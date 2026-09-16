@@ -5,9 +5,6 @@ when you ask or when something happens that you told it to watch for.
 
 This manual covers version 1.0.0, for WoW Midnight 12.1.
 
-> The screenshots are from an older build and show the previous name and layout.
-> The text describes the current addon.
-
 - [Installing](#installing)
 - [Opening the window](#opening-the-window)
 - [Outfit categories](#outfit-categories)
@@ -46,14 +43,12 @@ Open your character sheet, normally the `c` key. Outfitter adds a button with a
 robe icon near the top right of that window; click it to open and close the
 outfit list.
 
-![The Outfitter button on the character sheet](Images/OutfitterIcon.jpg)
-
 You can also open it from the minimap button, the addon compartment at the top of
 the minimap, or a LibDataBroker display if you use one.
 
 ## Outfit categories
 
-![The outfit list](Images/OutfitterUI.jpg)
+![The outfit list](https://raw.githubusercontent.com/tusharsaxena/Outfitter/master/Media/Screenshots/outfitter.screenshot.01.png)
 
 The list groups your outfits into two categories you create, and three it
 generates for you.
@@ -79,7 +74,7 @@ These are there so you can find gear you forgot about. You can't edit them.
 
 Click **New Outfit** at the bottom of the list.
 
-![Creating a new outfit](Images/NewOutfit.jpg)
+![The New Outfit dialog](https://raw.githubusercontent.com/tusharsaxena/Outfitter/master/Media/Screenshots/outfitter.screenshot.03.png)
 
 You can start from what you're wearing, from an empty outfit, or from a set of
 stat weights (see [Building an outfit from
@@ -122,6 +117,8 @@ rather than writing anything:
 | PvP | Any battleground, any arena, and one per map |
 | Other | Dining, Spellcast, Has buff, Pet battle, Quest turn-in |
 
+![An outfit's menu, with the automation options](https://raw.githubusercontent.com/tusharsaxena/Outfitter/master/Media/Screenshots/outfitter.screenshot.02.png)
+
 Choose one from the outfit's menu, fill in whatever settings it asks for, and it
 starts working. `/outfitter disable` stops every script at once; `/outfitter
 enable` starts them again.
@@ -143,21 +140,23 @@ useful thing to include in a bug report.
 
 ## The outfit bar
 
+![The outfit bar](https://raw.githubusercontent.com/tusharsaxena/Outfitter/master/Media/Screenshots/outfitter.screenshot.05.png)
+
 A movable bar of outfit icons for one-click switching, in a choice of sizes. Turn
 it on in Options, drag it where you want it, and `/outfitter reset bar` puts it
 back if it ends up somewhere unreachable.
 
-## The minimap button
+Each outfit picks its own icon, chosen from the whole icon set:
 
-![The minimap button menu](Images/Minimap.jpg)
+![Choosing an outfit icon](https://raw.githubusercontent.com/tusharsaxena/Outfitter/master/Media/Screenshots/outfitter.screenshot.04.png)
+
+## The minimap button
 
 Left-click opens the outfit menu, so you can switch without opening the character
 sheet. Drag it around the minimap edge to reposition it. Hide it from Options if
 you'd rather use a LibDataBroker display.
 
 ## QuickSlots
-
-![QuickSlots](Images/QuickSlots.jpg)
 
 Hovering an equipment slot on the character sheet shows the other items you own
 that fit it, so you can swap a single piece without editing an outfit.

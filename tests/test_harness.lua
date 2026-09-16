@@ -58,10 +58,10 @@ end)
 Kit.test("nothing a player needs is ignored by .pkgmeta", function()
 	-- The converse of the check above, and the half that was missing: asserting
 	-- only that three names ARE ignored says nothing about a fourth being added
-	-- that should not be.  Documentation/ is the user manual and ships; docs/ is
-	-- maintainer evidence and does not -- the two are one letter apart.
+	-- that should not be.  UsersManual.md ships; docs/ is maintainer evidence and
+	-- does not.
 	local skip = ignored()
-	for _, entry in ipairs({"Documentation", "Libraries", "Textures",
+	for _, entry in ipairs({"UsersManual.md", "Libraries", "Textures",
 	                        "Outfitter.toc", "Outfitter.xml", "LICENSE"}) do
 		Kit.isFalse(skip[entry], ".pkgmeta must not ignore " .. entry)
 	end

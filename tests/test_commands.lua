@@ -68,20 +68,22 @@ Kit.test("every dispatch target is a function that exists", function()
 	Kit.equal(#missing, 0, "dispatch table points at missing methods: " .. table.concat(missing, ", "))
 end)
 
---- The command words the README's table documents.
-local function readmeCommands()
+--- The command words the user manual's table documents.
+--
+-- The manual is the third surface, after the dispatch table and the in-game help.
+-- The README used to be a fourth, carrying its own copy of the table; it now
+-- points at the manual instead, which is one fewer place to drift.
+local function manualCommands()
 	local seen, out = {}, {}
-	for word in Ctx.readLF("README.md"):gmatch("`/outfitter ([%w_]+)") do
+	for word in Ctx.readLF("UsersManual.md"):gmatch("`/outfitter ([%w_]+)") do
 		if not seen[word] then seen[word] = true; out[#out + 1] = word end
 	end
 	return out
 end
 
-Kit.test("the README documents every command the addon dispatches", function()
-	-- The dispatch/help pair was already checked both ways; the README was a third
-	-- surface nothing read, and it had drifted by four commands.
+Kit.test("the user manual documents every command the addon dispatches", function()
 	local documented = {}
-	for _, w in ipairs(readmeCommands()) do documented[w] = true end
+	for _, w in ipairs(manualCommands()) do documented[w] = true end
 	local missing = {}
 	for _, w in ipairs(dispatchedCommands()) do
 		if not documented[w] and w ~= "daxdax" and w ~= "help" then
@@ -89,46 +91,46 @@ Kit.test("the README documents every command the addon dispatches", function()
 		end
 	end
 	table.sort(missing)
-	Kit.equal(#missing, 0, "commands missing from the README table: " ..
-		table.concat(missing, ", "))
+	Kit.equal(#missing, 0, "commands missing from the manual: " .. table.concat(missing, ", "))
 end)
 
-Kit.test("the README does not document a command that does not exist", function()
+Kit.test("the user manual does not document a command that does not exist", function()
 	local dispatched = {}
 	for _, w in ipairs(dispatchedCommands()) do dispatched[w] = true end
 	local phantom = {}
-	for _, w in ipairs(readmeCommands()) do
+	for _, w in ipairs(manualCommands()) do
 		if not dispatched[w] and w ~= "help" then phantom[#phantom + 1] = w end
 	end
 	table.sort(phantom)
-	Kit.equal(#phantom, 0, "README documents commands that do not dispatch: " ..
+	Kit.equal(#phantom, 0, "manual documents commands that do not dispatch: " ..
 		table.concat(phantom, ", "))
 end)
 
-Kit.test("the user manual documents the same commands as the README", function()
-	-- A fourth surface. It drifted for years as an .html file nobody regenerated;
-	-- now that it is markdown in the repo there is no excuse for it to drift again.
-	local function manualCommands()
-		local seen, out = {}, {}
-		for word in Ctx.readLF("Documentation/UsersManual.md"):gmatch("`/outfitter ([%w_]+)") do
-			if not seen[word] then seen[word] = true; out[#out + 1] = word end
-		end
-		return out
-	end
-	Kit.sameSet(manualCommands(), readmeCommands(), "manual vs README commands")
+Kit.test("the README points at the manual rather than copying its table", function()
+	-- If a command table comes back to the README it becomes a surface that can
+	-- drift again, and nothing here would notice.
+	local readme = Ctx.readLF("README.md")
+	local rows = select(2, readme:gsub("|%s*`/outfitter [%w_]+", ""))
+	Kit.equal(rows, 0, "the README has grown a command table again (" .. rows .. " rows)")
+	Kit.isTrue(readme:match("UsersManual%.md") ~= nil, "the README links the manual")
 end)
 
-Kit.test("every screenshot the manual references exists", function()
+Kit.test("every local file the manual references exists", function()
+	-- The screenshots are absolute raw URLs now, because the manual sits at the
+	-- repo root and ships, while Media/ deliberately does not. Any RELATIVE link
+	-- it still carries has to resolve against the root.
 	local missing = {}
-	for path in Ctx.readLF("Documentation/UsersManual.md"):gmatch("%]%((Images/[^)]+)%)") do
-		local f = io.open(Ctx.root .. "/Documentation/" .. path, "rb")
-		if f then f:close() else missing[#missing + 1] = path end
+	for path in Ctx.readLF("UsersManual.md"):gmatch("%]%(([^)]+)%)") do
+		if not path:match("^https?://") and not path:match("^#") then
+			local f = io.open(Ctx.root .. "/" .. path, "rb")
+			if f then f:close() else missing[#missing + 1] = path end
+		end
 	end
-	Kit.equal(#missing, 0, "manual references missing images: " .. table.concat(missing, ", "))
+	Kit.equal(#missing, 0, "manual references missing files: " .. table.concat(missing, ", "))
 end)
 
 Kit.test("the manual never points at an image that does not ship", function()
-	-- Documentation/ ships; Media/ deliberately does not.  A relative image
+	-- UsersManual.md ships; Media/ deliberately does not.  A relative image
 	-- reference from the manual into an ignored directory renders fine on GitHub
 	-- and is a broken image for every player who opens the shipped copy -- the
 	-- kind of mistake that is invisible to whoever makes it.
@@ -147,10 +149,10 @@ Kit.test("the manual never points at an image that does not ship", function()
 	end
 
 	local offenders = {}
-	for path in Ctx.readLF("Documentation/UsersManual.md"):gmatch("%]%(([^)]+)%)") do
+	for path in Ctx.readLF("UsersManual.md"):gmatch("%]%(([^)]+)%)") do
 		if not path:match("^https?://") and not path:match("^#") then
-			-- Resolved relative to Documentation/, then checked against the manifest.
-			local full = "Documentation/" .. path
+			-- Resolved against the repo root, then checked against the manifest.
+			local full = path
 			local top = full:match("^([^/]+)")
 			if ignored[top] or ignored[full] then
 				offenders[#offenders + 1] = path .. " (under an ignored path)"

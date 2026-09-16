@@ -10,8 +10,8 @@ package-as: Outfitter
 ignore:
     # Source artwork and screenshots for the project listing and the GitHub-rendered
     # docs -- not in-game textures.  Roughly 9 MB, which would otherwise be most of
-    # the download.  Anything referenced by the SHIPPED manual has to live under
-    # Documentation/ instead; see the test in tests/test_commands.lua.
+    # the download.  The shipped manual therefore references these by absolute URL
+    # rather than relatively; see the test in tests/test_commands.lua.
     - Media
 
     # The headless test harness: runner, framework, WoW mock and suites.  It runs
@@ -19,7 +19,7 @@ ignore:
     - tests
 
     # Frozen review, audit and automated-test bundles.  Evidence for whoever
-    # maintains the fork; a player has no use for it.  Documentation/ is NOT here
+    # maintains the fork; a player has no use for it.  UsersManual.md is NOT here
     # -- that is the user manual and it ships.
     - docs
 

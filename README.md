@@ -51,39 +51,11 @@ outfit owns. That's what separates a complete outfit from an accessory you can
 layer over one. Give an outfit a script and it equips itself: when you start
 fishing, enter a battleground, shift into bear form, sit down to eat.
 
+`/outfitter help` lists the available slash commands in-game.
+
 The [user
-manual](https://github.com/tusharsaxena/Outfitter/blob/master/Documentation/UsersManual.md)
+manual](https://github.com/tusharsaxena/Outfitter/blob/master/UsersManual.md)
 covers all of it, including writing your own scripts.
-
-## Slash commands
-
-`/outfitter help` lists these in-game.
-
-| Command | Effect |
-| --- | --- |
-| `/outfitter wear <outfit>` | Wear an outfit |
-| `/outfitter unwear <outfit>` | Remove an outfit |
-| `/outfitter toggle <outfit>` | Wear it, or remove it if it's already on |
-| `/outfitter update [outfit]` | Update an outfit from what you're wearing |
-| `/outfitter updatetitle` | Refresh your player title from equipped items |
-| `/outfitter deposit <outfit>` | Deposit an outfit to the bank |
-| `/outfitter depositunique <outfit>` | Deposit it, except items other outfits use |
-| `/outfitter depositothers <outfit>` | Deposit every outfit but this one |
-| `/outfitter withdraw <outfit>` | Withdraw an outfit from the bank |
-| `/outfitter withdrawothers <outfit>` | Withdraw every outfit but this one |
-| `/outfitter missing` | List outfit items that can't be found |
-| `/outfitter summary` | Summarize your outfits and the items they use |
-| `/outfitter rating` | Summarize the combat ratings of your outfits |
-| `/outfitter iteminfo <item>` | Report what Outfitter knows about an item |
-| `/outfitter itemstats <item>` | Report the parsed stats of an item |
-| `/outfitter zone` | Report the current instance map ID and its zone outfits |
-| `/outfitter disable` | Stop all automatic switching |
-| `/outfitter enable` | Resume automatic switching |
-| `/outfitter sound [on\|off]` | Silence equipment sounds during a gear change |
-| `/outfitter errors [on\|off]` | Missing-item messages during a gear change |
-| `/outfitter reset` | Restore default settings and outfits |
-| `/outfitter reset bar` | Move the outfit bar back to its default position |
-| `/unequip <item or slot>` | Take off a named item |
 
 ## What no longer works
 
