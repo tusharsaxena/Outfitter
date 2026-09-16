@@ -11,7 +11,7 @@ if GetLocale() == "koKR" then
 	Outfitter.cUseCurrentOutfit = "현재 장비 세트 사용"
 	Outfitter.cUseEmptyOutfit = "빈 장비 세트 생성"
 
-	Outfitter.cOutfitterTabTitle = "Outfitter Reborn"
+	Outfitter.cOutfitterTabTitle = "Outfitter"
 	Outfitter.cOptionsTabTitle = "옵션"
 	Outfitter.cAboutTabTitle = "정보"
 

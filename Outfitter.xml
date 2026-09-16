@@ -614,11 +614,15 @@
 				</Anchors>
 				<Layers>
 					<Layer level="OVERLAY">
+						<!-- x was -10, nudging this left to look centred between the frame
+						     edge and the close button.  The yellow panel heading below
+						     centres on the frame itself, so the two never lined up with
+						     each other.  Both centre on the frame now. -->
 						<FontString name="$parentTitle" text="Outfitter_cTitleVersion" inherits="GameFontHighlight">
 							<Anchors>
 								<Anchor point="TOP">
 									<Offset>
-										<AbsDimension x="-10" y="-6"/>
+										<AbsDimension x="0" y="-6"/>
 									</Offset>
 								</Anchor>
 							</Anchors>

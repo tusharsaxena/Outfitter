@@ -11,7 +11,7 @@ if GetLocale() == "deDE" then
 	Outfitter.cUseCurrentOutfit = "Benutze derzeitiges Outfit"
 	Outfitter.cUseEmptyOutfit = "Erstelle neues Outfit"
 
-	Outfitter.cOutfitterTabTitle = "Outfitter Reborn"
+	Outfitter.cOutfitterTabTitle = "Outfitter"
 	Outfitter.cOptionsTabTitle = "Einstellungen"
 	Outfitter.cAboutTabTitle = "über"
 

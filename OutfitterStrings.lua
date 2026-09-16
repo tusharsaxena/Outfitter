@@ -25,7 +25,9 @@ Outfitter.cUseCurrentOutfit = "Use Current Outfit"
 Outfitter.cUseEmptyOutfit = "Create Empty Outfit"
 Outfitter.cAutomationLabel = "Automation:"
 
-Outfitter.cOutfitterTabTitle = "Outfitter Reborn"
+-- The tab is short and "Outfitter Reborn" overflows it, so the tab keeps the
+-- short name.  Every other surface uses cTitle.
+Outfitter.cOutfitterTabTitle = "Outfitter"
 Outfitter.cOptionsTabTitle = "Options"
 Outfitter.cAboutTabTitle = "About"
 

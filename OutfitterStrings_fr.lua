@@ -11,7 +11,7 @@ if GetLocale() == "frFR" then
 	Outfitter.cUseCurrentOutfit = "Utiliser la tenue actuelle"
 	Outfitter.cUseEmptyOutfit = "Créer une tenue vide"
 
-	Outfitter.cOutfitterTabTitle = "Outfitter Reborn"
+	Outfitter.cOutfitterTabTitle = "Outfitter"
 	Outfitter.cOptionsTabTitle = "Options"
 	Outfitter.cAboutTabTitle = "A propos"
 

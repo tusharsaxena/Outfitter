@@ -16,7 +16,7 @@ if GetLocale() == "zhTW" then
 	Outfitter.cUseEmptyOutfit = "建立新配裝"
 	Outfitter.cAutomationLabel = "自動換裝:"
 
-	Outfitter.cOutfitterTabTitle = "Outfitter Reborn"
+	Outfitter.cOutfitterTabTitle = "Outfitter"
 	Outfitter.cOptionsTabTitle = "選項"
 	Outfitter.cAboutTabTitle = "關於"
 

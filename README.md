@@ -42,16 +42,18 @@ optimised for a stat combination you pick or from a
 [Pawn](https://www.curseforge.com/wow/addons/pawn) scale if you have Pawn
 installed. Tooltip comparisons against what your other outfits already use.
 
-## Installing
+## Usage
 
-Drop the `Outfitter` folder into `World of Warcraft\_retail_\Interface\AddOns`.
+Open your character sheet and click the robe icon near the top right to bring up
+the outfit list. Build an outfit from what you're wearing, then tick the
+checkboxes Outfitter adds beside each equipment slot to say which slots that
+outfit owns. That's what separates a complete outfit from an accessory you can
+layer over one. Give an outfit a script and it equips itself: when you start
+fishing, enter a battleground, shift into bear form, sit down to eat.
 
-Then quit the game properly, all the way out. Not a `/reload`, not a character
-logout. WoW reads an addon's `.toc` file once at startup and never looks at it
-again while it's running, so an update that adds or removes a file will half-load
-if you install it with the game still open. What you get is a stream of Lua
-errors, outfits that refuse to switch, and a UI in pieces. It looks exactly like
-the addon is broken. It isn't, and a real restart clears all of it.
+The [user
+manual](https://github.com/tusharsaxena/Outfitter/blob/master/Documentation/UsersManual.md)
+covers all of it, including writing your own scripts.
 
 ## Slash commands
 
@@ -112,7 +114,7 @@ instead, which is why those still work.
 
 | Version | Date | Highlights |
 | --- | --- | --- |
-| 1.0.0 | 2026-09-16 | First release as Outfitter Reborn, for WoW Midnight 12.1.<br>Fixed the per-slot checkboxes on the character sheet, which were invisible behind any addon drawing over the character panel.<br>Fixed the errors that stopped equipment updates for a whole session once health or power came back as a secret value.<br>Rebuilt battleground and arena detection on instance map IDs: every battleground and arena is recognised again, including the ones Blizzard re-issued under a second map ID, and detection no longer depends on the client's language. Adds outfits for Silvershard Mines, Temple of Kotmogu, Deepwind Gorge, Seething Shore, Deephaul Ravine, Ashran and the current arena rotation.<br>Fixed the outfit you fall back to after removing a Complete outfit, which had never searched past the most recent entry.<br>Fixed the Spirit Regen preset, which had never compiled, and the Resting preset, which was filed under the wrong category.<br>Retired what the game removed — void storage, TankPoints, gem capture and several preset scripts — into an isolated layer rather than leaving it to fail in place.<br>Added `/outfitter zone`, and four commands that worked but were undocumented. |
+| 1.0.0 | 2026-09-16 | - First release as Outfitter Reborn, for WoW Midnight 12.1.<br>- Fixed the per-slot checkboxes on the character sheet, which were invisible behind any addon drawing over the character panel.<br>- Fixed the errors that stopped equipment updates for a whole session once health or power came back as a secret value.<br>- Rebuilt battleground and arena detection on instance map IDs: every battleground and arena is recognised again, including the ones Blizzard re-issued under a second map ID, and detection no longer depends on the client's language. Adds outfits for Silvershard Mines, Temple of Kotmogu, Deepwind Gorge, Seething Shore, Deephaul Ravine, Ashran and the current arena rotation.<br>- Fixed the outfit you fall back to after removing a Complete outfit, which had never searched past the most recent entry.<br>- Fixed the Spirit Regen preset, which had never compiled, and the Resting preset, which was filed under the wrong category.<br>- Retired what the game removed — void storage, TankPoints, gem capture and several preset scripts — into an isolated layer rather than leaving it to fail in place.<br>- Added `/outfitter zone`, and four commands that worked but were undocumented. |
 
 ## Credits
 

@@ -119,7 +119,9 @@ Kit.suite("naming")
 
 Kit.test("the display name is Outfitter Reborn", function()
 	Kit.equal(Outfitter.cTitle, "Outfitter Reborn", "Outfitter.cTitle")
-	Kit.equal(Outfitter.cOutfitterTabTitle, "Outfitter Reborn", "the main tab title")
+	-- The tab is the one surface that keeps the short name: "Outfitter Reborn"
+	-- overflows it.
+	Kit.equal(Outfitter.cOutfitterTabTitle, "Outfitter", "the main tab title")
 	Kit.isTrue(Outfitter.cOptionsTitle:match("Outfitter Reborn") ~= nil, "the options title")
 	Kit.isTrue(Outfitter.cAboutTitle:match("Outfitter Reborn") ~= nil, "the about title")
 end)
