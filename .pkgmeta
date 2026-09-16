@@ -1,0 +1,25 @@
+# Packaging manifest for the CurseForge / WoWInterface packager.
+#
+# Everything listed under `ignore` stays in the repository and out of the zip
+# players download.  Nothing here is loaded by Outfitter.toc, so ignoring it
+# changes nothing about how the addon behaves -- it only stops shipping files
+# that would sit in every player's AddOns folder doing nothing.
+
+package-as: Outfitter
+
+ignore:
+    # Source artwork for the project listing, not in-game textures.  The TGA and
+    # PNG are ~6 MB and ~1.4 MB, which would otherwise be most of the download.
+    - Media
+
+    # The headless test harness: runner, framework, WoW mock and suites.  It runs
+    # on a desktop Lua, never inside the client.
+    - tests
+
+    # Developer tooling and repo furniture.
+    - .luacheckrc
+    - .gitignore
+    - .github
+
+    # Documentation aimed at whoever maintains the fork rather than at players.
+    - CLAUDE.md
