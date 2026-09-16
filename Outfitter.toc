@@ -9,6 +9,7 @@
 ## SavedVariables: gOutfitter_GlobalSettings
 ## IconTexture: Interface\Icons\INV_Chest_Cloth_21
 ## AddonCompartmentFunc: Outfitter_OnAddonCompartmentClick
+## X-Curse-Project-ID: 1698220
 ## X-ReloadTag: 2
 
 Compat.lua

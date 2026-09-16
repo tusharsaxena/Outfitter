@@ -57,6 +57,15 @@ Kit.test("every declared interface version is a plausible retail build", functio
 	Kit.isTrue(n > 0, "at least one interface version")
 end)
 
+Kit.test("the CurseForge project ID is present and numeric", function()
+	-- The packager uploads to whatever project this names. A missing one fails the
+	-- upload; a mistyped one succeeds against somebody else's project, which is
+	-- the worse outcome and the quiet one.
+	local id = Ctx.readLF("Outfitter.toc"):match("##%s*X%-Curse%-Project%-ID:%s*(%d+)")
+	Kit.notNil(id, "## X-Curse-Project-ID")
+	Kit.equal(id, "1698220", "the project ID")
+end)
+
 Kit.test("Deprecated.lua loads after Outfitter.lua", function()
 	local seenOutfitter = false
 	for _, rel in ipairs(Ctx.loadedFiles) do
