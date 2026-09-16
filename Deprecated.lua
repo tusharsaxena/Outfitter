@@ -5,9 +5,16 @@
 -- of Warcraft.  In almost every case the game removed the API it was built on, so
 -- the feature can't be repaired, only retired.
 --
--- The code is kept verbatim rather than deleted, but it is completely detached:
--- nothing here is called, nothing here is registered for an event, and nothing
--- here touches the live Outfitter tables -- it all hangs off Outfitter.Deprecated.
+-- The code is kept verbatim rather than deleted, but it is detached in the
+-- direction that matters: nothing live calls into it, nothing here is registered
+-- for an event, and the only names it adds to the live Outfitter table are
+-- Outfitter.Deprecated and Outfitter:DeprecatedFeature.
+--
+-- It is NOT true that nothing here touches the live tables.  Preserved bodies open
+-- `local self = Outfitter` and call live methods, because a body that had its
+-- calls rewritten would no longer be the thing that was retired and could not be
+-- revived by pasting it back.  That is deliberate, and it is safe because none of
+-- it runs.
 -- Each retired feature keeps its entry point where it always was, and that entry
 -- point now does nothing but report itself through Outfitter:DeprecatedFeature.
 --

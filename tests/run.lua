@@ -38,9 +38,12 @@ end
 --- Every .lua file in the repo, repo-relative, sorted.
 function Ctx.luaFiles(includeLibraries)
 	local out = {}
-	local pipe = io.popen("cd '" .. root .. "' && find . -name '*.lua' | sort")
+	-- git ls-files, not find: `find` swept untracked scratch .lua files into the
+	-- discipline checks, and the shell quoting broke on a repo path containing a
+	-- single quote. This lists exactly what is committed.
+	local pipe = io.popen("git -C " .. ("%q"):format(root) .. " ls-files '*.lua'")
 	for line in pipe:lines() do
-		local rel = line:gsub("^%./", "")
+		local rel = line
 		-- tests/ is the harness itself, not the addon.
 		local skip = rel:match("^tests/") or (not includeLibraries and rel:match("^Libraries/"))
 		if not skip then out[#out + 1] = rel end
@@ -62,7 +65,7 @@ Ctx.OutfitterAPI = _G.OutfitterAPI
 -- The XML's frames, then the addon's own start-up.  Both are things the client
 -- does between loading the files and the addon being usable, and most of the
 -- interesting tables (cSlotIDs, the slash commands) do not exist until they have.
-Ctx.xmlFrameCount = Mock.buildXMLFrames(root)
+Ctx.xmlFrameCount = Mock.buildXMLFrames(root)   -- asserted by test_xml.lua
 Ctx.initOK, Ctx.initError = pcall(function()
 	Ctx.Outfitter:InitializeInstant()
 	Ctx.Outfitter:Initialize()

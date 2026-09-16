@@ -7,6 +7,7 @@
 # Exits non-zero if any suite fails, so it works as a pre-commit gate.
 
 set -uo pipefail
+trap 'rm -f "${nobom:-}"' EXIT
 cd "$(dirname "$0")/.." || exit 1
 
 LUA=${LUA:-$(command -v lua5.1 || command -v lua)}
@@ -27,8 +28,12 @@ if [ -n "$LUAC" ]; then
 	while IFS= read -r f; do
 		# MC2DebugLib ships a UTF-8 BOM: the client accepts it, luac does not.
 		if head -c3 "$f" | grep -q $'\xef\xbb\xbf'; then
-			tail -c +4 "$f" > /tmp/outfitter-nobom.lua
-			"$LUAC" -p /tmp/outfitter-nobom.lua || { echo "  FAIL $f"; syntax_fail=1; }
+			# mktemp, not a fixed path: two concurrent runs, or two users on a
+			# shared machine, would collide on one.
+			nobom=$(mktemp "${TMPDIR:-/tmp}/outfitter-nobom.XXXXXX.lua")
+			tail -c +4 "$f" > "$nobom"
+			"$LUAC" -p "$nobom" || { echo "  FAIL $f"; syntax_fail=1; }
+			rm -f "$nobom"
 		else
 			"$LUAC" -p "$f" || { echo "  FAIL $f"; syntax_fail=1; }
 		fi

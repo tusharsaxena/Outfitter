@@ -19,7 +19,7 @@ Kit.test("the layer loaded and published itself", function()
 	Kit.equal(type(Outfitter.DeprecatedFeature), "function", "Outfitter:DeprecatedFeature")
 end)
 
-Kit.test("no live file calls an API the game removed", function()
+Kit.test("no live file calls an API the game removed, outside a comment", function()
 	local bad = {}
 	for _, rel in ipairs(Ctx.luaFiles(false)) do
 		if rel ~= "Deprecated.lua" then
@@ -43,7 +43,7 @@ Kit.test("no live file calls an API the game removed", function()
 	Kit.equal(#bad, 0, "live code calling a removed API:\n      " .. table.concat(bad, "\n      "))
 end)
 
-Kit.test("the layer writes nothing to the live Outfitter table but its own two keys", function()
+Kit.test("the layer adds only its own two names to the live Outfitter table", function()
 	local writes = {}
 	for line in Ctx.readLF("Deprecated.lua"):gmatch("[^\n]*") do
 		local key = line:match("^Outfitter%.([%w_]+)%s*=") or line:match("^function Outfitter[:%.]([%w_]+)")

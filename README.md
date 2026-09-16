@@ -70,8 +70,13 @@ go away after a proper restart.
 | `/outfitter withdraw <outfit>` | Withdraw an outfit from the bank |
 | `/outfitter withdrawothers <outfit>` | Withdraw every outfit but this one |
 | `/outfitter missing` | List outfit items that can't be found |
+| `/outfitter summary` | Summarize your outfits and the items they use |
+| `/outfitter rating` | Summarize the combat ratings of your outfits |
+| `/outfitter iteminfo <item>` | Report what Outfitter knows about an item |
+| `/outfitter itemstats <item>` | Report the parsed stats of an item |
 | `/outfitter zone` | Report the current instance map ID and its zone outfits |
-| `/outfitter disable` / `enable` | Stop or resume all automatic switching |
+| `/outfitter disable` | Stop all automatic switching |
+| `/outfitter enable` | Resume automatic switching |
 | `/outfitter sound [on\|off]` | Silence equipment sounds during a gear change |
 | `/outfitter errors [on\|off]` | Missing-item messages during a gear change |
 | `/outfitter reset` | Restore default settings and outfits |

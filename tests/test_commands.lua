@@ -68,6 +68,43 @@ Kit.test("every dispatch target is a function that exists", function()
 	Kit.equal(#missing, 0, "dispatch table points at missing methods: " .. table.concat(missing, ", "))
 end)
 
+--- The command words the README's table documents.
+local function readmeCommands()
+	local seen, out = {}, {}
+	for word in Ctx.readLF("README.md"):gmatch("`/outfitter ([%w_]+)") do
+		if not seen[word] then seen[word] = true; out[#out + 1] = word end
+	end
+	return out
+end
+
+Kit.test("the README documents every command the addon dispatches", function()
+	-- The dispatch/help pair was already checked both ways; the README was a third
+	-- surface nothing read, and it had drifted by four commands.
+	local documented = {}
+	for _, w in ipairs(readmeCommands()) do documented[w] = true end
+	local missing = {}
+	for _, w in ipairs(dispatchedCommands()) do
+		if not documented[w] and w ~= "daxdax" and w ~= "help" then
+			missing[#missing + 1] = w
+		end
+	end
+	table.sort(missing)
+	Kit.equal(#missing, 0, "commands missing from the README table: " ..
+		table.concat(missing, ", "))
+end)
+
+Kit.test("the README does not document a command that does not exist", function()
+	local dispatched = {}
+	for _, w in ipairs(dispatchedCommands()) do dispatched[w] = true end
+	local phantom = {}
+	for _, w in ipairs(readmeCommands()) do
+		if not dispatched[w] and w ~= "help" then phantom[#phantom + 1] = w end
+	end
+	table.sort(phantom)
+	Kit.equal(#phantom, 0, "README documents commands that do not dispatch: " ..
+		table.concat(phantom, ", "))
+end)
+
 Kit.test("the zone diagnostic reports without raising", function()
 	Ctx.Mock.state.instanceType = "pvp"
 	Ctx.Mock.state.instanceMapID = 30

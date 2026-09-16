@@ -1855,7 +1855,18 @@ function Outfitter:PlayerIsFull()
 		return false
 	end
 
-	if OutfitterAPI:UnsecretNumber(UnitPowerType("player"), -1) ~= 0 then
+	-- Power type decides whether power counts at all: a rage or energy user at full
+	-- health IS full.  But an unreadable power type is not evidence of that -- this
+	-- defaulted to -1 and then took the `~= 0` branch, reporting full for exactly
+	-- the reason it could not tell.  Same fallback as everywhere else in here.
+
+	local vPowerType = OutfitterAPI:UnsecretNumber(UnitPowerType("player"))
+
+	if not vPowerType then
+		return false
+	end
+
+	if vPowerType ~= 0 then
 		return true
 	end
 
@@ -7698,7 +7709,7 @@ end
 -- original implementation is Deprecated.Companions.CallByName
 
 function Outfitter:CallCompanionByName(pName)
-	self:DeprecatedFeature("Outfitter:CallCompanionByName")
+	self:DeprecatedFeature("Summoning a companion by name")
 end
 
 function Outfitter:PlayerIsOnQuestID(pQuestID)

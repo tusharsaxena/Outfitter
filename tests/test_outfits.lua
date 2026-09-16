@@ -120,3 +120,54 @@ Kit.test("cSlotOrder is a permutation of cSlotNames", function()
 		Kit.notNil(seen[i], "no slot at order index " .. i)
 	end
 end)
+
+Kit.suite("outfits: removal fallback")
+
+-- F-004.  Both conditions in the walk-back used `#t` as a truth test, which is
+-- always true in Lua, so the loop gave up after one entry and the fallback never
+-- searched. These cases pin the searching, not just the first hit.
+
+local function withRecent(names, fn)
+	local saved = Outfitter.Settings.RecentCompleteOutfits
+	Outfitter.Settings.RecentCompleteOutfits = names
+	local ok, err = pcall(fn)
+	Outfitter.Settings.RecentCompleteOutfits = saved
+	if not ok then error(err, 0) end
+end
+
+Kit.test("an empty recent-complete history is not walked", function()
+	-- The `> 0` guard: with `#t` the body ran against an empty list and indexed [0].
+	withRecent({}, function()
+		Kit.noError(function()
+			Outfitter:RemoveOutfit({CategoryID = "Complete", Name = "Gone"})
+		end, "RemoveOutfit with no history")
+	end)
+end)
+
+Kit.test("the walk-back passes over entries that no longer exist", function()
+	-- The heart of F-004: with the old `#t` break the loop stopped after one entry
+	-- and never searched the rest of the history.
+	--
+	-- RemoveOutfit returns early unless the outfit is on the live outfit stack, so
+	-- this puts it there through OutfitStack:AddOutfit rather than faking a table.
+	local outfit = Outfitter:NewEmptyOutfit("WalkBackTarget")
+	outfit.CategoryID = "Complete"
+	Outfitter.OutfitStack:AddOutfit(outfit)
+
+	withRecent({"WalkBackTarget", "StaleC", "StaleB", "StaleA"}, function()
+		Outfitter:RemoveOutfit(outfit)
+		-- Three stale names sit above the only real one. The walk reads from the
+		-- end, so reaching WalkBackTarget means it passed all three -- which is
+		-- exactly what the broken break prevented.
+		local left = Outfitter.Settings.RecentCompleteOutfits
+		Kit.isTrue(#left <= 2,
+			"expected the stale entries to be consumed, " .. #left .. " left")
+	end)
+end)
+
+Kit.test("removing a non-Complete outfit leaves the history alone", function()
+	withRecent({"Something"}, function()
+		Outfitter:RemoveOutfit({CategoryID = "Accessory", Name = "Gone"})
+		Kit.equal(#Outfitter.Settings.RecentCompleteOutfits, 1, "history untouched")
+	end)
+end)

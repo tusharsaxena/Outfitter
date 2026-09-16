@@ -164,3 +164,91 @@ Kit.test("the seam check would catch a regression", function()
 	local good = "\tlocal vHealth = OutfitterAPI:UnsecretNumber(UnitHealth(\"player\"))"
 	Kit.isTrue(good:match("OutfitterAPI[:%.]%w*[Ss]ecret%w*%b()") ~= nil, "matcher accepts the seam")
 end)
+
+Kit.suite("secrets: fallback direction")
+
+-- F-010.  PlayerIsFull returned true when power was unreadable, reporting the
+-- player as full and taking the dining outfit off mid-meal -- the opposite of what
+-- the function's own comment says. Health already fell back the documented way;
+-- this pins both, so the pair cannot drift apart again.
+
+local function fullWith(secret)
+	Mock.reset()
+	Mock.state.secret = secret
+	local r = Outfitter:PlayerIsFull()
+	Mock.reset()
+	return r
+end
+
+Kit.test("unreadable health reports not-full", function()
+	Kit.isFalse(fullWith({UnitHealth = true}), "secret health")
+end)
+
+Kit.test("unreadable power reports not-full, the same direction as health", function()
+	Kit.isFalse(fullWith({UnitPower = true}), "secret power")
+	Kit.isFalse(fullWith({UnitPowerMax = true}), "secret power max")
+end)
+
+Kit.test("an unreadable value never reports the player as full", function()
+	for _, api in ipairs({"UnitHealth", "UnitHealthMax", "UnitPower",
+	                      "UnitPowerMax", "UnitPowerType"}) do
+		Kit.isFalse(fullWith({[api] = true}),
+			api .. " secret should never report full -- that removes the dining outfit")
+	end
+end)
+
+Kit.suite("secrets: mana history")
+
+-- F-011.  A secret reading wiped PreviousManaLevel, so the next real sample read
+-- as a drop and could cancel the Spirit outfit with no drop having happened.
+
+Kit.test("a secret power reading does not wipe the last known level", function()
+	Mock.reset()
+	Outfitter.EquipmentUpdateCount = 0
+	Mock.state.power = 500
+	Outfitter:UnitHealthOrManaChanged("player")
+	Kit.equal(Outfitter.PreviousManaLevel, 500, "a real sample is recorded")
+
+	Mock.state.secret.UnitPower = true
+	Outfitter:UnitHealthOrManaChanged("player")
+	Kit.equal(Outfitter.PreviousManaLevel, 500,
+		"the last known level should survive a secret window")
+	Mock.reset()
+end)
+
+Kit.suite("equipment update count")
+
+-- F-009.  The Begin/End pair is manual at seventeen sites; an error between them
+-- stranded the count and stopped equipment updates for the session.
+
+Kit.test("a balanced pair returns to zero", function()
+	Outfitter.EquipmentUpdateCount = 0
+	Outfitter:BeginEquipmentUpdate()
+	Kit.equal(Outfitter.EquipmentUpdateCount, 1, "after Begin")
+	Outfitter:EndEquipmentUpdate()
+	Kit.equal(Outfitter.EquipmentUpdateCount, 0, "after End")
+end)
+
+Kit.test("an unmatched End refuses to go negative", function()
+	-- Going negative was worse than the unmatched call: the `== 0` test would then
+	-- never fire again and every later balanced pair was silently ignored.
+	Outfitter.EquipmentUpdateCount = 0
+	Outfitter:EndEquipmentUpdate("test")
+	Kit.equal(Outfitter.EquipmentUpdateCount, 0, "clamped at zero")
+	Outfitter:BeginEquipmentUpdate()
+	Outfitter:EndEquipmentUpdate()
+	Kit.equal(Outfitter.EquipmentUpdateCount, 0, "a later pair still balances")
+end)
+
+Kit.test("a stranded count can be cleared", function()
+	Outfitter.EquipmentUpdateCount = 3
+	Outfitter:ResetEquipmentUpdateCount()
+	Kit.equal(Outfitter.EquipmentUpdateCount, 0, "after a reset")
+end)
+
+Kit.test("the reset is quiet when nothing is stranded", function()
+	Outfitter.EquipmentUpdateCount = 0
+	Ctx.Mock.calls.chat = nil
+	Outfitter:ResetEquipmentUpdateCount()
+	Kit.isNil(Ctx.Mock.calls.chat, "reset should say nothing when the count is clean")
+end)
