@@ -799,11 +799,41 @@ function Outfitter:MoveLocationToEmptyBagSlot(pLocation, pEmptyBagSlots, pErrorM
 	end
 end
 
+-- Equipment updates are bracketed by Begin/End at seventeen sites, and the pair is
+-- manual: an error raised between them skips the End, the count stays above zero,
+-- and equipment updates stop firing for the rest of the session.  Recovery is a
+-- /reload, and nothing tells the player or a bug reporter that the count is why.
+--
+-- These do not pcall the bracketed regions.  Swallowing the error would trade a
+-- visible stuck state for an invisible one, and the raiser would go unreported.
+-- What they do instead is refuse to go negative, say so when the brackets do not
+-- match, and let ResetEquipmentUpdateCount clear a stuck count at a zone change.
+
 function Outfitter:BeginEquipmentUpdate()
 	self.EquipmentUpdateCount = self.EquipmentUpdateCount + 1
 end
 
+--- Clear a count stranded above zero by a handler that raised mid-bracket.
+function Outfitter:ResetEquipmentUpdateCount()
+	if self.EquipmentUpdateCount ~= 0 then
+		self:DebugMessage("Clearing a stranded equipment update count of %s",
+			tostring(self.EquipmentUpdateCount))
+		self.EquipmentUpdateCount = 0
+	end
+end
+
 function Outfitter:EndEquipmentUpdate(pCallerName, pUpdateNow)
+	if self.EquipmentUpdateCount <= 0 then
+		-- An End with no matching Begin.  Letting this go negative is worse than
+		-- the unmatched call itself: the == 0 test below would then never fire
+		-- again, and every later balanced pair would be silently ignored.
+
+		self:DebugMessage("EndEquipmentUpdate without a matching Begin (%s)",
+			tostring(pCallerName))
+		self.EquipmentUpdateCount = 0
+		return
+	end
+
 	self.EquipmentUpdateCount = self.EquipmentUpdateCount - 1
 
 	if self.EquipmentUpdateCount == 0 then

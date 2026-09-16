@@ -118,17 +118,39 @@ Kit.test("no retired string survived in any locale file", function()
 end)
 
 Kit.test("every string the addon reads is defined in English", function()
+	-- This carried two filters that between them made it near-inert: a suffix
+	-- allow-list (Outfit/Description/Title/Label/Error/Message) that skipped most
+	-- names, and an `Outfitter[key] ~= nil` escape that passed anything the loaded
+	-- addon happened to have on its table -- which, after a successful load, is
+	-- almost everything.
+	--
+	-- Now: every Outfitter.cXxx read anywhere outside the locale files must be
+	-- defined in OutfitterStrings.lua. DATA_TABLES are the names that share the
+	-- `c` prefix but are Lua tables built in code, not localized strings.
+	local DATA_TABLES = {
+		cSlotNames = true, cSlotOrder = true, cSlotIDs = true, cSlotDisplayNames = true,
+		cSlotIDToInventorySlot = true, cInvTypeToSlotName = true, cSpecialIDEvents = true,
+		cZoneSpecialIDs = true, cInstanceMapIDZoneIDs = true, cClassSpecialOutfits = true,
+		cSpellIDToSpecialID = true, cAuraIconSpecialID = true, cShapeshiftIDInfo = true,
+		cCategoryOrder = true, cScriptCategoryOrder = true, cScriptCategoryName = true,
+		cInitializationEvents = true, cCombatEquipmentSlots = true, cZoneSpecialIDMap = true,
+		cScriptPrefix = true, cScriptSuffix = true, cScriptPrefixNumLines = true,
+		cInputPrefix = true, cInputSuffix = true, cDeformat = true, cSlotIDList = true,
+		cUniqueGemItemIDs = true, cItemAliases = true, cIgnoredUnusedItems = true,
+		cStatIDItems = true, cFullAlternateStatSlot = true, cHalfAlternateStatSlot = true,
+		cArgentDawnTrinkets = true, cSmartOutfits = true, cItemHasUseFeature = true,
+		cItemUseDuration = true, cGeneralBagType = true, cItemLinkFormat = true,
+		cMinEquipmentUpdateInterval = true, cMaxDisplayedItems = true, cPanelFrames = true,
+		cVersion = true, cWildcardIcon = true,
+		cAuraRestrictionTypes = true, cCategoryDescriptions = true,
+		cMaxScannedAuras = true, cMinBindingTime = true,
+	}
 	local missing = {}
 	for _, rel in ipairs(Ctx.luaFiles(false)) do
 		if not rel:match("^OutfitterStrings") and rel ~= "Deprecated.lua" then
 			for key in Ctx.readLF(rel):gmatch("Outfitter%.(c[A-Z][%w_]*)") do
-				-- Only names that look like display strings; the addon also has
-				-- cSlotNames-style data tables sharing the prefix.
-				if key:match("Outfit$") or key:match("Description$") or key:match("Title$")
-				   or key:match("Label$") or key:match("Error$") or key:match("Message$") then
-					if englishKeys[key] == nil and Outfitter[key] == nil then
-						missing[#missing + 1] = rel .. ": " .. key
-					end
+				if not englishKeys[key] and not DATA_TABLES[key] then
+					missing[#missing + 1] = rel .. ": " .. key
 				end
 			end
 		end
@@ -136,5 +158,6 @@ Kit.test("every string the addon reads is defined in English", function()
 	local seen, uniq = {}, {}
 	for _, m in ipairs(missing) do if not seen[m] then seen[m] = true; uniq[#uniq + 1] = m end end
 	table.sort(uniq)
-	Kit.equal(#uniq, 0, "strings used but never defined:\n      " .. table.concat(uniq, "\n      "))
+	Kit.equal(#uniq, 0, "strings used but never defined in English:\n      " ..
+		table.concat(uniq, "\n      "))
 end)

@@ -103,35 +103,64 @@ end)
 
 Kit.suite("secrets: source discipline")
 
-Kit.test("no live file compares a Unit API result directly", function()
-	-- Deprecated.lua is exempt: nothing in it runs.  Compat.lua is the seam itself.
-	local risky = {"UnitHealth", "UnitPower", "UnitLevel", "UnitStat", "UnitHealthMax", "UnitPowerMax"}
+Kit.test("no live file reads a securable API outside the OutfitterAPI seam", function()
+	-- The previous version looked for a call sitting NEXT TO a comparison operator,
+	-- which is not how this codebase is written: it binds first and compares later
+	-- (`local vHealth = UnitHealth("player")` ... `if vHealth < x`), so the check
+	-- was near-inert.
+	--
+	-- This looks for the binding instead. Every live read of a securable API must
+	-- pass through OutfitterAPI on the SAME line -- that is the seam, and a value
+	-- that skips it is one comparison away from raising.
+	--
+	-- Exempt: Compat.lua, which IS the seam, and Deprecated.lua, where nothing runs.
+	local RISKY = {
+		"UnitHealth", "UnitHealthMax", "UnitPower", "UnitPowerMax", "UnitPowerType",
+		"UnitLevel", "UnitStat", "GetInventoryItemLink",
+	}
+	-- A call returning several values cannot be wrapped inline, so the codebase
+	-- binds and then routes each local through the seam on the following lines
+	-- (Outfitter:GetPlayerStat does exactly this). A short lookahead accepts that
+	-- idiom; anything with no seam within it is a genuine unguarded read.
+	local SEAM = "OutfitterAPI[:%.]%w*[Ss]ecret%w*"
+	local LOOKAHEAD = 6
+
 	local bad = {}
 	for _, rel in ipairs(Ctx.luaFiles(false)) do
-		if rel ~= "Deprecated.lua" and rel ~= "Compat.lua" and not rel:match("^tests/") then
-			for lineNo, line in ipairs((function()
-				local t = {}
-				for l in Ctx.readLF(rel):gmatch("[^\n]*") do t[#t + 1] = l end
-				return t
-			end)()) do
-				-- A commented-out line is not live code, and a plain `=` is an
-				-- assignment -- only a comparison or arithmetic operator inspects
-				-- the value, which is what raises on a secret.
+		if rel ~= "Deprecated.lua" and rel ~= "Compat.lua" then
+			local lines = {}
+			for line in Ctx.readLF(rel):gmatch("([^\n]*)\n?") do lines[#lines + 1] = line end
+			for lineNo, line in ipairs(lines) do
+				local code = line:gsub("%-%-.*$", "")
 				if not line:match("^%s*%-%-") then
-					local code = line:gsub("%-%-.*$", "")
-					for _, api in ipairs(risky) do
-						if code:match(api .. "%b()%s*[<>][=]?")
-						or code:match(api .. "%b()%s*[~=][=]")
-						or code:match(api .. "%b()%s*[+%-*/]")
-						or code:match("[<>~][=]?%s*" .. api .. "%b()")
-						or code:match("[+%-*/]%s*" .. api .. "%b()") then
-							bad[#bad + 1] = ("%s:%d  %s"):format(rel, lineNo, line:gsub("^%s+", ""))
+					for _, api in ipairs(RISKY) do
+						if code:match("[^%w_.:]" .. api .. "%s*%(") then
+							local seamed = code:match(SEAM .. "%b()") ~= nil
+							for ahead = lineNo + 1, math.min(lineNo + LOOKAHEAD, #lines) do
+								if lines[ahead]:match(SEAM) then seamed = true; break end
+							end
+							if not seamed then
+								bad[#bad + 1] = ("%s:%d  %s"):format(rel, lineNo, line:gsub("^%s+", ""))
+							end
 						end
 					end
 				end
 			end
 		end
 	end
-	Kit.equal(#bad, 0, "unguarded comparison of a possibly-secret value:\n      " ..
+	table.sort(bad)
+	Kit.equal(#bad, 0, "securable API read without the OutfitterAPI seam:\n      " ..
 		table.concat(bad, "\n      "))
+end)
+
+Kit.test("the seam check would catch a regression", function()
+	-- A check this shape is only worth having if it fails on the thing it names.
+	-- Rather than trust that, exercise the matcher itself on a known-bad line.
+	local bad = "\tif UnitHealth(\"player\") < vThreshold then"
+	local code = bad:gsub("%-%-.*$", "")
+	Kit.isTrue(code:match("[^%w_.:]UnitHealth%s*%(") ~= nil, "matcher sees the raw call")
+	Kit.isFalse(code:match("OutfitterAPI[:%.]%w*[Ss]ecret%w*%b()") ~= nil, "and no seam on the line")
+
+	local good = "\tlocal vHealth = OutfitterAPI:UnsecretNumber(UnitHealth(\"player\"))"
+	Kit.isTrue(good:match("OutfitterAPI[:%.]%w*[Ss]ecret%w*%b()") ~= nil, "matcher accepts the seam")
 end)

@@ -21,6 +21,12 @@ ignore:
     # -- that is the user manual and it ships.
     - docs
 
+    # Two textures no .lua, .xml or .toc references.  Kept in the repo rather than
+    # deleted -- they are upstream's art -- but there is no reason to put 13 KB of
+    # them in every download.
+    - Textures/IconButtonHighlight.blp
+    - Textures/Outfitter-Button-original.blp
+
     # Developer tooling and repo furniture.
     - .luacheckrc
     - .gitignore

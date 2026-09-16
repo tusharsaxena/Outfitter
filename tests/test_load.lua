@@ -7,6 +7,24 @@ local Outfitter = Ctx.Outfitter
 
 Kit.suite("load")
 
+Kit.test("the addon's own initialization completed", function()
+	-- run.lua pcalls InitializeInstant and Initialize and records the result.  It
+	-- used to record it and nothing read it, so an error thrown anywhere in
+	-- Outfitter:Initialize -- 252 lines, the largest function in the addon -- left
+	-- the whole battery green.  Proven at the time by injecting error() and
+	-- watching the run stay at 116 passed.
+	Kit.isTrue(Ctx.initOK, "Outfitter:Initialize() raised: " .. tostring(Ctx.initError))
+end)
+
+Kit.test("initialization produced the state the rest of the addon assumes", function()
+	-- Completing without raising is not the same as having done the work.
+	Kit.isTrue(Outfitter.Initialized, "Outfitter.Initialized")
+	Kit.isTrue(Outfitter.InitializedInstant, "Outfitter.InitializedInstant")
+	Kit.equal(type(Outfitter.Settings), "table", "Outfitter.Settings")
+	Kit.equal(type(Outfitter.Settings.Outfits), "table", "Settings.Outfits")
+	Kit.equal(type(Outfitter.cSlotIDs), "table", "cSlotIDs, built during Initialize")
+end)
+
 Kit.test("every TOC file loaded", function()
 	Kit.isTrue(#Ctx.loadedFiles > 30, "expected the whole addon, got " .. #Ctx.loadedFiles .. " files")
 end)

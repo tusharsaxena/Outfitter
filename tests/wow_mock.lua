@@ -78,7 +78,18 @@ function Frame:CreateTexture(name) return M.CreateFrame("Texture", name, self) e
 function Frame:CreateFontString(name) return M.CreateFrame("FontString", name, self) end
 function Frame:GetCheckedTexture() return self.__checkedTexture end
 function Frame:SetCheckedTexture(v) self.__checkedTexture = M.CreateFrame("Texture"); self.__checkedTextureFile = v end
-function Frame:RegisterEvent(e) self.__events = self.__events or {}; self.__events[e] = true end
+-- The client has raised on RegisterEvent for an event that does not exist since
+-- patch 8.0, so a mock that accepts anything hides exactly the bug that matters.
+-- M.knownEvents is populated by the runner AFTER the addon loads, because the
+-- allowed set includes the addon's own BuiltinEvents; until then this is
+-- permissive, which covers registrations made during load itself.
+function Frame:RegisterEvent(e)
+	if M.knownEvents and not M.knownEvents[e] then
+		error("RegisterEvent on an event the client does not have: " .. tostring(e), 2)
+	end
+	self.__events = self.__events or {}
+	self.__events[e] = true
+end
 function Frame:UnregisterEvent(e) if self.__events then self.__events[e] = nil end end
 function Frame:UnregisterAllEvents() self.__events = nil end
 function Frame:IsEventRegistered(e) return self.__events ~= nil and self.__events[e] == true end
@@ -130,14 +141,47 @@ M.state = {
 	instanceMapID = nil,
 	instanceName = "Somewhere",
 	health = 100, healthMax = 100, power = 100, powerMax = 100, powerType = 0,
+	itemLink = nil, aura = nil,
 	level = 80,
 	inCombat = false,
 	secret = {},   -- ["UnitHealth"] = true makes that API return a secret value
 }
 
--- A stand-in for the client's secret values: issecretvalue reports true for it,
--- and the addon is expected to route it through OutfitterAPI rather than compare it.
-local SECRET = setmetatable({}, {__tostring = function() return "<secret>" end})
+-- A stand-in for the client's secret values.
+--
+-- The point is that it RESISTS inspection the way a real secret does, rather than
+-- merely reporting true from issecretvalue.  Arithmetic, comparison, concatenation,
+-- tostring, indexing and calling all raise, so a guard that is missing or in the
+-- wrong order fails the test instead of quietly succeeding.
+--
+-- ONE THING THIS CANNOT REPRODUCE: a plain truthiness test.  Lua 5.1 has no
+-- metamethod for `if v then`, and every table and userdata is truthy, so
+-- `Compat.lua`'s warning that even a truthiness test is an inspection cannot be
+-- enforced here.  That gap is real and is called out rather than papered over --
+-- `IsSecret` must still come first, and only a client will prove it does.
+local function secretViolation(what)
+	return function()
+		error("inspected a secret value (" .. what .. ") without going through OutfitterAPI", 2)
+	end
+end
+
+local SECRET = setmetatable({}, {
+	__tostring = secretViolation("tostring"),
+	__concat   = secretViolation("concatenation"),
+	__add      = secretViolation("arithmetic"),
+	__sub      = secretViolation("arithmetic"),
+	__mul      = secretViolation("arithmetic"),
+	__div      = secretViolation("arithmetic"),
+	__mod      = secretViolation("arithmetic"),
+	__pow      = secretViolation("arithmetic"),
+	__unm      = secretViolation("arithmetic"),
+	__lt       = secretViolation("comparison"),
+	__le       = secretViolation("comparison"),
+	__index    = secretViolation("indexing"),
+	__newindex = secretViolation("assignment"),
+	__call     = secretViolation("call"),
+	__metatable = "secret",
+})
 M.SECRET = SECRET
 
 local function maybeSecret(apiName, value)
@@ -188,7 +232,7 @@ function M.install(root)
 	g.UnitPowerMax = function() return maybeSecret("UnitPowerMax", M.state.powerMax) end
 	g.UnitPowerType = function() return maybeSecret("UnitPowerType", M.state.powerType) end
 	g.UnitLevel = function() return maybeSecret("UnitLevel", M.state.level) end
-	g.UnitStat = function() return 10, 10, 0, 0 end
+	g.UnitStat = function() return maybeSecret("UnitStat", 10), maybeSecret("UnitStat", 10), 0, 0 end
 	g.UnitName = fn("Tester")
 	g.UnitClass = fn("Warrior", "WARRIOR", 1)
 	g.UnitRace = fn("Human", "Human", 1)
@@ -218,7 +262,7 @@ function M.install(root)
 		if not id then error("GetInventorySlotInfo: unknown slot " .. tostring(name), 2) end
 		return id, "Interface\\Icons\\Temp", true
 	end
-	g.GetInventoryItemLink = fn(nil)
+	g.GetInventoryItemLink = function() return maybeSecret("GetInventoryItemLink", M.state.itemLink) end
 	g.GetInventoryItemTexture = fn(nil)
 	g.GetInventoryItemQuality = fn(nil)
 	g.GetInventoryItemCooldown = fn(0, 0, 0)
@@ -234,7 +278,7 @@ function M.install(root)
 	g.ResetCursor = function() end
 	g.SetCursor = function() end
 
-	g.GetItemInfo = fn(nil)
+	g.GetItemInfo = function() return maybeSecret("GetItemInfo", nil) end
 	g.GetItemInfoInstant = fn(nil)
 	g.GetItemCount = fn(0)
 	g.GetItemQualityColor = fn(1, 1, 1, "|cffffffff")
@@ -311,6 +355,12 @@ function M.install(root)
 	g.GetCVar = fn(nil)
 	g.SetCVar = function() end
 	g.debugprofilestop = fn(0)
+	-- MC2DebugLib captures a stack when it reports.  Absent, Initialize raised --
+	-- silently, until test_load.lua started asserting Ctx.initOK.
+	g.debugstack = function() return "mock stack" end
+	g.debuginfo = fn(nil)
+	g.geterrorhandler = function() return function(e) M.record("error", e) end end
+	g.seterrorhandler = function() end
 	g.strsplit = function(sep, s)
 		local out = {}
 		for part in tostring(s):gmatch("([^" .. sep .. "]+)") do out[#out + 1] = part end
@@ -338,7 +388,31 @@ function M.install(root)
 	g.random = math.random
 	g.date = os.date
 	g.time = os.time
-	g.bit = { band = function(a) return a end, bor = function(a) return a end, bxor = function(a) return a end }
+	-- Real 32-bit ops.  These used to return their first argument, which made every
+	-- mask a no-op and let three live consumers pass while masking nothing.
+	local function bitop(f)
+		return function(a, b, ...)
+			local r = f(a % 4294967296, (b or 0) % 4294967296)
+			for i = 1, select("#", ...) do r = f(r, select(i, ...) % 4294967296) end
+			return r
+		end
+	end
+	local function raw(op)
+		return function(x, y)
+			local r, bit = 0, 1
+			for _ = 1, 32 do
+				local xb, yb = x % 2, y % 2
+				if op(xb, yb) == 1 then r = r + bit end
+				x, y, bit = (x - xb) / 2, (y - yb) / 2, bit * 2
+			end
+			return r
+		end
+	end
+	g.bit = {
+		band = bitop(raw(function(a, b) return (a == 1 and b == 1) and 1 or 0 end)),
+		bor  = bitop(raw(function(a, b) return (a == 1 or b == 1) and 1 or 0 end)),
+		bxor = bitop(raw(function(a, b) return (a ~= b) and 1 or 0 end)),
+	}
 
 	g.SlashCmdList = {}
 	g.UIParent = M.CreateFrame("Frame", "UIParent")
@@ -381,7 +455,8 @@ function M.install(root)
 			IsAddOnLoaded = fn(false), LoadAddOn = fn(true),
 		},
 		C_Container = {
-			GetContainerNumSlots = fn(0), GetContainerItemLink = fn(nil),
+			GetContainerNumSlots = fn(0),
+			GetContainerItemLink = function() return maybeSecret("GetContainerItemLink", M.state.itemLink) end,
 			GetContainerItemInfo = fn(nil), GetContainerNumFreeSlots = fn(0, 0),
 			ContainerIDToInventoryID = fn(0), PickupContainerItem = function() end,
 			UseContainerItem = function() end, ShowContainerSellCursor = function() end,
@@ -405,7 +480,13 @@ function M.install(root)
 		C_Map = { GetBestMapForUnit = fn(nil), GetMapInfo = fn(nil) },
 		C_PvP = { GetZonePVPInfo = fn("friendly", false, nil), IsRatedArena = fn(false) },
 		C_QuestLog = { GetNumQuestLogEntries = fn(0), GetInfo = fn(nil) },
-		C_UnitAuras = { GetAuraDataByIndex = fn(nil), GetAuraDataBySpellName = fn(nil) },
+		C_UnitAuras = {
+			-- Aura records are a documented secret source: GetPlayerAuraStates has
+			-- to test IsSecret BEFORE the nil test, and only a securable aura
+			-- proves it does.
+			GetAuraDataByIndex = function() return maybeSecret("GetAuraDataByIndex", M.state.aura) end,
+			GetAuraDataBySpellName = function() return maybeSecret("GetAuraDataBySpellName", nil) end,
+		},
 		C_Spell = { GetSpellInfo = fn(nil), GetSpellTexture = fn(nil) },
 		C_SpellBook = { GetSpellBookSkillLineInfo = fn(nil), GetNumSpellBookSkillLines = fn(0) },
 		C_Minimap = { GetNumTrackingTypes = fn(0), GetTrackingInfo = fn(nil), SetTracking = function() end },

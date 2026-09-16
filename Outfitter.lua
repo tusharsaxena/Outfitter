@@ -1481,6 +1481,12 @@ function Outfitter:PlayerEnteringWorld()
 	self.IsCasting = false
 	self.IsChanneling = false
 
+	-- Clear a count stranded by a handler that raised mid-bracket in the last zone.
+	-- Before this function's own Begin, not after: inside the bracket it would
+	-- strand the very count it just opened
+
+	self:ResetEquipmentUpdateCount()
+
 	self:BeginEquipmentUpdate()
 
 	self:FlushInventoryCache()
@@ -1750,7 +1756,13 @@ function Outfitter:UnitHealthOrManaChanged(pUnitID)
 		end
 	end
 
-	self.PreviousManaLevel = vPlayerMana
+	-- Keep the last known reading through a secret window.  Assigning nil here made
+	-- the next real sample look like a mana drop, cancelling the Spirit outfit with
+	-- no drop having happened
+
+	if vPlayerMana then
+		self.PreviousManaLevel = vPlayerMana
+	end
 
 	--
 
@@ -1850,8 +1862,12 @@ function Outfitter:PlayerIsFull()
 	local vPower = OutfitterAPI:UnsecretNumber(UnitPower("player"))
 	local vPowerMax = OutfitterAPI:UnsecretNumber(UnitPowerMax("player"))
 
+	-- Same fallback as health above.  This returned true, which reports the player
+	-- as full and takes the dining outfit off mid-meal -- the opposite of what the
+	-- comment at the top of this function says it does
+
 	if not vPower or not vPowerMax or vPowerMax == 0 then
-		return true
+		return false
 	end
 
 	return vPower > (vPowerMax * 0.85)
@@ -3202,7 +3218,7 @@ function Outfitter:Update(pOutfitsChanged)
 		end
 
 		-- Add in the BoEs category
-		if vBoEItems and #vBoEItems then
+		if vBoEItems and #vBoEItems > 0 then
 			vTotalNumItems = vTotalNumItems + 1
 			if not self.Collapsed["BoEs"] then
 				vTotalNumItems = vTotalNumItems + #vBoEItems
@@ -3450,7 +3466,7 @@ function Outfitter:RemoveOutfit(pOutfit, pCallerIsScript)
 	-- If they're removing a complete outfit, find something else to wear instead
 
 	if pOutfit.CategoryID == "Complete"
-	and #self.Settings.RecentCompleteOutfits then
+	and #self.Settings.RecentCompleteOutfits > 0 then
 		local vOutfit
 
 		while not vOutfit do
@@ -3465,7 +3481,11 @@ function Outfitter:RemoveOutfit(pOutfit, pCallerIsScript)
 
 			table.remove(self.Settings.RecentCompleteOutfits)
 
-			if #self.Settings.RecentCompleteOutfits then
+			-- Stop when the history is exhausted.  This read `if #... then`, which
+			-- is always true in Lua, so the walk-back gave up after one entry and
+			-- the loop this sits in never did its job
+
+			if #self.Settings.RecentCompleteOutfits == 0 then
 				break
 			end
 		end
@@ -4032,7 +4052,7 @@ function Outfitter:GetBagType(pBagIndex)
 		pBagIndex = 4 - pBagIndex
 	end
 
-	local vItemLink = GetInventoryItemLink("player", OutfitterAPI:ContainerIDToInventoryID(pBagIndex))
+	local vItemLink = OutfitterAPI:Unsecret(GetInventoryItemLink("player", OutfitterAPI:ContainerIDToInventoryID(pBagIndex)))
 
 	if not vItemLink then
 		return nil
@@ -4852,15 +4872,29 @@ function Outfitter:ScheduleUpdateZone()
 	self.SchedulerLib:RescheduleTask(0.01, self.UpdateZone, self)
 end
 
+-- Refresh the zone outfits if where we are has actually changed.
+--
+-- The early-out used to compare GetZoneText() -- the localized zone NAME -- while
+-- every decision below it is driven by the instance map ID.  Two instances can
+-- share a zone name and differ in map ID (Ashran and Battle for Wintergrasp each
+-- name both an outdoor zone and a battleground), and for those the refresh was
+-- skipped entirely: the outfit neither equipped nor unequipped.
+--
+-- The gate now compares what the rest of the function uses.  The zone name is
+-- still tracked because other code reports it, but nothing decides on it
+
 function Outfitter:UpdateZone()
 	local vCurrentZone = GetZoneText()
-	local name, instanceType, difficultyID, difficultyName, maxPlayers, dynamicDifficulty, isDynamic, instanceMapID = GetInstanceInfo()
+	local _, vInstanceType, _, _, _, _, _, vInstanceMapID = GetInstanceInfo()
 
-	-- Just return if the zone isn't changing
-	if vCurrentZone == self.CurrentZone then
+	if vInstanceType == self.CurrentInstanceType
+	and vInstanceMapID == self.CurrentInstanceMapID
+	and vCurrentZone == self.CurrentZone then
 		return
 	end
 
+	self.CurrentInstanceType = vInstanceType
+	self.CurrentInstanceMapID = vInstanceMapID
 	self.CurrentZone = vCurrentZone
 	self.CurrentZoneIDs = self:GetCurrentZoneIDs(self.CurrentZoneIDs)
 
@@ -4942,15 +4976,29 @@ function Outfitter:ShowZoneInfo()
 	else
 		self:NoteMessage("Zone outfits active: %s", table.concat(vActive, ", "))
 	end
+
+	-- Anything other than 0 here means a handler raised between a Begin and its
+	-- End and equipment updates have stopped.  It is invisible otherwise, so it is
+	-- reported alongside the zone state rather than needing its own command
+
+	if self.EquipmentUpdateCount ~= 0 then
+		self:NoteMessage("Equipment updates are STUCK (count %s) -- reload to clear",
+			tostring(self.EquipmentUpdateCount))
+	end
 end
+
+-- Public surface: nothing in this addon calls this, but it is a method on the
+-- global Outfitter table and a user script can.  Kept and pinned by
+-- tests/test_load.lua rather than retired -- retiring working API that someone may
+-- already be calling is not the same as removing dead code
 
 function Outfitter:InZoneType(pZoneType)
 	return self.CurrentZoneIDs[pZoneType] == true
 end
 
 function Outfitter:InBattlegroundZone()
-	local name, instanceType, difficultyID, difficultyName, maxPlayers, dynamicDifficulty, isDynamic, instanceMapID = GetInstanceInfo()
-	return instanceType == "pvp" or instanceType == "arena"
+	local _, vInstanceType = GetInstanceInfo()
+	return vInstanceType == "pvp" or vInstanceType == "arena"
 end
 
 function Outfitter:SetAllSlotEnables(pEnable)
@@ -5430,6 +5478,13 @@ function Outfitter:InitializeSettings()
 		LastOutfitStack = {},
 		LayerIndex = {},
 		RecentCompleteOutfits = {},
+
+		-- CheckDatabase's migrations and its final scan both walk this
+		-- unconditionally.  Creating it here is what makes that safe, rather than
+		-- six scattered guards that disagreed with each other about whether it
+		-- could be absent
+
+		Outfits = {},
 	}
 
 	self.Settings = gOutfitter_Settings
@@ -6625,12 +6680,10 @@ function Outfitter:CheckDatabase()
 	-- Remove ranged slot (WoW patch 5)
 
 	if self.Settings.Version < 19 then
-		if self.Settings.Outfits then
-			for vCategoryID, vOutfits in pairs(self.Settings.Outfits) do
-				for vIndex, vOutfit in ipairs(vOutfits) do
-					if vOutfit.Items then
-						vOutfit.Items.RangedSlot = nil
-					end
+		for vCategoryID, vOutfits in pairs(self.Settings.Outfits) do
+			for vIndex, vOutfit in ipairs(vOutfits) do
+				if vOutfit.Items then
+					vOutfit.Items.RangedSlot = nil
 				end
 			end
 		end
@@ -6660,9 +6713,14 @@ function Outfitter:CheckDatabase()
 	-- Added UpgradeTypeID, UpgradeID for WoW patch 6.2
 
 	if self.Settings.Version < 21 then
-		if self.Settings.Outfits then
-			for vCategoryID, vOutfits in pairs(self.Settings.Outfits) do
-				for vIndex, vOutfit in ipairs(vOutfits) do
+		for vCategoryID, vOutfits in pairs(self.Settings.Outfits) do
+			for vIndex, vOutfit in ipairs(vOutfits) do
+				-- Guarded to match the patch 5 block above.  A saved-variable file
+				-- from before 6.2 can carry an outfit with no Items table, and an
+				-- unguarded pairs() on it raises inside Initialize, which stops the
+				-- addon coming up at all
+
+				if vOutfit.Items then
 					for _, vItem in pairs(vOutfit.Items) do
 						vItem.UpgradeTypeID = 0
 						vItem.InstanceDifficultyID = 0
@@ -6681,9 +6739,9 @@ function Outfitter:CheckDatabase()
 
 	-- Normalized BonusIDs
 	if self.Settings.Version < 22 then
-		if self.Settings.Outfits then
-			for vCategoryID, vOutfits in pairs(self.Settings.Outfits) do
-				for vIndex, vOutfit in ipairs(vOutfits) do
+		for vCategoryID, vOutfits in pairs(self.Settings.Outfits) do
+			for vIndex, vOutfit in ipairs(vOutfits) do
+				if vOutfit.Items then
 					for _, vItem in pairs(vOutfit.Items) do
 						if not vItem.BonusIDs
 						or vItem.BonusIDs == "0"
@@ -6709,10 +6767,6 @@ function Outfitter:CheckDatabase()
 
 	if not self.Settings.LastOutfitStack then
 		self.Settings.LastOutfitStack = {}
-	end
-
-	if not self.Settings.RecentCompleteOutfits then
-		self.Settings.RecentCompleteOutfits = {}
 	end
 
 	if not self.Settings.OutfitBar then
@@ -7016,7 +7070,6 @@ function Outfitter:WithdrawOtherOutfits(pOutfit)
 	self:DispatchOutfitEvent("EDIT_OUTFIT", pOutfit:GetName(), pOutfit)
 end
 
-local VOID_DEPOSIT_MAX = 8
 
 -- Disabled: GetVoidTransferDepositInfo and ClickVoidTransferDepositSlot were
 -- removed, so an addon can no longer move anything into void storage.  The

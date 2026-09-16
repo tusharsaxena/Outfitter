@@ -68,6 +68,17 @@ Ctx.initOK, Ctx.initError = pcall(function()
 	Ctx.Outfitter:Initialize()
 end)
 
+-- Now that BuiltinEvents exists, the mock can start rejecting event names the
+-- client does not have.  Registrations made during load and init are already done
+-- by this point, which is deliberate: this guards the addon's runtime behaviour,
+-- not its start-up, and tightening it earlier would mean mocking the client's full
+-- event registry rather than a broad net.
+Ctx.clientEvents = dofile(root .. "/tests/client_events.lua")
+local known = {}
+for e in pairs(Ctx.clientEvents) do known[e] = true end
+for e in pairs(Ctx.Outfitter.BuiltinEvents or {}) do known[e] = true end
+Mock.knownEvents = known
+
 local SUITES = {
 	"test_harness.lua",
 	"test_syntax.lua",

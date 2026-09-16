@@ -107,17 +107,41 @@ Kit.test("every preset declares at least one event", function()
 end)
 
 Kit.test("every event a preset declares is one the addon dispatches", function()
+	-- This used to carry `and not ev:match("^[A-Z_]+$")` as an escape hatch for
+	-- real client events, which are also all-caps -- so the condition swallowed
+	-- every realistically-named event and the case could not fail.  A bogus
+	-- BOGUS_EVENT_XYZ on a live preset passed.
+	--
+	-- It matters more than a dead preset: OutfitterScripting.lua routes anything
+	-- outside BuiltinEvents to the client's own RegisterEvent, and the comment at
+	-- Outfitter.lua:466 records that since patch 8.0 the client RAISES on an event
+	-- that does not exist.  So the escape hatch was hiding a crash, not a nicety.
+	--
+	-- Allowed = the addon's own synthetic events (BuiltinEvents), the outfit events
+	-- it dispatches itself, and the real client events in tests/client_events.lua,
+	-- which is derived from Blizzard's published UI source rather than typed here.
+	local CLIENT_EVENTS = dofile(Ctx.root .. "/tests/client_events.lua")
+	local OUTFIT_EVENTS = {
+		OUTFIT_EQUIPPED = true, OUTFIT_UNEQUIPPED = true,   -- Outfitter.lua:1601-1603
+		ADD_OUTFIT = true, DELETE_OUTFIT = true, EDIT_OUTFIT = true,
+		WEAR_OUTFIT = true, UNWEAR_OUTFIT = true,
+		WILL_RENAME_OUTFIT = true, DID_RENAME_OUTFIT = true,
+		INITIALIZE = true, TERMINATE = true, OUTFITTER_INIT = true,
+	}
 	local unknown = {}
 	for _, p in ipairs(Outfitter.PresetScripts) do
 		local fields = Outfitter:ParseScriptFields(p.Script)
 		for ev in (fields and fields.Events or ""):gmatch("([%w_]+)") do
-			if not Outfitter.BuiltinEvents[ev] and not ev:match("^[A-Z_]+$") then
+			if not Outfitter.BuiltinEvents[ev]
+			and not CLIENT_EVENTS[ev]
+			and not OUTFIT_EVENTS[ev] then
 				unknown[#unknown + 1] = p.ID .. " -> " .. ev
 			end
 		end
 	end
-	Kit.equal(#unknown, 0, "presets listening for events nothing sends: " ..
-		table.concat(unknown, ", "))
+	table.sort(unknown)
+	Kit.equal(#unknown, 0, "presets listening for events nothing sends, which the " ..
+		"client raises on since 8.0: " .. table.concat(unknown, ", "))
 end)
 
 Kit.test("every preset's settings parse", function()
