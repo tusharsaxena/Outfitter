@@ -1,5 +1,5 @@
 ## Interface: 120100
-## Author: John Stephen, aDd1kTeD2Ka0s
+## Author: mundocani, aDd1kTeD2Ka0s
 ## Title: Outfitter Reborn
 ## Version: 1.0.0
 ## Notes: Clothing and weapon management and automated equipment changes
