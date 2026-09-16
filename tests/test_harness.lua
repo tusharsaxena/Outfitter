@@ -50,8 +50,20 @@ Kit.test(".pkgmeta keeps the harness and the artwork out of the zip", function()
 	local skip = ignored()
 	-- Media is ~8 MB of source artwork and tests/ never runs in a client; both
 	-- would otherwise sit in every player's AddOns folder doing nothing.
-	for _, entry in ipairs({"Media", "tests", ".luacheckrc"}) do
+	for _, entry in ipairs({"Media", "tests", ".luacheckrc", "docs"}) do
 		Kit.isTrue(skip[entry], ".pkgmeta should ignore " .. entry)
+	end
+end)
+
+Kit.test("nothing a player needs is ignored by .pkgmeta", function()
+	-- The converse of the check above, and the half that was missing: asserting
+	-- only that three names ARE ignored says nothing about a fourth being added
+	-- that should not be.  Documentation/ is the user manual and ships; docs/ is
+	-- maintainer evidence and does not -- the two are one letter apart.
+	local skip = ignored()
+	for _, entry in ipairs({"Documentation", "Libraries", "Textures",
+	                        "Outfitter.toc", "Outfitter.xml", "LICENSE"}) do
+		Kit.isFalse(skip[entry], ".pkgmeta must not ignore " .. entry)
 	end
 end)
 

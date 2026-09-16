@@ -16,6 +16,11 @@ ignore:
     # on a desktop Lua, never inside the client.
     - tests
 
+    # Frozen review, audit and automated-test bundles.  Evidence for whoever
+    # maintains the fork; a player has no use for it.  Documentation/ is NOT here
+    # -- that is the user manual and it ships.
+    - docs
+
     # Developer tooling and repo furniture.
     - .luacheckrc
     - .gitignore
