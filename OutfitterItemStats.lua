@@ -15,10 +15,10 @@ end
 function Outfitter:GetStatByID(pStatID)
 	for _, vCategory in ipairs(Outfitter.StatCategories) do
 		local vNumStats = vCategory:GetNumStats()
-		
+
 		for vStatIndex = 1, vNumStats do
 			local vStat = vCategory:GetIndexedStat(vStatIndex)
-			
+
 			if vStat.ID == pStatID then
 				return vStat
 			end
@@ -28,7 +28,7 @@ end
 
 function Outfitter:GetStatIDName(pStatID)
 	local vStat = self:GetStatByID(pStatID)
-	
+
 	return vStat and vStat.Name
 end
 
@@ -36,23 +36,23 @@ function Outfitter:GetStatConfigName(pStatConfig)
 	if not pStatConfig then
 		return
 	end
-	
+
 	local vName
-	
+
 	for _, vStatConfig in ipairs(pStatConfig) do
 		local vStat = self:GetStatByID(vStatConfig.StatID)
-		
+
 		if not vStat then
 			return -- One of the stats is missing, return nothing
 		end
-		
+
 		if not vName then
 			vName = vStat.Name
 		else
 			vName = vName..", "..vStat.Name
 		end
 	end
-	
+
 	return vName
 end
 
@@ -65,12 +65,12 @@ function Outfitter:CalcOutfitScore(pOutfit, pStat)
 
 		for _, vItem in pairs(vItems) do
 			local vItemScore = pStat:GetItemScore(vItem)
-			
+
 			if vItemScore then
 				vTotalScore = vTotalScore + vItemScore
 			end
 		end
-		
+
 		return vTotalScore
 	else
 		return 0
@@ -81,35 +81,35 @@ function Outfitter:ConstrainScore(pScore, pStatInfo)
 	if pStatInfo.MinValue then
 		-- If the score doesn't meet the minimum then set it to zero
 		-- so that it doesn't affect the final outfit
-		
+
 		if pScore < pStatInfo.MinValue then
 			pScore = 0
-		
+
 		-- Set it to the minimum so that higher scores aren't better
 		-- This keeps the score as close to minValue as possible
-		
+
 		else
 			pScore = pStatInfo.MinValue
 		end
 	elseif pStatInfo.MaxValue then
 		-- If the score is more than the max then set it to zero
 		-- so that it doesn't affect the final outfit
-		
+
 		if pScore > pStatInfo.MaxValue then
 			pScore = 0
 		end
 	end
-	
+
 	return pScore
 end
 
 function Outfitter:GetMultiStatScore(pOutfit, pParams)
 	local vCombiScores = {}
-	
+
 	for vIndex, vStatInfo in ipairs(pParams) do
 		vCombiScores[vIndex] = self:CalcOutfitScore(pOutfit, vStatInfo.Stat) or 0
 	end
-	
+
 	return vCombiScores
 end
 
@@ -142,7 +142,7 @@ function Outfitter._SimpleStat:GetItemScore(pItem)
 	-- Calculate the value if the cache wasn't available
 	if not vScore then
 		vScore = self:GetUncachedItemScore(pItem) or 0
-		
+
 		-- Create the cache table if necessary
 		if not pItem.ScoreCache then
 			pItem.ScoreCache = {}
@@ -160,17 +160,17 @@ end
 function Outfitter._SimpleStat:GetUncachedItemScore(pItem)
 	-- Parse the stats
 	local vStats = Outfitter.ItemStatsLib:statsForLink(pItem.Link)
-	
+
 	-- Leave if no stats
 	if not vStats then
 		return
 	end
-	
+
 	-- Leave if the item is too high-level.  A secret level can't be compared, so
 	-- when the client withholds it let the item through rather than silently drop it
-	
+
 	local vPlayerLevel = OutfitterAPI:UnsecretNumber(UnitLevel("player"))
-	
+
 	if vPlayerLevel and vStats.minLevel and vStats.minLevel > vPlayerLevel then
 		return
 	end
@@ -312,15 +312,15 @@ Outfitter.SimpleStatCategories =
 
 for _, vStatCategory in ipairs(Outfitter.SimpleStatCategories) do
 	setmetatable(vStatCategory, Outfitter._SimpleStatCategoryMetaTable)
-	
+
 	for _, vStat in ipairs(vStatCategory.Stats) do
 		if not vStat.Name then
 			vStat.Name = vStat.ID
 		end
-		
+
 		setmetatable(vStat, Outfitter._SimpleStatMetaTable)
 	end
-	
+
 	table.insert(Outfitter.StatCategories, vStatCategory)
 end
 
@@ -334,7 +334,7 @@ Outfitter.PawnScalesCategory =
 
 function Outfitter.PawnScalesCategory:GetNumStats()
 	local vScaleNames = PawnGetAllScales()
-	
+
 	if self.Scales then
 		for vKey, _ in pairs(self.Scales) do
 			self.Scales[vKey] = nil
@@ -342,7 +342,7 @@ function Outfitter.PawnScalesCategory:GetNumStats()
 	else
 		self.Scales = {}
 	end
-	
+
 	for _, vScaleName in ipairs(vScaleNames) do
 		if PawnIsScaleVisible(vScaleName) then
 			local vScale =
@@ -350,13 +350,13 @@ function Outfitter.PawnScalesCategory:GetNumStats()
 				Name = vScaleName,
 				ID = "Pawn_"..vScaleName,
 			}
-			
+
 			setmetatable(vScale, Outfitter._PawnScaleStatMetaTable)
-			
+
 			table.insert(self.Scales, vScale)
 		end
 	end
-	
+
 	return #self.Scales
 end
 
@@ -374,7 +374,7 @@ function Outfitter._PawnScaleStat:GetItemScore(pItem)
 	if not pItem or not pItem.Link then
 		return
 	end
-	
+
 	-- Get the score
 	local vScore
 
@@ -388,7 +388,7 @@ function Outfitter._PawnScaleStat:GetItemScore(pItem)
 		-- Parse the stats
 		local vStats = Outfitter.ItemStatsLib:statsForLink(pItem.Link)
 		local vPlayerLevel = OutfitterAPI:UnsecretNumber(UnitLevel("player"))
-	
+
 		-- Score zero if no stats
 		if not vStats then
 			vScore = 0
@@ -410,7 +410,7 @@ function Outfitter._PawnScaleStat:GetItemScore(pItem)
 			else
 				for _, vEntry in pairs(vItemData.Values) do
 					local vScaleName, vValue, UnenchantedValue = vEntry[1], vEntry[2], vEntry[3]
-		
+
 					if vScaleName == self.Name then
 						vScore = vValue
 						break
@@ -418,7 +418,7 @@ function Outfitter._PawnScaleStat:GetItemScore(pItem)
 				end
 			end
 		end
-		
+
 		-- Create the cache table if necessary
 		if not pItem.ScoreCache then
 			pItem.ScoreCache = {}
@@ -459,23 +459,23 @@ Outfitter.WeightsWatcherCategory =
 
 function Outfitter.WeightsWatcherCategory:GetNumStats()
 	local _, vClassID = UnitClass("player")
-	
+
 	if not ww_vars.weightsList[vClassID] then
 		return 0
 	end
-	
+
 	local vActiveWeights = ww_charVars.activeWeights[vClassID]
-	
+
 	if not vActiveWeights then
 		return 0
 	end
-	
+
 	if self.ActiveWeights then
 		wipe(self.ActiveWeights)
 	else
 		self.ActiveWeights = {}
 	end
-	
+
 	for _, vWeightName in ipairs(vActiveWeights) do
 		local vWeight =
 		{
@@ -484,12 +484,12 @@ function Outfitter.WeightsWatcherCategory:GetNumStats()
 			ClassID = vClassID,
 			Weight = vWeightName,
 		}
-		
+
 		setmetatable(vWeight, Outfitter._WeightsWatcherStatMetaTable)
-		
+
 		table.insert(self.ActiveWeights, vWeight)
 	end
-	
+
 	return #self.ActiveWeights
 end
 

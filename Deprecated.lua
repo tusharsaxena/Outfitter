@@ -351,7 +351,7 @@ end
 
 if equip then
     local inInstance, instanceType = IsInInstance()
-    
+
     if (setting.DisableInstance and inInstance and (instanceType == "raid" or instanceType == "party"))
     or (setting.DisableBG and Outfitter:InBattlegroundZone())
     or (setting.DisablePVP and UnitIsPVP("player")) then
@@ -748,64 +748,64 @@ end
 function Deprecated.TankPoints.New()
 	local vTankPointData = {}
 	local vStatDistribution = Outfitter:GetPlayerStatDistribution()
-	
+
 	if not vStatDistribution then
 		Outfitter:ErrorMessage("Missing stat distribution data for "..Outfitter.PlayerClass)
 		return
 	end
-	
+
 	vTankPointData.PlayerLevel = UnitLevel("player")
 	vTankPointData.StaminaFactor = 1.0 -- Warlocks with demonic embrace = 1.15
-	
+
 	-- Get the base stats
-	
+
 	vTankPointData.BaseStats = {}
-	
+
 	Outfitter.Stats_AddStatValue(vTankPointData.BaseStats, "Strength", UnitStat("player", 1))
 	Outfitter.Stats_AddStatValue(vTankPointData.BaseStats, "Agility", UnitStat("player", 2))
 	Outfitter.Stats_AddStatValue(vTankPointData.BaseStats, "Stamina", UnitStat("player", 3))
 	Outfitter.Stats_AddStatValue(vTankPointData.BaseStats, "Intellect", UnitStat("player", 4))
 	Outfitter.Stats_AddStatValue(vTankPointData.BaseStats, "Spirit", UnitStat("player", 5))
-	
+
 	Outfitter.Stats_AddStatValue(vTankPointData.BaseStats, "Health", UnitHealthMax("player"))
-	
+
 	vTankPointData.BaseStats.Health = vTankPointData.BaseStats.Health - vTankPointData.BaseStats.Stamina * 10
-	
+
 	vTankPointData.BaseStats.Dodge = GetDodgeChance()
 	vTankPointData.BaseStats.Parry = GetParryChance()
 	vTankPointData.BaseStats.Block = GetBlockChance()
-	
+
 	local vBaseDefense, vBuffDefense = UnitDefense("player")
 	Outfitter.Stats_AddStatValue(vTankPointData.BaseStats, "Defense", vBaseDefense + vBuffDefense)
-	
+
 	-- Replace the armor with the current value since that already includes various factors
-	
+
 	local vBaseArmor, vEffectiveArmor, vArmor, vArmorPosBuff, vArmorNegBuff = UnitArmor("player")
 	vTankPointData.BaseStats.Armor = vEffectiveArmor
-	
+
 	Outfitter:DebugMessage("------------------------------------------")
 	Outfitter:DebugTable(vTankPointData, "vTankPointData")
-	
+
 	-- Subtract out the current outfit
-	
+
 	local vCurrentOutfitStats = Deprecated.TankPoints.GetCurrentOutfitStats(vStatDistribution)
-	
+
 	Outfitter:DebugMessage("------------------------------------------")
 	Outfitter:DebugTable(vCurrentOutfitStats, "vCurrentOutfitStats")
-	
+
 	Outfitter.Stats_SubtractStats(vTankPointData.BaseStats, vCurrentOutfitStats)
-	
+
 	-- Calculate the buff stats (stuff from auras/spell buffs/whatever)
-	
+
 	vTankPointData.BuffStats = {}
-	
+
 	-- Reset the cumulative values
-	
+
 	Deprecated.TankPoints.Reset(vTankPointData)
-	
+
 	Outfitter:DebugMessage("------------------------------------------")
 	Outfitter:DebugTable(vTankPointData, "vTankPointData")
-	
+
 	Outfitter:DebugMessage("------------------------------------------")
 	return vTankPointData
 end
@@ -816,25 +816,25 @@ end
 
 function Deprecated.TankPoints.GetTotalStat(pTankPointData, pStat)
 	local vTotalStat = pTankPointData.BaseStats[pStat]
-	
+
 	if not vTotalStat then
 		vTotalStat = 0
 	end
-	
+
 	local vAdditionalStat = pTankPointData.AdditionalStats[pStat]
-	
+
 	if vAdditionalStat then
 		vTotalStat = vTotalStat + vAdditionalStat
 	end
-	
+
 	local vBuffStat = pTankPointData.BuffStats[pStat]
-	
+
 	if vBuffStat then
 		vTotalStat = vTotalStat + vBuffStat
 	end
-	
+
 	--
-	
+
 	return vTotalStat
 end
 
@@ -842,55 +842,55 @@ function Deprecated.TankPoints.CalcTankPoints(pTankPointData, pStanceModifier)
 	if not pStanceModifier then
 		pStanceModifier = 1
 	end
-	
+
 	Outfitter:DebugTable(pTankPointData, "pTankPointData")
-	
+
 	local vEffectiveArmor = Deprecated.TankPoints.GetTotalStat(pTankPointData, "Armor")
-	
+
 	Outfitter:TestMessage("Armor: "..vEffectiveArmor)
-	
+
 	local vArmorReduction = vEffectiveArmor / ((85 * pTankPointData.PlayerLevel) + 400)
-	
+
 	vArmorReduction = vArmorReduction / (vArmorReduction + 1)
-	
+
 	local vEffectiveHealth = Deprecated.TankPoints.GetTotalStat(pTankPointData, "Health")
-	
+
 	Outfitter:TestMessage("Health: "..vEffectiveHealth)
-	
+
 	Outfitter:TestMessage("Stamina: "..Deprecated.TankPoints.GetTotalStat(pTankPointData, "Stamina"))
-	
+
 	--
-	
+
 	local vEffectiveDodge = Deprecated.TankPoints.GetTotalStat(pTankPointData, "Dodge") * 0.01
 	local vEffectiveParry = Deprecated.TankPoints.GetTotalStat(pTankPointData, "Parry") * 0.01
 	local vEffectiveBlock = Deprecated.TankPoints.GetTotalStat(pTankPointData, "Block") * 0.01
 	local vEffectiveDefense = Deprecated.TankPoints.GetTotalStat(pTankPointData, "Defense")
-	
+
 	-- Add agility and defense to dodge
-	
+
 	-- defenseInputBox:GetNumber() * 0.04 + agiInputBox:GetNumber() * 0.05
 
 	Outfitter:TestMessage("Dodge: "..vEffectiveDodge)
 	Outfitter:TestMessage("Parry: "..vEffectiveParry)
 	Outfitter:TestMessage("Block: "..vEffectiveBlock)
 	Outfitter:TestMessage("Defense: "..vEffectiveDefense)
-	
+
 	local vDefenseModifier = (vEffectiveDefense - pTankPointData.PlayerLevel * 5) * 0.04 * 0.01
-	
+
 	Outfitter:TestMessage("Crit reduction: "..vDefenseModifier)
-	
+
 	local vMobCrit = max(0, 0.05 - vDefenseModifier)
 	local vMobMiss = 0.05 + vDefenseModifier
 	local vMobDPS = 1
-	
+
 	local vTotalReduction = 1 - (vMobCrit * 2 + (1 - vMobCrit - vMobMiss - vEffectiveDodge - vEffectiveParry)) * (1 - vArmorReduction) * pStanceModifier
-	
+
 	Outfitter:TestMessage("Total reduction: "..vTotalReduction)
-	
+
 	local vTankPoints = vEffectiveHealth / (vMobDPS * (1 - vTotalReduction))
-	
+
 	return vTankPoints
-	
+
 	--[[
 	Stats used in TankPoints calculation:
 		Health
@@ -904,31 +904,31 @@ end
 
 function Deprecated.TankPoints.GetCurrentOutfitStats(pStatDistribution)
 	local vTotalStats = {}
-	
+
 	for _, vSlotName in ipairs(Outfitter.cSlotNames) do
 		local vStats = Outfitter.ItemList_GetItemStats({SlotName = vSlotName})
-		
+
 		if vStats then
 			Outfitter:TestMessage("--------- "..vSlotName)
-			
+
 			for vStat, vValue in pairs(vStats) do
 				Outfitter.Stats_AddStatValue(vTotalStats, vStat, vValue)
 			end
 		end
 	end
-	
+
 	return vTotalStats
 end
 
 function Deprecated.TankPoints.Test()
 	local vStatDistribution = Outfitter:GetPlayerStatDistribution()
-	
+
 	local vTankPointData = Deprecated.TankPoints.New()
 	local vStats = Deprecated.TankPoints.GetCurrentOutfitStats(vStatDistribution)
-	
+
 	Outfitter.Stats_AddStats(vTankPointData.AdditionalStats, vStats)
-	
+
 	local vTankPoints = Deprecated.TankPoints.CalcTankPoints(vTankPointData)
-	
+
 	Outfitter:TestMessage("TankPoints = "..vTankPoints)
 end

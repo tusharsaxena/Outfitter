@@ -9,7 +9,7 @@ function Outfitter.LDB:Initialize()
 		text = "Outfitter",
 		OnClick = function(pFrame, pButton) self:OnClick(pFrame, pButton) end
 	})
-	
+
 	Outfitter:RegisterOutfitEvent("WEAR_OUTFIT", function (...) self:OutfitEvent(...) end)
 	Outfitter:RegisterOutfitEvent("UNWEAR_OUTFIT", function (...) self:OutfitEvent(...) end)
 	Outfitter:RegisterOutfitEvent("OUTFITTER_INIT", function (...) self:OutfitEvent(...) end)
@@ -40,7 +40,7 @@ end
 
 function Outfitter.LDB:OutfitEvent(pEvent, pOutfitName, pOutfit)
 	local vOutfitName, vOutfit = Outfitter:GetCurrentOutfitInfo()
-	
+
 	if vOutfit then
 		self.DataObj.text = vOutfitName
 		self.DataObj.icon = Outfitter.OutfitBar:GetOutfitTexture(vOutfit)
@@ -62,8 +62,8 @@ function Outfitter.LDB:ShowMenu()
 	assert(not self.dropDownMenu, "can't show the LDB menu while it's already up")
 
 	-- Create the items
-	items = Outfitter:New(Outfitter.UIElementsLib._DropDownMenuItems, function ()
-		
+	local items = Outfitter:New(Outfitter.UIElementsLib._DropDownMenuItems, function ()
+
 		-- Close the menu after a short delay when a menu item is selected
 		Outfitter.SchedulerLib:ScheduleTask(0.1, function ()
 			self:HideMenu()

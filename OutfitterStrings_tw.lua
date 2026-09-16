@@ -76,9 +76,6 @@ if GetLocale() == "zhTW" then
 	Outfitter.cRidingOutfitDescription = "在坐騎上時換上此配裝"
 	Outfitter.cDiningOutfitDescription = "進食或飲水時換上此配裝，直到生命力/法力超過 90%"
 	Outfitter.cBattlegroundOutfitDescription = "位在任何戰場時換上此配裝"
-	Outfitter.cArathiBasinOutfitDescription = "位在阿拉希盆地戰場時換上此配裝"
-	Outfitter.cAlteracValleyOutfitDescription = "位在奧特蘭克山谷戰場時換上此配裝"
-	Outfitter.cWarsongGulchOutfitDescription = "位在戰歌峽谷戰場時換上此配裝"
 	Outfitter.cEotSOutfitDescription = "位在暴風之眼戰場時換上此配裝"
 	Outfitter.cSotAOutfitDescription = "位在遠祖灘頭戰場時換上此配裝"
 	Outfitter.cIoCOutfitDescription = "位在征服之島戰場時換上此配裝"
@@ -347,6 +344,6 @@ BINDING_NAME_OUTFITTER_DISABLEAUTOMATION = "停用自動換裝"
 	Outfitter.cStoreOnServerOnDescription = "關閉裝備管理員並移除本地儲存的配裝。這將與其他電腦的配裝不相容。"
 	Outfitter.cStoreOnServerOffDescription = "開啟裝備管理員這將與其他電腦上的配裝相容。但最多只能儲存10組配裝。"
 	Outfitter.cTooManyServerOutfits = "你無法存取超過%d組配裝。"
-	
+
 	Outfitter.cNoItemsWithStat = "Couldn't generate an outfit because no items with that stat were found"
 end

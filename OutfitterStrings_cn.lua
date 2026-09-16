@@ -77,9 +77,6 @@ if GetLocale() == "zhCN" then
 	Outfitter.cRidingOutfitDescription = "骑乘时，自动切换为此套装备"
 	Outfitter.cDiningOutfitDescription = "吃喝时，自动切换为此套装备，直至生命值/法力值超过90%"
 	Outfitter.cBattlegroundOutfitDescription = "身处战场时，自动切换为此套装备"
-	Outfitter.cArathiBasinOutfitDescription = "身处阿拉希盆地时，自动切换为此套装备"
-	Outfitter.cAlteracValleyOutfitDescription = "身处奥特兰克山谷时，自动切换为此套装备"
-	Outfitter.cWarsongGulchOutfitDescription = "身处战歌峡谷时，自动切换为此套装备"
 	Outfitter.cEotSOutfitDescription = "身处风暴之眼时，自动切换为此套装备"
 	Outfitter.cSotAOutfitDescription = "身处远古海滩时，自动切换为此套装备"
 	Outfitter.cIoCOutfitDescription = "身处征服者之岛时，自动切换为此套装备"
@@ -359,6 +356,6 @@ if GetLocale() == "zhCN" then
 
 	Outfitter.cCantSetIcon = "装备管理无法在切换装备方案时更换图标。"
 	Outfitter.cChangeIcon = "更换图标"
-	
+
 	Outfitter.cNoItemsWithStat = "Couldn't generate an outfit because no items with that stat were found"
 end

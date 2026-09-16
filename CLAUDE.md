@@ -97,9 +97,35 @@ rather than wiring the live code back to it.
 
 ## Verification
 
-There is no test suite, no luacheck config and no headless harness — upstream
-never had them, and adding a Ka0s-style one is not on the table unless asked.
+`./tests/run-all.sh` is the whole battery: `luac -p` over every file, `luacheck`,
+and the headless suite. **It must be green before every commit** — 0 lint
+warnings and 0 test failures is the current state, so any number other than zero
+is something this change introduced.
 
-What exists: `for f in *.lua; do luac -p "$f"; done` for syntax, and reading.
-Anything beyond that needs a real client, so say plainly when a change is
-unverified rather than implying it was tested.
+`lua tests/run.lua` runs just the suite; `--list` prints the case inventory.
+
+The harness is Outfitter's own — framework, WoW mock, loader and suites all live
+in `tests/`. It deliberately does **not** vendor the Ka0s testkit, for the reason
+at the top of this file. `tests/wow_mock.lua` loads the entire TOC, so a file
+that stops loading is a test failure rather than a surprise in someone's client.
+
+What it cannot reach: anything rendered. There is no XML engine, so the mock
+builds hollow frames from the names in `Outfitter.xml` (resolving `$parent` the
+way the real parser does) and nothing about layout, anchoring or drawing is
+verified. Those belong in a client. Say plainly when a change is unverified
+rather than implying it was tested.
+
+When adding a suite file, add it to `SUITES` in `tests/run.lua` — a file that is
+not listed loads nothing and reads exactly like a clean run. `test_harness.lua`
+asserts the two agree.
+
+Lint policy is written down in `.luacheckrc`: every real finding was fixed at
+source, and the convention classes that remain are listed by code with the reason
+rather than hidden behind a blanket `ignore`.
+
+## Packaging
+
+`.pkgmeta` decides what reaches players. `Media/` (source artwork, ~8 MB),
+`tests/`, `.luacheckrc` and `CLAUDE.md` are all kept out of the zip. Anything
+added that is for maintainers rather than players belongs in that ignore list,
+and `test_harness.lua` checks the TOC never loads something `.pkgmeta` excludes.

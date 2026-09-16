@@ -516,8 +516,6 @@ function Outfitter:GetSlotIDItemInfo(slotID)
 	itemInfo.AzeriteCodes = self:GetAzeriteCodesForLocation(location)
 	itemInfo.Location = {SlotID = slotID}
 
-	local location = ItemLocation:CreateFromEquipmentSlot(slotID)
-
 	return itemInfo
 end
 

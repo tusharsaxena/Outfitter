@@ -1,11 +1,11 @@
-if GetLocale() == "koKR" then	
+if GetLocale() == "koKR" then
 	Outfitter.cTitle = "Outfitter"
 	Outfitter.cTitleVersion = Outfitter.cTitle.." "..Outfitter.cVersion
 
 	Outfitter.cSingleItemFormat = "%s"
 	Outfitter.cTwoItemFormat = "%s and %s"
 	Outfitter.cMultiItemFormat = "%s{{, %s}} and %s"
-	
+
 	Outfitter.cNameLabel = "이름:"
 	Outfitter.cCreateUsingTitle = "최적화:"
 	Outfitter.cUseCurrentOutfit = "현재 장비 세트 사용"
@@ -108,9 +108,6 @@ if GetLocale() == "koKR" then
 	Outfitter.cRidingOutfitDescription = "이 세트는 탈것을 탈 때 자동으로 착용 됩니다."
 	Outfitter.cDiningOutfitDescription = "이 세트는 음식을 먹거나 음료를 마실 때 자동으로 착용 됩니다."
 	Outfitter.cBattlegroundOutfitDescription = "이 세트는 전장에 있을 때 자동으로 착용 됩니다."
-	Outfitter.cArathiBasinOutfitDescription = "이 세트는 아라시 분지에 있을 때 자동으로 착용 됩니다."
-	Outfitter.cAlteracValleyOutfitDescription = "이 세트는 알터랙 계곡에 있을 때 자동으로 착용 됩니다."
-	Outfitter.cWarsongGulchOutfitDescription = "이 세트는 전쟁노래 협곡에 있을 때 자동으로 착용 됩니다."
 	Outfitter.cEotSOutfitDescription = "이 세트는 폭풍의 눈에 있을 때 자동으로 착용 됩니다."
 	Outfitter.cCityOutfitDescription = "이 세트는 우호적인 대도시에 있을 때 자동으로 착용 됩니다."
 	Outfitter.cSwimmingOutfitDescription = "이 세트는 수영할 때 자동적으로 장착됩니다."
@@ -130,28 +127,28 @@ if GetLocale() == "koKR" then
 	BINDING_NAME_OUTFITTER_OUTFIT8  = "세트 8"
 	BINDING_NAME_OUTFITTER_OUTFIT9  = "세트 9"
 	BINDING_NAME_OUTFITTER_OUTFIT10 = "세트 10"
-	
+
 	Outfitter.cShow = "보이기"
 	Outfitter.cHide = "숨기기"
 	Outfitter.cDontChange = "Don't change"
-	
+
 	Outfitter.cPlayerTitle = "Title"
 
 	Outfitter.cMore = "More"
-	
+
 	Outfitter.cAutomation = "Automation"
-	
+
 	Outfitter.cDisableOutfit = "세트 사용 안함"
 	Outfitter.cDisableOutfitInBG = "전장에서 사용 안함"
 	Outfitter.cDisableOutfitInCombat = "전투중 사용 안함"
 	Outfitter.cDisableOutfitInAQ40 = "안퀴라즈 사원 내 사용 안함"
 	Outfitter.cDisableOutfitInNaxx = "낙스라마스 내 사용 안함"
 	Outfitter.cDisabledOutfitName = "%s (사용 안함)"
-	
+
 	Outfitter.cOutfitBar = "Outfit Bar"
 	Outfitter.cShowInOutfitBar = "Show in outfit bar"
 	Outfitter.cChangeIcon = "Choose icon..."
-	
+
 	Outfitter.cMinimapButtonTitle = "미니맵 버튼"
 	Outfitter.cMinimapButtonDescription = "클릭 : 세트 선택, 드래그 : 미니맵 버튼 이동"
 
@@ -167,7 +164,7 @@ if GetLocale() == "koKR" then
 	Outfitter.cDruidTreeOfLifeForm = "드루이드: 생명의 나무"
 	Outfitter.cDruidProwl = "드루이드: 숨기"
 	Outfitter.cProwl = "숨기"
-	
+
 	Outfitter.cPriestShadowform = "사제: 어둠의 형상"
 
 	Outfitter.cRogueStealth = "도적: 은신"
@@ -203,7 +200,7 @@ if GetLocale() == "koKR" then
 	Outfitter.cDepositOthersToBank = "Deposit other outfits to bank"
 	Outfitter.cWithdrawFromBank = "은행으로부터 아이템 회수"
 	Outfitter.cWithdrawOthersFromBank = "Withdraw other outfits from bank"
-	
+
 	Outfitter.cMissingItemsLabel = "찾을 수 없는 아이템: "
 	Outfitter.cBankedItemsLabel = "은행에 있는 아이템: "
 
@@ -237,15 +234,15 @@ if GetLocale() == "koKR" then
 
 	Outfitter.cAutoChangesDisabled = "Automated changes are now disabled"
 	Outfitter.cAutoChangesEnabled = "Automated changes are now enabled"
-	
+
 	-- OutfitterFu strings
-	
+
 
 	Outfitter.cStoreOnServer = "Store outfit on server"
 	Outfitter.cStoreOnServerOnDescription = "Turn off to remove this outfit from the server and store it locally instead.  It will no longer be available from other computers."
 	Outfitter.cStoreOnServerOffDescription = "Turn on to store this outfit on the server so that it's available from any computer.  You may only store 10 outfits on the server."
 	Outfitter.cTooManyServerOutfits = "You cannot store more than %d outfits on the server."
-	
+
 	Outfitter.cNoItemsWithStat = "Couldn't generate an outfit because no items with that stat were found"
 
 	Outfitter.cRequiresPrefix = "요구 사항:"

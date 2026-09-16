@@ -524,7 +524,7 @@ function Outfitter.OutfitBar:UpdateBars2()
 					vBar:SetPoint("TOPRIGHT", vPreviousBar, "TOPLEFT")
 				end
 
-				vAnchorOffsetX, vAnchorOffsetY = nil, nil
+				local vAnchorOffsetX, vAnchorOffsetY = nil, nil
 
 				vBar:Show()
 
@@ -552,7 +552,7 @@ function Outfitter.OutfitBar:UpdateBars2()
 					vBar:SetPoint("TOPLEFT", vPreviousBar, "TOPRIGHT")
 				end
 
-				vAnchorOffsetX, vAnchorOffsetY = nil, nil
+				local vAnchorOffsetX, vAnchorOffsetY = nil, nil
 
 				vBar:Show()
 

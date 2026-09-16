@@ -10,7 +10,7 @@ function Outfitter._FlyoutQuickSlots:Construct()
 			Outfitter:HookScript(vSlotButton, "PostClick", function (...) self:PostClick(...) end)
 		end
 	end
-	
+
 	local vFlyoutSettings = PaperDollItemsFrame.flyoutSettings
 	local vOrigGetItemsFunc = vFlyoutSettings.getItemsFunc
 	vFlyoutSettings.getItemsFunc = function (pSlotID, pItemTable, ...)
@@ -319,7 +319,7 @@ end
 
 function Outfitter._FlyoutQuickSlots:PostClick(pButton, ...)
 	local vSlotItemLink = Outfitter:GetInventorySlotIDLink(pButton.id or pButton:GetID())
-	
+
 	if EquipmentFlyoutFrame:IsVisible() and EquipmentFlyoutFrame.button == pButton then
 		EquipmentFlyoutFrame:Hide()
 

@@ -73,9 +73,6 @@ if GetLocale() == "ruRU" then
 	Outfitter.cRidingOutfitDescription = "Одевает комплект для верховой езды"
 	Outfitter.cDiningOutfitDescription = "Одевает комплект, когда вы едите или пьете, а ваши здоровье/жизнь ниже 90%"
 	Outfitter.cBattlegroundOutfitDescription = "Одевает комплект, когда вы находитесь на боевых площадках"
-	Outfitter.cArathiBasinOutfitDescription = "Одевает комплект, когда вы находитесь на боевой площадке Низина Арати"
-	Outfitter.cAlteracValleyOutfitDescription = "Одевает комплект, когда вы находитесь на боевой площадке Альтеракская долина"
-	Outfitter.cWarsongGulchOutfitDescription = "Одевает комплект, когда вы находитесь на боевой площадке Ущелье Песни Войны"
 	Outfitter.cEotSOutfitDescription = "Одевает комплект, когда вы находитесь на Око Бури"
 	Outfitter.cSotAOutfitDescription = "Одевает комплект, когда вы находитесь на Береге Древних"
 	Outfitter.cIoCOutfitDescription = "Одевает комплект, когда вы находитесь на Острове Завоеваний"
@@ -346,9 +343,9 @@ if GetLocale() == "ruRU" then
 	Outfitter.cStoreOnServerOnDescription = "Отключает хранение наборов на сервере, и удаляет их от туда. теперь они будут храниться локально и не будет доступны с других компьютеров."
 	Outfitter.cStoreOnServerOffDescription = "Включает хранение наборов на сервер, тем самым они будут доступны с других крмпьютеров.  Вы можете хранить только 10 наборов на сервере."
 	Outfitter.cTooManyServerOutfits = "Вы не можете хранить больше %d наборов на сервере."
-	
+
 	Outfitter.cCantSetIcon = "Equipment Manager doesn't have the ability to change an icon without also updating the gear.  You should equip this outfit first before changing its icon.  If you continue anyhow, some of your item selections for this outfit will be changed to your currently equipped gear."
 	Outfitter.cChangeIcon = "Сменить иконку"
-	
+
 	Outfitter.cNoItemsWithStat = "Couldn't generate an outfit because no items with that stat were found"
 end

@@ -102,6 +102,21 @@ an API that no longer exists, and reviving it would need a list of capital city
 map IDs that goes stale every expansion. Battleground and arena triggers do not
 have that problem and work — see below.
 
+## Working on it
+
+```sh
+./tests/run-all.sh          # syntax, lint and the headless test suite
+./tests/run-all.sh --list   # what the suite covers
+```
+
+The suite loads the whole addon against a mock WoW client and checks the things
+that have actually broken here before: tables that have to agree with each other,
+preset scripts that have to compile, locale keys that have to exist, and the
+secret-value guards that keep a handler from aborting half way through. It needs
+Lua 5.1 and, for the lint pass, `luacheck`.
+
+Nothing in `tests/` or `Media/` ships to players; `.pkgmeta` keeps them out.
+
 ## Credits
 
 **John Stephen (mundocani)** — designed and wrote Outfitter, 2006–2018.

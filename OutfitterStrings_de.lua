@@ -5,7 +5,7 @@ if GetLocale() == "deDE" then
 	Outfitter.cSingleItemFormat = "%s"
 	Outfitter.cTwoItemFormat = "%s und %s"
 	Outfitter.cMultiItemFormat = "%s{{, %s}} und %s"
-	
+
 	Outfitter.cNameLabel = "Name:"
 	Outfitter.cCreateUsingTitle = "Optimieren für:"
 	Outfitter.cUseCurrentOutfit = "Benutze derzeitiges Outfit"
@@ -40,17 +40,17 @@ if GetLocale() == "deDE" then
 	Outfitter.cArgentTournamentOutfit = "Argent Tournament"
 	Outfitter.cMultiphaseSurveyOutfit = "The Multiphase Survey"
 	Outfitter.cSpellcastOutfit = "Spellcast"
-	
+
 	Outfitter.cABOutfit = "Schlachtfeld: Arathibecken"
 	Outfitter.cAVOutfit = "Schlachtfeld: Alteractal"
 	Outfitter.cWSGOutfit = "Schlachtfeld: Kriegshymnenschlucht"
 	Outfitter.cEotSOutfit = "Schlachtfeld: Auge des Sturms"
 	Outfitter.cCityOutfit = "Stadt"
 	Outfitter.cSwimmingOutfit = "Schwimmen"
-	
+
 	Outfitter.cMountSpeedFormat = "Erhöht %w+empo um %d+%%"; -- For detecting when mounted
 	Outfitter.cFlyingMountSpeedFormat = "Erhöht Fluggeschwindigkeit um (%d+)%%%."; -- For detecting when mounted
-	
+
 	Outfitter.cBagsFullError = "%s kann nicht enfernt werden da alle Taschen voll sind."
 	Outfitter.cItemNotFoundError = "Kann %s nicht finden."
 	Outfitter.cAddingItem = "Füge %s zum %s Outfit."
@@ -69,7 +69,7 @@ if GetLocale() == "deDE" then
 
 	Outfitter.cTotalStatsName = "Gesamt	werte"
 	Outfitter.cItemLevelName = "Item Level"
-	
+
 	Outfitter.cOptionsTitle = "Outfitter Einstellungen"
 	Outfitter.cShowMinimapButton = "Zeige Minimapbutton"
 	Outfitter.cShowMinimapButtonOnDescription = "Deaktivieren, um den Minimapbutton von Outfitter zu verstecken."
@@ -97,9 +97,6 @@ if GetLocale() == "deDE" then
 	Outfitter.cRidingOutfitDescription = "Dieses Outfit wird automatisch beim Reiten angelegt"
 	Outfitter.cDiningOutfitDescription = "Dieses Outfit wird automatisch beim Essen und/oder Trinken angelegt"
 	Outfitter.cBattlegroundOutfitDescription = "Dieses Outfit wird automatisch beim Betreten eines Schlachtfeldes angelegt"
-	Outfitter.cArathiBasinOutfitDescription = "Dieses Outfit wird automatisch beim Betreten des Arathibeckens angelegt"
-	Outfitter.cAlteracValleyOutfitDescription = "Dieses Outfit wird automatisch beim Betreten des Alteractals angelegt"
-	Outfitter.cWarsongGulchOutfitDescription = "Dieses Outfit wird automatisch beim Betreten der Kriegshymnenschlucht angelegt"
 	Outfitter.cEotSOutfitDescription = "Dieses Outfit wird automatisch beim Betreten des Auge des Sturms angelegt"
 	Outfitter.cCityOutfitDescription = "Dieses Outfit wird automatisch beim Betreten freundlicher Hauptstädte angelegt"
 
@@ -117,17 +114,17 @@ if GetLocale() == "deDE" then
 	BINDING_NAME_OUTFITTER_OUTFIT8  = "Outfit 8"
 	BINDING_NAME_OUTFITTER_OUTFIT9  = "Outfit 9"
 	BINDING_NAME_OUTFITTER_OUTFIT10 = "Outfit 10"
-	
+
 	Outfitter.cShow = "Anzeigen"
 	Outfitter.cHide = "Verstecken"
 	Outfitter.cDontChange = "Don't change"
-	
+
 	Outfitter.cPlayerTitle = "Title"
 
 	Outfitter.cMore = "More"
-	
+
 	Outfitter.cAutomation = "Automation"
-	
+
 	Outfitter.cDisableOutfit = "Outfit abschalten"
 	Outfitter.cDisableOutfitInBG = "Outfit beim Betreten eines Schlachtfeldes abschalten."
 	Outfitter.cDisabledOutfitName = "%s (Abgeschalten)"
@@ -149,7 +146,7 @@ if GetLocale() == "deDE" then
 	Outfitter.cDruidTravelForm = "Druide: Reisegestalt"
 	Outfitter.cDruidMoonkinForm = "Druide: Mondkingestalt"
 	Outfitter.cDruidProwl = "Druide: Prowl"
-	Outfitter.cDruidTreeOfLifeForm = "Druide: Baum des Lebens";	
+	Outfitter.cDruidTreeOfLifeForm = "Druide: Baum des Lebens";
 	Outfitter.cProwl = "Pirschen"
 
 	Outfitter.cPriestShadowform = "Priester: Schattengestalt"
@@ -168,18 +165,18 @@ if GetLocale() == "deDE" then
 	Outfitter.cAccessoryCategoryDescription = "Zusatzgegenstände-Outfits haben nur einige festgelegte Inventarslots.  Anders als beim Mix-n-match kannst du so viele Zusatzgegenstände-Outfits erstellen und tragen, sie werden alle miteinander verbunden und über bestehenden Outfits getragen."
 	Outfitter.cSpecialCategoryDescription = "Besondere Gelegenheit-Outfits werden automatisch angelegt wenn die Situation es verlangt.  Sie werden über allen anderen Outfits getragen."
 	Outfitter.cOddsNEndsCategoryDescription = "Odds 'n ends ist eine Auflistung der Gegenstände, die keinem Outfit zugewiesen sind. Mit dieser Funktion kannst du sicherstellen, dass alle Gegenstände ihren Platz haben oder dass du keine unnötigen Gegenstände mit dir herumträgst."
-	
+
 	Outfitter.cRebuildOutfitFormat = "%s geändert."
-	
+
 	Outfitter.cSlotEnableTitle = "Slot aktivieren"
 	Outfitter.cSlotEnableDescription = "Aktiviere diese Option, damit der Gegenstand in diesem Slot automatisch angelegt wird wenn du zu diesem Outfit wechselst.  Ist dieser Slot nicht aktiviert, wird er beim Anlegen eines anderen Outfits nicht verändert."
-	
+
 	Outfitter.cFinger0SlotName = "Erster Finger"
 	Outfitter.cFinger1SlotName = "Zweiter Finger"
-	
+
 	Outfitter.cTrinket0SlotName = "Erstes Schmuckstück"
 	Outfitter.cTrinket1SlotName = "Zweites Schmuckstück"
-	
+
 	Outfitter.cOutfitCategoryTitle = "Kategorie"
 	Outfitter.cBankCategoryTitle = "Bank"
 	Outfitter.cDepositToBank = "Gegenstände im Bankfach ablegen"
@@ -187,13 +184,13 @@ if GetLocale() == "deDE" then
 	Outfitter.cDepositOthersToBank = "Deposit other outfits to bank"
 	Outfitter.cWithdrawFromBank = "Gegenstände vom Bankfach aufnehmen"
 	Outfitter.cWithdrawOthersFromBank = "Withdraw other outfits from bank"
-	
+
 	Outfitter.cMissingItemsLabel = "Fehlende Gegenstände: "
 	Outfitter.cBankedItemsLabel = "Gegenstände auf der Bank: "
 
 	Outfitter.cResistCategory = "Widerstände"
 	Outfitter.cTradeCategory = "Fähigkeiten"
-	
+
 	Outfitter.cScript = "Script"
 	Outfitter.cDisableScript = "Script abschalten"
 	Outfitter.cEditScript = "Script bearbeiten"
@@ -211,16 +208,16 @@ if GetLocale() == "deDE" then
 	Outfitter.cSettings = "Einstellungen"
 	Outfitter.cSource = "Quellcode"
 	Outfitter.cInsertFormat = "<- %s"
-	
+
 	Outfitter.cNone = "Keins"
-	
+
 	Outfitter.cUseTooltipLineFormat = "^Benutzen:.*"
 	Outfitter.cUseDurationTooltipLineFormat = "^Benutzen:.*(%d+) Sek%. lang"
 	Outfitter.cUseDurationTooltipLineFormat2 = "^Benutzen:.*(%d+) Sek%. lang"
-	
+
 	Outfitter.cAutoChangesDisabled = "Automated changes are now disabled"
 	Outfitter.cAutoChangesEnabled = "Automated changes are now enabled"
-	
+
 	-- OutfitterFu strings
 
 
@@ -228,9 +225,9 @@ if GetLocale() == "deDE" then
 	Outfitter.cStoreOnServerOnDescription = "Turn off to remove this outfit from the server and store it locally instead.  It will no longer be available from other computers."
 	Outfitter.cStoreOnServerOffDescription = "Turn on to store this outfit on the server so that it's available from any computer.  You may only store 10 outfits on the server."
 	Outfitter.cTooManyServerOutfits = "You cannot store more than %d outfits on the server."
-	
+
 	Outfitter.cNoItemsWithStat = "Couldn't generate an outfit because no items with that stat were found"
-	
+
 	Outfitter.cRequiresPrefix = "Benötigt:"
 	Outfitter.cUniqueEquippedSearchPattern = "^Einzigartig angelegt: (.*) %((%d+)%)$"
 end
