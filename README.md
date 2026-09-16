@@ -25,6 +25,11 @@ licence let the work carry on after he stopped maintaining it.
   professions, fishing, resting, swimming, riding, druid forms, rogue stealth,
   ghost wolf, entering a battleground, and more. You can edit them or write your
   own in the built-in script editor.
+- **Battleground and arena outfits** — a general one for any battleground, plus
+  one per map: every battleground and arena in the game is recognised, including
+  the ones Blizzard re-issued under a second map ID. Detection reads the instance
+  map ID rather than the zone's name, so it doesn't break when you play in a
+  language other than English. `/outfitter zone` reports what it sees.
 - **Outfit bar** — a movable icon bar for one-click switching, with a choice of
   sizes and icons.
 - **Minimap button and LibDataBroker** — compact access from wherever you keep
@@ -65,6 +70,7 @@ go away after a proper restart.
 | `/outfitter withdraw <outfit>` | Withdraw an outfit from the bank |
 | `/outfitter withdrawothers <outfit>` | Withdraw every outfit but this one |
 | `/outfitter missing` | List outfit items that can't be found |
+| `/outfitter zone` | Report the current instance map ID and its zone outfits |
 | `/outfitter disable` / `enable` | Stop or resume all automatic switching |
 | `/outfitter sound [on\|off]` | Silence equipment sounds during a gear change |
 | `/outfitter errors [on\|off]` | Missing-item messages during a gear change |
@@ -91,11 +97,10 @@ piece. Currently retired:
 - `Outfitter:CallCompanionByName` (summoning pets by name still works)
 - The **Has debuff**, **Low health** and three **Championing** preset scripts
 
-Zone-triggered outfits are inert for the same reason: the table mapping zones to
-outfit triggers was built on an API that no longer exists. Battleground detection
-still works, so a general **Battleground** outfit will switch, but the
-per-battleground and city triggers won't until that table is rebuilt against
-`C_Map`.
+The **Around Town** (city) outfit is also inert. It matched on zone names through
+an API that no longer exists, and reviving it would need a list of capital city
+map IDs that goes stale every expansion. Battleground and arena triggers do not
+have that problem and work — see below.
 
 ## Credits
 

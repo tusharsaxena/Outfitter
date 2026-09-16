@@ -87,6 +87,13 @@ rather than wiring the live code back to it.
   `Outfitter.xml` has not created the frame by the time `OnLoad` runs.
 - **Secure buttons in the outfit list can't be re-anchored.** See the comment at
   `Outfitter._ListItem:disableSecureActions`; the window is moved instead.
+- **Zone detection is map-ID based, and five tables must stay in step.**
+  Adding a battleground or arena means touching all of
+  `cInstanceMapIDZoneIDs`, `cZoneSpecialIDs`, `cSpecialIDEvents`,
+  `Outfitter.BuiltinEvents` and `Outfitter.PresetScripts`. Miss one and the
+  outfit silently never fires — which is exactly how four presets sat dead for
+  years. Regenerate IDs from `Map.db2` (<https://wago.tools/db2/Map>,
+  `InstanceType` 3 and 4), never from memory.
 
 ## Verification
 

@@ -473,50 +473,101 @@ Outfitter.BuiltinEvents = {
 	["BATTLEGROUND"] = true,
 	["NOT_BATTLEGROUND"] = true,
 
+	["BATTLEGROUND_ARENA"] = true,
+	["NOT_BATTLEGROUND_ARENA"] = true,
+
 	["BATTLEGROUND_AV"] = true,
 	["NOT_BATTLEGROUND_AV"] = true,
 
 	["BATTLEGROUND_AB"] = true,
 	["NOT_BATTLEGROUND_AB"] = true,
 
-	["BATTLEGROUND_ARENA"] = true,
-	["NOT_BATTLEGROUND_ARENA"] = true,
-
-	["BATTLEGROUND_BLADESEDGE"] = true,
-	["NOT_BATTLEGROUND_BLADESEDGE"] = true,
+	["BATTLEGROUND_WSG"] = true,
+	["NOT_BATTLEGROUND_WSG"] = true,
 
 	["BATTLEGROUND_EOTS"] = true,
 	["NOT_BATTLEGROUND_EOTS"] = true,
 
-	["BATTLEGROUND_GILNEAS"] = true,
-	["NOT_BATTLEGROUND_GILNEAS"] = true,
+	["BATTLEGROUND_SOTA"] = true,
+	["NOT_BATTLEGROUND_SOTA"] = true,
 
 	["BATTLEGROUND_IOC"] = true,
 	["NOT_BATTLEGROUND_IOC"] = true,
 
-	["BATTLEGROUND_NAGRAND"] = true,
-	["NOT_BATTLEGROUND_NAGRAND"] = true,
-
-	["BATTLEGROUND_LORDAERON"] = true,
-	["NOT_BATTLEGROUND_LORDAERON"] = true,
-
-	["BATTLEGROUND_ROV"] = true,
-	["NOT_BATTLEGROUND_ROV"] = true,
-
-	["BATTLEGROUND_SEWERS"] = true,
-	["NOT_BATTLEGROUND_SEWERS"] = true,
-
-	["BATTLEGROUND_SOTA"] = true,
-	["NOT_BATTLEGROUND_SOTA"] = true,
-
 	["BATTLEGROUND_TWINPEAKS"] = true,
 	["NOT_BATTLEGROUND_TWINPEAKS"] = true,
+
+	["BATTLEGROUND_GILNEAS"] = true,
+	["NOT_BATTLEGROUND_GILNEAS"] = true,
 
 	["BATTLEGROUND_WG"] = true,
 	["NOT_BATTLEGROUND_WG"] = true,
 
-	["BATTLEGROUND_WSG"] = true,
-	["NOT_BATTLEGROUND_WSG"] = true,
+	["BATTLEGROUND_SILVERSHARD"] = true,
+	["NOT_BATTLEGROUND_SILVERSHARD"] = true,
+
+	["BATTLEGROUND_KOTMOGU"] = true,
+	["NOT_BATTLEGROUND_KOTMOGU"] = true,
+
+	["BATTLEGROUND_DEEPWIND"] = true,
+	["NOT_BATTLEGROUND_DEEPWIND"] = true,
+
+	["BATTLEGROUND_SEETHING"] = true,
+	["NOT_BATTLEGROUND_SEETHING"] = true,
+
+	["BATTLEGROUND_DEEPHAUL"] = true,
+	["NOT_BATTLEGROUND_DEEPHAUL"] = true,
+
+	["BATTLEGROUND_ASHRAN"] = true,
+	["NOT_BATTLEGROUND_ASHRAN"] = true,
+
+	["BATTLEGROUND_LORDAERON"] = true,
+	["NOT_BATTLEGROUND_LORDAERON"] = true,
+
+	["BATTLEGROUND_SEWERS"] = true,
+	["NOT_BATTLEGROUND_SEWERS"] = true,
+
+	["BATTLEGROUND_BLADESEDGE"] = true,
+	["NOT_BATTLEGROUND_BLADESEDGE"] = true,
+
+	["BATTLEGROUND_NAGRAND"] = true,
+	["NOT_BATTLEGROUND_NAGRAND"] = true,
+
+	["BATTLEGROUND_TOLVIRON"] = true,
+	["NOT_BATTLEGROUND_TOLVIRON"] = true,
+
+	["BATTLEGROUND_TIGERSPEAK"] = true,
+	["NOT_BATTLEGROUND_TIGERSPEAK"] = true,
+
+	["BATTLEGROUND_BLACKROOK"] = true,
+	["NOT_BATTLEGROUND_BLACKROOK"] = true,
+
+	["BATTLEGROUND_ASHAMANE"] = true,
+	["NOT_BATTLEGROUND_ASHAMANE"] = true,
+
+	["BATTLEGROUND_HOOKPOINT"] = true,
+	["NOT_BATTLEGROUND_HOOKPOINT"] = true,
+
+	["BATTLEGROUND_MUGAMBALA"] = true,
+	["NOT_BATTLEGROUND_MUGAMBALA"] = true,
+
+	["BATTLEGROUND_ROBODROME"] = true,
+	["NOT_BATTLEGROUND_ROBODROME"] = true,
+
+	["BATTLEGROUND_EMPYREAN"] = true,
+	["NOT_BATTLEGROUND_EMPYREAN"] = true,
+
+	["BATTLEGROUND_MALDRAXXUS"] = true,
+	["NOT_BATTLEGROUND_MALDRAXXUS"] = true,
+
+	["BATTLEGROUND_ENIGMA"] = true,
+	["NOT_BATTLEGROUND_ENIGMA"] = true,
+
+	["BATTLEGROUND_NOKHUDON"] = true,
+	["NOT_BATTLEGROUND_NOKHUDON"] = true,
+
+	["BATTLEGROUND_CAGEOFCARNAGE"] = true,
+	["NOT_BATTLEGROUND_CAGEOFCARNAGE"] = true,
 
 	["CASTER_FORM"] = true,
 	["NOT_CASTER_FORM"] = true,
@@ -968,21 +1019,40 @@ Outfitter.cSpecialIDEvents =
 	ArgentDawn = {Equip = "ARGENT_DAWN", Unequip = "NOT_ARGENT_DAWN"},
 
 	Battleground = {Equip = "BATTLEGROUND", Unequip = "NOT_BATTLEGROUND"},
-	AB = {Equip = "BATTLEGROUND_AB", Unequip = "NOT_BATTLEGROUND_AB"},
+	Arena = {Equip = "BATTLEGROUND_ARENA", Unequip = "NOT_BATTLEGROUND_ARENA"},
+
 	AV = {Equip = "BATTLEGROUND_AV", Unequip = "NOT_BATTLEGROUND_AV"},
+	AB = {Equip = "BATTLEGROUND_AB", Unequip = "NOT_BATTLEGROUND_AB"},
 	WSG = {Equip = "BATTLEGROUND_WSG", Unequip = "NOT_BATTLEGROUND_WSG"},
 	EotS = {Equip = "BATTLEGROUND_EOTS", Unequip = "NOT_BATTLEGROUND_EOTS"},
 	SotA = {Equip = "BATTLEGROUND_SOTA", Unequip = "NOT_BATTLEGROUND_SOTA"},
 	IoC = {Equip = "BATTLEGROUND_IOC", Unequip = "NOT_BATTLEGROUND_IOC"},
-	Wintergrasp = {Equip = "BATTLEGROUND_WG", Unequip = "NOT_BATTLEGROUND_WG"},
-	Sewers = {Equip = "BATTLEGROUND_SEWERS", Unequip = "NOT_BATTLEGROUND_SEWERS"},
-	Gilneas = {Equip = "BATTLEGROUND_GILNEAS", Unequip = "NOT_BATTLEGROUND_GILNEAS"},
 	TwinPeaks = {Equip = "BATTLEGROUND_TWINPEAKS", Unequip = "NOT_BATTLEGROUND_TWINPEAKS"},
-	RingOfValor = {Equip = "BATTLEGROUND_ROV", Unequip = "NOT_BATTLEGROUND_ROV"},
-	Arena = {Equip = "BATTLEGROUND_ARENA", Unequip = "NOT_BATTLEGROUND_ARENA"},
+	Gilneas = {Equip = "BATTLEGROUND_GILNEAS", Unequip = "NOT_BATTLEGROUND_GILNEAS"},
+	Wintergrasp = {Equip = "BATTLEGROUND_WG", Unequip = "NOT_BATTLEGROUND_WG"},
+	SilvershardMines = {Equip = "BATTLEGROUND_SILVERSHARD", Unequip = "NOT_BATTLEGROUND_SILVERSHARD"},
+	TempleOfKotmogu = {Equip = "BATTLEGROUND_KOTMOGU", Unequip = "NOT_BATTLEGROUND_KOTMOGU"},
+	DeepwindGorge = {Equip = "BATTLEGROUND_DEEPWIND", Unequip = "NOT_BATTLEGROUND_DEEPWIND"},
+	SeethingShore = {Equip = "BATTLEGROUND_SEETHING", Unequip = "NOT_BATTLEGROUND_SEETHING"},
+	DeephaulRavine = {Equip = "BATTLEGROUND_DEEPHAUL", Unequip = "NOT_BATTLEGROUND_DEEPHAUL"},
+	Ashran = {Equip = "BATTLEGROUND_ASHRAN", Unequip = "NOT_BATTLEGROUND_ASHRAN"},
+
+	LordaeronArena = {Equip = "BATTLEGROUND_LORDAERON", Unequip = "NOT_BATTLEGROUND_LORDAERON"},
+	Sewers = {Equip = "BATTLEGROUND_SEWERS", Unequip = "NOT_BATTLEGROUND_SEWERS"},
 	BladesEdgeArena = {Equip = "BATTLEGROUND_BLADESEDGE", Unequip = "NOT_BATTLEGROUND_BLADESEDGE"},
 	NagrandArena = {Equip = "BATTLEGROUND_NAGRAND", Unequip = "NOT_BATTLEGROUND_NAGRAND"},
-	LordaeronArena = {Equip = "BATTLEGROUND_LORDAERON", Unequip = "NOT_BATTLEGROUND_LORDAERON"},
+	TolVironArena = {Equip = "BATTLEGROUND_TOLVIRON", Unequip = "NOT_BATTLEGROUND_TOLVIRON"},
+	TigersPeakArena = {Equip = "BATTLEGROUND_TIGERSPEAK", Unequip = "NOT_BATTLEGROUND_TIGERSPEAK"},
+	BlackRookArena = {Equip = "BATTLEGROUND_BLACKROOK", Unequip = "NOT_BATTLEGROUND_BLACKROOK"},
+	AshamanesFallArena = {Equip = "BATTLEGROUND_ASHAMANE", Unequip = "NOT_BATTLEGROUND_ASHAMANE"},
+	HookPointArena = {Equip = "BATTLEGROUND_HOOKPOINT", Unequip = "NOT_BATTLEGROUND_HOOKPOINT"},
+	MugambalaArena = {Equip = "BATTLEGROUND_MUGAMBALA", Unequip = "NOT_BATTLEGROUND_MUGAMBALA"},
+	RobodromeArena = {Equip = "BATTLEGROUND_ROBODROME", Unequip = "NOT_BATTLEGROUND_ROBODROME"},
+	EmpyreanDomainArena = {Equip = "BATTLEGROUND_EMPYREAN", Unequip = "NOT_BATTLEGROUND_EMPYREAN"},
+	MaldraxxusArena = {Equip = "BATTLEGROUND_MALDRAXXUS", Unequip = "NOT_BATTLEGROUND_MALDRAXXUS"},
+	EnigmaCrucibleArena = {Equip = "BATTLEGROUND_ENIGMA", Unequip = "NOT_BATTLEGROUND_ENIGMA"},
+	NokhudonArena = {Equip = "BATTLEGROUND_NOKHUDON", Unequip = "NOT_BATTLEGROUND_NOKHUDON"},
+	CageOfCarnageArena = {Equip = "BATTLEGROUND_CAGEOFCARNAGE", Unequip = "NOT_BATTLEGROUND_CAGEOFCARNAGE"},
 }
 
 Outfitter.cClassSpecialOutfits =
@@ -1060,12 +1130,13 @@ Outfitter.cAuraIconSpecialID =
 -- earlier outfits (when they're being applied at the same time)
 -- This allows BG-specific outfits to take priority over the generic
 -- BG outfit
+--
+-- Every ID here must have an entry in cSpecialIDEvents, both of its events in
+-- BuiltinEvents, and a preset in Outfitter.PresetScripts.  Four of these used to
+-- be missing from this list and so could never fire
 
 Outfitter.cZoneSpecialIDs =
 {
-	"ArgentDawn",
-
-	"City",
 	"Battleground",
 	"Arena",
 
@@ -1075,17 +1146,129 @@ Outfitter.cZoneSpecialIDs =
 	"EotS",
 	"SotA",
 	"IoC",
+	"TwinPeaks",
+	"Gilneas",
+	"Wintergrasp",
+	"SilvershardMines",
+	"TempleOfKotmogu",
+	"DeepwindGorge",
+	"SeethingShore",
+	"DeephaulRavine",
+	"Ashran",
 
+	"LordaeronArena",
+	"Sewers",
 	"BladesEdgeArena",
 	"NagrandArena",
-	"LordaeronArena",
+	"TolVironArena",
+	"TigersPeakArena",
+	"BlackRookArena",
+	"AshamanesFallArena",
+	"HookPointArena",
+	"MugambalaArena",
+	"RobodromeArena",
+	"EmpyreanDomainArena",
+	"MaldraxxusArena",
+	"EnigmaCrucibleArena",
+	"NokhudonArena",
+	"CageOfCarnageArena",
 }
 
--- Disabled: this table was built with GetMapNameByID, which the game removed, so
--- "In Zones" outfits never match anything.  The original table is kept in
--- Deprecated.ZoneSpecialIDMap -- see Deprecated.lua
+-- Instance map ID -> the zone special IDs it activates.  The ID is the eighth
+-- return of GetInstanceInfo(), which is the Map.db2 row ID: stable forever and
+-- never localized, unlike the zone names this used to match on.
+--
+-- Blizzard re-issued several maps rather than editing them, so a battleground can
+-- have more than one ID and every one of them has to be listed.  Regenerate from
+-- Map.db2 (https://wago.tools/db2/Map) by taking every row with InstanceType 3
+-- (battleground) or 4 (arena); the generic Battleground and Arena outfits do not
+-- depend on this table at all, so a map missing here still equips those.
 
-Outfitter.cZoneSpecialIDMap = {}
+Outfitter.cInstanceMapIDZoneIDs =
+{
+	-- Battlegrounds
+
+	[30] = {"Battleground", "AV"}, -- Alterac Valley
+	[2197] = {"Battleground", "AV"}, -- Korrak's Revenge
+
+	[529] = {"Battleground", "AB"}, -- Classic Arathi Basin
+	[1681] = {"Battleground", "AB"}, -- Arathi Basin Winter
+	[2107] = {"Battleground", "AB"}, -- Arathi Basin
+	[2177] = {"Battleground", "AB"}, -- Arathi Basin Comp Stomp
+
+	[489] = {"Battleground", "WSG"}, -- Classic Warsong Gulch
+	[2106] = {"Battleground", "WSG"}, -- Warsong Gulch
+
+	[566] = {"Battleground", "EotS"}, -- Eye of the Storm
+	[968] = {"Battleground", "EotS"}, -- Rated Eye of the Storm
+
+	[607] = {"Battleground", "SotA"}, -- Strand of the Ancients
+
+	[628] = {"Battleground", "IoC"}, -- Isle of Conquest
+
+	[726] = {"Battleground", "TwinPeaks"}, -- Twin Peaks
+
+	[761] = {"Battleground", "Gilneas"}, -- The Battle for Gilneas
+
+	[2118] = {"Battleground", "Wintergrasp"}, -- Battle for Wintergrasp
+
+	[727] = {"Battleground", "SilvershardMines"}, -- Silvershard Mines
+
+	[998] = {"Battleground", "TempleOfKotmogu"}, -- Temple of Kotmogu
+
+	[1105] = {"Battleground", "DeepwindGorge"}, -- Deepwind Gorge (Legacy)
+	[2245] = {"Battleground", "DeepwindGorge"}, -- Deepwind Gorge
+
+	[1803] = {"Battleground", "SeethingShore"}, -- Seething Shore
+
+	[2656] = {"Battleground", "DeephaulRavine"}, -- Deephaul Ravine
+
+	[1191] = {"Battleground", "Ashran"}, -- Ashran
+
+	-- Brawls and novelty maps: no outfit of their own, but they are still
+	-- battlegrounds, so they equip the generic one
+
+	[1170] = {"Battleground"}, -- Shado-Pan Showdown
+	[1280] = {"Battleground"}, -- Southshore vs. Tarren Mill
+	[1691] = {"Battleground"}, -- Cooking: Impossible
+	[2799] = {"Battleground"}, -- Slayer's Rise
+
+	-- Arenas.  Arena implies Battleground, matching how the old code set both
+
+	[572] = {"Battleground", "Arena", "LordaeronArena"}, -- Ruins of Lordaeron
+
+	[617] = {"Battleground", "Arena", "Sewers"}, -- Dalaran Sewers
+
+	[562] = {"Battleground", "Arena", "BladesEdgeArena"}, -- zzOldBlade's Edge Arena
+	[1672] = {"Battleground", "Arena", "BladesEdgeArena"}, -- Blade's Edge Arena
+
+	[559] = {"Battleground", "Arena", "NagrandArena"}, -- Nagrand Arena (old)
+	[1505] = {"Battleground", "Arena", "NagrandArena"}, -- Nagrand Arena
+
+	[980] = {"Battleground", "Arena", "TolVironArena"}, -- Tol'Viron Arena
+
+	[1134] = {"Battleground", "Arena", "TigersPeakArena"}, -- The Tiger's Peak
+
+	[1504] = {"Battleground", "Arena", "BlackRookArena"}, -- Black Rook Hold Arena
+
+	[1552] = {"Battleground", "Arena", "AshamanesFallArena"}, -- Ashamane's Fall
+
+	[1825] = {"Battleground", "Arena", "HookPointArena"}, -- Hook Point
+
+	[1911] = {"Battleground", "Arena", "MugambalaArena"}, -- Mugambala
+
+	[2167] = {"Battleground", "Arena", "RobodromeArena"}, -- The Robodrome
+
+	[2373] = {"Battleground", "Arena", "EmpyreanDomainArena"}, -- Empyrean Domain
+
+	[2509] = {"Battleground", "Arena", "MaldraxxusArena"}, -- Maldraxxus Coliseum
+
+	[2547] = {"Battleground", "Arena", "EnigmaCrucibleArena"}, -- Enigma Crucible
+
+	[2563] = {"Battleground", "Arena", "NokhudonArena"}, -- Nokhudon Proving Grounds
+
+	[2759] = {"Battleground", "Arena", "CageOfCarnageArena"}, -- Cage of Carnage
+}
 
 -- As of patch 3.3 automated combat swaps aren't allowed.  I'm
 -- leaving the code in but emptying the slot list in
@@ -1750,6 +1933,7 @@ function Outfitter:ExecuteCommand(pCommand)
 		itemstats = {func = self.ShowLinkStats},
 
 		missing = {func = self.ShowMissingItems},
+		zone = {func = self.ShowZoneInfo},
 
 		sound = {func = self.SetSoundOption},
 		help = {func = self.ShowCommandHelp},
@@ -1852,6 +2036,7 @@ function Outfitter:ShowCommandHelp()
 	self:NoteMessage(HIGHLIGHT_FONT_COLOR_CODE.."/outfitter disable"..NORMAL_FONT_COLOR_CODE..": Prevents all scripts from running")
 	self:NoteMessage(HIGHLIGHT_FONT_COLOR_CODE.."/outfitter enable"..NORMAL_FONT_COLOR_CODE..": Allows enabled scripts to run")
 	self:NoteMessage(HIGHLIGHT_FONT_COLOR_CODE.."/outfitter missing"..NORMAL_FONT_COLOR_CODE..": Generates a list of items which are in your outfits but can't be found")
+	self:NoteMessage(HIGHLIGHT_FONT_COLOR_CODE.."/outfitter zone"..NORMAL_FONT_COLOR_CODE..": Reports the current instance map ID and which zone outfits it triggers")
 	self:NoteMessage(HIGHLIGHT_FONT_COLOR_CODE.."/outfitter errors [on|off]"..NORMAL_FONT_COLOR_CODE..": Enables/disables missing item messages during gear changes")
 end
 
@@ -4694,28 +4879,65 @@ function Outfitter:UpdateZone()
 	self:EndEquipmentUpdate()
 end
 
+-- Which zone special outfits apply right now.
+--
+-- Driven entirely off GetInstanceInfo: the instance type gives the generic
+-- Battleground and Arena outfits, so a map Blizzard added yesterday still equips
+-- them, and the map ID adds whatever is specific to it.  Nothing here matches on a
+-- zone name, which is what rotted the previous version
+
 function Outfitter:GetCurrentZoneIDs(pRecycleTable)
 	local vZoneIDs = self:RecycleTable(pRecycleTable)
 
-	local vZoneSpecialIDMap = self.cZoneSpecialIDMap[self.CurrentZone]
+	local _, vInstanceType, _, _, _, _, _, vInstanceMapID = GetInstanceInfo()
 
-	if not vZoneSpecialIDMap then
-		vZoneSpecialIDMap = self.cZoneSpecialIDMap[GetRealZoneText()]
+	if vInstanceType == "pvp" then
+		vZoneIDs.Battleground = true
+	elseif vInstanceType == "arena" then
+		vZoneIDs.Battleground = true
+		vZoneIDs.Arena = true
 	end
 
-	local vPVPType, vIsArena, vFactionName = C_PvP.GetZonePVPInfo()
+	local vMapZoneIDs = vInstanceMapID and self.cInstanceMapIDZoneIDs[vInstanceMapID]
 
-	if vZoneSpecialIDMap then
-		for _, vZoneSpecialID in ipairs(vZoneSpecialIDMap) do
-			if vZoneSpecialID ~= "City" or vPVPType ~= "hostile" then
-				vZoneIDs[vZoneSpecialID] = true
-			end
+	if vMapZoneIDs then
+		for _, vZoneSpecialID in ipairs(vMapZoneIDs) do
+			vZoneIDs[vZoneSpecialID] = true
 		end
 	end
 
-	local inInstance, instanceType = IsInInstance()
-	vZoneIDs.Battleground = instanceType == "pvp" or instanceType == "arena"
 	return vZoneIDs
+end
+
+-- Reports what the zone detection currently sees.  The map ID it prints is the
+-- key into cInstanceMapIDZoneIDs, so a battleground outfit that does not fire can
+-- be reported as a number rather than as "it does not work"
+
+function Outfitter:ShowZoneInfo()
+	local vName, vInstanceType, _, _, _, _, _, vInstanceMapID = GetInstanceInfo()
+
+	self:NoteMessage("Instance: %s (type %s, map ID %s)",
+		tostring(vName), tostring(vInstanceType), tostring(vInstanceMapID))
+
+	local vMapZoneIDs = vInstanceMapID and self.cInstanceMapIDZoneIDs[vInstanceMapID]
+
+	if not vMapZoneIDs then
+		self:NoteMessage("This map has no entry in cInstanceMapIDZoneIDs")
+	end
+
+	local vActive = {}
+
+	for _, vZoneSpecialID in ipairs(self.cZoneSpecialIDs) do
+		if self.CurrentZoneIDs and self.CurrentZoneIDs[vZoneSpecialID] == true then
+			table.insert(vActive, vZoneSpecialID)
+		end
+	end
+
+	if #vActive == 0 then
+		self:NoteMessage("No zone outfits apply here")
+	else
+		self:NoteMessage("Zone outfits active: %s", table.concat(vActive, ", "))
+	end
 end
 
 function Outfitter:InZoneType(pZoneType)

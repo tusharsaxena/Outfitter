@@ -25,8 +25,8 @@
 --       GetNumCompanions, CallCompanion
 --   Outfitter._ListItem:OnEnter                Outfitter.lua (banked item branch)
 --       BankButtonIDToInvSlotID
---   Outfitter.cZoneSpecialIDMap                Outfitter.lua
---       GetMapNameByID
+--   Outfitter.cZoneSpecialIDMap                Outfitter.lua (City / ArgentDawn only)
+--       GetMapNameByID -- the battleground and arena half was rebuilt and is live
 --   Outfitter:GetBagItemInfo / GetInventoryItemInfo   OutfitterInventory.lua
 --       GetContainerItemGems, GetInventoryItemGems
 --   Outfitter._FlyoutQuickSlots:GetLocationItemLink   OutfitterQuickSlots.lua
@@ -172,12 +172,18 @@ end
 -- Zone-triggered outfits
 ----------------------------------------
 
--- "In Zones" outfits matched the player's zone name against this table.  It was
--- already commented out before the deprecation layer existed, because
--- GetMapNameByID was removed -- which is why the feature silently never fires.
+-- "In Zones" outfits matched the player's zone name against this table, via
+-- GetMapNameByID, which the game removed.
 --
--- Reviving it means rebuilding the table against C_Map.GetMapInfo and rewriting
--- the lookup to work on map IDs instead of localized zone names
+-- The battleground and arena half of this has been rebuilt and is live again:
+-- Outfitter.cInstanceMapIDZoneIDs keys off the instance map ID from
+-- GetInstanceInfo, which is stable and never localized.  What is kept here is the
+-- outdoor half -- the City and ArgentDawn triggers -- which would need a capital
+-- and zone uiMapID list that goes stale every expansion, which is the same rot
+-- that broke this table in the first place.
+--
+-- The City and ArgentDawn entries in Outfitter.cSpecialIDEvents are still there
+-- and the City preset is still registered; neither is ever set, so neither fires
 
 Deprecated.ZoneSpecialIDMap =
 {
