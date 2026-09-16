@@ -127,6 +127,40 @@ Kit.test("every screenshot the manual references exists", function()
 	Kit.equal(#missing, 0, "manual references missing images: " .. table.concat(missing, ", "))
 end)
 
+Kit.test("the manual never points at an image that does not ship", function()
+	-- Documentation/ ships; Media/ deliberately does not.  A relative image
+	-- reference from the manual into an ignored directory renders fine on GitHub
+	-- and is a broken image for every player who opens the shipped copy -- the
+	-- kind of mistake that is invisible to whoever makes it.
+	--
+	-- Absolute URLs are not checked: those resolve from the web wherever the
+	-- manual is read, which is a deliberate and different choice.
+	local ignored = {}
+	local inIgnore = false
+	for line in Ctx.readLF(".pkgmeta"):gmatch("[^\n]*") do
+		if line:match("^ignore:") then inIgnore = true
+		elseif line:match("^%a") then inIgnore = false
+		elseif inIgnore then
+			local entry = line:match("^%s+%-%s*([%w%._/%-]+)%s*$")
+			if entry then ignored[entry] = true end
+		end
+	end
+
+	local offenders = {}
+	for path in Ctx.readLF("Documentation/UsersManual.md"):gmatch("%]%(([^)]+)%)") do
+		if not path:match("^https?://") and not path:match("^#") then
+			-- Resolved relative to Documentation/, then checked against the manifest.
+			local full = "Documentation/" .. path
+			local top = full:match("^([^/]+)")
+			if ignored[top] or ignored[full] then
+				offenders[#offenders + 1] = path .. " (under an ignored path)"
+			end
+		end
+	end
+	Kit.equal(#offenders, 0, "the shipped manual links to files that do not ship: " ..
+		table.concat(offenders, ", "))
+end)
+
 Kit.test("the zone diagnostic reports without raising", function()
 	Ctx.Mock.state.instanceType = "pvp"
 	Ctx.Mock.state.instanceMapID = 30

@@ -8,8 +8,10 @@
 package-as: Outfitter
 
 ignore:
-    # Source artwork for the project listing, not in-game textures.  The TGA and
-    # PNG are ~6 MB and ~1.4 MB, which would otherwise be most of the download.
+    # Source artwork and screenshots for the project listing and the GitHub-rendered
+    # docs -- not in-game textures.  Roughly 9 MB, which would otherwise be most of
+    # the download.  Anything referenced by the SHIPPED manual has to live under
+    # Documentation/ instead; see the test in tests/test_commands.lua.
     - Media
 
     # The headless test harness: runner, framework, WoW mock and suites.  It runs
