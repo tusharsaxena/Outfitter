@@ -3,7 +3,7 @@
 -------------------------------------------------------------------------------
 
 if GetLocale() == "zhCN" then
-	Outfitter.cTitle = "Outfitter"
+	Outfitter.cTitle = "Outfitter Reborn"
 	Outfitter.cTitleVersion = Outfitter.cTitle.." "..Outfitter.cVersion
 
 	Outfitter.cSingleItemFormat = "%s"
@@ -16,7 +16,7 @@ if GetLocale() == "zhCN" then
 	Outfitter.cUseEmptyOutfit = "新建空白套装"
 	Outfitter.cAutomationLabel = "自动:"
 
-	Outfitter.cOutfitterTabTitle = "Outfitter"
+	Outfitter.cOutfitterTabTitle = "Outfitter Reborn"
 	Outfitter.cOptionsTabTitle = "选项"
 	Outfitter.cAboutTabTitle = "关于"
 
@@ -136,7 +136,7 @@ if GetLocale() == "zhCN" then
 	Outfitter.cCombatManaRegenStatName = "5秒回魔(战斗)"
 	Outfitter.cCombatHealthRegenStatName = "5秒回血(战斗)"
 
-	Outfitter.cOptionsTitle = "Outfitter 选项"
+	Outfitter.cOptionsTitle = "Outfitter Reborn 选项"
 	Outfitter.cShowMinimapButton = "显示小地图按钮"
 	Outfitter.cShowMinimapButtonOnDescription = "禁用（在小地图上隐藏 Outfitter 按钮）"
 	Outfitter.cShowMinimapButtonOffDescription = "启用（在小地图上显示 Outfitter 按钮）"
@@ -158,7 +158,7 @@ if GetLocale() == "zhCN" then
 	Outfitter.cEquipOutfitMessageFormat = "Outfitter: %s 已装备"
 	Outfitter.cUnequipOutfitMessageFormat = "Outfitter: %s 未装备"
 
-	Outfitter.cAboutTitle = "关于 Outfitter"
+	Outfitter.cAboutTitle = "关于 Outfitter Reborn"
 	Outfitter.cAboutAuthor = "John Stephen 设计编写"
 	Outfitter.cAboutThanks = "非常感谢所有玩家及支持者！"
 

@@ -1,5 +1,5 @@
 if GetLocale() == "ruRU" then
-	Outfitter.cTitle = "Outfitter"
+	Outfitter.cTitle = "Outfitter Reborn"
 	Outfitter.cTitleVersion = Outfitter.cTitle.." "..Outfitter.cVersion
 
 	Outfitter.cSingleItemFormat = "%s"
@@ -154,7 +154,7 @@ if GetLocale() == "ruRU" then
 	Outfitter.cEquipOutfitMessageFormat = "Outfitter: %s одет"
 	Outfitter.cUnequipOutfitMessageFormat = "Outfitter: %s снят"
 
-	Outfitter.cAboutTitle = "Об Outfitter"
+	Outfitter.cAboutTitle = "Об Outfitter Reborn"
 	Outfitter.cAuthor = "Designed and written by John Stephen with contributions by %s"
 	Outfitter.cTestersTitle = "Outfitter тестеры"
 	Outfitter.cTestersNames = "%s"

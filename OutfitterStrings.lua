@@ -1,6 +1,14 @@
 Outfitter.cVersion = C_AddOns.GetAddOnMetadata("Outfitter", "Version")
 
-Outfitter.cTitle = "Outfitter"
+-- The display name. cBrokerName below is the IDENTITY -- they are deliberately
+-- different, see OutfitterLDB.lua.
+Outfitter.cTitle = "Outfitter Reborn"
+
+-- The name this addon registers with LibDataBroker and LibDBIcon.  It is a key,
+-- not a label: broker display addons store their per-object settings against it,
+-- so renaming it would silently reset everyone's broker configuration and detach
+-- the minimap button from its saved state.  It stays "Outfitter" forever.
+Outfitter.cBrokerName = "Outfitter"
 Outfitter.cTitleVersion = Outfitter.cTitle.." "..Outfitter.cVersion
 
 Outfitter.cSingleItemFormat = "%s"
@@ -17,7 +25,7 @@ Outfitter.cUseCurrentOutfit = "Use Current Outfit"
 Outfitter.cUseEmptyOutfit = "Create Empty Outfit"
 Outfitter.cAutomationLabel = "Automation:"
 
-Outfitter.cOutfitterTabTitle = "Outfitter"
+Outfitter.cOutfitterTabTitle = "Outfitter Reborn"
 Outfitter.cOptionsTabTitle = "Options"
 Outfitter.cAboutTabTitle = "About"
 
@@ -194,7 +202,7 @@ Outfitter.cItemLevelName = "Item Level"
 Outfitter.cCombatManaRegenStatName = "Mana per 5 (combat)"
 Outfitter.cCombatHealthRegenStatName = "Health per 5 (combat)"
 
-Outfitter.cOptionsTitle = "Outfitter Options"
+Outfitter.cOptionsTitle = "Outfitter Reborn Options"
 Outfitter.cShowMinimapButton = "Show Minimap Button"
 Outfitter.cShowMinimapButtonOnDescription = "Turn this off if you don't want the Outfitter button on your minimap cluster"
 Outfitter.cShowMinimapButtonOffDescription = "Turn this on if you want the Outfitter button on your minimap cluster"
@@ -216,8 +224,9 @@ Outfitter.cShowOutfitBarDescription = "Shows a bar of icon buttons you can click
 Outfitter.cEquipOutfitMessageFormat = "Outfitter: %s equipped"
 Outfitter.cUnequipOutfitMessageFormat = "Outfitter: %s unequipped"
 
-Outfitter.cAboutTitle = "About Outfitter %s"
-Outfitter.cAboutAuthor = "Designed and written by John Stephen"
+Outfitter.cAboutTitle = "About Outfitter Reborn %s"
+Outfitter.cAboutAuthor = "Originally created by John Stephen"
+Outfitter.cAboutMaintainer = "Updated for WoW Midnight by aDd1kTeD2Ka0s"
 Outfitter.cAboutCopyright = "Copyright 2006 - 2018 John Stephen"
 Outfitter.cAboutThanks = "Many thanks to all fans and supporters."
 

@@ -2,11 +2,14 @@ Outfitter.LDB = {}
 
 function Outfitter.LDB:Initialize()
 	self.LDB = LibStub("LibDataBroker-1.1", true)
-	self.DataObj = self.LDB:NewDataObject(Outfitter.cTitle,
+	-- cBrokerName, not cTitle: this argument is the object KEY that broker
+	-- displays store their settings against, so it must never change.  The
+	-- visible label is `text` below.
+	self.DataObj = self.LDB:NewDataObject(Outfitter.cBrokerName,
 	{
 		type = "launcher",
 		icon = "Interface\\AddOns\\Outfitter\\Textures\\Icon",
-		text = "Outfitter",
+		text = Outfitter.cTitle,
 		OnClick = function(pFrame, pButton) self:OnClick(pFrame, pButton) end
 	})
 
@@ -18,15 +21,15 @@ end
 function Outfitter.LDB:CreateIcon(minimapButton)
     self.icon = LibStub("LibWithFreeDragDBIcon-1.0")
 
-    self.icon:Register(Outfitter.cTitle, self.DataObj, minimapButton)
+    self.icon:Register(Outfitter.cBrokerName, self.DataObj, minimapButton)
 end
 
 function Outfitter.LDB:ShowIcon()
-    self.icon:Show(Outfitter.cTitle)
+    self.icon:Show(Outfitter.cBrokerName)
 end
 
 function Outfitter.LDB:HideIcon()
-    self.icon:Hide(Outfitter.cTitle)
+    self.icon:Hide(Outfitter.cBrokerName)
 end
 
 function Outfitter.LDB:OnClick(pFrame, pButton)

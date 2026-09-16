@@ -3,7 +3,7 @@
 -------------------------------------------------------------------------------
 
 if GetLocale() == "zhTW" then
-	Outfitter.cTitle = "換裝管理"
+	Outfitter.cTitle = "Outfitter Reborn"
 	Outfitter.cTitleVersion = Outfitter.cTitle.." "..Outfitter.cVersion
 
 	Outfitter.cSingleItemFormat = "%s"
@@ -16,7 +16,7 @@ if GetLocale() == "zhTW" then
 	Outfitter.cUseEmptyOutfit = "建立新配裝"
 	Outfitter.cAutomationLabel = "自動換裝:"
 
-	Outfitter.cOutfitterTabTitle = "Outfitter"
+	Outfitter.cOutfitterTabTitle = "Outfitter Reborn"
 	Outfitter.cOptionsTabTitle = "選項"
 	Outfitter.cAboutTabTitle = "關於"
 
@@ -134,7 +134,7 @@ if GetLocale() == "zhTW" then
 	Outfitter.cCombatManaRegenStatName = "每5秒恢復法力(戰鬥中)"
 	Outfitter.cCombatHealthRegenStatName = "每5秒恢復生命力(戰鬥中)"
 
-	Outfitter.cOptionsTitle = "換裝管理 選項"
+	Outfitter.cOptionsTitle = "Outfitter Reborn 選項"
 	Outfitter.cShowMinimapButton = "顯示小地圖按鈕"
 	Outfitter.cShowMinimapButtonOnDescription = "取消以隱藏 換裝管理 小地圖按鈕"
 	Outfitter.cShowMinimapButtonOffDescription = "勾選以顯示 換裝管理 小地圖按鈕"
@@ -156,7 +156,7 @@ if GetLocale() == "zhTW" then
 	Outfitter.cEquipOutfitMessageFormat = "換裝管理: %s 裝上"
 	Outfitter.cUnequipOutfitMessageFormat = "換裝管理: %s 卸下"
 
-	Outfitter.cAboutTitle = "關於 換裝管理"
+	Outfitter.cAboutTitle = "關於 Outfitter Reborn"
 	Outfitter.cAuthor = "作者: John Stephen, contributions 及其他參與者 %s"
 	Outfitter.cTestersTitle = "換裝管理測試者"
 	Outfitter.cTestersNames = "%s"

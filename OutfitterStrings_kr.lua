@@ -1,5 +1,5 @@
 if GetLocale() == "koKR" then
-	Outfitter.cTitle = "Outfitter"
+	Outfitter.cTitle = "Outfitter Reborn"
 	Outfitter.cTitleVersion = Outfitter.cTitle.." "..Outfitter.cVersion
 
 	Outfitter.cSingleItemFormat = "%s"
@@ -11,7 +11,7 @@ if GetLocale() == "koKR" then
 	Outfitter.cUseCurrentOutfit = "현재 장비 세트 사용"
 	Outfitter.cUseEmptyOutfit = "빈 장비 세트 생성"
 
-	Outfitter.cOutfitterTabTitle = "Outfitter"
+	Outfitter.cOutfitterTabTitle = "Outfitter Reborn"
 	Outfitter.cOptionsTabTitle = "옵션"
 	Outfitter.cAboutTabTitle = "정보"
 
@@ -78,7 +78,7 @@ if GetLocale() == "koKR" then
 	Outfitter.cTotalStatsName = "모든 능력치"
 	Outfitter.cItemLevelName = "Item Level"
 
-	Outfitter.cOptionsTitle = "Outfitter 옵션"
+	Outfitter.cOptionsTitle = "Outfitter Reborn 옵션"
 	Outfitter.cShowMinimapButton = "미니맵 버튼 표시"
 	Outfitter.cShowMinimapButtonOnDescription = "미니맵 버튼을 사용하지 않으려면 이 설정을 끄십시오."
 	Outfitter.cShowMinimapButtonOffDescription = "미니맵 버튼을 사용하려면 이 설정을 켜십시오."
@@ -96,7 +96,7 @@ if GetLocale() == "koKR" then
 	Outfitter.cEquipOutfitMessageFormat = "Outfitter: %s 장비됨"
 	Outfitter.cUnequipOutfitMessageFormat = "Outfitter: %s 해제됨"
 
-	Outfitter.cAboutTitle = "Outfitter 정보"
+	Outfitter.cAboutTitle = "Outfitter Reborn 정보"
 	Outfitter.cAuthor = "Designed and written by John Stephen and Bruce Quinton with contributions by %s"
 	Outfitter.cTestersTitle = "Outfitter testers"
 	Outfitter.cSpecialThanksTitle = "Special thanks to"

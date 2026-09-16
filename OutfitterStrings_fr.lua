@@ -1,5 +1,5 @@
 if GetLocale() == "frFR" then
-	Outfitter.cTitle = "Outfitter"
+	Outfitter.cTitle = "Outfitter Reborn"
 	Outfitter.cTitleVersion = Outfitter.cTitle.." "..Outfitter.cVersion
 
 	Outfitter.cSingleItemFormat = "%s"
@@ -11,7 +11,7 @@ if GetLocale() == "frFR" then
 	Outfitter.cUseCurrentOutfit = "Utiliser la tenue actuelle"
 	Outfitter.cUseEmptyOutfit = "Créer une tenue vide"
 
-	Outfitter.cOutfitterTabTitle = "Outfitter"
+	Outfitter.cOutfitterTabTitle = "Outfitter Reborn"
 	Outfitter.cOptionsTabTitle = "Options"
 	Outfitter.cAboutTabTitle = "A propos"
 
@@ -199,7 +199,7 @@ if GetLocale() == "frFR" then
 	Outfitter.cNatureResistStatName = "Résistance à la nature"
 	Outfitter.cShadowResistStatName = "Résistance à l'ombre"
 
-	Outfitter.cOptionsTitle = "Options de Outfitter"
+	Outfitter.cOptionsTitle = "Options de Outfitter Reborn"
 	Outfitter.cShowMinimapButton = "Bouton Minimap"
 	Outfitter.cShowMinimapButtonOnDescription = "Désactivez si vous ne voulez pas le bouton d'Outfitter sur votre minimap"
 	Outfitter.cShowMinimapButtonOffDescription = "Activez pour afficher le bouton d'Outfitter sur la minimap"
@@ -211,7 +211,7 @@ if GetLocale() == "frFR" then
 	Outfitter.cTooltipInfoOffDescription = "Turn this on if you want to display 'Used By:' information in Tooltip"
 	Outfitter.cOutfitDisplay = "Outfit display"
 
-	Outfitter.cAboutTitle = "A propos d'Outfitter"
+	Outfitter.cAboutTitle = "A propos d'Outfitter Reborn"
 	Outfitter.cAuthor = "Designed and written by John Stephen with contributions by %s"
 	Outfitter.cTestersTitle = "Outfitter testers"
 	Outfitter.cTestersNames = "%s"

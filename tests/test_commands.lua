@@ -105,6 +105,28 @@ Kit.test("the README does not document a command that does not exist", function(
 		table.concat(phantom, ", "))
 end)
 
+Kit.test("the user manual documents the same commands as the README", function()
+	-- A fourth surface. It drifted for years as an .html file nobody regenerated;
+	-- now that it is markdown in the repo there is no excuse for it to drift again.
+	local function manualCommands()
+		local seen, out = {}, {}
+		for word in Ctx.readLF("Documentation/UsersManual.md"):gmatch("`/outfitter ([%w_]+)") do
+			if not seen[word] then seen[word] = true; out[#out + 1] = word end
+		end
+		return out
+	end
+	Kit.sameSet(manualCommands(), readmeCommands(), "manual vs README commands")
+end)
+
+Kit.test("every screenshot the manual references exists", function()
+	local missing = {}
+	for path in Ctx.readLF("Documentation/UsersManual.md"):gmatch("%]%((Images/[^)]+)%)") do
+		local f = io.open(Ctx.root .. "/Documentation/" .. path, "rb")
+		if f then f:close() else missing[#missing + 1] = path end
+	end
+	Kit.equal(#missing, 0, "manual references missing images: " .. table.concat(missing, ", "))
+end)
+
 Kit.test("the zone diagnostic reports without raising", function()
 	Ctx.Mock.state.instanceType = "pvp"
 	Ctx.Mock.state.instanceMapID = 30

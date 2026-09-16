@@ -108,3 +108,66 @@ Kit.test("the global surface has not grown by accident", function()
 	table.sort(leaked)
 	Kit.equal(#leaked, 0, "unexpected Outfitter* globals: " .. table.concat(leaked, ", "))
 end)
+
+Kit.suite("naming")
+
+-- The addon is displayed as "Outfitter Reborn" and IDENTIFIED as "Outfitter".
+-- The two are deliberately different and the difference is load-bearing:
+-- SavedVariables, the folder name, GetAddOnMetadata lookups and the LibDataBroker
+-- object key all use the identity, and changing any of them silently discards
+-- somebody's settings.
+
+Kit.test("the display name is Outfitter Reborn", function()
+	Kit.equal(Outfitter.cTitle, "Outfitter Reborn", "Outfitter.cTitle")
+	Kit.equal(Outfitter.cOutfitterTabTitle, "Outfitter Reborn", "the main tab title")
+	Kit.isTrue(Outfitter.cOptionsTitle:match("Outfitter Reborn") ~= nil, "the options title")
+	Kit.isTrue(Outfitter.cAboutTitle:match("Outfitter Reborn") ~= nil, "the about title")
+end)
+
+Kit.test("the broker identity is still Outfitter and must stay that way", function()
+	-- Broker display addons store their per-object settings against this key.
+	-- Renaming it resets everyone's broker configuration.
+	Kit.equal(Outfitter.cBrokerName, "Outfitter", "Outfitter.cBrokerName")
+end)
+
+Kit.test("the LDB registration uses the identity, not the display name", function()
+	local src = Ctx.readLF("OutfitterLDB.lua")
+	Kit.isNil(src:match("NewDataObject%(Outfitter%.cTitle"),
+		"NewDataObject must be keyed on cBrokerName, not the display name")
+	for _, call in ipairs({"Register", "Show", "Hide"}) do
+		Kit.isNil(src:match(call .. "%(Outfitter%.cTitle"),
+			"icon:" .. call .. " must use cBrokerName")
+	end
+end)
+
+Kit.test("the TOC title matches the display name", function()
+	local toc = Ctx.read("Outfitter.toc"):gsub("\r", "")
+	Kit.equal(toc:match("##%s*Title:%s*([^\n]+)"), Outfitter.cTitle, "## Title")
+end)
+
+Kit.test("SavedVariables names are untouched by the rename", function()
+	-- Renaming either of these throws away every existing user's outfits.
+	local toc = Ctx.read("Outfitter.toc"):gsub("\r", "")
+	Kit.equal(toc:match("##%s*SavedVariablesPerCharacter:%s*([^\n]+)"), "gOutfitter_Settings",
+		"## SavedVariablesPerCharacter")
+	Kit.equal(toc:match("##%s*SavedVariables:%s*([^\n]+)"), "gOutfitter_GlobalSettings",
+		"## SavedVariables")
+end)
+
+Kit.test("no locale renames the addon back to plain Outfitter", function()
+	local stale = {}
+	for _, loc in ipairs({"cn", "de", "fr", "kr", "ru", "tw"}) do
+		local src = Ctx.readLF("OutfitterStrings_" .. loc .. ".lua")
+		local title = src:match('Outfitter%.cTitle%s*=%s*"([^"]*)"')
+		if title and title ~= "Outfitter Reborn" then
+			stale[#stale + 1] = loc .. " = " .. title
+		end
+	end
+	Kit.equal(#stale, 0, "locales still using the old name: " .. table.concat(stale, ", "))
+end)
+
+Kit.test("the About panel credits both authors", function()
+	Kit.isTrue(Outfitter.cAboutAuthor:match("John Stephen") ~= nil, "original author")
+	Kit.isTrue(Outfitter.cAboutMaintainer:match("aDd1kTeD2Ka0s") ~= nil, "current maintainer")
+	Kit.isTrue(Outfitter.cAboutMaintainer:match("Midnight") ~= nil, "what it was updated for")
+end)

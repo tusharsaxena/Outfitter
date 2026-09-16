@@ -1,13 +1,14 @@
-# Outfitter
+# Outfitter Reborn
 
 Equipment management for World of Warcraft. Build named outfits, switch between
 them by hand or automatically, and let the addon put the right gear on for
 whatever you're doing: fishing, herbalism, a battleground, shapeshifting,
 mounting up.
 
-This is a community-maintained fork, kept working against current retail. The
-addon itself is the work of John Stephen (mundocani), who wrote and maintained it
-from 2006 to 2018 and released it under the MIT licence.
+Outfitter Reborn is a community-maintained fork, kept working against current
+retail. The addon itself is the work of John Stephen (mundocani), who wrote and
+maintained it from 2006 to 2018 and released it under the MIT licence. It is
+updated for WoW Midnight by aDd1kTeD2Ka0s.
 
 - Original author: [Mundocani](https://www.curseforge.com/members/mundocani/projects)
 - Original addon: [Outfitter](https://www.curseforge.com/wow/addons/outfitter)
@@ -82,7 +83,7 @@ the addon is broken. It isn't, and a real restart clears all of it.
 | `/outfitter reset bar` | Move the outfit bar back to its default position |
 | `/unequip <item or slot>` | Take off a named item |
 
-There's a fuller guide in `Documentation/UsersManual.html`.
+There's a fuller guide in [`Documentation/UsersManual.md`](Documentation/UsersManual.md).
 
 ## What no longer works
 
@@ -107,11 +108,19 @@ and reviving it would mean keeping a list of capital city map IDs that goes stal
 every expansion. Battleground and arena triggers read the instance map ID
 instead, which is why those still work.
 
+## Version history
+
+| Version | Date | Highlights |
+| --- | --- | --- |
+| 1.0.0 | 2026-09-16 | First release as Outfitter Reborn, for WoW Midnight 12.1.<br>Fixed the per-slot checkboxes on the character sheet, which were invisible behind any addon drawing over the character panel.<br>Fixed the errors that stopped equipment updates for a whole session once health or power came back as a secret value.<br>Rebuilt battleground and arena detection on instance map IDs: every battleground and arena is recognised again, including the ones Blizzard re-issued under a second map ID, and detection no longer depends on the client's language. Adds outfits for Silvershard Mines, Temple of Kotmogu, Deepwind Gorge, Seething Shore, Deephaul Ravine, Ashran and the current arena rotation.<br>Fixed the outfit you fall back to after removing a Complete outfit, which had never searched past the most recent entry.<br>Fixed the Spirit Regen preset, which had never compiled, and the Resting preset, which was filed under the wrong category.<br>Retired what the game removed — void storage, TankPoints, gem capture and several preset scripts — into an isolated layer rather than leaving it to fail in place.<br>Added `/outfitter zone`, and four commands that worked but were undocumented. |
+
 ## Credits
 
 John Stephen ([mundocani](https://www.curseforge.com/members/mundocani/projects))
 designed and wrote [Outfitter](https://www.curseforge.com/wow/addons/outfitter)
 between 2006 and 2018.
+
+aDd1kTeD2Ka0s maintains Outfitter Reborn and updated it for WoW Midnight.
 
 The community has kept it going since.
 [Nulian](https://www.curseforge.com/members/nulian/projects) did the Dragonflight
