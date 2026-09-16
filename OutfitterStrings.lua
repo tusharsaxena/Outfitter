@@ -226,7 +226,7 @@ Outfitter.cShowOutfitBarDescription = "Shows a bar of icon buttons you can click
 Outfitter.cEquipOutfitMessageFormat = "Outfitter: %s equipped"
 Outfitter.cUnequipOutfitMessageFormat = "Outfitter: %s unequipped"
 
-Outfitter.cAboutTitle = "About Outfitter Reborn %s"
+Outfitter.cAboutTitle = "About Outfitter Reborn"
 Outfitter.cAboutAuthor = "Originally created by John Stephen"
 Outfitter.cAboutMaintainer = "Updated for WoW Midnight by aDd1kTeD2Ka0s"
 Outfitter.cAboutCopyright = "Copyright 2006 - 2018 John Stephen"

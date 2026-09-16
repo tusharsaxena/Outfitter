@@ -15,7 +15,7 @@ function Outfitter._AboutView:Construct(pParent)
 	self.Title = self:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
 	self.Title:SetPoint("TOP", self, "TOP", -4, -36)
 	self.Title:SetWidth(230)
-	self.Title:SetText(Outfitter.cAboutTitle:format(Outfitter.cVersion))
+	self.Title:SetText(Outfitter.cAboutTitle)
 
 	self.AuthorText = self:CreateFontString(nil, "OVERLAY", "GameFontNormal")
 	self.AuthorText:SetPoint("TOP", self.Title, "BOTTOM", 0, -15)

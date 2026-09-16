@@ -85,17 +85,9 @@ covers all of it, including writing your own scripts.
 | `/outfitter reset bar` | Move the outfit bar back to its default position |
 | `/unequip <item or slot>` | Take off a named item |
 
-There's a fuller guide in [`Documentation/UsersManual.md`](Documentation/UsersManual.md).
-
 ## What no longer works
 
-Blizzard has removed a lot of API over the years, and some of what Outfitter was
-built on went with it. The affected code hasn't been deleted. It lives in
-`Deprecated.lua`, which nothing else touches: each feature's entry point stays
-where it always was and quietly does nothing. That file's header explains how to
-delete the whole layer in one step, and what reviving any given piece would take.
-
-Currently retired:
+Blizzard has removed a lot of API over the years, and some of what Outfitter was built on went with it. Some of the functionality that has been retired:
 
 - Void storage deposit and withdraw
 - TankPoints stat support
