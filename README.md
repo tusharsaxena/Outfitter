@@ -1,57 +1,56 @@
 # Outfitter
 
 Equipment management for World of Warcraft. Build named outfits, switch between
-them by hand or automatically, and let the addon put the right gear on for what
-you're doing — fishing, herbalism, a battleground, shapeshifting, mounting up.
+them by hand or automatically, and let the addon put the right gear on for
+whatever you're doing: fishing, herbalism, a battleground, shapeshifting,
+mounting up.
 
-This is a community-maintained fork kept working against current retail. The
-addon itself is the work of **John Stephen (mundocani)**, who wrote and
-maintained it from 2006 to 2018 and released it under the MIT licence.
+This is a community-maintained fork, kept working against current retail. The
+addon itself is the work of John Stephen (mundocani), who wrote and maintained it
+from 2006 to 2018 and released it under the MIT licence.
 
-- Original author: <https://www.curseforge.com/members/mundocani/projects>
-- Original addon: <https://www.curseforge.com/wow/addons/outfitter>
+- Original author: [Mundocani](https://www.curseforge.com/members/mundocani/projects)
+- Original addon: [Outfitter](https://www.curseforge.com/wow/addons/outfitter)
 
-Everything good about Outfitter is his. This fork exists only because the MIT
-licence let the work carry on after he stopped maintaining it.
+Everything good about Outfitter is theirs. This fork exists only because the MIT
+licence let the work carry on after they stopped maintaining it.
 
 ## What it does
 
-- **Outfits** — any number of them, in categories. A *complete* outfit specifies
-  every slot; an *accessory* outfit specifies only some, so you can wear several
-  at once. Which slots belong to an outfit is set with the checkboxes Outfitter
-  adds beside each slot on the character sheet.
-- **Automatic switching** — outfits can carry a script that equips and unequips
-  them on cue. Around sixty ready-made scripts ship with the addon: gathering
-  professions, fishing, resting, swimming, riding, druid forms, rogue stealth,
-  ghost wolf, entering a battleground, and more. You can edit them or write your
-  own in the built-in script editor.
-- **Battleground and arena outfits** — a general one for any battleground, plus
-  one per map: every battleground and arena in the game is recognised, including
-  the ones Blizzard re-issued under a second map ID. Detection reads the instance
-  map ID rather than the zone's name, so it doesn't break when you play in a
-  language other than English. `/outfitter zone` reports what it sees.
-- **Outfit bar** — a movable icon bar for one-click switching, with a choice of
-  sizes and icons.
-- **Minimap button and LibDataBroker** — compact access from wherever you keep
-  your other addon buttons.
-- **Bank support** — deposit an outfit, withdraw it, or deposit everything except
-  the outfit you're using.
-- **Outfit generation** — build an outfit optimised for a stat combination you
-  choose, or from a [Pawn](https://www.curseforge.com/wow/addons/pawn) scale if
-  you have Pawn installed.
-- **Comparisons** — tooltip information showing how an item stacks up against
-  what your other outfits already use.
+Outfits come in categories. A *complete* outfit specifies every slot. An
+*accessory* outfit specifies only some, so you can wear several at once. Which
+slots belong to an outfit is set with the checkboxes Outfitter adds beside each
+slot on the character sheet.
+
+An outfit can also carry a script that equips and unequips it on cue. About sixty
+ready-made ones ship with the addon, covering gathering professions, fishing,
+resting, swimming, riding, druid forms, rogue stealth, ghost wolf and walking
+into a battleground. Edit those or write your own in the built-in script editor.
+
+Battlegrounds and arenas get more than the general outfit: there's one per map as
+well, and every battleground and arena in the game is recognised, including the
+ones Blizzard re-issued under a second map ID. Detection reads the instance map
+ID rather than the zone's name, so it doesn't fall over if you play in a language
+other than English. `/outfitter zone` reports what it sees.
+
+The rest is smaller. A movable icon bar for one-click switching, in a choice of
+sizes and icons. A minimap button and a LibDataBroker feed, if you keep your
+addon buttons somewhere else. Bank support: deposit an outfit, withdraw it, or
+deposit everything except the one you're wearing. Outfit generation, either
+optimised for a stat combination you pick or from a
+[Pawn](https://www.curseforge.com/wow/addons/pawn) scale if you have Pawn
+installed. Tooltip comparisons against what your other outfits already use.
 
 ## Installing
 
 Drop the `Outfitter` folder into `World of Warcraft\_retail_\Interface\AddOns`.
 
-**Restart the game client fully after updating**, not just a `/reload` or a
-character logout. WoW reads an addon's `.toc` file once at startup and never
-looks at it again while it's running, so an update that adds or removes a file
-will half-load if you install it with the game open. The symptoms are dramatic —
-a stream of Lua errors, outfits refusing to switch, a mangled UI — and they all
-go away after a proper restart.
+Then quit the game properly, all the way out. Not a `/reload`, not a character
+logout. WoW reads an addon's `.toc` file once at startup and never looks at it
+again while it's running, so an update that adds or removes a file will half-load
+if you install it with the game still open. What you get is a stream of Lua
+errors, outfits that refuse to switch, and a UI in pieces. It looks exactly like
+the addon is broken. It isn't, and a real restart clears all of it.
 
 ## Slash commands
 
@@ -88,50 +87,36 @@ There's a fuller guide in `Documentation/UsersManual.html`.
 ## What no longer works
 
 Blizzard has removed a lot of API over the years, and some of what Outfitter was
-built on went with it. Rather than delete the affected code, it's been moved into
-`Deprecated.lua`, which is detached from everything else — each feature's entry
-point stays where it was and quietly does nothing. The file's header explains how
-to delete the whole layer in one step, and what it would take to revive each
-piece. Currently retired:
+built on went with it. The affected code hasn't been deleted. It lives in
+`Deprecated.lua`, which nothing else touches: each feature's entry point stays
+where it always was and quietly does nothing. That file's header explains how to
+delete the whole layer in one step, and what reviving any given piece would take.
+
+Currently retired:
 
 - Void storage deposit and withdraw
 - TankPoints stat support
 - Gem capture from items
 - The spellbook half of the outfit bar's icon picker
 - Tooltips for items sitting in the bank
-- `Outfitter:CallCompanionByName` (summoning pets by name still works)
-- The **Has debuff**, **Low health** and three **Championing** preset scripts
+- `Outfitter:CallCompanionByName`, though summoning pets by name still works
+- The Has debuff, Low health and three Championing preset scripts
 
-The **Around Town** (city) outfit is also inert. It matched on zone names through
-an API that no longer exists, and reviving it would need a list of capital city
-map IDs that goes stale every expansion. Battleground and arena triggers do not
-have that problem and work — see below.
-
-## Working on it
-
-```sh
-./tests/run-all.sh          # syntax, lint and the headless test suite
-./tests/run-all.sh --list   # what the suite covers
-```
-
-The suite loads the whole addon against a mock WoW client and checks the things
-that have actually broken here before: tables that have to agree with each other,
-preset scripts that have to compile, locale keys that have to exist, and the
-secret-value guards that keep a handler from aborting half way through. It needs
-Lua 5.1 and, for the lint pass, `luacheck`.
-
-Nothing in `tests/` or `Media/` ships to players; `.pkgmeta` keeps them out.
+Around Town is inert too. It matched on zone names through an API that's gone,
+and reviving it would mean keeping a list of capital city map IDs that goes stale
+every expansion. Battleground and arena triggers read the instance map ID
+instead, which is why those still work.
 
 ## Credits
 
-**John Stephen (mundocani)** — designed and wrote Outfitter, 2006–2018.
-[CurseForge](https://www.curseforge.com/members/mundocani/projects) ·
-[original addon](https://www.curseforge.com/wow/addons/outfitter)
+John Stephen ([mundocani](https://www.curseforge.com/members/mundocani/projects))
+designed and wrote [Outfitter](https://www.curseforge.com/wow/addons/outfitter)
+between 2006 and 2018.
 
-Kept alive since by the community, including
-[**Nulian**](https://www.curseforge.com/members/nulian/projects), who did the
-Dragonflight work that this fork builds on, and **NokeHarrier**, **kionik** and
-**UppyDan**, whose fixes carried it through the 9.x patches.
+The community has kept it going since.
+[Nulian](https://www.curseforge.com/members/nulian/projects) did the Dragonflight
+work this fork builds on, and NokeHarrier, kionik and UppyDan carried it through
+the 9.x patches.
 
 Localisations, and the libraries bundled under `Libraries/`, come from their
 respective authors.
