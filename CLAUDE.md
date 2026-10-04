@@ -12,7 +12,7 @@ addons and shares nothing else with them.
 Concretely, none of the following apply here, and none of them should be
 introduced:
 
-- **Not in the audit rotation.** Never run `/wow-addon:standards-audit` against
+- **Not in the audit rotation.** Never run `/dev-copilot:wow-standards-audit` against
   this repo, and never write a `docs/audits/` bundle into it.
 - **Not governed by the Ka0s WoW Addon Standard.** No `## X-Standard:` line in
   the TOC, no standard badge in the README, no `docs/ARCHITECTURE.md` /
