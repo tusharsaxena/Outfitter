@@ -1,4 +1,4 @@
-## Interface: 120100
+## Interface: 120105
 ## Author: mundocani, aDd1kTeD2Ka0s
 ## Title: Outfitter Reborn
 ## Version: 1.0.0
