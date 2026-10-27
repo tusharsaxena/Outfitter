@@ -1332,8 +1332,6 @@ function Outfitter:OnLoad()
 
 	self:DetachWindow()
 
-	OutfitterFrame:SetFrameStrata("HIGH")
-
 	-- It used to inherit its visibility from PaperDollFrame; now it has to be told
 
 	PaperDollFrame:HookScript("OnHide", function ()
@@ -1398,6 +1396,8 @@ function Outfitter:WindowFollowUpdate(pElapsed)
 
 	self.WindowFollowElapsed = 0
 
+	self:MatchWindowStrata()
+
 	local right, top = PaperDollFrame:GetRight(), PaperDollFrame:GetTop()
 
 	if not right or not top then
@@ -1409,6 +1409,50 @@ function Outfitter:WindowFollowUpdate(pElapsed)
 	end
 
 	self:AttachWindow()
+end
+
+-- Detached, the window no longer inherits its strata and level from the character
+-- sheet, so it has to copy them.  OutfitterButtonFrame is where Outfitter.xml
+-- parents it, so sitting one level above that stacks it exactly as it did when
+-- it was a real child: anything that covers the character sheet covers the window
+-- too.  The character sheet's level changes whenever it's raised over another
+-- panel, so this runs from the follow as well as on show
+
+function Outfitter:MatchWindowStrata()
+	if OutfitterSlotEnables:IsShown()
+	and CharacterFrame:GetFrameLevel() ~= self.SlotEnablesCharacterLevel then
+		self:MatchSlotEnablesStrata()
+	end
+
+	if InCombatLockdown() then
+		return
+	end
+
+	local vStrata = OutfitterButtonFrame:GetFrameStrata()
+	local vLevel = OutfitterButtonFrame:GetFrameLevel() + 1
+
+	if OutfitterFrame:GetFrameStrata() ~= vStrata then
+		OutfitterFrame:SetFrameStrata(vStrata)
+	end
+
+	if OutfitterFrame:GetFrameLevel() ~= vLevel then
+		self.SetFrameLevel(OutfitterFrame, vLevel)
+	end
+end
+
+-- The slot checkboxes sit on top of the character sheet's item buttons, and on top
+-- of anything another addon draws over the sheet, so they need a level above
+-- everything in it.  A fixed high level or strata does that but also pokes them
+-- through any window covering the sheet, so they take the sheet's strata and one
+-- level above its highest frame instead, and follow it as it's raised and lowered.
+-- OutfitterButtonFrame is skipped because the checkboxes are in it.  They hold no
+-- secure buttons, so unlike the window this is allowed in combat
+
+function Outfitter:MatchSlotEnablesStrata()
+	self.SlotEnablesCharacterLevel = CharacterFrame:GetFrameLevel()
+
+	OutfitterSlotEnables:SetFrameStrata(CharacterFrame:GetFrameStrata())
+	self.SetFrameLevel(OutfitterSlotEnables, self.GetHighestFrameLevel(CharacterFrame, OutfitterButtonFrame) + 1)
 end
 
 function Outfitter:DetachWindow()
@@ -1445,6 +1489,7 @@ end
 
 function Outfitter:OnShow()
 	self:AttachWindow()
+	self:MatchWindowStrata()
 
 	self.SetFrameLevel(OutfitterFrame, OutfitterFrame:GetFrameLevel())
 
@@ -3274,12 +3319,10 @@ function Outfitter:SelectOutfit(pOutfit)
 
 	self:UpdateSlotEnables(pOutfit, vInventoryCache)
 
-	-- The checkboxes sit on top of the character sheet's item buttons, and the frame
-	-- inherits PaperDollFrame's strata, so anything else drawing over the character
-	-- panel at a higher strata buries them.  Raise it here rather than in OnLoad:
-	-- OutfitterFrame's OnLoad runs before Outfitter.xml has created this frame
+	-- Stacked here rather than in OnLoad: OutfitterFrame's OnLoad runs before
+	-- Outfitter.xml has created this frame.  See MatchSlotEnablesStrata
 
-	OutfitterSlotEnables:SetFrameStrata("DIALOG")
+	self:MatchSlotEnablesStrata()
 	OutfitterSlotEnables:Show()
 
 	-- Done, rebuild the list

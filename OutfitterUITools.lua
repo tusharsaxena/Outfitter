@@ -561,6 +561,23 @@ function Outfitter.SetFrameLevel(pFrame, pLevel)
 	end
 end
 
+-- The highest frame level anywhere in pFrame's tree, leaving out pSkipFrame and
+-- everything under it
+
+function Outfitter.GetHighestFrameLevel(pFrame, pSkipFrame)
+	local vLevel = pFrame:GetFrameLevel()
+
+	local vChildren = {pFrame:GetChildren()}
+
+	for _, vChildFrame in pairs(vChildren) do
+		if vChildFrame ~= pSkipFrame then
+			vLevel = math.max(vLevel, Outfitter.GetHighestFrameLevel(vChildFrame, pSkipFrame))
+		end
+	end
+
+	return vLevel
+end
+
 function Outfitter.SetFrameStrata(pFrame, pStrata)
 	pFrame:SetFrameStrata(pStrata)
 

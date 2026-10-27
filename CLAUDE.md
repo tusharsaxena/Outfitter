@@ -81,9 +81,14 @@ rather than wiring the live code back to it.
   out of `Outfitter.PresetScripts` on every run rather than copying it into the
   outfit, so editing a preset's body changes behaviour for existing users with
   no saved-variable migration.
-- **The character-sheet slot checkboxes need an explicit strata.**
-  `OutfitterSlotEnables` inherits `PaperDollFrame`'s, and any addon drawing over
-  the character panel buries it. It is raised in `SelectOutfit`, not `OnLoad` —
+- **The window and the slot checkboxes stack with the character panel.**
+  `OutfitterFrame` is detached from the sheet, so `MatchWindowStrata` copies
+  `OutfitterButtonFrame`'s strata and level onto it. `OutfitterSlotEnables` takes
+  the sheet's strata and one level above the highest frame under `CharacterFrame`,
+  so it beats the item buttons and any addon drawing over them. Both re-sync from
+  the window follow, because raising the sheet changes its level. Never give
+  either a fixed strata: that pokes them through any window that covers the
+  sheet. The checkboxes are first stacked in `SelectOutfit`, not `OnLoad`, because
   `Outfitter.xml` has not created the frame by the time `OnLoad` runs.
 - **Secure buttons in the outfit list can't be re-anchored.** See the comment at
   `Outfitter._ListItem:disableSecureActions`; the window is moved instead.
