@@ -148,6 +148,7 @@ local SUITES = {
     { name = "test_companion",        pending = "P4.13" },
 
     { name = "test_states",           pending = "P4.14" },
+    { name = "test_secrets_states",   pending = "P4.14" },
 
     { name = "test_quickslots",       pending = "P4.18" },
 
@@ -221,6 +222,12 @@ _G.OUTFITTERREBORN_TEST = Kit.expose{
     isSecret         = Kit.isSecret,
     reveal           = Kit.reveal,
     installSecretValue = Kit.installSecretValue,
+    -- The domain mocks (P4.1): T.fake(NS, "Stack", {...}) for a module that has not landed (design
+    -- §12, the fake rule), the item fixtures, and the gear and world scenario halves.
+    fake             = mockmod.fake,
+    fixtures         = mockmod.fixtures,
+    gear             = mockmod.gear,
+    world            = mockmod.world,
 }
 
 -- The typed-value gate (skinning-§1): what no kit category takes, each with its cause. None yet: the

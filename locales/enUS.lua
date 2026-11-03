@@ -101,9 +101,6 @@ L["First Finger"] = "First Finger"
 L["Second Finger"] = "Second Finger"
 L["First Trinket"] = "First Trinket"
 L["Second Trinket"] = "Second Trinket"
--- defaults/Zones.lua: the two generic zone rows (enUS_Triggers.lua has no P4.3 block; see the P4.3 commit)
-L["Battleground"] = "Battleground"
-L["Arena"] = "Arena"
 
 -- P4.4 keys (modules/PlayerState.lua, modules/ItemInfo.lua)
 

@@ -44,8 +44,6 @@ open issues (§14); a row here leaves when its check passes or its owner rules.
 ## Not covered
 
 - **Warband bank.** Not scanned, so warbound items there read as missing (O19).
-- **Cooking pets.** The COOKING trigger's pet options stay disabled until the species IDs are taken
-  from BattlePetSpecies.db2 (O21); the outfit swap itself works.
 - **Item stats.** `GetItemStats` combined primary keys on adaptive gear are aliased by hand, and
   Spirit scores 0 on current items (O20).
 - **Icon search** covers named icon sets only (O33).
@@ -65,7 +63,6 @@ Each is a row in [smoke-tests.md](smoke-tests.md) with its pass criterion.
 | O18 | `EQUIPMENT_SETS_CHANGED` timing inside a save | Widen the ignore window, or match the set id |
 | O22 | The lockpicking line's composed GlobalString | `L["Requires Lockpicking"]` (row D4) |
 | O23 | `ChangeActionBarPage` in combat (Fishing) | Skipped in lockdown, retried on regen |
-| O24 | `DIFFICULTY_GROUPS` ids against Difficulty.db2 | — |
 | O27 | Druid and rogue form spell IDs | A forms dump under `/of debug` |
 | O29 | The sheet button beside the close button does not overlap | Move it |
 | O31 | The window title fits 260 px | Shorten it |
