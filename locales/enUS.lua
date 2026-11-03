@@ -106,6 +106,8 @@ L["Second trinket"] = "Second trinket"
 L["Not a readable item link."] = "Not a readable item link."
 
 -- P4.5 keys (modules/Inventory.lua, modules/Inventory_Lists.lua)
+L["^Use:.*for (%d+) sec"] = "^Use:.*for (%d+) sec"
+L["^Use:.*Lasts (%d+) sec"] = "^Use:.*Lasts (%d+) sec"
 
 -- P4.6 keys (modules/Outfits.lua, modules/Outfits_Seed.lua, modules/Outfits_Schema.lua)
 
