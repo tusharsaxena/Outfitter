@@ -134,6 +134,9 @@ L["Updated the outfit '%s' to currently equipped items"] = "Updated the outfit '
 -- P4.10 keys (modules/EquipmentManager.lua, modules/Bank.lua)
 
 -- P4.11 keys (modules/ItemStats.lua, modules/ItemStats_Sources.lua)
+L["Base stats"] = "Base stats"
+L["Total stats"] = "Total stats"
+L["Item level"] = "Item level"
 
 -- P4.12 keys (modules/Optimize.lua, modules/Optimize_Genetic.lua)
 
