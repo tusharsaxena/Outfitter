@@ -77,6 +77,9 @@ files["core/WidgetsSetup.lua"] = { read_globals = { "MenuUtil" } }
 -- A queued protected write that raises goes to the client's error handler, and the next one runs.
 files["core/SecureQueue.lua"] = { read_globals = { "geterrorhandler" } }
 
+-- The bound-outfit key announces its wear on the client's error frame, as legacy did (INV §14).
+files["core/LauncherSetup.lua"] = { read_globals = { "UIErrorsFrame" } }
+
 -- The equipment bracket surfaces a failed update through the client error handler, with its stack.
 files["modules/Equip.lua"] = { read_globals = { "geterrorhandler", "debugstack" } }
 

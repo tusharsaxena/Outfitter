@@ -8,7 +8,7 @@ Total.
 
 **Generated — do not hand-edit.** Regenerate with `lua tests/run.lua --list > docs/test-cases.md`.
 
-### test_skeleton.lua (9)
+### test_skeleton.lua (10)
 
 - skeleton: the addon registers with AceAddon under its folder name
 - skeleton: NS.Print is the tagged printer, reclaimed from AceConsole
@@ -19,6 +19,7 @@ Total.
 - skeleton: every declared icon resolves to a shipped path
 - skeleton: every authored Lua file opens with the NS bootstrap (an overlay, its gate) and a path comment
 - skeleton: the addon's source is Lua 5.1 only
+- skeleton: every literal debug tag the code writes is in docs/debug.md's tag register
 
 ### test_toc.lua (5)
 
@@ -238,7 +239,7 @@ Total.
 - settings: the Profiles page says outfits are per character, above AceDBOptions' controls
 - settings: library absent, the addon still loads and the reset still lands
 
-### test_slash.lua (23)
+### test_slash.lua (44)
 
 - slash: the reserved verbs open NS.COMMANDS, in the DpsRace order
 - slash: bare /of opens the settings panel
@@ -261,10 +262,31 @@ Total.
 - slash: the stub's refusal format is byte-equal to the live library's
 - slash: library absent, /of still answers, and enable/disable still land
 - slash: the stub's live-verb set is the library's LIVE_VERBS, no more and no less
-- slash: the live dispatcher's live set is the library's LIVE_VERBS and nothing more yet
+- slash: the live dispatcher's live set is the library's LIVE_VERBS, then auto, zone and iteminfo
 - slash: the stub carries no library string but the refusal format
+- slash: the outfit verbs follow the reserved ones, in design §4.3.2's order
+- slash: every verb is in /of help, the README's Usage and the user manual
+- slash: auto, zone and iteminfo answer while disabled on both arms; wear is refused
+- slash: an outfit name matches case-insensitively, and every wear passes now and hw
+- slash: an empty argument means the current Complete outfit, or says there is none
+- slash: an outfit argument opening with `[` is decided by the client's parser
+- slash: wear, wear <unknown> and zone print the lines legacy printed (fixtures/legacy)
+- slash: /of zone routes to Commands.Zone: the zone lines, then the equipment bracket's
+- slash: the dropped verbs are unknown commands, and no /unequip is registered
+- slash: `set equip.muteSounds` is the old `sound`, and its echo is not inverted
+- slash: `reset bar.position` is the old `reset bar`; `deleteall` is the old `reset`
+- slash: `auto` writes auto.enabled; on/off and enable/disable are synonyms; bare reads it
+- slash: `lock` and `unlock` write the Lock frame row and echo it
+- slash: `show` and `hide` open and close the window; no window toggle verb (C35)
+- slash: `update` snapshots the named or Complete outfit, or says there is none
+- slash: `updatetitle` re-applies the worn outfit's title
+- slash: the bank verbs and `missing` print the refusal while the bank is closed
+- slash: `withdrawothers` brings every other outfit's banked items (INV §3.7 Fix)
+- slash: `unequip` takes the argument, moves one item, and stops after a miss
+- slash: `iteminfo` prints the link's fields through the secret-safe reader
+- slash: `test` flips test mode
 
-### test_launcher.lua (9)
+### test_launcher.lua (12)
 
 - launcher: one object named for the folder, labeled with the brand, wearing the logo
 - launcher: left-click opens the settings panel, in either state
@@ -275,8 +297,11 @@ Total.
 - launcher: the Minimap button row hides and shows the real button
 - launcher: no compartment function and no compartment TOC line (H6)
 - launcher: library-absent, no button, said once, and the row still writes the stored key
+- launcher: the host line reads None, Custom or the outfit's name off the real stack
+- launcher: the icon and label stay put across outfit changes (H6)
+- launcher: the Locked entry runs the lock and unlock verbs (launcher-§2)
 
-### test_keybinds.lua (11)
+### test_keybinds.lua (21)
 
 - keybinds: NS.BINDINGS is Bindings.xml's order, Show window first, each with a tooltip
 - keybinds: Bindings.xml is the addon's own category, no header, no default, labeled
@@ -289,6 +314,16 @@ Total.
 - keybinds: a key bound in the tab is the client's key; one set on the client's page shows
 - keybinds: in combat the tab binds nothing
 - keybinds: the General Defaults tooltip says it leaves key bindings alone
+- keybinds: Wear outfit 1 is assigned through the tab like any other row
+- keybinds: a wear key wears a Complete outfit now and toggles any other, anti-panic 0.75 s
+- keybinds: the press clears trigger.disabled and is a hardware event (a title is set)
+- keybinds: an unbound key says so
+- keybinds: the key announces on UIErrorsFrame in the outfit color, unless announceKeys is off
+- keybinds: AutoOn and AutoOff write auto.enabled through the auto verb
+- keybinds: UpdateOutfit with no Complete outfit prints the line and raises nothing
+- keybinds: every button refuses through the one helper before its handler, AutoOn/AutoOff too
+- keybinds: NS.WearBoundOutfit refuses for a direct caller too
+- keybinds: one key per outfit: binding a key to a second outfit takes it off the first
 
 ### test_disabled.lua (16)
 
@@ -570,7 +605,7 @@ Total.
 - outfits: UsingItem reads the link into an item info, and answers the outfits that use it
 - outfits: the kind dispatch sends an EM outfit's items and slot edits to the EM
 
-### test_reset.lua (6)
+### test_reset.lua (8)
 
 - reset: Reset all settings restores the profile and keeps db.char deep-equal
 - reset: a profile switch and a profile copy keep every outfit
@@ -578,6 +613,8 @@ Total.
 - reset: Delete all wipes the character's outfits, re-seeds the built-in ones, keeps the profile
 - reset: Delete all refuses in combat and while stood down, and changes nothing
 - reset: Delete all survives a record with no name (the old AskReset's strlower(nil), INV §19)
+- reset: Delete all asks through OUTFITTERREBORN_DELETE_ALL, refuses in combat and stood down
+- reset: Reset all closes every open dialog first, and a draft writes nothing
 
 ### test_equip_plan.lua (31)
 
@@ -1152,7 +1189,7 @@ Total.
 - parity: the menu sorts as legacy's, and a renamed or refiled row by the same rule
 - parity: a class row is offered to its own class only, as the legacy menu filtered it
 
-### test_preview.lua (13)
+### test_preview.lua (14)
 
 - preview: NS.Preview publishes the §8 surface and starts off
 - preview: the placeholders are five Test Outfits in two rows, each stamped placeholder and preview:<n>
@@ -1167,22 +1204,65 @@ Total.
 - preview: re-locking the bar does not end it, and Toggle flips it
 - preview: Start and Stop each announce PREVIEW_CHANGED once, and a repeat is a no-op
 - preview: Diagnose reports the mode, the bar it opened and the sample count
+- preview: every start and stop, from any source, repaints an open settings panel
 
-### test_outfit_menu.lua (1)
+### test_outfit_menu.lua (10)
 
-- test_outfit_menu.lua: suite not written yet (skipped: P4.21)
+- menu: NS.OutfitMenu is published
+- menu: the rows per section are legacy's, less Void Storage and the script editor
+- menu: Bank rows are disabled with the bank closed, with a reason, and each asks for its move
+- menu: the key binding rows name each key's holder and bind the outfit
+- menu: the Title submenu lists the known titles, a secret one skipped, 30 a level with More
+- menu: the toggles keep the menu open, Turn trigger off writes outfit.trigger.disabled
+- menu: picking a trigger writes outfit.trigger.id and opens its settings when it has params
+- menu: Delete, Update and Rebuild ask through popups carrying the id; the dialogs open
+- menu: nothing opens for an unknown id or while stood down
+- menu: the class category reads the client's class name, the rest their own labels
 
-### test_dialogs.lua (1)
+### test_dialogs.lua (15)
 
-- test_dialogs.lua: suite not written yet (skipped: P4.21)
+- dialogs: NS.Dialogs builds a MODAL, toplevel, clamped, Escape-closed frame that saves its place
+- dialogs: CloseAll closes every open dialog and its draft writes nothing
+- new outfit: Current items is the default, and the outfit is worn at once
+- new outfit: Empty makes an outfit with no items
+- new outfit: Best for <stat> builds from the optimizer and keeps the stat; an unknown stat refuses
+- new outfit: a used name is refused with the error line, and Done waits for a name
+- new outfit: a trigger fills an empty or auto-filled name, and one with params opens its settings
+- rename: the name field only, 140 px shorter, and Done renames
+- popups: every popup times out never, works dead, hides on Escape, and carries its id in data
+- popups: the row EM box selects first, stores on the second check, says the EM is full, and unstores
+- rebuild: the rows give the §5.14 cfg, and Done keeps it on the outfit and rebuilds
+- progress: OPTIMIZE_* drive it, High speed sets the job's, and Cancel cancels that job
+- icons: the wildcard saves nil, a pick writes outfit.icon, Cancel discards, an EM outfit sets its set
+- icons: the sets, the search on named sets only, and the 6x5 grid
+- icons: it closes on an outside press but not its own, on Escape, on stand-down and with its opener
 
-### test_trigger_dialog.lua (1)
+### test_trigger_dialog.lua (9)
 
-- test_trigger_dialog.lua: suite not written yet (skipped: P4.21)
+- trigger dialog: NS.TriggerDialog and the nine field types are published
+- trigger dialog: every field type builds and round-trips its value
+- trigger dialog: the draft reads the descriptor's default, never the type's, and the stored value first
+- trigger dialog: a validation failure shows on its field and writes nothing
+- trigger dialog: Done is one SetMany with the instance id, trigger.<TID>.* and outfit.trigger.* only
+- trigger dialog: picking another trigger rebuilds the fields and Done writes the id with them
+- trigger dialog: the close button and Escape discard the draft
+- trigger dialog: the list editors add by capture, show names, and remove one entry
+- trigger dialog: no Source tab, no script text
 
-### test_diagnostics.lua (1)
+### test_diagnostics.lua (12)
 
-- test_diagnostics.lua: suite not written yet (skipped: P4.26)
+- diagnostics: ZoneInfo gives the instance line and the active zone outfits
+- diagnostics: ZoneInfo names a map the zone table misses
+- diagnostics: ZoneInfo says when no zone outfit applies
+- diagnostics: Equip.Diagnostic carries the STUCK line only while depth outruns the batches
+- diagnostics: the report's sections, in order
+- diagnostics: the zone section is ZoneInfo's lines
+- diagnostics: the equip section is Equip.Diagnostic's lines, STUCK included
+- diagnostics: the bindings section lists faulted bindings with their errors, sorted
+- diagnostics: the rejected section names the core's and the binder's refused events
+- diagnostics: the state section says whether the old Outfitter is loaded
+- diagnostics: the sections read state and never act
+- diagnostics: the report written to the console carries the zone and STUCK lines
 
 ### test_credits.lua (1)
 
@@ -1274,7 +1354,7 @@ Total.
 
 | Suite | Cases |
 |-------|------:|
-| test_skeleton.lua | 9 |
+| test_skeleton.lua | 10 |
 | test_toc.lua | 5 |
 | test_loadorder.lua | 13 |
 | test_database.lua | 11 |
@@ -1287,9 +1367,9 @@ Total.
 | test_perf_harness.lua | 8 |
 | test_schema.lua | 25 |
 | test_settings.lua | 15 |
-| test_slash.lua | 23 |
-| test_launcher.lua | 9 |
-| test_keybinds.lua | 11 |
+| test_slash.lua | 44 |
+| test_launcher.lua | 12 |
+| test_keybinds.lua | 21 |
 | test_disabled.lua | 15 |
 | test_locale.lua | 11 |
 | test_glyphs.lua | 1 |
@@ -1302,7 +1382,7 @@ Total.
 | test_item_match.lua | 20 |
 | test_inventory.lua | 24 |
 | test_outfits.lua | 46 |
-| test_reset.lua | 6 |
+| test_reset.lua | 8 |
 | test_equip_plan.lua | 31 |
 | test_item_stats.lua | 23 |
 | test_companion.lua | 25 |
@@ -1330,7 +1410,11 @@ Total.
 | test_slot_enables.lua | 12 |
 | test_bar.lua | 26 |
 | test_triggers_parity.lua | 13 |
-| test_preview.lua | 13 |
+| test_preview.lua | 14 |
+| test_outfit_menu.lua | 10 |
+| test_dialogs.lua | 15 |
+| test_trigger_dialog.lua | 9 |
+| test_diagnostics.lua | 12 |
 | test_skin_values.lua | 3 |
 | test_skin_switch.lua | 3 |
 | test_eol.lua | 2 |
@@ -1338,5 +1422,5 @@ Total.
 | test_diagnostics_contract.lua | 8 |
 | test_lizard_sighted.lua | 8 |
 | test_prose.lua | 15 |
-| Skipped | 11 |
-| **Total** | **1038** |
+| Skipped | 7 |
+| **Total** | **1122** |

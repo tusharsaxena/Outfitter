@@ -182,7 +182,7 @@ function Bank.MissingReport()
         for _, id in ipairs(O.Ids(category)) do
             for _, item in ipairs((NS.Inventory.Missing(O.Get(id)))) do
                 if #lines == 0 then
-                    lines[1] = L["Missing items (note that a missing item will be listed multiple times if it was used by multiple outfits):"]
+                    lines[1] = L["Missing items (an item used by several outfits is listed once per outfit)."]
                 end
                 lines[#lines + 1] = itemLine(item)
             end

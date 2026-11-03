@@ -155,7 +155,7 @@ L["Saved outfit to Equipment Manager"] = "Saved outfit to Equipment Manager"
 L["The bank must be open"] = "The bank must be open"
 L["Bank items can't be moved in combat."] = "Bank items can't be moved in combat."
 L["You must have your bank open to generate a missing items report"] = "You must have your bank open to generate a missing items report"
-L["Missing items (note that a missing item will be listed multiple times if it was used by multiple outfits):"] = "Missing items (note that a missing item will be listed multiple times if it was used by multiple outfits):"
+L["Missing items (an item used by several outfits is listed once per outfit)."] = "Missing items (an item used by several outfits is listed once per outfit)."
 L["No items are missing"] = "No items are missing"
 
 -- P4.11 keys (modules/ItemStats.lua, modules/ItemStats_Sources.lua)

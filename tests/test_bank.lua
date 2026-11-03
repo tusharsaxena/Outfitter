@@ -243,7 +243,7 @@ test("bank: MissingReport lists every outfit's missing items after the intro, or
     O.Create("Ghost", { HeadSlot = { id = 424242, name = "Ghostly Hood" }, ChestSlot = { id = 0 } })
     lines = Bank.MissingReport()
     assertEqual(#lines, 2)
-    assertEqual(lines[1], L["Missing items (note that a missing item will be listed multiple times if it was used by multiple outfits):"])
+    assertEqual(lines[1], L["Missing items (an item used by several outfits is listed once per outfit)."])
     assertEqual(lines[2], "Ghostly Hood")
 end)
 

@@ -47,6 +47,9 @@ open issues (§14); a row here leaves when its check passes or its owner rules.
 - **Item stats.** `GetItemStats` combined primary keys on adaptive gear are aliased by hand, and
   Spirit scores 0 on current items (O20).
 - **Icon search** covers named icon sets only (O33).
+- **Pet trigger picker.** The trigger dialog's pet field offers None, the stored pet and the summoned
+  pet, not the owned-pet list: that needs a journal walk Compat does not publish yet
+  (`Compat.OwnedPets()`, due when `core/Compat.lua` splits; it is at its line budget).
 
 ## Client checks still owed
 

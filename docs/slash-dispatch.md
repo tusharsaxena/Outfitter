@@ -9,7 +9,7 @@ dispatcher is LibKa0s-Slash, built from the descriptor in `settings/Slash.lua`; 
 Both commands are registered through AceConsole on one host routing function (H25), which is not a
 second dispatcher:
 
-- A message that holds no item link (`|h`) and either opens with `[` or holds a `;` is passed whole
+- A message that holds no item link (`|h`) and opens with `[` is passed whole
   through `SecureCmdOptionParse`. A nil result (no clause matched) is a silent no-op, as in a Blizzard
   macro. The chosen clause then goes to the dispatcher.
 - An outfit verb whose **argument** opens with `[` passes that argument alone through

@@ -4,7 +4,7 @@
 -- The menu is drawn through the real NS.OpenMenu seam (core/WidgetsSetup.lua); tests/dialog_scene.lua
 -- records W.ContextMenu's rows, so a submenu row's click reopens the recorder one level down, as the
 -- library's menu does. NS.Bank runs against a recorded fake where a case asserts which move a row
--- asks for; the bank's own behaviour is test_bank's.
+-- asks for; the bank's own behavior is test_bank's.
 
 local T = _G.OUTFITTERREBORN_TEST
 local test, assertEqual, assertTrue, assertFalse, assertNil =

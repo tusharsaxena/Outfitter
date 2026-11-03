@@ -40,7 +40,7 @@ function NS.WearBoundOutfit(n)
     if NS.GetSetting("equip.announceKeys") == false then return end
     local c = NS.Constants.OUTFIT_MESSAGE_COLOR
     local text = (worn and L["%s equipped"] or L["%s unequipped"]):format(tostring(rec.name))
-    _G.UIErrorsFrame:AddMessage(text, c.r, c.g, c.b)
+    UIErrorsFrame:AddMessage(text, c.r, c.g, c.b)
 end
 
 -- ── The key bindings (launcher-§6, design §4.4) ─────────────────────────────────────────────────
