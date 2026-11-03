@@ -173,7 +173,7 @@ local SUITES = {
 
     { name = "test_triggers_trade",   pending = "P4.16b" },
 
-    { name = "test_triggers_quest",   pending = "P4.16c" },
+    { name = "test_triggers_quest" },
 
     { name = "test_triggers_class",   pending = "P4.16d" },
     { name = "test_triggers_pvp",     pending = "P4.16d" },

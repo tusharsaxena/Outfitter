@@ -156,3 +156,4 @@ L["Trigger %s is not available"] = "Trigger %s is not available"
 -- P4.16b keys (modules/Triggers_CondTrade.lua)
 
 -- P4.16c keys (modules/Triggers_CondQuest.lua)
+L["Couldn't find that pet"] = "Couldn't find that pet"
