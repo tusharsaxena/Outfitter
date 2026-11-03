@@ -89,7 +89,7 @@ end
 
 local shared = loadInstance()
 
--- The legacy behaviour fixtures (tests/fixtures/legacy/, generated in P3 C2 from 7ea3dc3), each
+-- The legacy behavior fixtures (tests/fixtures/legacy/, generated in P3 C2 from 7ea3dc3), each
 -- loaded on first read and kept: `T.legacy.zones` is fixtures/legacy/zones.lua's table.
 local Legacy = setmetatable({}, {
     __index = function(t, name)
@@ -99,10 +99,9 @@ local Legacy = setmetatable({}, {
     end,
 })
 
--- Every kit suite is declared against the kit's directory (§11 Gates). `test_prose` is the one the
--- suites list leaves out: it is declined by the temporary `## Documented deviations` row in
--- docs/ARCHITECTURE.md until the doc set is rewritten in US English (P3 C16), and the kit honours a
--- decline only for a kit suite no entry declares. C16 adds it here and deletes the row together.
+-- Every kit suite is declared against the kit's directory, and every one is live (§11 Gates):
+-- `test_prose` joined with the doc set's US-English rewrite (P3 C16), which deleted the temporary
+-- `## Documented deviations` row that had declined it.
 local SUITES = {
     "test_skeleton",
     "test_toc",
@@ -129,6 +128,7 @@ local SUITES = {
     { name = "test_layout_cap", dir = "tests/_kit/" },
     { name = "test_diagnostics_contract", dir = "tests/_kit/" },
     { name = "test_lizard_sighted", dir = "tests/_kit/" },
+    { name = "test_prose", dir = "tests/_kit/" },
 }
 
 _G.OUTFITTERREBORN_TEST = Kit.expose{

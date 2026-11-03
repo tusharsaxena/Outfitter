@@ -4,7 +4,7 @@
 ![CurseForge Version](https://img.shields.io/curseforge/v/1698220)
 ![License](https://img.shields.io/badge/License-MIT-orange)
 ![Standard](https://img.shields.io/badge/Ka0s-WoW_Addon_Standard-yellow)
-![Tests](https://img.shields.io/badge/Tests-61%2F61_passing-green)
+![Tests](https://img.shields.io/badge/Tests-271%2F271_passing-green)
 
 Equipment management for World of Warcraft. Build named outfits, switch between
 them by hand or automatically, and let the addon put the right gear on for
@@ -13,14 +13,14 @@ mounting up.
 
 Outfitter Reborn is a community-maintained fork, kept working against current
 retail. The addon itself is the work of John Stephen (mundocani), who wrote and
-maintained it from 2006 to 2018 and released it under the MIT licence. It is
+maintained it from 2006 to 2018 and released it under the MIT license. It is
 updated for WoW Midnight by aDd1kTeD2Ka0s.
 
 - Original author: [Mundocani](https://www.curseforge.com/members/mundocani/projects)
 - Original addon: [Outfitter](https://www.curseforge.com/wow/addons/outfitter)
 
 Everything good about Outfitter is theirs. This fork exists only because the MIT
-licence let the work carry on after they stopped maintaining it.
+license let the work carry on after they stopped maintaining it.
 
 ## What it does
 
@@ -35,7 +35,7 @@ resting, swimming, riding, druid forms, rogue stealth, ghost wolf and walking
 into a battleground. Edit those or write your own in the built-in script editor.
 
 Battlegrounds and arenas get more than the general outfit: there's one per map as
-well, and every battleground and arena in the game is recognised, including the
+well, and every battleground and arena in the game is recognized, including the
 ones Blizzard re-issued under a second map ID. Detection reads the instance map
 ID rather than the zone's name, so it doesn't fall over if you play in a language
 other than English. `/outfitter zone` reports what it sees.
@@ -44,7 +44,7 @@ The rest is smaller. A movable icon bar for one-click switching, in a choice of
 sizes and icons. A minimap button and a LibDataBroker feed, if you keep your
 addon buttons somewhere else. Bank support: deposit an outfit, withdraw it, or
 deposit everything except the one you're wearing. Outfit generation, either
-optimised for a stat combination you pick or from a
+optimized for a stat combination you pick or from a
 [Pawn](https://www.curseforge.com/wow/addons/pawn) scale if you have Pawn
 installed. Tooltip comparisons against what your other outfits already use.
 
@@ -99,10 +99,10 @@ The community has kept it going since.
 work this fork builds on, and NokeHarrier, kionik and UppyDan carried it through
 the 9.x patches.
 
-Localisations, and the libraries bundled under `libs/`, come from their
+Localizations, and the libraries bundled under `libs/`, come from their
 respective authors.
 
-## Licence
+## License
 
 MIT. Copyright © 2006–2018 John Stephen; see `LICENSE`. The fork is distributed
 under the same terms.

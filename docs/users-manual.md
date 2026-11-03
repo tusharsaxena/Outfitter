@@ -125,7 +125,7 @@ enable` starts them again.
 
 ## Battleground and arena outfits
 
-Outfitter Reborn recognises every battleground and arena in the game, and you can
+Outfitter Reborn recognizes every battleground and arena in the game, and you can
 have a general battleground outfit plus one for a specific map. The specific one
 layers over the general one.
 
