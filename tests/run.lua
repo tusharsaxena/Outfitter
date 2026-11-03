@@ -133,7 +133,7 @@ local SUITES = {
     { name = "test_slots" },
     { name = "test_zones" },
 
-    { name = "test_itemlink",         pending = "P4.4" },
+    { name = "test_itemlink" },
 
     { name = "test_item_match",       pending = "P4.5" },
     { name = "test_inventory",        pending = "P4.5" },

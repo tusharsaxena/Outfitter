@@ -103,6 +103,7 @@ L["First trinket"] = "First trinket"
 L["Second trinket"] = "Second trinket"
 
 -- P4.4 keys (modules/PlayerState.lua, modules/ItemInfo.lua)
+L["Not a readable item link."] = "Not a readable item link."
 
 -- P4.5 keys (modules/Inventory.lua, modules/Inventory_Lists.lua)
 

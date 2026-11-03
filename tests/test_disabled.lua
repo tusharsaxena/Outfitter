@@ -130,9 +130,14 @@ local function installStandIn(NS, M)
     S.bus = assert(NS.NewBusTarget(), "no bus target (AceEvent absent?)")
     S.bus:RegisterMessage(NS.MSG.SETTINGS_CHANGED, function() S.heard = S.heard + 1 end)
 
-    -- What the login path will do once P4 lands: register the game events and resume the modules.
+    -- What the login path does once P4 lands: register the game events and resume every module the
+    -- latch walks, bottom to top as standUp does, so the baseline holds the real modules that have
+    -- landed (PlayerState from P4.4) beside the stand-in, and a stand-up rebuilds exactly that set.
     NS.RegisterGameEvents()
-    S.Resume()
+    for i = #NS.LIFECYCLE_MODULES, 1, -1 do
+        local m = NS[NS.LIFECYCLE_MODULES[i]]
+        if m and m.Resume then m.Resume() end
+    end
     return S
 end
 
@@ -483,6 +488,7 @@ end)
 test("Disabled 9: re-enabling restores the set FROM CURRENT STATE, not a snapshot", function()
     local inst, NS = scene()
     local on = table.concat(regKeys(inst), ",")
+    local onNames = eventNames(inst)
     assertTrue(NS.SetByPath("enabled", false))
     assertTrue(NS.SetByPath("enabled", true))
     assertEqual(table.concat(regKeys(inst), ","), on)
@@ -494,8 +500,13 @@ test("Disabled 9: re-enabling restores the set FROM CURRENT STATE, not a snapsho
     assertTrue(NS.SetByPath("locked", true))
     assertEqual(#regKeys(inst), 0, "a write while disabled registered something")
     assertTrue(NS.SetByPath("enabled", true))
-    assertEqual(table.concat(eventNames(inst), ","),
-        "PLAYER_ENTERING_WORLD,PLAYER_REGEN_DISABLED,PLAYER_TARGET_CHANGED,UNIT_AURA")
+    -- The baseline's event names (the stand-in's and the landed modules') plus the one the setting adds.
+    local want = { PLAYER_TARGET_CHANGED = true }
+    for _, e in ipairs(onNames) do want[e] = true end
+    local wantNames = {}
+    for e in pairs(want) do wantNames[#wantNames + 1] = e end
+    table.sort(wantNames)
+    assertEqual(table.concat(eventNames(inst), ","), table.concat(wantNames, ","))
 end)
 
 test("Disabled 10: releasing ONE hold does not resurrect an addon the other holds down", function()
