@@ -140,6 +140,9 @@ L["Couldn't find an item named %s"] = "Couldn't find an item named %s"
 -- P4.10 keys (modules/EquipmentManager.lua, modules/Bank.lua)
 
 -- P4.11 keys (modules/ItemStats.lua, modules/ItemStats_Sources.lua)
+L["Base stats"] = "Base stats"
+L["Total stats"] = "Total stats"
+L["Item level"] = "Item level"
 
 -- P4.12 keys (modules/Optimize.lua, modules/Optimize_Genetic.lua)
 
