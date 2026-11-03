@@ -554,6 +554,14 @@ function Gear.install(M, deps)
         return b and b.slots[loc.slot]
     end
 
+    -- The bind line, split out of tooltipLines to keep it under CCN 15.
+    local function addBindLine(add, inst, def)
+        if inst and inst.bound then add(STRINGS.ITEM_SOULBOUND, 1, 1, 1)
+        elseif def.bindType == 9 then add(STRINGS.ITEM_ACCOUNTBOUND_UNTIL_EQUIP, 0, 0.8, 1)
+        elseif def.bindType == 2 then add(STRINGS.ITEM_BIND_ON_EQUIP, 1, 1, 1)
+        elseif def.bindType == 1 then add(STRINGS.ITEM_BIND_ON_PICKUP, 1, 1, 1) end
+    end
+
     function G:tooltipLines(obj)
         local inst = obj and obj.def and obj or nil
         local def = inst and inst.def or obj
@@ -562,10 +570,7 @@ function Gear.install(M, deps)
         local q = QUALITY_COLORS[def.quality] or QUALITY_COLORS[1]
         local lines = { { leftText = text(def.name), leftColor = { r = q[1], g = q[2], b = q[3] } } }
         local function add(s, r, g, b) lines[#lines + 1] = { leftText = text(s), leftColor = { r = r, g = g, b = b } } end
-        if inst and inst.bound then add(STRINGS.ITEM_SOULBOUND, 1, 1, 1)
-        elseif def.bindType == 9 then add(STRINGS.ITEM_ACCOUNTBOUND_UNTIL_EQUIP, 0, 0.8, 1)
-        elseif def.bindType == 2 then add(STRINGS.ITEM_BIND_ON_EQUIP, 1, 1, 1)
-        elseif def.bindType == 1 then add(STRINGS.ITEM_BIND_ON_PICKUP, 1, 1, 1) end
+        addBindLine(add, inst, def)
         if def.unique == true then add(STRINGS.ITEM_UNIQUE_EQUIPPABLE, 1, 1, 1)
         elseif type(def.unique) == "table" then
             add(STRINGS.ITEM_LIMIT_CATEGORY_MULTIPLE:format(def.unique.name, def.unique.count or 1), 1, 1, 1)

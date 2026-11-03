@@ -55,7 +55,7 @@ end
 --- changed while down comes back correctly because the registrations are rebuilt from it.
 local function standUp()
     NS.BusStandUp()
-    if NS.RegisterGameEvents then NS.RegisterGameEvents() end
+    NS.RegisterGameEvents()
     for i = #MODULES, 1, -1 do
         local m = NS[MODULES[i]]
         if m and m.Resume then m.Resume() end

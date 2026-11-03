@@ -7,10 +7,10 @@
 -- WHY. Since P4.27 every T.load() logs in the way the client does: OnEnable resumes every module in
 -- NS.LIFECYCLE_MODULES, so the instance holds the whole graph live (the States poll, the binder, the
 -- dock, the bar, the first-run skin picker's timer). A suite that pins ONE module drives that module's
--- Resume itself, with recorded fakes for its neighbours (design §12, the fake rule), and the live
+-- Resume itself, with recorded fakes for its neighbors (design §12, the fake rule), and the live
 -- graph would answer its events, timers and fakes too. This instance logs in with the walk emptied:
 -- OnEnable still runs (the legacy guard, the host's game events), PLAYER_LOGIN still settles the skin
--- library's retry frame (tests/run.lua), and the picker's login timer is cancelled, so the instance
+-- library's retry frame (tests/run.lua), and the picker's login timer is canceled, so the instance
 -- is the one every such suite was written against. The whole-graph cases (test_disabled,
 -- test_surface_parity, test_skeleton) use T.load().
 
