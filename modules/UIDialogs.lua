@@ -80,13 +80,13 @@ function D.Label(parent, text, role)
     return fs
 end
 
---- The red line a refused Done writes its reason into, empty until then.
+--- The red line a refused Done writes its reason into, empty until then. Its color is the owner token
+--- through S.Text, a recorded primitive, so a skin switch recolors it (a one-time SetTextColor did not).
 function D.ErrorLine(parent)
     local fs = parent:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     fs:SetJustifyH("LEFT")
     fs:SetText("")
-    local r, g, b = NS.SkinColor("of.dialog.error")
-    if r then fs:SetTextColor(r, g, b) end
+    NS.Skin.Text(fs, "of.dialog.error")
     return fs
 end
 
