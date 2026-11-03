@@ -7,7 +7,7 @@ publishing `NS.Compat`. The trigger counts its hand-written shims:
 cat core/Compat*.lua | grep -cE '^\s*function\s+[A-Za-z_][A-Za-z0-9_]*\.'
 ```
 
-which answers **12** today (three or more fires the trigger). The members LibKa0s-Compat-1.0
+which answers **73** today (three or more fires the trigger). The members LibKa0s-Compat-1.0
 supplies are documented by the library and are not repeated here beyond naming which ones this addon
 routes.
 
@@ -22,7 +22,7 @@ routes.
   scope, so Compat loads first, and a file-scope capture of `NS.Secrets` here would read nil
   (`test_loadorder` pins it).
 - **One file.** The family stays one file until `cat core/Compat*.lua | wc -l` would pass 1000
-  (compat; design C39). The accessors P4.2 adds bring it to about 680 lines. A split by size alone,
+  (compat; design C39). With the P4.2 accessors it is about 950 lines. A split by size alone,
   or an underscore name such as `Compat_Items`, is outside the family pattern.
 
 ## Routed from LibKa0s-Compat-1.0
@@ -58,8 +58,27 @@ a comparison mid-swap, on exactly the degraded path the stub exists to survive.
 | `Compat.GetTime()` | The client clock, 0 without one |
 | `Compat.IsAddOnLoaded(name)` | `true`/`false` (`C_AddOns` first) |
 
-## Arriving in P4.2
+## The P4.2 accessors
 
-The item, container, equipment-manager, pet, bank, tooltip, title and macro-icon accessors (design
-§5.13): about 45 members, each plain-or-nil, several with a tooltip or ladder fallback for the client
-APIs still to be confirmed in game (O17).
+The engine's whole view of the client (design §5.13). Reads answer plain-or-nil; writes answer `true`
+when the client call was made and `false` when the API is absent. A **location** is the addon's own
+plain table, `{ bag = bagID, slot = index }` or `{ slotID = inventorySlotID }`; only this file builds the
+client's `ItemLocation` from one. The client APIs still to be confirmed in game (O17) are `pcall`'d,
+and a raise reads as `nil` ("unknown"), which sends the caller to its tooltip fallback.
+
+| Group | Members | No-answer value |
+|---|---|---|
+| Links and slots | `ContainerItemLink(bag, slot)`, `InventoryItemLink(slotID)`, `InventoryItemID(slotID)`, `InventorySlotID(slotName)` | `nil` (a secret link reads as an empty slot) |
+| Item info | `ItemInfo(item)` → name, quality, level, minLevel, bindType; `ItemInfoInstant(item)` → id, invType, icon, classID, subclassID; `DetailedItemLevel`, `ItemStats` (a secret key or value dropped), `ItemIcon`, `ItemSpell` → name, spellID; `ItemFamily`; `ItemUpgradeInfo` (the four numeric track fields) | `nil`; a sealed argument is refused before the client is asked |
+| Cooldowns | `ContainerItemCooldown(bag, slot)`, `InventoryItemCooldown(slotID)` → start, duration, enabled (1/0 normalized) | each part `nil` |
+| By location | `IsBound(loc)`, `IsWarboundUntilEquip(loc)`, `CanUpgradeItem(loc)` (checks `DoesItemExist` first), `AzeritePowers(loc)` (sorted selected ids); `ItemUniqueness(id)` → `{ unique, categoryID, count }`; `CanUseItem(id)` | `nil` |
+| Tooltip data | `TooltipLines(loc or link)` → `{ {text, r, g, b} }`, a secret line skipped; `TooltipInventoryUnit(tooltip)` (O41) | `{}` / `nil` |
+| Pets and hooks | `SummonedPetGUID()`, `PetGUIDByName(name)` and `PetGUIDBySpecies(id)` (owned pets only; the compare runs here on plain names), `SummonPet(guid)`, `HookPetSummon(fn)`, `HookCompare(fn)` | `nil` / `false` |
+| Equipment Manager | `EMSetIDs()` (bounded at 512, a secret id skipped), `EMSetInfo(id)`, `EMLocations(id)`, `EMIgnoredSlots(id)`, `EMLocation(location)` (alias `FlyoutLocationData`), `EMSetID(name)`, `EMNumSets()`, `EMMaxSets()`; writes `EMCreateSet`, `EMSaveSet`, `EMModifySet`, `EMDeleteSet`, `EMClearIgnored`, `EMIgnoreSlot(slotID, ignore)` | `{}` (the zero-sets path, Q8), `nil`, `0`, `10`, `false` |
+| Titles | `KnownTitles()` → `{ {id, name} }`, sorted case-insensitively, a secret name skipped; `SetCurrentTitle(id)` | `{}` / `false` |
+| Bank | `BankBagIDs()` (the character bank tabs, else the bank and its bags; never the warband tabs, O19), `IsBankerInteraction(type)` | `{}` / `false` |
+| Containers and cursor | `ContainerNumSlots`, `ContainerNumFreeSlots` → free, family; `ContainerIDToInventoryID`; `PickupContainerItem`, `PickupInventoryItem`, `PickupItemLocation(loc)`, `UseContainerItem`, `ShowContainerSellCursor`, `EquipCursorItem`, `ClearCursor` | `0` / `nil` / `false` |
+| Other | `MacroIcons(kind)` (`"item"` or `"ability"`), `PawnVisibleScales()`, `PawnItemValue(link, scale)`, `CanDualWield()`, `BitAnd(a, b)` (plain arithmetic, no `bit` library) | `{}` / `nil` / `false` / `0` |
+
+`test_secrets` pins each group: plain answers through, secret answers out as their no-answer value,
+and every member's answer with its API absent.

@@ -182,7 +182,7 @@ behind them, and `docs/reviews/2026-09-16/` is the fork's last review, kept froz
 | [`perf-analysis/README.md`](perf-analysis/README.md) | Present | The performance harness is wired (`core/PerfSetup.lua`) |
 | [`slash-dispatch.md`](slash-dispatch.md) | Present | 14 commands in `NS.COMMANDS` today (eight or more) |
 | [`midnight-quirks.md`](midnight-quirks.md) | Present | `core/Compat.lua` carries client-version workarounds of its own (the table-detector ladder, the spec ladder's stub) and the secret-value rules |
-| [`compat-layer.md`](compat-layer.md) | Present | `core/Compat.lua` publishes 12 hand-written shims (the trigger is three or more) |
+| [`compat-layer.md`](compat-layer.md) | Present | `core/Compat.lua` publishes 73 hand-written shims (the trigger is three or more) |
 | [`message-bus.md`](message-bus.md) | Present | 25 messages in `NS.MSG` (the trigger is more than ten) |
 | [`profiles.md`](profiles.md) | Present | A Profiles page ships in the options UI (`settings/Profiles.lua`) |
 | [`known-limitations.md`](known-limitations.md) | Present | Known Limitations spilled: the full list passes ~60 lines; the hub keeps a summary |
