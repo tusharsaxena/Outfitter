@@ -12,10 +12,11 @@ local _, NS = ...
 -- LAYOUT. A row runs 1 x N, or N x 1 with `bar.vertical` (one column per category, design §4.2), at a
 -- 37 px pitch with 32 px buttons. Everything grows AWAY from the saved corner (QUADRANT): a bar saved
 -- at a right corner grows left, one saved at a bottom corner grows up. The position is the named
--- non-setting state `profile.windows.bar` (design §3.4), whose sole writer is SavePosition (drag stop:
+-- non-setting state `profile.windows.bar` (design §3.4), whose writers are SavePosition (drag stop:
 -- the nearest screen corner, in screen pixels, divided by the effective scale on the way back, as
 -- legacy stored it) and ResetPosition, which COPIES the default (legacy aliased it, so a reset after a
--- drag could do nothing: OutfitterBar.lua:107-115).
+-- drag could do nothing: OutfitterBar.lua:107-115) and the `bar.position` row's set (settings/OutfitBar.lua),
+-- which writes a new table each time, never an alias.
 --
 -- SHOWN = (bar.shown or test mode) and the Master visibility rule and not in a pet battle and not
 -- stood down. The decision is made here and nowhere else, so a stood-down bar cannot be re-shown.

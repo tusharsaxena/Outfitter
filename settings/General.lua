@@ -237,7 +237,7 @@ local function build(mainCategory)
         defaultsButton  = true,
         -- A page reset (options-ui-§13). Defaults never reaches a key: the game keeps them, not the
         -- profile (options-ui-§20).
-        defaultsTooltip = L["Restore every General setting on this profile to its addon default: Master controls and the skin."]
+        defaultsTooltip = L["Restore every General setting on this profile to its addon default: Master controls, Behavior, Tooltips and the skin."]
             .. " " .. H.KEYBINDS_UNCHANGED,
     })
     ctx.panel.defaultsOnClick = function() H.RestoreDefaults(PAGE, ctx) end

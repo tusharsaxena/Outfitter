@@ -9,7 +9,7 @@
 --
 -- The instance is the legacy capture's own stand-in (fixtures/legacy/README.md): a DRUID whose four
 -- specs are named Spec1..Spec4, and a client that names each PvP map the way the legacy preset did.
--- The behaviour of every trigger is pinned in the test_triggers_* suites; this one pins the menu.
+-- The behavior of every trigger is pinned in the test_triggers_* suites; this one pins the menu.
 
 local T = _G.OUTFITTERREBORN_TEST
 local test, assertEqual, assertTrue, assertNil = T.test, T.assertEqual, T.assertTrue, T.assertNil
