@@ -8,11 +8,14 @@ Reference addon: **DpsRace** (newest Ka0s addon). Standard: WowAddonStandards `s
 | Question | Decision |
 |---|---|
 | Saved data | **Fresh start**: new AceDB store; no import from `gOutfitter_Settings` / `gOutfitter_GlobalSettings` |
-| Identity | Title **Ka0s Outfitter Reborn**; folder stays `Outfitter`; CurseForge ID 1698220 kept; version **1.1.0** |
+| Identity | Title **Ka0s Outfitter Reborn**; addon folder / TOC renamed to **`OutfitterReborn`** (2026-11-03 ruling, supersedes "folder stays"); CurseForge ID 1698220 kept; version **1.1.0** |
 | Roster | Add a row to WowAddonStandards `standards/ADDONS.md` on a branch, push, merge only on go-ahead |
 | Main window | Stays **docked to the character sheet**, drawn with the LibKa0s skin; slot checkboxes kept |
 | Code shape | Free to rewrite everything; functionality is what must survive |
 | Deprecated.lua | Dropped. The rewrite does not carry retired features (decided by me) |
+| Scripts (H1) | **Native triggers**: every preset re-implemented as a native trigger descriptor; free-form Custom script editor dropped; no `loadstring` (2026-11-03) |
+| Version (H3) | **Keep 1.1.0** despite the API/data break; versioning-git deviation row, owner ruling, re-check at next MAJOR (2026-11-03) |
+| Other hard calls | H2, H4–H30 and blueprint Q1–Q5: take the research recommendation/default (2026-11-03) |
 | Credits | README keeps credit to John Stephen (mundocani) and later maintainers; MIT LICENSE keeps the original copyright |
 
 ## How to resume
@@ -27,7 +30,7 @@ Research outputs live in `docs/superpowers/specs/2026-11-03-*.md`.
 |---|---|---|---|
 | P0 | Branch + this plan | done | branch created |
 | P1 | Understand: Outfitter feature inventory, DpsRace blueprint, standard digest | done | specs/2026-11-03-{outfitter-feature-inventory,dpsrace-blueprint,standard-checklist}.md |
-| P2 | Design: target module map, schema, launcher, test mode, skin surfaces | pending | specs/2026-11-03-design.md |
+| P2 | Design: target module map, schema, launcher, test mode, skin surfaces | done | specs/2026-11-03-design.md (P3 = its §11 C1–C16; P4 = its §12 sub-ledger) |
 | P3 | Scaffold: libs (Ace3, LibKa0s, LSM, LDB, LibDBIcon), TOC, core seams, tests/_kit, locales | pending | |
 | P4 | Port: engine, scripting, optimize/stats, UI, bar, quick slots, settings, launcher, test mode | pending | |
 | P5 | Green gate: luacheck 0, headless suite 0 failures, 1500-line cap | pending | |
