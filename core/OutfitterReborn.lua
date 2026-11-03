@@ -12,6 +12,11 @@ NS.Print = NS.Util.print
 --- guard's LEGACY_DETECTED send lands here in P4.27 (design §4.7); until then there is nothing to do.
 function NS.OnLoadPassDone() end
 
+--- Test mode's one line when combat ends it (modules/Preview.lua; as DpsRace's core/DpsRace.lua).
+function NS.SayTestModeEnded()
+    NS.Print(NS.L["Test mode ended: you entered combat."])
+end
+
 function NS:OnInitialize()
     self:InitDB()
     -- Before anything reads NS.db.profile (savedvariables-§1).

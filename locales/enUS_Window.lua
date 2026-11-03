@@ -54,3 +54,10 @@ L["Couldn't make an outfit from %s because it isn't equippable"] = "Couldn't mak
 -- P4.21 keys (modules/OutfitMenu.lua, modules/UIDialogs.lua, modules/Dialog_*.lua, modules/Popups.lua, modules/IconChooser.lua)
 
 -- P4.22 keys (modules/Preview.lua, defaults/PreviewOutfits.lua)
+L["Test Outfit 1"] = "Test Outfit 1"
+L["Test Outfit 2"] = "Test Outfit 2"
+L["Test Outfit 3"] = "Test Outfit 3"
+L["Test Outfit 4"] = "Test Outfit 4"
+L["Test Outfit 5"] = "Test Outfit 5"
+L["Test mode is not available in combat."] = "Test mode is not available in combat."
+L["Test mode ended: you entered combat."] = "Test mode ended: you entered combat."
