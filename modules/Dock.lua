@@ -138,7 +138,12 @@ local function onWindowHide()
     driver:SetScript("OnUpdate", nil)
     driver:Hide()
     -- Escape (UISpecialFrames) hides it behind the dock's back: that is a close, unless combat did it.
-    if not Dock.suspended then Dock.wanted = false end
+    -- A close takes the Name and Rebuild dialogs with it (Outfitter.lua:1491-1504); the combat
+    -- suspend keeps them (O30).
+    if not Dock.suspended then
+        Dock.wanted = false
+        NS.Dialogs.CloseAll("host")
+    end
     NS.Stack.Select(nil)
     NS.CloseMenu()
     NS.IconChooser.Close("opener")
@@ -192,8 +197,14 @@ function Dock.Close()
     Dock.Refresh()
 end
 
-function Dock.Toggle()
-    if Dock.IsShown() or (Dock.wanted and locked()) then return Dock.Close() end
+--- Open or close the window. `closeSheet`: a close takes the character sheet down too (the launcher's
+--- ToggleUI(true), Outfitter.lua:6699-6708); the sheet goes first, so its OnHide closes the window.
+--- @param closeSheet boolean|nil
+function Dock.Toggle(closeSheet)
+    if Dock.IsShown() or (Dock.wanted and locked()) then
+        if closeSheet and PaperDollFrame:IsVisible() == true then ToggleCharacter("PaperDollFrame") end
+        return Dock.Close()
+    end
     return Dock.Open()
 end
 
@@ -207,10 +218,12 @@ end
 -- "Doesn't reappear next open" (Outfitter.lua:1500-1504).
 local function onSheetHide()
     if NS.IsStoodDown() then return end
+    local wasShown = Dock.IsShown()
     Dock.wanted = false
     Dock.Refresh()
     NS.CloseMenu()
-    NS.Dialogs.CloseAll("host")
+    -- A shown window's own OnHide closed the dialogs; this covers a window hidden for combat (O30).
+    if not wasShown then NS.Dialogs.CloseAll("host") end
 end
 
 local function onRegenDisabled()

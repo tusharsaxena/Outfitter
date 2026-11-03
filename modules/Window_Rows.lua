@@ -243,8 +243,11 @@ function RENDER.item(row, e)
     row.icon:SetTexture(NS.Compat.ItemIcon(item.id))
     row.icon:Show()
     row.itemName:SetText(item.name or "")
+    -- No quality color (an item the client has not cached yet): the muted text color, always set, so
+    -- a reused row never keeps the last item's color (the legacy drew it GRAY_FONT_COLOR).
     local r, g, b = NS.QualityColor(item.quality)
-    if r then row.itemName:SetTextColor(r, g, b) end
+    if r == nil then r, g, b = NS.SkinColor("text.muted") end
+    row.itemName:SetTextColor(r, g, b)
     row.itemName:Show()
 end
 

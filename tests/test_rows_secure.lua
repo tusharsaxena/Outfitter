@@ -92,26 +92,37 @@ end)
 
 test("rows: an item row arms its secure child with the bag and slot; other kinds hide it", function()
     local NS = opened()
-    local armed, hidden = 0, 0
-    for _, row in ipairs(rows(NS)) do
-        local e = row.entry
-        if e and e.kind == "item" then
-            armed = armed + 1
-            assertTrue(row.secure:IsShown(), "an item row's secure child is shown")
-            assertNil(row.secure:GetAttribute("type"))
-            assertEqual(row.secure:GetAttribute("target-bag"), e.item.loc.bag)
-            assertEqual(row.secure:GetAttribute("target-slot"), e.item.loc.slot)
-        else
-            hidden = hidden + 1
-            assertFalse(row.secure:IsShown(), "a non-item row's secure child is hidden")
+    local armed, hidden, bagged = 0, 0, 0
+    -- Every shown row, on every page: the first page holds no item row, so one page proves nothing.
+    local function check()
+        for _, row in ipairs(rows(NS)) do
+            local e = row.entry
+            if e and e.kind == "item" then
+                armed = armed + 1
+                local loc = e.item.loc or {}
+                if loc.bag ~= nil then bagged = bagged + 1 end
+                -- red under: Rows.ArmSecure without its s:Show() (the targeting click has no frame).
+                assertTrue(row.secure:IsShown(), "an item row's secure child is shown")
+                assertNil(row.secure:GetAttribute("type"))
+                -- red under: Rows.ArmSecure dropping its target-bag / target-slot writes (INV §16.3).
+                assertEqual(row.secure:GetAttribute("target-bag"), loc.bag)
+                assertEqual(row.secure:GetAttribute("target-slot"), loc.slot)
+            else
+                hidden = hidden + 1
+                -- red under: Rows.Bind without its Rows.Disarm first (a row scrolled from an item to
+                -- another kind keeps its armed secure child; the SetOffset(0) pass below sees it).
+                assertFalse(row.secure:IsShown(), "a non-item row's secure child is hidden")
+            end
         end
     end
+    check()
     assertTrue(hidden > 0, "the fixture shows no category or outfit row")
     NS.Window.SetOffset(#NS.Window.entries)
-    for _, row in ipairs(rows(NS)) do
-        if row.entry and row.entry.kind == "item" then armed = armed + 1 end
-    end
+    check()
     assertTrue(armed > 0, "the fixture never showed an item row")
+    NS.Window.SetOffset(0)                               -- the rows that held items now hold other kinds
+    check()
+    assertTrue(bagged > 0, "no item row on a bag slot: the attributes were never compared to a real one")
 end)
 
 test("rows: arm and disarm are no-ops in combat lockdown", function()
@@ -275,4 +286,18 @@ test("rows: an outfit row's name is colored by its status, and a disabled one sa
     assertTrue(row.trig:IsShown(), "an outfit with a trigger shows the mark")
     assertEqual(row.trig:GetAlpha(), 0.4)
     NS.Skin.Text = text
+end)
+
+test("rows: an item with no quality color is drawn muted, never in the previous item's color", function()
+    local NS = opened()
+    local row = rows(NS)[1]
+    NS.WindowRows.Bind(row, { kind = "item", item = { id = 1, name = "Epic", quality = 4, loc = {} } }, 1)
+    local er, eg, eb = NS.QualityColor(4)
+    local r, g, b = row.itemName:GetTextColor()
+    assertEqual(("%s,%s,%s"):format(r, g, b), ("%s,%s,%s"):format(er, eg, eb), "the epic color")
+    NS.WindowRows.Bind(row, { kind = "item", item = { id = 2, name = "Uncached", loc = {} } }, 1)
+    local mr, mg, mb = NS.SkinColor("text.muted")
+    r, g, b = row.itemName:GetTextColor()
+    -- red under: RENDER.item setting the color only when NS.QualityColor answers one.
+    assertEqual(("%s,%s,%s"):format(r, g, b), ("%s,%s,%s"):format(mr, mg, mb), "no quality: muted")
 end)

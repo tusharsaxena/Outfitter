@@ -247,6 +247,30 @@ test("dock: Open shows the sheet first when it is hidden, and Toggle closes the 
     assertTrue(NS.Dock.IsShown())
 end)
 
+test("dock: Toggle(true), the launcher's, closes the sheet with the window; the dialogs close once", function()
+    local NS, M, fakes = opened()
+    NS.Dock.Toggle(true)
+    assertFalse(NS.Dock.IsShown())
+    -- red under: Dock.Toggle ignoring closeSheet (Outfitter.lua:6699-6708 hid CharacterFrame too).
+    assertFalse(M.PaperDollFrame:IsShown(), "the sheet stayed open")
+    -- red under: the sheet's OnHide closing the dialogs again after the window's OnHide did.
+    assertEqual(fakes.Dialogs.__count("CloseAll"), 1)
+    NS.Dock.Toggle(true)
+    assertTrue(NS.Dock.IsShown() and M.PaperDollFrame:IsShown(), "an open shows the sheet and the window")
+end)
+
+test("dock: closing the window (Close, Escape) closes the dialogs; only the combat suspend keeps them", function()
+    local NS, M, fakes, win = opened()
+    NS.Dock.Close()
+    -- red under: onWindowHide without NS.Dialogs.CloseAll (Outfitter.lua:1491-1504 canceled both dialogs).
+    assertEqual(fakes.Dialogs.__count("CloseAll"), 1)
+    assertEqual(fakes.Dialogs.__calls[1][2], "host")
+    NS.Dock.Open()
+    win:Hide()                                           -- Escape: UISpecialFrames hides it directly
+    assertEqual(fakes.Dialogs.__count("CloseAll"), 2, "Escape is a close")
+    assertTrue(M.PaperDollFrame:IsShown(), "Escape closed the window only")
+end)
+
 test("dock: the window's OnHide clears the selection and closes the menu and the icon chooser", function()
     local NS, M, fakes = opened()
     local id = NS.Outfits.Create("Hat", { HeadSlot = { id = 0 } })

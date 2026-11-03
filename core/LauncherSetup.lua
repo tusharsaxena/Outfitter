@@ -18,7 +18,7 @@ end
 --- THE Show window handler: the launcher menu's entry and the Show window key both call it, so the
 --- press and the menu cannot differ (launcher-§6). It shows or hides the outfit window (P4.19).
 local function toggleWindow()
-    NS.Dock.Toggle()
+    NS.Dock.Toggle(true)
 end
 
 --- Run a verb by name, or `fallback` while the verb is not in NS.COMMANDS yet. `lock` and `unlock`

@@ -211,6 +211,7 @@ test("bar: the size, the scale and the backplate follow the settings", function(
     NS.db.profile.bar.showBackground = false
     NS.SendBus(NS.MSG.SETTINGS_CHANGED, "bar.showBackground", false)
     settle(M)
+    -- red under: Render's bg:SetShown ignoring bar.showBackground (always true).
     assertFalse(f.bg:IsShown())
 end)
 
@@ -362,7 +363,37 @@ test("bar: a dropped item without Alt becomes a new outfit named after it, worn"
     local made = NS.Outfits.FindByName(info.name)
     assertTrue(made ~= nil, "an outfit named after the item")
     assertTrue(NS.Stack.IsWorn(made), "and worn")
+    -- red under: Bar.Drop routing a non-Alt item drop through dropIcon as well.
     assertNil(NS.Outfits.Get(hat).icon, "the target outfit is untouched")
+end)
+
+test("bar: a dropped item that cannot make an outfit stays on the cursor, and says why", function()
+    local NS, M, Bar = scene()
+    local hat = accessory(NS, "Hat")
+    settle(M)
+    local function count()
+        local n = 0
+        for _, category in ipairs(NS.Outfits.Categories()) do
+            for _ in NS.Outfits.Each(category) do n = n + 1 end
+        end
+        return n
+    end
+    local before = count()
+    local cleared = 0
+    M.ClearCursor = function() cleared = cleared + 1 end
+    M.IsAltKeyDown = function() return false end
+    M.GetCursorInfo = function() return "item", 6948, "|cffffffff|Hitem:6948::::::::::::|h[Hearthstone]|h|r" end
+    buttonFor(Bar, hat):__fire("OnReceiveDrag")
+    settle(M)
+    assertEqual(count(), before, "no outfit made")
+    -- red under: dropItem clearing the cursor before CreateFromItem answers (the item drops back silently).
+    assertEqual(cleared, 0, "the item stays on the cursor")
+    local said = 0
+    for _, line in ipairs(M.__printed()) do
+        if line:find("because it isn't equippable", 1, true) then said = said + 1 end
+    end
+    -- red under: dropItem returning on a nil CreateFromItem with nothing printed (OutfitterBar.lua:759-768).
+    assertEqual(said, 1, "the reason is printed")
 end)
 
 test("bar: the hover shows the outfit tooltip with always = true, and hides GameTooltip when it shows nothing", function()
@@ -433,6 +464,59 @@ test("bar: leaving the bar fades the handle over 0.3 s and the bar to its alpha 
     settle(M)
     f:__fire("OnEnter"); f:__fire("OnLeave")
     for _, fade in ipairs(ctl.fades) do assertFalse(fade[1] == f.handle, "no handle fade while locked") end
+end)
+
+test("bar: a rebuild leaves a faded handle faded; an unlock shows it again", function()
+    local NS, M, Bar = scene()
+    complete(NS, "A")
+    settle(M)
+    local f = Bar.Frame()
+    assertEqual(f.handle:GetAlpha(), 1, "unlocked: the handle shows")
+    f:__fire("OnEnter"); f:__fire("OnLeave")
+    f.handle:SetAlpha(0)                                 -- where UIFrameFadeOut leaves it
+    NS.SendBus(NS.MSG.OUTFIT_EDITED, NS.Outfits.FindByName("A"), "name")
+    settle(M)
+    assertTrue(f.handle:IsShown())
+    -- red under: SetLocked's SetAlpha(1) on every refresh (any rebuild brought the handle back).
+    assertEqual(f.handle:GetAlpha(), 0, "the rebuild left the faded handle alone")
+    NS.SetByPath("locked", true); settle(M)
+    NS.SetByPath("locked", false); settle(M)
+    assertEqual(f.handle:GetAlpha(), 1, "an unlock shows it at full alpha")
+end)
+
+test("bar: an alpha change stops a hover-out fade still running, so it cannot land on the old alpha", function()
+    local NS, M, Bar = scene()
+    complete(NS, "A")
+    NS.SetByPath("alpha", 0.6)
+    NS.db.profile.bar.combatAlpha = 0
+    settle(M)
+    local f = Bar.Frame()
+    local stopped = {}
+    M.UIFrameFadeRemoveFrame = function(frame) stopped[#stopped + 1] = frame end
+    f:__fire("OnEnter"); f:__fire("OnLeave")             -- the 0.5 s fade to 0.6 starts
+    stopped = {}
+    NS.SendBus(NS.MSG.PLAYER_STATE_CHANGED, "combat", true)
+    local hit = false
+    for _, frame in ipairs(stopped) do hit = hit or frame == f end
+    -- red under: ApplyAlpha without its fadeStop(bar) (the fade ends at 0.6 over combatAlpha 0).
+    assertTrue(hit, "the running fade was not stopped")
+    assertEqual(f:GetAlpha(), 0)
+end)
+
+test("bar: the clamp covers the handle above the bar while it shows, and only then", function()
+    local NS, M, Bar = scene()
+    local insets
+    complete(NS, "A")
+    settle(M)
+    local f = Bar.Frame()
+    rawset(f, "SetClampRectInsets", function(_, l, r, t, b) insets = { l, r, t, b } end)
+    NS.SendBus(NS.MSG.SETTINGS_CHANGED, "bar.vertical", false)
+    settle(M)
+    -- red under: no SetClampRectInsets (a drag to the top edge pushes the handle off screen).
+    assertTrue(insets ~= nil and insets[3] >= 18 + 2, "the top inset reaches over the handle")
+    assertEqual(insets[1], 0); assertEqual(insets[2], 0); assertEqual(insets[4], 0)
+    NS.SetByPath("locked", true); settle(M)
+    assertEqual(insets[3], 0, "locked: no handle, no inset")
 end)
 
 -- ── the show decision and the lifecycle ───────────────────────────────────────────────────────

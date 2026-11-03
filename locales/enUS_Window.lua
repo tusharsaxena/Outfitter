@@ -48,6 +48,8 @@ L["Outfit bar"] = "Outfit bar"
 L["Drag to move. Right-click for bar settings."] = "Drag to move. Right-click for bar settings."
 L["Sample outfit (test mode). Nothing is equipped."] = "Sample outfit (test mode). Nothing is equipped."
 L["Test mode: sample outfits. Nothing is equipped or saved"] = "Test mode: sample outfits. Nothing is equipped or saved"
+L["Couldn't get information about the item being dropped"] = "Couldn't get information about the item being dropped"
+L["Couldn't make an outfit from %s because it isn't equippable"] = "Couldn't make an outfit from %s because it isn't equippable"
 
 -- P4.21 keys (modules/OutfitMenu.lua, modules/UIDialogs.lua, modules/Dialog_*.lua, modules/Popups.lua, modules/IconChooser.lua)
 

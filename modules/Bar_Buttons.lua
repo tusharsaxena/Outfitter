@@ -19,7 +19,7 @@ local _, NS = ...
 -- and its tooltip says so (H17): no write path below runs for one.
 --
 -- CALLS (at call time, no nil guard; design §12): NS.Stack, NS.Outfits, NS.OutfitMenu.Open,
--- NS.OutfitTooltip.Show, NS.Triggers.Get, NS.SetByPath.
+-- NS.OutfitTooltip.Show, NS.Triggers.Get, NS.SetByPath, NS.ItemInfo.FromLink.
 
 local Bar = NS.Bar
 
@@ -96,13 +96,22 @@ local function dropIcon(btn, kind, a, b, c)
 end
 
 --- A dropped item: a new outfit named after it, worn. The item goes back to its bag first, so the
---- wear moves it from there.
+--- wear moves it from there. An item that cannot make one stays on the cursor, with the legacy's
+--- reason printed (OutfitterBar.lua:759-768).
 local function dropItem(link)
     local plain = Secrets.PlainString(link)
-    if not plain then return false end
-    Compat.ClearCursor()
+    local info = plain and NS.ItemInfo.FromLink(plain)
+    if not info then
+        NS.Print(L["Couldn't get information about the item being dropped"])
+        return false
+    end
     local id = NS.Outfits.CreateFromItem(plain)
-    if not id then return false end
+    if not id then
+        NS.Print(L["Couldn't make an outfit from %s because it isn't equippable"]:format(
+            Secrets.PlainString(info.name) or plain))
+        return false
+    end
+    Compat.ClearCursor()
     NS.Stack.Wear(id, { hw = true })
     return true
 end

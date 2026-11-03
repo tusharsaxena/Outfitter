@@ -41,6 +41,7 @@ local PITCH, BUTTON_SIZE = 37, 32       -- Style.ButtonBar: 37 px buttons (Outfi
 local MAX_ROWS = 2                      -- one per category
 local HANDLE_FADE, BAR_FADE = 0.3, 0.5  -- StartFrameFades (OutfitterBar.lua:236-248)
 local HANDLE_GAP = 2
+local HANDLE_HEIGHT = 18                -- W.DragHandle's strip, when the frame cannot say
 
 Bar.PITCH, Bar.BUTTON_SIZE, Bar.HANDLE_FADE, Bar.BAR_FADE = PITCH, BUTTON_SIZE, HANDLE_FADE, BAR_FADE
 
@@ -53,7 +54,10 @@ Bar.QUADRANT = QUADRANT
 -- The Master rows that govern the bar (options-ui-§15); every `bar.*` row does too.
 local MASTER = { scale = true, alpha = true, locked = true, visibility = true }
 
-local st = { active = false, inCombat = false, inPetBattle = false, hovered = false, timer = nil }
+-- handleFaded: the pointer left since the bar was last locked, so the handle rests faded out until
+-- the next hover; a rebuild must not bring it back (the legacy handle showed only on hover).
+local st = { active = false, inCombat = false, inPetBattle = false, hovered = false, handleFaded = false,
+             timer = nil }
 local bar, rows = nil, {}
 local mod   -- the module's own bus target, with AceTimer and the pet-battle events on it
 
@@ -333,8 +337,10 @@ function Bar.EffectiveAlpha()
 end
 
 --- Apply the resting alpha (full while hovered); at 0 the buttons and the container take no mouse.
+--- A hover-out fade still running is stopped first, or its end alpha would overwrite this one.
 function Bar.ApplyAlpha()
     if not bar then return end
+    fadeStop(bar)
     local a = Bar.EffectiveAlpha()
     local mouse = a > 0
     bar:SetAlpha((st.hovered and mouse) and 1 or a)
@@ -342,25 +348,40 @@ function Bar.ApplyAlpha()
     for _, btn in ipairs(Bar.Buttons()) do btn:EnableMouse(mouse) end
 end
 
---- Show the drag handle while unlocked and the bar is up; hide it while locked.
+-- The container's clamp covers the handle above it while it shows, so a drag to the top edge can
+-- never push the handle off screen (the legacy moved the drag bar itself, which kept it on).
+local function clampHandle(shown)
+    local top = 0
+    if shown then
+        local h = num(bar.handle:GetHeight(), 0)
+        top = (h > 0 and h or HANDLE_HEIGHT) + HANDLE_GAP
+    end
+    bar:SetClampRectInsets(0, 0, top, 0)
+end
+
+--- Show the drag handle while unlocked and the bar is up; hide it while locked. Shown, it is at full
+--- alpha until the pointer first leaves after an unlock, then faded until the next hover.
 --- @param on boolean|nil  the lock; nil reads the setting
 function Bar.SetLocked(on)
     if on == nil then on = locked() end
     local handle = bar and bar.handle
     if not handle then return end
-    if on or not bar:IsShown() then
+    if on then st.handleFaded = false end
+    local shown = not on and bar:IsShown() == true
+    clampHandle(shown)
+    if not shown then
         fadeStop(handle)
         handle:Hide()
-    else
-        handle:SetAlpha(1)
-        handle:Show()
+        return
     end
+    if not st.handleFaded then handle:SetAlpha(1) end
+    handle:Show()
 end
 
 --- The pointer is over the bar, a button or the handle: everything at full alpha, the fades stopped.
 function Bar.HoverIn()
     if not bar then return end
-    st.hovered = true
+    st.hovered, st.handleFaded = true, false
     fadeStop(bar)
     fadeStop(bar.handle)
     if bar.handle and not locked() then bar.handle:SetAlpha(1) end
@@ -371,7 +392,10 @@ end
 function Bar.HoverOut()
     if not bar then return end
     st.hovered = false
-    if bar.handle and not locked() then fadeOut(bar.handle, HANDLE_FADE, 1, 0) end
+    if bar.handle and not locked() then
+        st.handleFaded = true
+        fadeOut(bar.handle, HANDLE_FADE, 1, 0)
+    end
     local a = Bar.EffectiveAlpha()
     if a ~= 1 and a > 0 then
         fadeOut(bar, BAR_FADE, 1, a)

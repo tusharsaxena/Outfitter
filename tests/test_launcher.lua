@@ -104,11 +104,13 @@ test("launcher: each menu entry runs the shared handler", function()
 
     -- Show window is the Show window key's handler: it toggles the outfit window (P4.19).
     -- red under: a toggleWindow that still opens the settings panel.
-    local toggled, settings = 0, 0
-    NS.Dock.Toggle = function() toggled = toggled + 1 end
+    local toggled, settings, closeSheet = 0, 0, nil
+    NS.Dock.Toggle = function(c) toggled = toggled + 1; closeSheet = c end
     NS.OpenOptionsPanel = function() settings = settings + 1 end
     openMenu(inst):Click("Show window")
     assertEqual(toggled, 1)
+    -- red under: toggleWindow calling NS.Dock.Toggle() (the legacy ToggleUI(true) closed the sheet too).
+    assertEqual(closeSheet, true, "the launcher's close takes the sheet with it")
     assertEqual(settings, 0, "Show window opened the settings panel")
     assertFalse(openMenu(inst):Find("Show window").isSelected(), "the outfit window is not shown")
     assertFalse(openMenu(inst):Find("Test mode").isSelected(), "test mode is off with no preview")
