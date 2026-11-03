@@ -2,14 +2,15 @@
 
 The in-game checks no headless run can reach: real rendering, layering, taint, and client behavior
 the design could not measure ahead of time (audit-review-history). The owner runs them end to end
-before a release. Each row has a pass criterion; a row marked **P4** cannot run until the port lands
-the surface it checks.
+before a release. Each row has a pass criterion. A row marked **P4** checks a surface the port
+landed, and every row can run now; section 10 maps what the headless gate leaves unverified to the
+rows that verify it.
 
 ## Sign-off
 
 | Date | Build | Result |
 |---|---|---|
-| — | — | Not run yet. The scaffold (P3) has no outfit surface; the first full pass is after the port (P4) and before the 1.1.0 tag |
+| — | — | Not run yet. The headless gate is green at P5 (`docs/automated-tests/`, newest bundle); the first full pass is before the 1.1.0 tag |
 
 ## How to run it
 
@@ -50,7 +51,7 @@ the surface it checks.
 | K3 | Minimap button tooltip | The brand and (P4) "Current outfit: …" |
 | K4 | `/of` and `/of help` | The command list, with the alias line |
 | K5 | `/of disable`, then a feature verb | The one disabled line; `/of enable` restores |
-| K6 | Show window key, out of combat and in combat | Opens the settings panel today; (P4) toggles the window, and from combat prints that it opens when combat ends (O8) |
+| K6 | Show window key, out of combat and in combat | Toggles the window, and from combat prints that it opens when combat ends (O8) |
 | K7 | `/of wear [combat] A; B` (P4) | Wears B out of combat and A in combat |
 
 ## 4. Debug, diagnostics and performance
@@ -73,6 +74,8 @@ the surface it checks.
 | W5 | Slot checkboxes | Beat the item buttons and any addon drawing over them; tri-state works |
 | W6 | The sheet button | Does not overlap the close button (O29) |
 | W7 | The window title | Fits (O31) |
+| W8 | In combat with the window gone: change an outfit from the bar, press a wear key, rebind a key on the Keybindings tab | The wear follows the client's combat rules; the window's secure rows are not rebuilt until combat ends; a binding change in combat is refused or waits, never half-applied; no `ADDON_ACTION_BLOCKED` appears (O11) |
+| W9 | The icon chooser's search; the Title submenu on a character with 200+ titles | Search finds icons from named sets (O33); the submenu opens in 30-row chunks with "More" and stays usable (O38) |
 
 ## 6. Wearing and triggers (P4)
 
@@ -87,6 +90,10 @@ the surface it checks.
 | T7 | Find Fish tracking | FISHING's tracking restore works (O5) |
 | T8 | An error inside a trigger | Updates keep working afterward; `/of zone` reports no stuck bracket |
 | T9 | Blizzard equipment sets | Each shows as an outfit, a save from the addon appears in the Equipment Manager (O18), and a save is refused in combat (O44) |
+| T10 | Wear an outfit that holds two unique-equipped items of one family (two of the same unique ring or trinket, or past an equipped-limit category's count) | The outfit is worn in full with no "unique-equipped" error; if the client still refuses one item, the rest is worn, the error does not repeat on every update, and `/of zone` shows no stuck bracket (O17 uniqueness shape) |
+| T11 | Fishing with a pole outfit, entering combat with Fishing worn | The action bar page change is skipped in combat and applied when combat ends (O23) |
+| T12 | A boss encounter (a raid or dungeon boss) with triggers on and `/of debug on` | No Lua error while health, power, auras or item links read as secret values; a trigger that needs one holds its outfit instead of flapping; `/of diagnostics` after the fight shows no stuck bracket |
+| T13 | A potion or trinket with a use duration | The duration the addon reads matches the tooltip; record the item and the client build when it does not (O15) |
 
 ## 7. Bar, bank, tooltips and quick slots (P4)
 
@@ -97,6 +104,7 @@ the surface it checks.
 | B3 | Bank open: deposit, withdraw, `missing` | Items move; the missing list is right |
 | B4 | An item's tooltip | Lists the outfits that use it; comparisons draw (O34, O41) |
 | B5 | Click an empty slot | The flyout opens, sorted |
+| B6 | With Pawn, then WeightsWatcher, loaded: open Rebuild (optimize) and pick each addon's stat category | Pawn lists one stat per visible scale and WeightsWatcher one per active weight; values match the addon's own tooltip; hiding a Pawn scale removes it the next time the list opens; nothing errors without either addon |
 
 ## 8. Locales and coexistence
 
@@ -104,6 +112,8 @@ the surface it checks.
 |---|---|---|
 | X1 | A zhCN, zhTW, koKR and ruRU client | Text renders in the skin's face, or the D7 row is written (H8) |
 | X2 | The old Outfitter enabled too | One warning at login; `/of diagnostics` reports it |
+| X3 | Common addons that register slash commands (e.g. a bag addon, a raid tool) | `/of` reaches this addon; record any collision (O3) |
+| X4 | `/of diagnostics` after login | The O17 client APIs (uniqueness, warbound, usability, item stats, Azerite, bank container) answer, or their tooltip or ladder fallback is the one in use |
 
 ## 9. The skin switch (P4)
 
@@ -118,3 +128,35 @@ checked by eye in the client.
 | SK4 | Item icons in the list, the icon chooser and the bar | Cropped with no art border showing; a 1 px edge in the window and in the icon chooser, the HUD edge on the bar |
 | SK5 | A dialog open over the window, then Escape twice | The dialog closes first, then the window |
 | SK6 | Another addon moves the character sheet with the window open | The sheet still moves, and the window follows it |
+
+## 10. What the headless run cannot reach
+
+The headless gate (design §13 step 11) mocks the client, so it proves the logic and leaves these to
+this list. Each is checked by the rows named beside it; an O-number is a design §14 open issue marked
+"client check", also listed in [known-limitations.md](known-limitations.md).
+
+| Unverified headless | Why the harness cannot reach it | Rows |
+|---|---|---|
+| Real equips | The mock moves items by the plan; the client's swap timing, item locks and bag-full refusals are its own | T1, T2, T3, T10 |
+| The unique-equip error path | The mock ranks unique keys from captured fixtures; the client's error and `GetItemUniquenessByID`'s 12.x shape are not mocked (O17) | T10, X4 |
+| Docked layout, anchoring and strata against real CharacterFrame children | The layer mock records levels; it cannot see Blizzard's or another addon's frames redrawn over the sheet (O29, O31) | W1, W2, W5, W6, W7, SK6 |
+| The combat hide and restore of the window | Lockdown is a flag in the mock; implicit protection of the rows is assumed worst-case (O4, O11) | W3 |
+| Refusals of secure rows and bindings in combat | The client's `ADDON_ACTION_BLOCKED` and binding protection are not emulated (O8, O11, O44) | K6, W8, T9 |
+| Escape ordering | `UISpecialFrames` order is the client's | W4, SK5 |
+| CJK and Cyrillic in skin faces | Glyph coverage is the font file's; the harness checks paths, not rendering (H8) | X1 |
+| Pawn and WeightsWatcher live | Their globals are stubbed; the live scale and weight tables are theirs | B6 |
+| Secret-value windows in an encounter | The harness seals values on demand; which reads the client seals, and when, is its own | T12 |
+| O5 Find Fish tracking | `C_Minimap.GetTrackingInfo` IDs | T7 |
+| O7 Category accepted | The AddOns list | L2 |
+| O10 Spec event name on 12.x | Event delivery | T5 |
+| O15 Item use-duration text | Tooltip text | T13 |
+| O17 Client API shapes | The 12.x APIs | T10, X4 |
+| O18 `EQUIPMENT_SETS_CHANGED` timing | Event timing inside a save | T9 |
+| O22 Lockpicking line text | GlobalStrings | T6 |
+| O23 `ChangeActionBarPage` in combat | Protection | T11 |
+| O27 Druid and rogue form spell IDs | Spell IDs | T5 |
+| O33 Icon search sources | `GetMacroIcons` on 120105 | W9 |
+| O34 The Equipment Sets tooltip line | Tooltip data lines | B4 |
+| O38 Title submenu with 200+ titles | Usability | W9 |
+| O41 `GetPrimaryTooltipInfo()` field names | Tooltip info | B4 |
+| O3 `/of` collision | Other addons | X3 |
