@@ -40,6 +40,7 @@ The TOC (`OutfitterReborn.toc`) is the load order and the authority on it.
 | `core/SecureQueue.lua` | `NS.SecureQueue`: a protected write runs now or waits out combat lockdown, latest per key |
 | `core/LifecycleSetup.lua` | `NS.lifecycle`, the one stand-down latch with its `disabled` and `perf` holds, `NS.ApplyEnabled`, `NS.IsStoodDown`, `NS.StoodDownRefusal` (LibKa0s-Lifecycle) |
 | `core/PerfSetup.lua` | `NS.Perf`, the performance harness over `OutfitterRebornPerfDB` with its ten fixed buckets (LibKa0s-Perf) |
+| `core/DebugLogSetup.lua` | `NS.DebugLog`, the debug console with its init summary and diagnostics hook, `NS.Debug` and the `DebugOnce`/`DebugChanged`/`DebugAtEnable` gates (LibKa0s-DebugLog) |
 | `core/OutfitterReborn.lua` | `NewAddon`, the `NS.Print` reclaim, `OnInitialize` (DB, migrations, the profile's skin) |
 | `core/Database.lua` | AceDB, the profile callbacks, the migration runner, both `resolveRoot` functions |
 | `defaults/Profile.lua` | `NS.defaults`, the only place a default is hardcoded |

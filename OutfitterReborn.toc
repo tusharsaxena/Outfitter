@@ -60,6 +60,8 @@ core\SecureQueue.lua
 core\LifecycleSetup.lua
 # LOAD-BEARING: NS.Perf, captured at FILE SCOPE by the modules.
 core\PerfSetup.lua
+# LOAD-BEARING: needs FONT_MONO, NS.State and the printer, and precedes any NS.Debug call.
+core\DebugLogSetup.lua
 # LOAD-BEARING: NewAddon(NS, addonName, ...) and the NS.Print reclaim at FILE SCOPE, so it follows core\CoreSetup.lua.
 core\OutfitterReborn.lua
 core\Database.lua
