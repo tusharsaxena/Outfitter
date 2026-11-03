@@ -1,0 +1,15 @@
+local addonName, NS = ...
+-- core/OutfitterReborn.lua — AceAddon registration, the NS.Print reclaim and the lifecycle kick.
+
+local addon = LibStub("AceAddon-3.0"):NewAddon(NS, addonName, "AceEvent-3.0", "AceTimer-3.0", "AceConsole-3.0")
+NS.addon = addon
+
+-- AceConsole's embed stamped its own :Print over NS.Print; reclaim the tagged printer every settings
+-- file captured (architecture-§2: the SAME function object as NS.Util.print).
+NS.Print = NS.Util.print
+
+function NS:OnInitialize()
+    self:InitDB()
+    -- Before anything reads NS.db.profile (savedvariables-§1).
+    self:RunMigrations()
+end

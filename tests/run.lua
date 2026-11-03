@@ -1,118 +1,127 @@
--- tests/run.lua -- the headless runner.
---
---   lua tests/run.lua          -- from the repo root; exits non-zero on any failure
---   lua tests/run.lua --list   -- emit the case inventory and exit 0
---
--- Everything here is Outfitter's own.  There is no vendored kit: the Ka0s
--- collection's harness comes out of LibKa0s, and this addon must never carry
--- LibKa0s (see CLAUDE.md), so the framework, the mock and the loader are local.
---
--- The suite list is the one hand-kept list in the harness.  Adding a file to
--- tests/ without adding it here loads nothing and reads exactly like a clean run,
--- which is why test_harness.lua asserts the two agree.
+-- tests/run.lua — this addon's load list, lifecycle kick and suite list, on the vendored kit
+-- (testing-§1). Run from the repo root: `lua tests/run.lua` (`--list` writes docs/test-cases.md).
 
 local root = (arg and arg[0] and arg[0]:match("^(.*)/tests/run%.lua$")) or "."
 package.path = root .. "/tests/?.lua;" .. package.path
 
-local Kit    = dofile(root .. "/tests/framework.lua")
-local Loader = dofile(root .. "/tests/loader.lua")
-local Mock   = dofile(root .. "/tests/wow_mock.lua")
+local Kit     = dofile(root .. "/tests/_kit/framework.lua")
+local Loader  = dofile(root .. "/tests/_kit/loader.lua")
+local mockmod = assert(loadfile(root .. "/tests/wow_mock.lua"))(root)
 
--- Context every suite gets, so no suite has to work out where the repo is or
--- reload the addon for itself.
-local Ctx = {root = root, Kit = Kit, Loader = Loader, Mock = Mock}
+Loader.addonName = "OutfitterReborn"
 
---- Read a repo file as text.  Suites that inspect source rather than behaviour
---- (the structural ones) go through this so they all handle CRLF the same way.
-function Ctx.read(rel)
-	local f = assert(io.open(root .. "/" .. rel, "rb"), "cannot read " .. rel)
-	local s = f:read("*a")
-	f:close()
-	return s
+-- The vendored library's files, read out of LibKa0s.xml in its own order rather than remembered:
+-- omit one and its module refuses to register, the host takes its stub, and the suite measures the
+-- stub -- green, and testing nothing (testing-§9). The floor below fails loudly if the .xml ever
+-- stops naming a file of one of the sixteen majors this addon leases (§1.3; Glow, Toast, Charts and
+-- Sim load with the rest of the .xml and are not leased).
+local LIB_FILES = Loader.xmlFiles(root .. "/libs/LibKa0s/LibKa0s.xml")
+do
+    local EXPECTED = {
+        "Core.lua", "Env.lua", "Compat.lua", "Lifecycle.lua", "Bus.lua", "Schema.lua", "Pool.lua",
+        "Item.lua", "Media.lua", "MediaIcons.lua",
+        "Skin.lua", "SkinOwnerTokens.lua", "SkinDefs.lua", "SkinDefsOthers.lua", "SkinPaint.lua",
+        "SkinPaintControls.lua", "SkinPaintExtras.lua", "SkinEUI.lua", "SkinAce.lua",
+        "Widgets.lua", "WidgetsDragHandle.lua", "WidgetsCopyWindow.lua",
+        "DebugLog.lua", "DebugLogDiagnostics.lua", "DebugLogGates.lua", "DebugLogWindow.lua",
+        "Slash.lua", "SlashParse.lua", "Launcher.lua",
+        "Options.lua", "OptionsRegistry.lua", "OptionsWidgets.lua", "OptionsFlow.lua", "OptionsTabs.lua",
+        "OptionsTabbed.lua", "OptionsCombat.lua", "OptionsCompose.lua", "OptionsScroll.lua",
+        "OptionsKeybinds.lua", "OptionsAppearance.lua", "OptionsSkinPicker.lua", "OptionsSkinPickerRows.lua",
+        "OptionsSwitch.lua", "OptionsMedia.lua",
+        "Perf.lua", "PerfSampler.lua", "PerfCommands.lua", "PerfPanel.lua",
+    }
+    local present = {}
+    for _, path in ipairs(LIB_FILES) do present[path:match("([^/]+)$")] = true end
+    local missing = {}
+    for _, name in ipairs(EXPECTED) do
+        if not present[name] then missing[#missing + 1] = name end
+    end
+    assert(#missing == 0, "libs/LibKa0s/LibKa0s.xml is missing " .. table.concat(missing, ", "))
 end
 
-function Ctx.readLF(rel)
-	return (Ctx.read(rel):gsub("\r\n", "\n"))
+-- The addon's own files come from the TOC, so this runner cannot drift from what the client loads.
+local ADDON_FILES = Loader.tocFiles(root .. "/OutfitterReborn.toc")
+
+local function rooted(list)
+    local out = {}
+    for i, rel in ipairs(list) do out[i] = root .. "/" .. rel end
+    return out
 end
 
---- Every .lua file in the repo, repo-relative, sorted.
-function Ctx.luaFiles(includeLibraries)
-	local out = {}
-	-- git ls-files, not find: `find` swept untracked scratch .lua files into the
-	-- discipline checks, and the shell quoting broke on a repo path containing a
-	-- single quote. This lists exactly what is committed.
-	local pipe = io.popen("git -C " .. ("%q"):format(root) .. " ls-files '*.lua'")
-	for line in pipe:lines() do
-		local rel = line
-		-- tests/ is the harness itself, not the addon.  tools/ is maintainer
-		-- tooling that never ships, and libs/ is where the Ka0s conversion vendors
-		-- its libraries: neither is in the TOC, so the orphan, seam and
-		-- discipline checks must not walk them.
-		local skip = rel:match("^tests/") or rel:match("^tools/") or rel:match("^libs/")
-			or (not includeLibraries and rel:match("^Libraries/"))
-		if not skip then out[#out + 1] = rel end
-	end
-	pipe:close()
-	assert(#out > 0, "found no Lua files")
-	return out
+--- One isolated instance: a fresh mock, a fresh NS, the client's lifecycle.
+---   opts.libFiles  the LibKa0s files to load ({} = the library-absent load)
+---   opts.mutate    function(mocks) run before anything loads
+---   opts.init      false = load the files only (no OnInitialize)
+---   opts.enable    false = initialize but do not enable
+local function loadInstance(opts)
+    opts = opts or {}
+    local mocks = mockmod.build()
+    if opts.mutate then opts.mutate(mocks) end
+    -- `_G` inside a loaded chunk is the mocked environment, as in the client it is the one global table.
+    mocks._G = Loader.makeEnv(mocks)
+    _G.OutfitterRebornDB, _G.OutfitterRebornPerfDB = nil, nil
+    local NS = {}
+    Loader.loadAll(opts.libFiles or LIB_FILES, NS, mocks)
+    Loader.loadAll(rooted(ADDON_FILES), NS, mocks)
+    if opts.init ~= false then
+        local AceAddon = mocks.LibStub("AceAddon-3.0")
+        AceAddon:InitializeAddon(NS)                 -- OnInitialize: DB, migrations
+        if opts.enable ~= false then
+            AceAddon:EnableAddon(NS)                 -- OnEnable
+            if mocks.__fireTimers then mocks.__fireTimers() end
+        end
+    end
+    return { NS = NS, mocks = mocks }
 end
 
--- The addon is loaded ONCE, before any suite runs, and every suite shares the
--- result.  Loading it per-suite would be forty seconds of nothing and would hide
--- order-dependent state rather than expose it.
-Mock.install(root)
-local loadedFiles, bomFiles = Loader.loadAddon(root)
-Ctx.loadedFiles, Ctx.bomFiles = loadedFiles, bomFiles
-Ctx.Outfitter = _G.Outfitter
-Ctx.OutfitterAPI = _G.OutfitterAPI
+local shared = loadInstance()
 
--- The XML's frames, then the addon's own start-up.  Both are things the client
--- does between loading the files and the addon being usable, and most of the
--- interesting tables (cSlotIDs, the slash commands) do not exist until they have.
-Ctx.xmlFrameCount = Mock.buildXMLFrames(root)   -- asserted by test_xml.lua
-Ctx.initOK, Ctx.initError = pcall(function()
-	Ctx.Outfitter:InitializeInstant()
-	Ctx.Outfitter:Initialize()
-end)
+-- The legacy behaviour fixtures (tests/fixtures/legacy/, generated in P3 C2 from 7ea3dc3), each
+-- loaded on first read and kept: `T.legacy.zones` is fixtures/legacy/zones.lua's table.
+local Legacy = setmetatable({}, {
+    __index = function(t, name)
+        local v = dofile(root .. "/tests/fixtures/legacy/" .. tostring(name) .. ".lua")
+        rawset(t, name, v)
+        return v
+    end,
+})
 
--- Now that BuiltinEvents exists, the mock can start rejecting event names the
--- client does not have.  Registrations made during load and init are already done
--- by this point, which is deliberate: this guards the addon's runtime behaviour,
--- not its start-up, and tightening it earlier would mean mocking the client's full
--- event registry rather than a broad net.
-Ctx.clientEvents = dofile(root .. "/tests/client_events.lua")
-local known = {}
-for e in pairs(Ctx.clientEvents) do known[e] = true end
-for e in pairs(Ctx.Outfitter.BuiltinEvents or {}) do known[e] = true end
-Mock.knownEvents = known
-
+-- Every kit suite is declared against the kit's directory (§11 Gates). `test_prose` is the one the
+-- suites list leaves out: it is declined by the temporary `## Documented deviations` row in
+-- docs/ARCHITECTURE.md until the doc set is rewritten in US English (P3 C16), and the kit honours a
+-- decline only for a kit suite no entry declares. C16 adds it here and deletes the row together.
 local SUITES = {
-	"test_harness.lua",
-	"test_syntax.lua",
-	"test_eol.lua",
-	"test_toc.lua",
-	"test_xml.lua",
-	"test_load.lua",
-	"test_compat.lua",
-	"test_zones.lua",
-	"test_scripts.lua",
-	"test_locale.lua",
-	"test_deprecated.lua",
-	"test_secrets.lua",
-	"test_outfits.lua",
-	"test_commands.lua",
+    "test_skeleton",
+    "test_toc",
+    "test_loadorder",
+    "test_database",
+    "test_packaging",
+    "test_vendor_sync",
+    { name = "test_skin_values", dir = "tests/_kit/" },
+    { name = "test_skin_switch", dir = "tests/_kit/" },
+    { name = "test_eol", dir = "tests/_kit/" },
+    { name = "test_layout_cap", dir = "tests/_kit/" },
+    { name = "test_diagnostics_contract", dir = "tests/_kit/" },
+    { name = "test_lizard_sighted", dir = "tests/_kit/" },
 }
-Ctx.SUITES = SUITES
 
-for _, suite in ipairs(SUITES) do
-	local chunk = assert(loadfile(root .. "/tests/" .. suite), "missing suite: " .. suite)
-	chunk(Ctx)
-end
+_G.OUTFITTERREBORN_TEST = Kit.expose{
+    root             = root,
+    NS               = shared.NS,
+    mocks            = shared.mocks,
+    load             = loadInstance,
+    libFiles         = LIB_FILES,
+    loadedAddonFiles = ADDON_FILES,
+    Loader           = Loader,
+    legacy           = Legacy,
+    secret           = Kit.secret,
+    isSecret         = Kit.isSecret,
+    reveal           = Kit.reveal,
+    installSecretValue = Kit.installSecretValue,
+}
 
-if arg and arg[1] == "--list" then
-	Kit.list()
-	os.exit(0)
-end
+-- The 1500-line cap gate's census lives in the hub (layout-§1); nothing here is generated data.
+Kit.layoutCap = { hub = "docs/ARCHITECTURE.md", exempt = {} }
 
-local _, failed = Kit.run()
-os.exit(failed == 0 and 0 or 1)
+Kit.run{ dir = root .. "/tests/", suites = SUITES }

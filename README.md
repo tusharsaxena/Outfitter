@@ -1,5 +1,11 @@
 # Outfitter Reborn
 
+![WoW](https://img.shields.io/badge/WoW-Midnight_12.1.5-purple)
+![CurseForge Version](https://img.shields.io/curseforge/v/1698220)
+![License](https://img.shields.io/badge/License-MIT-orange)
+![Standard](https://img.shields.io/badge/Ka0s-WoW_Addon_Standard-yellow)
+![Tests](https://img.shields.io/badge/Tests-61%2F61_passing-green)
+
 Equipment management for World of Warcraft. Build named outfits, switch between
 them by hand or automatically, and let the addon put the right gear on for
 whatever you're doing: fishing, herbalism, a battleground, shapeshifting,

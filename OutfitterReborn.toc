@@ -1,0 +1,52 @@
+## Interface: 120105
+## Title: Ka0s Outfitter Reborn
+## Notes: Clothing and weapon management and automated equipment changes.
+## Author: add1kted2ka0s
+## Version: 1.1.0
+## IconTexture: Interface\AddOns\OutfitterReborn\media\logos\outfitterreborn.logo.128.tga
+## SavedVariables: OutfitterRebornDB, OutfitterRebornPerfDB
+## OptionalDeps: Ace3, LibStub, CallbackHandler-1.0, LibSharedMedia-3.0, LibDataBroker-1.1, LibDBIcon-1.0, EllesmereUI, Pawn, WeightsWatcher
+## DefaultState: enabled
+## Category-enUS: Inventory
+## X-License: MIT
+## X-Standard: https://github.com/tusharsaxena/WowAddonStandards
+## X-Curse-Project-ID: 1698220
+
+# Libraries (must load first) -- vendored in libs/
+libs\LibStub\LibStub.lua
+libs\CallbackHandler-1.0\CallbackHandler-1.0.lua
+libs\AceAddon-3.0\AceAddon-3.0.lua
+libs\AceEvent-3.0\AceEvent-3.0.lua
+libs\AceTimer-3.0\AceTimer-3.0.lua
+libs\AceDB-3.0\AceDB-3.0.lua
+libs\AceDBOptions-3.0\AceDBOptions-3.0.lua
+libs\AceConsole-3.0\AceConsole-3.0.lua
+libs\AceGUI-3.0\AceGUI-3.0.xml
+libs\AceConfig-3.0\AceConfig-3.0.xml
+# ONE line: the .xml is itself the file list (library-stack-§7). After Ace3.
+libs\LibKa0s\LibKa0s.xml
+libs\LibSharedMedia-3.0\lib.xml
+libs\LibDataBroker-1.1\LibDataBroker-1.1.lua
+libs\LibDBIcon-1.0\lib.xml
+
+# Locales
+# LOAD-BEARING: creates NS.L, which core\LauncherSetup.lua, defaults\*.lua and every settings\ file read at FILE SCOPE.
+locales\enUS.lua
+
+# Core -- dependency-correct order (layout-§1)
+# LOAD-BEARING: NS.PREFIX, NS.name, NS.BRAND and the version fallback every file below reads.
+core\Namespace.lua
+# LOAD-BEARING: NS.MediaFont, which core\Constants.lua resolves FONT_MONO from at FILE SCOPE.
+core\MediaSetup.lua
+core\Constants.lua
+core\State.lua
+# LOAD-BEARING: NS.Version(), called by core\PerfSetup.lua at FILE SCOPE.
+core\EnvSetup.lua
+# LOAD-BEARING: NS.Util.print (reclaimed by core\OutfitterReborn.lua at FILE SCOPE) and NS.LIBKA0S_MISSING (read by every stub below).
+core\CoreSetup.lua
+# LOAD-BEARING: NewAddon(NS, addonName, ...) and the NS.Print reclaim at FILE SCOPE, so it follows core\CoreSetup.lua.
+core\OutfitterReborn.lua
+core\Database.lua
+
+# Defaults (the only place a default is hardcoded -- savedvariables-§2; pure data)
+defaults\Profile.lua
