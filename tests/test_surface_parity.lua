@@ -136,8 +136,7 @@ test("parity: the Perf stub carries every member this addon reads, on both arms"
 end)
 
 test("parity: the Core seam carries every member this addon reads, on both arms", function()
-    -- members from: grep -rhoE "NS\.(Print|SafeToString|IsConcatSafe|SafeRegister[A-Za-z]*|ApplySkin|
-    -- SKIN|MakeCloseButton|MakeResizable|RaiseStaticPopups)\b" core/ modules/ settings/
+    -- members from: grep -rhoE "NS\.(Print|SafeToString|IsConcatSafe|SafeRegister[A-Za-z]*|ApplySkin|SKIN|MakeCloseButton|MakeResizable|RaiseStaticPopups)\b" core/ modules/ settings/
     bothArms("NS", function(NS) return NS end, {
         Print = "function", SafeToString = "function", IsConcatSafe = "function",
         SafeRegisterEvent = "function", SafeRegisterUnitEvent = "function",
@@ -169,6 +168,7 @@ end)
 test("parity: the Compat and Secrets seams carry the same surface on both arms", function()
     -- Host tables over LibKa0s-Compat-1.0 (core/Compat.lua, core/Secrets.lua): every member the
     -- full load publishes is published, as the same kind, when the library is absent.
+    -- members from: grep -rhoE "NS\.(IsSecret|Unsecret|SafeNumber)\b" core/ modules/ settings/
     local l, d = pair()
     T.assertSurfaceParity(l.NS.Compat, d.NS.Compat, "NS.Compat")
     T.assertSurfaceParity(l.NS.Secrets, d.NS.Secrets, "NS.Secrets")
