@@ -258,8 +258,10 @@ NS.VALID_PAGES = { general = true, bar = true, profiles = true }
 
 -- The Minimap row declares no stored `shown`: it answers no root here, and its stored key
 -- (`global.minimap.hide`) is checked against the defaults by the suite instead (architecture-§5).
+-- Nor does a row whose own get/set is its storage: `bar.position` (settings/OutfitBar.lua) encodes
+-- the named state `profile.windows.bar`, and its default is that tree's, encoded.
 local function defaultsRoot(parts, row)
-    if RESET_EXEMPT[row.path] then return nil end
+    if RESET_EXEMPT[row.path] or type(row.set) == "function" then return nil end
     if parts[1] == "global" then return NS.defaults and NS.defaults.global, 2 end
     return NS.defaults and NS.defaults.profile, 1
 end
