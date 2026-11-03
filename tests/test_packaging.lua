@@ -96,3 +96,71 @@ test("packaging: every media path the addon names resolves to a shipped file", f
         assertFalse(ignored(rel, list) ~= nil, rel .. " is named at run time but not shipped")
     end
 end)
+
+-- A path the addon hands the client, made relative to the package root: nil when it does not sit
+-- under Interface\AddOns\OutfitterReborn\. Icon paths are extensionless (LibKa0s-Media `Icon`: the
+-- client appends `.tga`), so `ext` names the file the client then opens.
+local PREFIX = "Interface\\AddOns\\OutfitterReborn\\"
+local function packaged(full, ext)
+    if type(full) ~= "string" or full:sub(1, #PREFIX) ~= PREFIX then return nil end
+    return full:sub(#PREFIX + 1):gsub("\\", "/") .. (ext or "")
+end
+
+local function onDisk(rel)
+    local file = io.open(T.root .. "/" .. rel, "rb")
+    if file then file:close() end
+    return file ~= nil
+end
+
+-- The names of root CLAUDE.md's `LibKa0s icons:` line, read by the kit's own parser.
+local function declaredIcons()
+    local VendorSync = dofile(T.root .. "/tests/_kit/vendor_sync.lua")
+    local f = assert(io.open(T.root .. "/CLAUDE.md", "rb"))
+    local doc = f:read("*a")
+    f:close()
+    local decl = assert(VendorSync.iconDeclaration(doc), "CLAUDE.md declares its icons")
+    return decl.names or {}
+end
+
+test("packaging: every declared icon resolves to a shipped file under the package folder", function()
+    local _, list = pkgmeta()
+    local names = declaredIcons()
+    assertTrue(#names > 0, "the declaration names icons")
+    for _, name in ipairs(names) do
+        local rel = packaged(NS.Icon(name), ".tga")
+        assertTrue(rel ~= nil, name .. " resolves under " .. PREFIX .. " (got " .. tostring(NS.Icon(name)) .. ")")
+        if rel then
+            assertTrue(onDisk(rel), rel .. " is on disk")
+            -- red under: `- libs/LibKa0s/media/icons` added to the .pkgmeta ignores
+            assertFalse(ignored(rel, list) ~= nil, rel .. " is drawn at run time but not shipped")
+        end
+    end
+end)
+
+test("packaging: each shipped icon set ships its license file beside it", function()
+    local _, list = pkgmeta()
+    local LICENSES = {
+        [""] = "libs/LibKa0s/media/icons/LICENSE-open-iconic.txt",
+        ph   = "libs/LibKa0s/media/icons/phosphor/LICENSE-phosphor.txt",
+        gi   = "libs/LibKa0s/media/icons/game-icons/LICENSE-game-icons.txt",
+    }
+    local sets = {}
+    for _, name in ipairs(declaredIcons()) do sets[name:match("^(%a+):") or ""] = true end
+    for prefix in pairs(sets) do
+        local rel = assert(LICENSES[prefix], "a license is known for the `" .. prefix .. "` set")
+        assertTrue(onDisk(rel), rel .. " is on disk")
+        -- red under: `- libs/LibKa0s/media/icons/LICENSE-open-iconic.txt` added to the .pkgmeta ignores
+        assertFalse(ignored(rel, list) ~= nil, rel .. " is ignored by " .. tostring(ignored(rel, list)))
+    end
+end)
+
+test("packaging: the debug console's face resolves to a shipped font", function()
+    local _, list = pkgmeta()
+    local rel = packaged(NS.Constants.FONT_MONO)
+    assertTrue(rel ~= nil, "FONT_MONO resolves under " .. PREFIX .. " (got " .. tostring(NS.Constants.FONT_MONO) .. ")")
+    if rel then
+        assertTrue(onDisk(rel), rel .. " is on disk")
+        -- red under: `- libs/LibKa0s/media/fonts` added to the .pkgmeta ignores
+        assertFalse(ignored(rel, list) ~= nil, rel .. " is named at run time but not shipped")
+    end
+end)
