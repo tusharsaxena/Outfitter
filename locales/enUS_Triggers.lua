@@ -17,6 +17,10 @@ L["Battleground"] = "Battleground"
 L["Arena"] = "Arena"
 
 -- P4.14 keys (modules/States.lua, modules/States_Zone.lua)
+L["Instance: %s (type %s, map ID %s)"] = "Instance: %s (type %s, map ID %s)"
+L["This map has no entry in the zone table"] = "This map has no entry in the zone table"
+L["No zone outfits apply here"] = "No zone outfits apply here"
+L["Zone outfits active: %s"] = "Zone outfits active: %s"
 
 -- P4.15 keys (defaults/Triggers.lua, modules/Triggers_Params.lua, modules/Triggers_Families.lua, modules/Triggers_Effects.lua, modules/Triggers.lua, modules/Triggers_Binder.lua)
 

@@ -402,4 +402,217 @@ test("trigger data: the maps, skill lines, Find Fish and the cooking pets", func
 end)
 
 -- ── the engine (P4.14) ───────────────────────────────────────────────────────────────────────
--- modules/States_Zone.lua's producer cases are appended here by P4.14 (design §9.3 test_zones).
+-- modules/States_Zone.lua's producer (design §6.5, INV §8.2): the derived tables, CurrentIds (the
+-- instance type gives the generics, the map id the specifics, a name never), the debounced update
+-- with its three-field early-out, the wear-order emission inside one Batch, the first-sighting seed,
+-- and the public reads. NS.Equip (P4.8), NS.Triggers (P4.15) and NS.Stack (P4.9) are recorded fakes
+-- (design §12, the fake rule). "Every row has one trigger" is P4.16d's test_triggers_pvp: the zone
+-- triggers are emitted by Triggers.Finalize (P4.15).
+
+local function zoneScene(opts)
+    opts = opts or {}
+    local inst = T.load()
+    local NS, M = inst.NS, inst.mocks
+    local ctl = { worn = opts.worn or {}, forState = opts.forState or {} }
+    local equip = T.fake(NS, "Equip", { Batch = function(fn, ...) return true, fn(...) end,
+                                        SuspendedForLoad = function() return false end })
+    T.fake(NS, "Triggers", { ForState = function(id) return ctl.forState[id] or {} end })
+    T.fake(NS, "Stack", { IsWorn = function(id) return ctl.worn[id] == true end })
+    local heard = {}
+    NS.NewBusTarget():RegisterMessage(NS.MSG.STATE_CHANGED, function(_, id, on)
+        heard[#heard + 1] = id .. "=" .. tostring(on)
+    end)
+    NS.States.ResumeZone()
+    M.__fireTimers()
+    for i = #heard, 1, -1 do heard[i] = nil end
+    return { NS = NS, M = M, S = NS.States, W = M.__world, equip = equip, heard = heard, ctl = ctl }
+end
+
+local function idList(set)
+    local out = {}
+    for _, row in ipairs(Z().rows) do if set[row.id] then out[#out + 1] = row.id end end
+    return table.concat(out, ",")
+end
+
+local function enter(s, spec)
+    s.W:setInstance(spec)
+    s.M.__fire("ZONE_CHANGED_NEW_AREA")
+    s.M.__fireTimers()
+end
+
+test("zone engine: ORDER and BY_MAP_ID are derived from the rows at load", function()
+    local order = {}
+    for i, row in ipairs(Z().rows) do order[i] = row.id end
+    assertEqual(table.concat(Z().ORDER, ","), table.concat(order, ","), "ORDER")
+    local want, n = deriveByMapID(Z()), 0
+    for mapID, ids in pairs(want) do
+        n = n + 1
+        assertEqual(table.concat(Z().BY_MAP_ID[mapID] or {}, ","), table.concat(ids, ","), "map " .. mapID)
+    end
+    local extra = 0
+    for mapID in pairs(Z().BY_MAP_ID) do if not want[mapID] then extra = extra + 1 end end
+    assertEqual(extra, 0, "maps the rows do not list")
+    assertEqual(n, 44)
+end)
+
+test("zone engine: an unknown battleground gives the generic only; an unknown arena both generics", function()
+    local S = T.NS.States
+    -- red under: generics only from BY_MAP_ID (a map Blizzard adds tomorrow would set nothing).
+    assertEqual(idList(S.CurrentIds("pvp", 99999)), "PVP_BATTLEGROUND", "an unknown battleground")
+    assertEqual(idList(S.CurrentIds("arena", 99999)), "PVP_BATTLEGROUND,PVP_ARENA", "an unknown arena")
+    assertEqual(idList(S.CurrentIds("none", nil)), "", "the open world")
+    assertEqual(idList(S.CurrentIds("party", 1)), "", "a dungeon")
+    assertEqual(idList(S.CurrentIds(nil, nil)), "", "nothing readable")
+end)
+
+test("zone engine: every map gives its own row plus the generics, and nothing else", function()
+    local S = T.NS.States
+    for _, row in ipairs(Z().rows) do
+        for _, mapID in ipairs(row.mapIDs or {}) do
+            local itype = row.kind == "arena" and "arena" or "pvp"
+            local want = row.kind == "arena" and ("PVP_BATTLEGROUND,PVP_ARENA," .. row.id)
+                or ("PVP_BATTLEGROUND," .. row.id)
+            -- red under: an arena row deriving only PVP_BATTLEGROUND in BY_MAP_ID (read on a "pvp" type).
+            assertEqual(idList(S.CurrentIds("pvp", mapID)), want, row.id .. " map " .. mapID .. " (by map)")
+            assertEqual(idList(S.CurrentIds(itype, mapID)), want, row.id .. " map " .. mapID)
+        end
+    end
+    for _, mapID in ipairs({ 529, 1681, 2107, 2177 }) do
+        assertEqual(idList(S.CurrentIds("pvp", mapID)), "PVP_BATTLEGROUND,BG_AB", "AB map " .. mapID)
+    end
+    for _, mapID in ipairs(Z().BRAWL_MAP_IDS) do
+        assertEqual(idList(S.CurrentIds("pvp", mapID)), "PVP_BATTLEGROUND", "brawl " .. mapID)
+    end
+end)
+
+test("zone engine: the map decides, never the name", function()
+    local s = zoneScene()
+    -- An instance named for Alterac Valley on a map the table does not know.
+    s.M.__context.zone = "Alterac Valley"
+    s.M.GetRealZoneText = function() return "Alterac Valley" end
+    s.M.GetMinimapZoneText = function() return "Alterac Valley" end
+    enter(s, { name = "Alterac Valley", type = "pvp", instanceID = 99999 })
+    -- red under: any name match in CurrentIds or the update (the zone texts reached the decision).
+    assertFalse(s.S.InZone("BG_AV"), "a name set the AV outfit")
+    assertTrue(s.S.InZone("PVP_BATTLEGROUND"))
+    enter(s, { name = "Somewhere", type = "pvp", instanceID = 30 })
+    assertTrue(s.S.InZone("BG_AV"), "the map id")
+end)
+
+test("zone engine: one battleground never sets another, and leaving clears both", function()
+    local s = zoneScene()
+    enter(s, { type = "pvp", instanceID = 30 })
+    assertTrue(s.S.InZone("BG_AV"))
+    for _, row in ipairs(Z().rows) do
+        if row.id ~= "BG_AV" and row.id ~= "PVP_BATTLEGROUND" then
+            assertFalse(s.S.InZone(row.id), row.id .. " in Alterac Valley")
+        end
+    end
+    assertTrue(s.S.InPvPInstance())
+    enter(s, nil)
+    assertFalse(s.S.InZone("BG_AV"))
+    assertFalse(s.S.InZone("PVP_BATTLEGROUND"))
+    assertFalse(s.S.InPvPInstance())
+end)
+
+test("zone engine: the states go out in wear order, generic first, inside one Batch", function()
+    local s = zoneScene()
+    local b = s.equip.__count("Batch")
+    enter(s, { type = "arena", instanceID = 572 })
+    assertEqual(s.equip.__count("Batch"), b + 1, "one bracket")
+    -- red under: iterating the current ids with pairs (the specific outfit could go on under the generic).
+    assertEqual(table.concat(s.heard, ","), "PVP_BATTLEGROUND=true,PVP_ARENA=true,ARENA_LORDAERON=true")
+    for i = #s.heard, 1, -1 do s.heard[i] = nil end
+    enter(s, nil)
+    assertEqual(table.concat(s.heard, ","), "PVP_BATTLEGROUND=false,PVP_ARENA=false,ARENA_LORDAERON=false")
+end)
+
+test("zone engine: the zone events are debounced into one update 0.01 s out", function()
+    local s = zoneScene()
+    s.W:setInstance({ type = "pvp", instanceID = 30 })
+    for _, ev in ipairs({ "ZONE_CHANGED_NEW_AREA", "ZONE_CHANGED", "ZONE_CHANGED_INDOORS", "PLAYER_ENTERING_WORLD" }) do
+        s.M.__fire(ev)
+    end
+    local live = 0
+    for _, t in ipairs(s.M.__timers()) do
+        live = live + 1
+        assertEqual(t.delay, 0.01, "the debounce delay")
+    end
+    -- red under: scheduling without canceling the pending update (four updates for one move).
+    assertEqual(live, 1, "one pending update")
+    assertFalse(s.S.InZone("BG_AV"), "nothing before the debounce")
+    s.M.__fireTimers()
+    assertTrue(s.S.InZone("BG_AV"))
+end)
+
+test("zone engine: the update returns early only when type, map id and zone text all hold", function()
+    local s = zoneScene()
+    enter(s, { type = "pvp", instanceID = 30 })
+    local b = s.equip.__count("Batch")
+    s.M.__fire("ZONE_CHANGED")
+    s.M.__fireTimers()
+    -- red under: no early-out (every subzone step re-ran the zone states).
+    assertEqual(s.equip.__count("Batch"), b, "nothing moved")
+    -- Ashran and Wintergrasp each name a zone and a battleground: the text is a change detector too.
+    s.M.__context.zone = "Somewhere else"
+    s.M.__fire("ZONE_CHANGED")
+    s.M.__fireTimers()
+    -- red under: an early-out on the map id and type alone.
+    assertEqual(s.equip.__count("Batch"), b + 1, "the zone text moved")
+    s.W:setInstance({ type = "pvp", instanceID = 529 })
+    s.M.__context.zone = "Somewhere else"
+    s.M.__fire("ZONE_CHANGED")
+    s.M.__fireTimers()
+    assertEqual(s.equip.__count("Batch"), b + 2, "the map id moved")
+    assertTrue(s.S.InZone("BG_AB"))
+end)
+
+test("zone engine: a first sighting is seeded from the worn outfit whose trigger subscribes", function()
+    local s = zoneScene({ forState = { BG_AV = { "BG_AV" } } })
+    local O = s.NS.Outfits
+    local id = O.Create("AV", {}, { trigger = "BG_AV" })
+    s.ctl.worn[id] = true                                       -- a /reload inside Alterac Valley
+    -- The scene's first update already saw every zone id; a stand-down forgets the states.
+    s.S.Suspend()
+    s.S.ResumeZone()
+    enter(s, { type = "pvp", instanceID = 30 })
+    -- red under: seeding a nil zone state as false (the AV outfit would be worn a second time).
+    assertEqual(table.concat(s.heard, ","), "PVP_BATTLEGROUND=true", "no edge for the worn AV outfit")
+    assertTrue(s.S.InZone("BG_AV"))
+end)
+
+test("zone engine: ZoneInfo reports the instance, a missing map entry and the active zone ids", function()
+    local s = zoneScene()
+    enter(s, { name = "Ruins of Lordaeron", type = "arena", instanceID = 572 })
+    local lines = s.S.ZoneInfo()
+    assertEqual(lines[1], "Instance: Ruins of Lordaeron (type arena, map ID 572)")
+    assertEqual(lines[2], "Zone outfits active: PVP_BATTLEGROUND, PVP_ARENA, ARENA_LORDAERON")
+    assertEqual(#lines, 2)
+    enter(s, { name = "New Arena", type = "arena", instanceID = 99999 })
+    lines = s.S.ZoneInfo()
+    -- red under: no BY_MAP_ID check in ZoneInfo (a map the table misses reads as known).
+    assertEqual(lines[2], "This map has no entry in the zone table")
+    assertEqual(lines[3], "Zone outfits active: PVP_BATTLEGROUND, PVP_ARENA")
+    enter(s, nil)
+    lines = s.S.ZoneInfo()
+    assertEqual(lines[#lines], "No zone outfits apply here")
+end)
+
+test("zone engine: SuspendZone drops the events and the pending update; ResumeZone re-reads", function()
+    local s = zoneScene()
+    enter(s, { type = "pvp", instanceID = 30 })
+    s.M.__fire("ZONE_CHANGED")
+    s.S.SuspendZone()
+    local n = 0
+    for _, r in ipairs(s.M.__registrations()) do
+        if r.event:find("^ZONE_CHANGED") then n = n + 1 end
+    end
+    -- red under: SuspendZone leaving the zone target registered.
+    assertEqual(n, 0, "a zone event survived")
+    assertEqual(s.M.__fireTimers(), 0, "the pending update survived")
+    assertFalse(s.S.InZone("BG_AV"), "the current ids cleared")
+    s.S.ResumeZone()
+    s.M.__fireTimers()
+    -- The early-out memory went with the stand-down, so the same place is read again.
+    assertTrue(s.S.InZone("BG_AV"))
+end)

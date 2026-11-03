@@ -147,8 +147,8 @@ local SUITES = {
 
     { name = "test_companion",        pending = "P4.13" },
 
-    { name = "test_states",           pending = "P4.14" },
-    { name = "test_secrets_states",   pending = "P4.14" },
+    { name = "test_states" },
+    { name = "test_secrets_states" },
 
     { name = "test_quickslots",       pending = "P4.18" },
 
