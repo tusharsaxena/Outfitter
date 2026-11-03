@@ -9,6 +9,8 @@
 local T = _G.OUTFITTERREBORN_TEST
 local test, assertEqual, assertTrue, assertFalse = T.test, T.assertEqual, T.assertTrue, T.assertFalse
 local scene = dofile(T.root .. "/tests/dock_scene.lua")(T)
+-- The fake sheet re-strataed by the host: a host value, never one of ours (C.LAYERS).
+local RAISED_HOST_STRATA = "HIGH"
 
 -- The six boxes that anchor at the slot's TOPRIGHT (the right-hand column and the weapons).
 local RIGHT = { Finger0Slot = true, Finger1Slot = true, Trinket0Slot = true, Trinket1Slot = true,
@@ -133,11 +135,11 @@ test("slot enables: the first Restack is in Show, from the sheet's strata and hi
     local frame = M.OutfitterRebornSlotEnables
     -- red under: call Restack from Build (the level is set before the sheet is shown).
     assertEqual(rawget(frame, "__level"), nil, "stacked at build")
-    M.CharacterFrame:SetFrameStrata("HIGH")
+    M.CharacterFrame:SetFrameStrata(RAISED_HOST_STRATA)
     local id = NS.Outfits.Create("Hat", { HeadSlot = { id = 0 } })
     NS.Stack.Select(id)
     assertTrue(frame:IsShown())
-    assertEqual(frame:GetFrameStrata(), "HIGH")
+    assertEqual(frame:GetFrameStrata(), RAISED_HOST_STRATA)
     local highest = NS.SlotEnables.HighestLevel(M.CharacterFrame, M.OutfitterRebornSheetHolder)
     assertEqual(highest, M.CharacterHeadSlot:GetFrameLevel(), "the slot buttons are the sheet's top frames")
     assertEqual(frame:GetFrameLevel(), highest + 1)

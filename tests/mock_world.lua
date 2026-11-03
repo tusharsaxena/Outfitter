@@ -470,9 +470,12 @@ end
 
 -- ── the character sheet ──────────────────────────────────────────────────────────────────────
 
+-- The stock sheet's strata: the host's value, never one of ours (C.LAYERS).
+local SHEET_STRATA = "MEDIUM"
+
 function World.installSheet(M, W, Gear)
     local sheet = M.CreateFrame("Frame", "CharacterFrame", M.UIParent)
-    sheet:SetFrameStrata("MEDIUM")
+    sheet:SetFrameStrata(SHEET_STRATA)
     sheet:SetFrameLevel(1)
     sheet:Hide()
     local doll = M.CreateFrame("Frame", "PaperDollFrame", sheet)

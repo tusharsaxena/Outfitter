@@ -12,6 +12,8 @@ local test, assertEqual, assertTrue, assertFalse, assertNil =
 local scene = dofile(T.root .. "/tests/dock_scene.lua")(T)
 
 local DOCK_OVER_HOST = 1
+-- The fake sheet re-strataed by the host: a host value, never one of ours (C.LAYERS).
+local RAISED_HOST_STRATA = "HIGH"
 
 -- The scene with the sheet laid out at (right 300, top 500) and the window open on it.
 local function opened()
@@ -74,11 +76,11 @@ test("dock: strata and level are copied from the host, level + DOCK_OVER_HOST, n
     assertFalse(win:IsToplevel(), "the window is not toplevel")
     assertEqual(win:GetParent(), M.UIParent, "the window is detached from the sheet")
     -- The sheet raised and re-strataed: the next follow tick re-syncs.
-    M.CharacterFrame:SetFrameStrata("HIGH")
+    M.CharacterFrame:SetFrameStrata(RAISED_HOST_STRATA)
     M.CharacterFrame:SetFrameLevel(20)
     M.OutfitterRebornDockDriver:__fire("OnUpdate", 0.05)
     -- red under: copy a fixed strata (L.STRATA.HUD) in Dock.ApplyLayers instead of the host's.
-    assertEqual(win:GetFrameStrata(), "HIGH")
+    assertEqual(win:GetFrameStrata(), RAISED_HOST_STRATA)
     assertEqual(win:GetFrameLevel(), holder:GetFrameLevel() + DOCK_OVER_HOST)
     -- The rows and the scroll bar sit above the window's own level.
     assertTrue(NS.WindowRows.rows[1]:GetFrameLevel() > win:GetFrameLevel())

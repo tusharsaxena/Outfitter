@@ -142,7 +142,7 @@ end
 
 -- The body of a double-quoted literal, unescaped the way Lua 5.1 reads it: the named escapes, \ddd
 -- (one to three digits), an escaped newline, and any other escaped character standing for itself.
--- Decoded by hand rather than by compiling `return "..."`: test_no_loadstring (design §9) bans run-
+-- Decoded by hand rather than by compiling `return "..."`: the no-code-from-text guard (design §9) bans run-
 -- time compilation in every file outside libs/, tests/_kit/ and tools/.
 local NAMED_ESCAPES = { a = "\a", b = "\b", f = "\f", n = "\n", r = "\r", t = "\t", v = "\v" }
 local function unescape(raw)
@@ -194,7 +194,7 @@ end
 
 -- An overlay run on a client of `clientLocale`, writing into a fresh recording NS.L: the keys it
 -- wrote, in order. The chunk sees GetLocale as a mock over the base globals, compiled by the kit's
--- loader (tests/_kit/ is outside test_no_loadstring's scope; this suite is not).
+-- loader (tests/_kit/ is outside the no-code-from-text guard's scope; this suite is not).
 local function overlayWrites(text, path, clientLocale)
     local written = {}
     local L = setmetatable({}, { __newindex = function(t, k, v)
