@@ -64,13 +64,16 @@ Total.
 - database: the outfit root refuses a nil id, an unknown id and any other first segment
 - database: db.char starts in the §3.1 shape, and the outfit store's writes land in it
 
-### test_packaging.lua (5)
+### test_packaging.lua (8)
 
 - packaging: the package folder is the TOC basename and the addon's folder name
 - packaging: every maintainer file and folder is ignored
 - packaging: the player-facing files and the runtime logos ship
 - packaging: nothing the TOC loads is ignored
 - packaging: every media path the addon names resolves to a shipped file
+- packaging: every declared icon resolves to a shipped file under the package folder
+- packaging: each shipped icon set ships its license file beside it
+- packaging: the debug console's face resolves to a shipped font
 
 ### test_vendor_sync.lua (3)
 
@@ -360,7 +363,7 @@ Total.
 - Disabled (Outfitter): the LoadPass timer and the Pawn/WeightsWatcher watch are canceled
 - Disabled (Outfitter): the stand-up rebuilds: an outfit added while down binds on resume
 
-### test_locale.lua (12)
+### test_locale.lua (18)
 
 - locale: the enUS files are the TOC's, the base first and its topic files contiguous after it
 - locale: a topic file is named enUS_<Topic> and fills the base file's NS.L, keeping no table
@@ -373,11 +376,18 @@ Total.
 - locale: an overlay writes only keys an enUS file defines
 - locale: no locale key carries a retired string
 - locale: NS.L is never handed to a descriptor's L
-- locale: each overlay covers the legacy translations it re-keys (skipped: pending P4.28: the overlays carry only their gate line until tools/rekey-locales.lua writes them; the case then holds each locale at or above fixtures/legacy/locale_keys.lua less the retired keys)
+- rekey: the tool names the conversion base the legacy capture was taken at
+- rekey: a translation is kept only when its English is an enUS key and its directives match
+- rekey: format directives compare as a multiset, %% left out
+- rekey: a rendered overlay is gated first, notes its fields, and writes only on its locale
+- locale: each overlay covers the legacy translations it re-keys
+- locale: every overlay translation carries its English's format directives
+- locale: the overlays carry the legacy translations
 
-### test_glyphs.lua (1)
+### test_glyphs.lua (2)
 
 - glyphs: display strings use only characters every shipped skin face draws
+- glyphs: only the four overlays in another script are left out
 
 ### test_file_budget.lua (2)
 
@@ -1287,13 +1297,31 @@ Total.
 - diagnostics: the sections read state and never act
 - diagnostics: the report written to the console carries the zone and STUCK lines
 
-### test_credits.lua (1)
+### test_credits.lua (8)
 
-- test_credits.lua: suite not written yet (skipped: P4.29)
+- credits: the landing page's Credits section is the one host credits line
+- credits: the landing line names the author, his handle, the maintainer and Nulian
+- credits: README.md's Credits is its last section
+- credits: the README names the author, the maintainers and the license
+- credits: the README carries every localizer, under the language they translated
+- credits: the README carries every developer, tester, supporter and friend the old panel did
+- credits: the README credits exactly the icon sets this build ships
+- credits: LICENSE keeps John Stephen's copyright with the Ka0s line directly under it
 
-### test_skin.lua (1)
+### test_skin.lua (12)
 
-- test_skin.lua: suite not written yet (skipped: P4.30)
+- skin: every owner token a source file names is registered
+- skin: every skin primitive a source file calls is in the library's VOCAB
+- skin: the primitive scan is falsifiable
+- skin: every library color a call site reads by name has a host copy
+- skin: with every surface built, no Blizzard frame is painted
+- skin: the window and the dialogs wear NS.ApplySkin's Shell, the chooser and bar a Panel
+- skin: Blizzard icon art in a window is cropped and edged from the skin, never as a HUD
+- skin: the bar's icons are HUD icons, cropped and edged from the skin
+- skin: the sheet button's logo is a cropped square icon
+- skin: no source file writes inline icon markup by hand (W.IconText crops it)
+- skin: a switch recolors a dialog's error line through of.dialog.error
+- skin: a switch marks the window, and its next tick recolors an item row's name
 
 ### test_refactor_pins.lua (1)
 
@@ -1305,11 +1333,93 @@ Total.
 - skin values: no typed value outside the kit's categories and the host's rows
 - skin values: the check is falsifiable, a planted value of each shape is reported
 
-### test_skin_switch.lua (3)
+### test_skin_switch.lua (85)
 
 - skin switch: the check is falsifiable, a surface that redraws a literal is reported
-- skin switch: an owned window's edge (NS.ApplySkin) changes
-- skin switch: an owned window's edge (NS.ApplySkin) changes with the Scope ignored
+- skin switch: the sheet button changes
+- skin switch: the sheet button changes with the Scope ignored
+- skin switch: the window's shell changes
+- skin switch: the window's shell changes with the Scope ignored
+- skin switch: the window's settings button changes
+- skin switch: the window's settings button changes with the Scope ignored
+- skin switch: the window's scroll bar changes
+- skin switch: the window's scroll bar changes with the Scope ignored
+- skin switch: a category row changes
+- skin switch: a category row changes with the Scope ignored
+- skin switch: an outfit row changes
+- skin switch: an outfit row changes with the Scope ignored
+- skin switch: an outfit row's name changes
+- skin switch: an outfit row's name changes with the Scope ignored
+- skin switch: an item row changes
+- skin switch: an item row changes with the Scope ignored
+- skin switch: an item row's name changes
+- skin switch: an item row's name changes with the Scope ignored
+- skin switch: a slot checkbox, on changes
+- skin switch: a slot checkbox, on changes with the Scope ignored
+- skin switch: a slot checkbox, off changes
+- skin switch: a slot checkbox, off changes with the Scope ignored
+- skin switch: a slot checkbox, unknown changes
+- skin switch: a slot checkbox, unknown changes with the Scope ignored
+- skin switch: the New outfit button changes
+- skin switch: the New outfit button changes with the Scope ignored
+- skin switch: the Slots All button changes
+- skin switch: the Slots All button changes with the Scope ignored
+- skin switch: the Slots None button changes
+- skin switch: the Slots None button changes with the Scope ignored
+- skin switch: the outfit dialog's shell changes
+- skin switch: the outfit dialog's shell changes with the Scope ignored
+- skin switch: the outfit dialog's Done button changes
+- skin switch: the outfit dialog's Done button changes with the Scope ignored
+- skin switch: the outfit dialog's name box changes
+- skin switch: the outfit dialog's name box changes with the Scope ignored
+- skin switch: a dialog's error line changes
+- skin switch: a dialog's error line changes with the Scope ignored
+- skin switch: the trigger dialog's shell changes
+- skin switch: the trigger dialog's shell changes with the Scope ignored
+- skin switch: the rebuild dialog's shell changes
+- skin switch: the rebuild dialog's shell changes with the Scope ignored
+- skin switch: the progress dialog's shell changes
+- skin switch: the progress dialog's shell changes with the Scope ignored
+- skin switch: the progress dialog's fill changes
+- skin switch: the progress dialog's fill changes with the Scope ignored
+- skin switch: a bool field's checkbox changes
+- skin switch: a bool field's checkbox changes with the Scope ignored
+- skin switch: a number field's box changes
+- skin switch: a number field's box changes with the Scope ignored
+- skin switch: a string field's box changes
+- skin switch: a string field's box changes with the Scope ignored
+- skin switch: a spell list field's list changes
+- skin switch: a spell list field's list changes with the Scope ignored
+- skin switch: an item list field's list changes
+- skin switch: an item list field's list changes with the Scope ignored
+- skin switch: a map list field's list changes
+- skin switch: a map list field's list changes with the Scope ignored
+- skin switch: a subzone list field's list changes
+- skin switch: a subzone list field's list changes with the Scope ignored
+- skin switch: a unit list field's list changes
+- skin switch: a unit list field's list changes with the Scope ignored
+- skin switch: a pet field's button changes
+- skin switch: a pet field's button changes with the Scope ignored
+- skin switch: a list field's scroll bar changes
+- skin switch: a list field's scroll bar changes with the Scope ignored
+- skin switch: the icon chooser's shell changes
+- skin switch: the icon chooser's shell changes with the Scope ignored
+- skin switch: an icon chooser grid button changes
+- skin switch: an icon chooser grid button changes with the Scope ignored
+- skin switch: the icon chooser's scroll bar changes
+- skin switch: the icon chooser's scroll bar changes with the Scope ignored
+- skin switch: the bar's backplate changes
+- skin switch: the bar's backplate changes with the Scope ignored
+- skin switch: a bar button changes
+- skin switch: a bar button changes with the Scope ignored
+- skin switch: a bar button's worn mark changes
+- skin switch: a bar button's worn mark changes with the Scope ignored
+- skin switch: the bar's drag handle changes
+- skin switch: the bar's drag handle changes with the Scope ignored
+- skin switch: the bar's test strip changes
+- skin switch: the bar's test strip changes with the Scope ignored
+- skin switch: a compare tooltip changes
+- skin switch: a compare tooltip changes with the Scope ignored
 
 ### test_eol.lua (2)
 
@@ -1381,7 +1491,7 @@ Total.
 | test_toc.lua | 5 |
 | test_loadorder.lua | 13 |
 | test_database.lua | 11 |
-| test_packaging.lua | 5 |
+| test_packaging.lua | 8 |
 | test_vendor_sync.lua | 3 |
 | test_secrets.lua | 42 |
 | test_bus.lua | 12 |
@@ -1394,8 +1504,8 @@ Total.
 | test_launcher.lua | 12 |
 | test_keybinds.lua | 21 |
 | test_disabled.lua | 21 |
-| test_locale.lua | 11 |
-| test_glyphs.lua | 1 |
+| test_locale.lua | 18 |
+| test_glyphs.lua | 2 |
 | test_file_budget.lua | 2 |
 | test_removed_apis.lua | 2 |
 | test_mock_gear.lua | 27 |
@@ -1438,12 +1548,14 @@ Total.
 | test_dialogs.lua | 20 |
 | test_trigger_dialog.lua | 11 |
 | test_diagnostics.lua | 12 |
+| test_credits.lua | 8 |
+| test_skin.lua | 12 |
 | test_skin_values.lua | 3 |
-| test_skin_switch.lua | 3 |
+| test_skin_switch.lua | 85 |
 | test_eol.lua | 2 |
 | test_layout_cap.lua | 13 |
 | test_diagnostics_contract.lua | 8 |
 | test_lizard_sighted.lua | 8 |
 | test_prose.lua | 15 |
-| Skipped | 6 |
-| **Total** | **1146** |
+| Skipped | 3 |
+| **Total** | **1259** |

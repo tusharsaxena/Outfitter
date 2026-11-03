@@ -249,7 +249,7 @@ end
 -- only colors typed so far are core/SkinSetup.lua's, which the kit reads as the seam.
 Kit.skinValues = { root = root, rows = {} }
 
--- The skin-switch test's painted surfaces (skinning-§1): the skeleton until P4.30 (design §9.5).
+-- The skin-switch test's painted surfaces (skinning-§1): the design §9.5 builders (P4.30).
 Kit.skinSwitch = dofile(root .. "/tests/skin_surfaces.lua")(_G.OUTFITTERREBORN_TEST)
 
 -- The diagnostics contract runs against THIS addon's dispatcher (debug-logging-§14), on an instance
