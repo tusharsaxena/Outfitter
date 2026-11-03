@@ -12,11 +12,15 @@
 -- tests/ IS ours and is linted, apart from tests/fixtures/: those files are
 -- data written by tools/legacy_capture.lua, never edited by hand, and a lint
 -- finding in one is fixed by regenerating it.  tools/ is ours and is linted.
+--
+-- tests/_kit/ is the LibKa0s test kit, vendored whole from the library's tag
+-- like libs/LibKa0s/, so it is excluded for the same reason.  docs/revendor/
+-- holds the frozen re-vendor bundles and is never linted.
 
 std = "lua51"
 max_line_length = false
 codes = true
-exclude_files = {"Libraries/", "libs/", "tests/fixtures/"}
+exclude_files = {"Libraries/", "libs/", "tests/fixtures/", "tests/_kit/", "docs/revendor/"}
 
 -- The addon's own globals.  Outfitter predates addon namespaces: the table is a
 -- global, the public API is a set of globals, and the XML reaches text bindings
