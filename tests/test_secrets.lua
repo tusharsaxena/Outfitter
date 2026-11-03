@@ -491,6 +491,26 @@ test("compat: AzeritePowers lists the selected powers sorted, and nil off azerit
         assertEqual(table.concat(C.AzeritePowers({ slotID = 1 }), ":"), "10:30", "a secret power id is skipped")
         assertNil(C.AzeritePowers({ slotID = 3 }))
     end)
+    -- O17: a 12.x client that dropped or changed a member reads as unknown, never raises.
+    with({ ItemLocation = FakeItemLocation,
+           C_AzeriteEmpoweredItem = {
+               IsAzeriteEmpoweredItem = function() return true end,
+               GetAllTierInfo = function() error("GetAllTierInfo changed") end } }, function()
+        -- red under: call api.GetAllTierInfo without pcall in Compat.AzeritePowers.
+        assertNil(C.AzeritePowers({ slotID = 1 }), "a raising GetAllTierInfo is unknown")
+    end)
+    with({ ItemLocation = FakeItemLocation,
+           C_AzeriteEmpoweredItem = {
+               IsAzeriteEmpoweredItem = function() return true end,
+               GetAllTierInfo = function() return { { azeritePowerIDs = { 30, 10 } } } end,
+               IsPowerSelected = function(_, id) if id == 30 then error("changed") end return true end } }, function()
+        -- red under: call api.IsPowerSelected without pcall in selectedPowers (core/Compat.lua).
+        assertEqual(table.concat(C.AzeritePowers({ slotID = 1 }), ":"), "10", "a raising power is left out")
+    end)
+    with({ ItemLocation = FakeItemLocation,
+           C_AzeriteEmpoweredItem = { IsAzeriteEmpoweredItem = function() return true end } }, function()
+        assertNil(C.AzeritePowers({ slotID = 1 }), "a missing GetAllTierInfo is unknown")
+    end)
 end)
 
 test("compat: ItemUniqueness answers a plain record, or nil when unreadable", function()
@@ -550,6 +570,7 @@ end)
 test("compat: pet lookups compare plain names inside Compat and skip a secret one", function()
     local PETS = {
         { "BattlePet-0-1", 39, true, nil, "Mechanical Squirrel" },
+        { "BattlePet-0-5", 39, true, "Pierre", "Mechanical Squirrel" },
         { "BattlePet-0-2", 1203, true, T.secret("Sir Pierre"), "Pierre" },
         { "BattlePet-0-3", 77, false, nil, "Unowned" },
         { T.secret("BattlePet-0-4"), 88, true, nil, "Hidden" },
@@ -565,9 +586,11 @@ test("compat: pet lookups compare plain names inside Compat and skip a secret on
         SummonPetByGUID = function(guid) summoned[#summoned + 1] = guid end } }, function()
         assertEqual(C.SummonedPetGUID(), "BattlePet-0-1")
         assertEqual(C.PetGUIDByName("Mechanical Squirrel"), "BattlePet-0-1", "case-insensitive")
-        -- red under: lower the custom name in Compat before NS.Secrets.PlainString (the secret raises)
-        assertNil(C.PetGUIDByName("sir pierre"), "a secret custom name is skipped, never compared")
-        assertEqual(C.PetGUIDByName("pierre"), "BattlePet-0-2", "the species name still matches")
+        -- INV §3.10 Keep: the species name, never a custom one. A squirrel the player renamed
+        -- "Pierre" sits first in the journal; the COOKING preset's Pierre is the species.
+        -- red under: a PetGUIDByName that also matches the custom name (core/Compat.lua).
+        assertEqual(C.PetGUIDByName("pierre"), "BattlePet-0-2", "the species, not the renamed squirrel")
+        assertNil(C.PetGUIDByName("sir pierre"), "a custom name is never matched")
         assertNil(C.PetGUIDByName("unowned"), "an unowned pet is never a handle")
         assertNil(C.PetGUIDByName("hidden"), "a secret guid is never a handle")
         assertNil(C.PetGUIDByName(T.secret("pierre")))

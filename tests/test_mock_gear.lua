@@ -150,6 +150,7 @@ test("mock gear: gear never lands in a herb bag, and a full backpack keeps it on
     -- red under: make `accepts` in tests/mock_gear.lua return true for every bag.
     assertFalse(M.PutItemInBag(31))
     assertEqual(M.__gearErrors[1], "ERR_ITEM_DOESNT_GO_INTO_BAG")
+    -- red under: a PutItemInBackpack that drops into slot 1 when no slot is free (tests/mock_gear.lua).
     assertFalse(M.PutItemInBackpack())
     assertEqual(M.__gearErrors[2], "ERR_BAG_FULL")
     M.ClearCursor()
@@ -168,6 +169,7 @@ test("mock gear: equipping a BoE binds it, and a warbound item stops being warbo
     local cloak = M.ItemLocation:CreateFromBagAndSlot(1, 1)
     assertTrue(M.C_Item.IsBoundToAccountUntilEquip(cloak))
     M.C_Container.UseContainerItem(1, 1)
+    -- red under: drop `inst.warbound = false` from bindOnEquip (tests/mock_gear.lua).
     assertFalse(M.C_Item.IsBoundToAccountUntilEquip(M.ItemLocation:CreateFromEquipmentSlot(15)))
 end)
 
@@ -177,6 +179,7 @@ test("mock gear: a secret fixture's links are fresh wrappers on every read, the 
     local M = mock("secret_slots")
     local a, b = M.GetInventoryItemLink("player", 1), M.GetInventoryItemLink("player", 1)
     assertTrue(T.isSecret(a))
+    -- red under: a linkOf that caches one secret wrapper per instance (tests/mock_gear.lua).
     assertFalse(rawequal(a, b), "a fresh wrapper per read")
     assertEqual(T.reveal(a), Items.secret_helm.link)
     assertTrue(T.isSecret(M.C_Container.GetContainerItemLink(0, 1)))
@@ -204,6 +207,7 @@ end)
 test("mock gear: an uncached item answers nil until GET_ITEM_INFO_RECEIVED; Instant never waits", function()
     local M, G = mock("uncached")
     local link = Items.legs_plate.link
+    -- red under: drop the `G.pending[def.id]` early return from C_Item.GetItemInfo (tests/mock_gear.lua).
     assertNil(M.C_Item.GetItemInfo(link))
     assertEqual((M.C_Item.GetItemInfoInstant(link)), Items.legs_plate.id)
     local got = listener(M, { "GET_ITEM_INFO_RECEIVED" })
@@ -229,6 +233,9 @@ test("mock gear: EM sets follow their items, wear for real, and survive the zero
     assertEqual(data.slot, 1)
     assertTrue(EM.UseEquipmentSet(2))
     assertEqual(keyAt(G, "MainHandSlot"), "greatsword")
+    -- red under: drop displacedHand's off-hand case AND UseEquipmentSet's `inst == false` branch
+    -- (tests/mock_gear.lua, tests/mock_gear_sets.lua); either alone empties it, and the partial-set
+    -- case below pins the second by itself.
     assertNil(G:equipped("SecondaryHandSlot"))
     assertEqual(EM.GetItemLocations(2)[16], LOC.PLAYER + 16, "the set followed its item")
     assertTrue(select(4, EM.GetEquipmentSetInfo(2)), "and is now the worn set")
@@ -243,6 +250,115 @@ test("mock gear: EM sets follow their items, wear for real, and survive the zero
     local id = EM.GetEquipmentSetID("Fresh")
     assertEqual(EM.GetIgnoredSlots(id)[4], true)
     assertEqual(EM.GetItemIDs(id)[16], Items.greatsword.id, "a new set snapshots what is worn")
+end)
+
+test("mock gear: a closed bank is out of reach: no pickup, and UseEquipmentSet leaves banked items", function()
+    local M, G = mock("bank_closed")
+    G.bankCached = true
+    assertEqual(M.C_Container.GetContainerItemLink(6, 1), Items.legs_plate.link, "the cache still answers reads")
+    -- red under: drop the `reachable` refusal from lift (tests/mock_gear.lua).
+    assertFalse(M.C_Container.PickupContainerItem(6, 1))
+    assertFalse(M.CursorHasItem())
+    M.C_Container.PickupContainerItem(0, 1)
+    -- red under: PickupContainerItem checking readable() instead of reachable() (tests/mock_gear.lua).
+    assertFalse(M.C_Container.PickupContainerItem(6, 3), "nothing drops into a closed bank")
+    assertNil(G:bagItem(6, 3))
+    M.ClearCursor()
+    G.bankCached = false
+    local id = G:addSet{ name = "Banked", items = { LegsSlot = "legs_plate" } }
+    M.C_EquipmentSet.UseEquipmentSet(id)
+    -- red under: drop the `reachable` refusal from lift (tests/mock_gear.lua), here for the set.
+    assertFalse(keyAt(G, "LegsSlot") == "legs_plate", "nothing came out of the closed bank")
+    assertEqual(G:where(select(1, G:find("legs_plate"))).bag, 6, "it is still banked")
+    assertFalse(M.CursorHasItem())
+    G:openBank()
+    M.C_EquipmentSet.UseEquipmentSet(id)
+    assertEqual(keyAt(G, "LegsSlot"), "legs_plate", "with the bank open the set reaches it")
+end)
+
+test("mock gear: the reagent bag refuses gear on a direct drop, and takes a reagent", function()
+    local M, G = mock("specialty_bags")
+    M.PickupInventoryItem(1)
+    -- red under: move the REAGENT_BAG rule out of `accepts` back into `takes` (tests/mock_gear.lua).
+    assertFalse(M.PutItemInBag(35))
+    assertEqual(M.__gearErrors[1], "ERR_ITEM_DOESNT_GO_INTO_BAG")
+    M.ClearCursor()
+    M.PickupInventoryItem(7)
+    assertFalse(M.C_Container.PickupContainerItem(5, 2))
+    assertEqual(M.__gearErrors[2], "ERR_ITEM_DOESNT_GO_INTO_BAG")
+    M.ClearCursor()
+    assertNil(G:bagItem(5, 1))
+    assertEqual(keyAt(G, "HeadSlot"), "head_plate")
+    M.C_Container.PickupContainerItem(1, 1)
+    assertTrue(M.PutItemInBag(35), "a reagent goes in")
+    assertEqual(bagKey(G, 5, 1), "herb_silverleaf")
+end)
+
+test("mock gear: a container cooldown's enable flag is the 12.x boolean (B19)", function()
+    local M = mock("cooldowns")
+    local start, duration, enabled = M.C_Container.GetContainerItemCooldown(0, 1)
+    assertEqual(start, 100)
+    assertEqual(duration, 120)
+    assertEqual(enabled, true)
+    assertEqual(type(select(3, M.C_Container.GetContainerItemCooldown(0, 2))), "boolean")
+    assertEqual(type(select(3, M.C_Container.GetContainerItemCooldown(0, 9))), "boolean", "an empty slot too")
+    -- red under: a GetContainerItemCooldown that answers the fixture's flag as the number 1 (the
+    -- legacy `enable == 1` test at OutfitterInventory.lua:25 would then pass against the mock).
+    assertFalse(enabled == 1 and start ~= 0, "the legacy number test misses a cooling item")
+    assertEqual(select(3, M.GetInventoryItemCooldown("player", 13)), 1, "the inventory call stays numeric")
+end)
+
+test("mock gear: a set built with unlisted slots answers one story for them", function()
+    local M, G = mock("em_sets")
+    local EM, LOC = M.C_EquipmentSet, Mock.gear.LOCATION
+    local id = G:addSet{ name = "Partial", items = { HeadSlot = "head_plate" } }
+    -- red under: an addSet that leaves unlisted slots nil (GetItemLocations would answer 0, "empty").
+    assertEqual(EM.GetItemLocations(id)[5], LOC.PLAYER + 5, "the chest worn when the set was made")
+    assertTrue(EM.UseEquipmentSet(id))
+    assertEqual(keyAt(G, "ChestSlot"), "chest_plate")
+    assertTrue(select(4, EM.GetEquipmentSetInfo(id)), "worn, and the locations agree")
+    local bare = G:addSet{ name = "Bare hands", items = { SecondaryHandSlot = false } }
+    assertEqual(EM.GetItemLocations(bare)[17], 0, "a listed false is an empty-slot entry")
+    EM.UseEquipmentSet(bare)
+    -- red under: drop UseEquipmentSet's `inst == false` branch (tests/mock_gear_sets.lua).
+    assertNil(G:equipped("SecondaryHandSlot"), "wearing it empties the off hand")
+    assertEqual(keyAt(G, "MainHandSlot"), "sword_1h")
+end)
+
+test("mock gear: the flyout list holds worn, carried and (bank open) banked items that fit", function()
+    local M, G = mock("geared")
+    local LOC = Mock.gear.LOCATION
+    local rings = M.GetInventoryItemsForSlot(11, {})
+    -- red under: a GetInventoryItemsForSlot that scans the bags only (tests/mock_gear.lua).
+    assertEqual(rings[LOC.PLAYER + 11], G:equipped("Finger0Slot").def.id, "the slot's own ring")
+    assertEqual(rings[LOC.PLAYER + 12], G:equipped("Finger1Slot").def.id, "the other worn ring")
+    assertEqual(rings[LOC.PLAYER + LOC.BAGS + 2], Items.ring_unique_a.id, "a carried ring")
+    assertNil(rings[LOC.PLAYER + 1], "a helm does not fit a finger")
+    M, G = mock("bank_closed")
+    -- red under: a scan that reads the bank while it is closed.
+    assertNil(M.GetInventoryItemsForSlot(7, {})[LOC.BANK + LOC.BAGS + 6 * 256 + 1], "a closed bank lists nothing")
+    G:openBank()
+    assertEqual(M.GetInventoryItemsForSlot(7, {})[LOC.BANK + LOC.BAGS + 6 * 256 + 1], Items.legs_plate.id)
+end)
+
+test("mock gear: Titan's Grip follows the spec, and grips an axe but never a staff", function()
+    local M, G = mock("tg_warrior")
+    M.C_Container.PickupContainerItem(0, 3)
+    -- red under: a `fits` that lets Titan's Grip take any INVTYPE_2HWEAPON (tests/mock_gear.lua).
+    assertFalse(M.EquipCursorItem(17), "a staff never sits in the off hand")
+    assertEqual(M.__gearErrors[1], "ERR_WRONG_SLOT")
+    M.ClearCursor()
+    M.PickupInventoryItem(17)
+    M.PutItemInBackpack()
+    M.__world:setClass("WARRIOR", 1)
+    M.C_Container.PickupContainerItem(0, 4)
+    -- red under: a static G.titansGrip that ignores the spec change (tests/mock_gear.lua).
+    assertFalse(M.EquipCursorItem(17), "Arms cannot grip the greataxe")
+    M.ClearCursor()
+    M.__world:setClass("WARRIOR", 2)
+    M.C_Container.PickupContainerItem(0, 4)
+    assertTrue(M.EquipCursorItem(17), "back to Fury, it fits")
+    assertEqual(keyAt(G, "SecondaryHandSlot"), "greataxe")
 end)
 
 -- ── the world half ────────────────────────────────────────────────────────────────────────────
@@ -315,6 +431,7 @@ test("mock world: hooksecurefunc hooks the pet journal, and stays a no-op elsewh
     local other = { Fn = function() return 1 end }
     M.hooksecurefunc(other, "Fn", function() seen[#seen + 1] = "x" end)
     other.Fn()
+    -- red under: a hooksecurefunc in tests/mock_world.lua that wraps any table's function.
     assertEqual(#seen, 1, "an unmodeled table is not hooked")
 end)
 
@@ -356,5 +473,19 @@ test("mock gear: fake records calls, refuses an unlisted member, and restores wh
     T.assertError(function()
         Mock.fake(empty, "Equip", { Request = true }, function(e) e.Request(); error("boom") end)
     end)
+    -- red under: drop the restore() between pcall(body, f) and the re-raise in fake() (tests/wow_mock.lua).
     assertNil(rawget(empty, "Equip"), "restored after the body raised")
+end)
+
+-- The fake rule's "for the length of the case": tests/run.lua wraps every T.test case so the fakes
+-- it installed are restored when it ends. Two cases, in registration order, over one shared table.
+local SHARED = { Stack = "real" }
+test("mock gear: a case installs a fake and leaves it in place", function()
+    T.fake(SHARED, "Stack", { Remove = true })
+    assertTrue(SHARED.Stack ~= "real")
+end)
+
+test("mock gear: the next case sees the original again (restored when the last case ended)", function()
+    -- red under: drop the restoreFakes() call from tests/run.lua's T.test wrapper.
+    assertEqual(rawget(SHARED, "Stack"), "real")
 end)

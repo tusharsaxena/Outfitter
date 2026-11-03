@@ -35,10 +35,10 @@ ID.SLOT_LABEL_KEYS = {
     MainHandSlot = "MAINHANDSLOT", SecondaryHandSlot = "SECONDARYHANDSLOT",
 }
 ID.SLOT_LABELS = {
-    Finger0Slot  = L["First Finger"],
-    Finger1Slot  = L["Second Finger"],
-    Trinket0Slot = L["First Trinket"],
-    Trinket1Slot = L["Second Trinket"],
+    Finger0Slot  = L["First finger"],
+    Finger1Slot  = L["Second finger"],
+    Trinket0Slot = L["First trinket"],
+    Trinket1Slot = L["Second trinket"],
 }
 
 -- An item's inventory type -> the slot it goes in, and the meta slot the optimizer pairs it on

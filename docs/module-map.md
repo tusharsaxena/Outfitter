@@ -110,7 +110,12 @@ file. In outline:
 | Path | Job |
 |---|---|
 | `tests/run.lua` | The runner: the load list, the lifecycle kick and the suite list, on the vendored kit |
-| `tests/wow_mock.lua` | The WoW API mock, extending the kit's base mock |
+| `tests/wow_mock.lua` | The WoW API mock, extending the kit's base mock , and `T.fake` (design §12, the fake rule: a stand-in restored when the case ends) |
+| `tests/mock_gear.lua` | The domain mock's gear half: worn items, bags, the bank, the cursor and item info, moving items for real |
+| `tests/mock_gear_sets.lua` | `C_EquipmentSet` over the gear half: sets that follow their items and wear for real |
+| `tests/mock_world.lua` | The domain mock's world half: instance, restriction, auras, class and spec, protected frames, hooks, the character sheet and tooltips |
+| `tests/fixtures/items.lua` | The item fixtures the gear half answers from, in the 12.x link shape |
+| `tests/fixtures/inventories.lua` | The named gear scenarios `M.__gear:load` places |
 | `tests/test_*.lua` | The local suites ([testing.md](testing.md)) |
 | `tests/skin_surfaces.lua` | The skin-switch suite's painted surfaces (skinning-§1) |
 | `tests/prose_waivers.lua` | What the US-English gate must not correct here, per file and per word |

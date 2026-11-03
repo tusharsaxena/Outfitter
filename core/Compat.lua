@@ -485,18 +485,25 @@ local function selectedPowers(api, il, tier, out)
     local S = NS.Secrets
     for _, raw in S.SafeIterate(tier.azeritePowerIDs) do
         local id = S.PlainNumber(raw)
-        if id and S.PlainTruth(api.IsPowerSelected(il, id)) then out[#out + 1] = id end
+        if id then
+            local ok, selected = pcall(api.IsPowerSelected, il, id)
+            if ok and S.PlainTruth(selected) == true then out[#out + 1] = id end
+        end
     end
 end
 
---- The sorted selected azerite power IDs of the item at `loc`, or nil off azerite gear.
+--- The sorted selected azerite power IDs of the item at `loc`, or nil off azerite gear or when the
+--- client cannot say (O17: a missing or raising C_AzeriteEmpoweredItem call reads as unknown; a
+--- power whose IsPowerSelected raises is left out).
 function Compat.AzeritePowers(loc)
     local api = C_AzeriteEmpoweredItem
     local il = member(api, "IsAzeriteEmpoweredItem") and itemLocation(loc)
     if not il then return nil end
     local ok, isAzerite = pcall(api.IsAzeriteEmpoweredItem, il)
     if not ok or NS.Secrets.PlainTruth(isAzerite) ~= true then return nil end
-    local tiers, out = api.GetAllTierInfo(il), {}
+    local okTiers, tiers = pcall(api.GetAllTierInfo, il)
+    if not okTiers then return nil end
+    local out = {}
     if not readable(tiers) then return out end
     for _, tier in NS.Secrets.SafeIterate(tiers) do selectedPowers(api, il, tier, out) end
     table.sort(out)
@@ -575,33 +582,31 @@ function Compat.SummonedPetGUID()
     return NS.Secrets.PlainString(fn())
 end
 
--- The GUID of the first owned journal pet that `match(speciesID, customName, speciesName)` accepts,
--- every argument plain or nil. A pet whose GUID is secret is never a handle.
+-- The GUID of the first owned journal pet that `match(speciesID, speciesName)` accepts, each
+-- argument plain or nil. A pet whose GUID is secret is never a handle.
 local function findPet(match)
     local api, S = C_PetJournal, NS.Secrets
     local count, info = member(api, "GetNumPets"), member(api, "GetPetInfoByIndex")
     if not count or not info then return nil end
     local n = math.min(S.UnsecretNumber((count()), 0), PET_LIMIT)
     for i = 1, n do
-        local guid, species, owned, custom, _, _, _, name = info(i)
+        local guid, species, owned, _, _, _, _, name = info(i)
         guid = S.PlainString(guid)
-        if guid and S.PlainTruth(owned) == true
-            and match(S.PlainNumber(species), S.PlainString(custom), S.PlainString(name)) then
+        if guid and S.PlainTruth(owned) == true and match(S.PlainNumber(species), S.PlainString(name)) then
             return guid
         end
     end
     return nil
 end
 
---- The GUID of the owned pet whose custom or species name matches `name` case-insensitively, or nil.
+--- The GUID of the first owned pet whose SPECIES name matches `name` case-insensitively, or nil
+--- (INV §3.10, Keep: a pet the player renamed is found by its species, never its custom name).
 --- The compare runs here, on plain names only: a secret name is skipped, never compared.
 function Compat.PetGUIDByName(name)
     local want = NS.Secrets.PlainString(name)
     if not want then return nil end
     want = want:lower()
-    return findPet(function(_, custom, species)
-        return (custom ~= nil and custom:lower() == want) or (species ~= nil and species:lower() == want)
-    end)
+    return findPet(function(_, species) return species ~= nil and species:lower() == want end)
 end
 
 --- The GUID of the first owned pet of `speciesID`, or nil.

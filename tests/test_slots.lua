@@ -55,10 +55,14 @@ test("slots: every slot has exactly one label source, a GlobalString key or an L
         if k then assertEqual(k, slot:upper(), slot .. "'s GlobalString key") end
         if l then assertEqual(type(l), "string", slot .. "'s label") end
     end
-    -- The four labels no GlobalString carries are the legacy English ones.
-    local want = T.legacy.slots.displayNames
-    for _, slot in ipairs({ "Finger0Slot", "Finger1Slot", "Trinket0Slot", "Trinket1Slot" }) do
-        assertEqual(labels[slot], want[slot], slot)
+    -- The four labels no GlobalString carries are the legacy English re-cased to sentence case
+    -- (design §4.6 "Re-homed", options-ui-§21): "First Finger" becomes "First finger".
+    local legacy = T.legacy.slots.displayNames
+    local want = { Finger0Slot = "First finger", Finger1Slot = "Second finger",
+                   Trinket0Slot = "First trinket", Trinket1Slot = "Second trinket" }
+    for slot, label in pairs(want) do
+        assertEqual(labels[slot], label, slot)
+        assertEqual(label:lower(), legacy[slot]:lower(), slot .. " is the legacy text, re-cased")
     end
     -- red under: a SLOT_LABELS entry for a slot that is not one of the 18 (the per-slot loop above
     -- never visits it).
@@ -146,7 +150,23 @@ test("slots: CORRECTIONS are the three legacy item-class overrides", function()
 end)
 
 test("slots: the dropped tables stay dropped (design §5.1, INV §18)", function()
-    for _, name in ipairs({ "UNIQUE_GEM_IDS", "COMBAT_SLOTS", "ARGENT_DAWN_TRINKETS", "STAT_ID_ITEMS" }) do
-        assertFalse(data()[name] ~= nil, name .. " is retired")
+    -- NS.ItemData is a closed set: a retired table (cUniqueGemItemIDs, cCombatEquipmentSlots,
+    -- cArgentDawnTrinkets, cStatIDItems) carried over under any name adds a key here.
+    -- red under: an `ID.UNIQUE_GEM_IDS = {}` (or any other new table) in defaults/Items.lua.
+    assertEqual(keyList(data()), "ALIASES,ApplyFactionAliases,CORRECTIONS,FULL_ALT_SLOT,HALF_ALT_SLOT,"
+        .. "IGNORED_UNUSED,INVTYPE_TO_SLOT,PHANTOM_IDS,SLOT_LABELS,SLOT_LABEL_KEYS,SLOT_NAMES,SLOT_ORDER,"
+        .. "SLOT_SWAP,UNEQUIP_EXEMPT", "NS.ItemData's members")
+    -- And no addon file names a retired legacy table, by its legacy name.
+    local RETIRED = { "cUniqueGemItemIDs", "cCombatEquipmentSlots", "cArgentDawnTrinkets", "cStatIDItems" }
+    for _, rel in ipairs(T.loadedAddonFiles) do
+        if rel:match("%.lua$") and not rel:match("^libs/") then
+            local f = assert(io.open(T.root .. "/" .. rel, "rb"))
+            local src = f:read("*a")
+            f:close()
+            for _, name in ipairs(RETIRED) do
+                -- red under: a `local cStatIDItems = { ... }` in any addon file the TOC loads.
+                assertFalse(src:find(name, 1, true) ~= nil, rel .. " names the retired " .. name)
+            end
+        end
     end
 end)

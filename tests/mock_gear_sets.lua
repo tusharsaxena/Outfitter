@@ -139,8 +139,8 @@ function Sets.install(M, G, h, EQUIP_IDS)
             if not set.ignored[slotID] then
                 local loc = inst and h.where(inst)
                 if inst and loc and loc.equip ~= slotID then
-                    h.lift(loc)
-                    if not h.equipFromCursor(slotID) then h.clearCursor() end
+                    -- A banked item stays put while the bank is closed (h.lift refuses it).
+                    if h.lift(loc) and not h.equipFromCursor(slotID) then h.clearCursor() end
                 elseif inst == false and G.worn[slotID] then
                     local dest = h.freeSlot(G.worn[slotID])
                     if dest then h.lift({ equip = slotID }); h.dropInBag(dest) end

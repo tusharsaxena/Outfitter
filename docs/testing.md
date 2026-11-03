@@ -54,7 +54,8 @@ places in Lua, and the kit's sighted shadow is what the complexity suite measure
   and auras, forms, units, pets, quests, CVars, titles, protected frames, the character sheet's
   frames, the tooltips). Both answer from `tests/fixtures/items.lua` and the named scenarios in
   `tests/fixtures/inventories.lua` (`M.__gear:load("full_bags")`). It also carries `fake`, the
-  recorded stand-in a suite installs for a module that has not landed yet.
+  recorded stand-in a suite installs for a module that has not landed yet. `tests/run.lua` wraps
+  every `T.test` case so the fakes it installed are restored when it ends, pass or fail.
 - **`tests/fixtures/legacy/`** is the fork's behavior, captured at `7ea3dc3` by
   `tools/legacy_capture.lua` and never hand-edited (its README says how to regenerate it). The new
   suites assert against it: a *keep* pin asserts the legacy value, a *fix* pin the corrected one with

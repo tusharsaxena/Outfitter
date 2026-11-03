@@ -32,8 +32,12 @@
 --   * A `secret = true` fixture's links are a fresh Kit.secret wrapper on every read (worn, bag,
 --     item location, tooltip text), so the only safe thing to do with one is to hand it to the seam.
 --   * The bank's contents are unreadable while it is closed (no slots, no links), unless a suite
---     sets `M.__gear.bankCached = true` to model the client's cache. C_EquipmentSet still knows
---     where a banked set item is, as the client does.
+--     sets `M.__gear.bankCached = true` to model the client's cache, and nothing moves into or out
+--     of it (pickup, drop, UseEquipmentSet) until it opens, cache or not. C_EquipmentSet still
+--     knows where a banked set item is, as the client does.
+--   * The reagent bag (5) refuses gear on every path, a direct drop included.
+--   * Titan's Grip follows class and spec (a Fury warrior), and grips a two-handed axe, mace or
+--     sword only; a scenario may force it with `titansGrip = true/false`.
 --   * C_EquipmentSet keeps real sets that follow their items as they move; `M.__emFlake = true`
 --     makes it answer zero sets without forgetting them (Q8), and clearing the flag restores them.
 --
@@ -170,7 +174,7 @@ function Gear.install(M, deps)
     local function reset()
         G.worn, G.bags, G.cursor, G.sets, G.nextSetID = {}, {}, nil, {}, 1
         G.ignoreForSave, G.pending = {}, {}
-        G.bankOpen, G.bankCached, G.titansGrip, G.canDualWield = false, false, false, true
+        G.bankOpen, G.bankCached, G.titansGrip, G.canDualWield = false, false, nil, true
         G.bags[BACKPACK] = { size = 16, family = 0, slots = {} }
         for k in pairs(G.calls) do G.calls[k] = nil end
         for k in pairs(G.errors) do G.errors[k] = nil end
@@ -183,6 +187,12 @@ function Gear.install(M, deps)
         if not b then return nil end
         if b.bank and not (G.bankOpen or G.bankCached) then return nil end
         return b
+    end
+    -- Whether a hand can reach into `bag` now: the client's cache answers reads of a closed bank,
+    -- but nothing moves into or out of it until the bank frame is open (INV §3.4).
+    local function reachable(bag)
+        local b = G.bags[bag]
+        return b ~= nil and (not b.bank or G.bankOpen)
     end
 
     local function at(loc)
@@ -216,6 +226,8 @@ function Gear.install(M, deps)
     local function accepts(bag, inst)
         local b = G.bags[bag]
         if not b then return false end
+        -- The reagent bag takes crafting reagents only, never gear, however the item reaches it.
+        if bag == REAGENT_BAG and inst.def.invType ~= "" then return false end
         if (b.family or 0) == 0 then return true end
         local def = inst.def
         return sharesBit(def.family or 0, b.family)
@@ -225,7 +237,6 @@ function Gear.install(M, deps)
     -- fills them, then the general bags in order. Bank bags only when `bank` is asked for.
     local function takes(bag, b, inst, special)
         if not b or ((b.family or 0) ~= 0) ~= special then return false end
-        if bag == REAGENT_BAG and inst.def.invType ~= "" then return false end
         return accepts(bag, inst)
     end
     local function firstEmpty(bag, b)
@@ -249,9 +260,24 @@ function Gear.install(M, deps)
 
     -- ── equip rules ──────────────────────────────────────────────────────────────────────────
 
+    -- Titan's Grip: Fury warriors (legacy CanDualWield2H, Outfitter.lua:2250), unless a scenario
+    -- forces it with `titansGrip = true/false`. It follows a spec change, as the client's does.
+    local function hasTitansGrip()
+        if G.titansGrip ~= nil then return G.titansGrip end
+        return M.__context ~= nil and M.__context.classToken == "WARRIOR" and M.__spec == 2
+    end
+    G.hasTitansGrip = hasTitansGrip
+    -- Whether Titan's Grip lets `def` share the hands: a two-handed axe, mace or sword (weapon
+    -- subclasses 1, 5, 8). A staff, a polearm or a bow still takes both hands.
+    local GRIPPABLE = { [1] = true, [5] = true, [8] = true }
+    local function gripped(def)
+        return hasTitansGrip() and def.invType == "INVTYPE_2HWEAPON" and def.classID == 2
+            and GRIPPABLE[def.subclassID] == true
+    end
+
     local function fits(inst, slotID)
         local inv = inst.def.invType
-        if slotID == OH and TWO_HAND[inv] then return G.titansGrip and inv == "INVTYPE_2HWEAPON" end
+        if slotID == OH and TWO_HAND[inv] then return gripped(inst.def) end
         if slotID == OH and inv == "INVTYPE_WEAPON" and not G.canDualWield then return false end
         for _, s in ipairs(FITS[inv] or {}) do if s == slotID then return true end end
         return false
@@ -284,10 +310,9 @@ function Gear.install(M, deps)
 
     -- The hand that must empty for `inst` to go in `slotID`, or nil.
     local function displacedHand(inst, slotID)
-        if G.titansGrip then return nil end
-        if slotID == MH and TWO_HAND[inst.def.invType] and G.worn[OH] then return OH end
-        local main = G.worn[MH]
-        if slotID == OH and main and TWO_HAND[main.def.invType] then return MH end
+        local off, main = G.worn[OH], G.worn[MH]
+        if slotID == MH and TWO_HAND[inst.def.invType] and off and not gripped(inst.def) then return OH end
+        if slotID == OH and main and TWO_HAND[main.def.invType] and not gripped(main.def) then return MH end
         return nil
     end
 
@@ -368,6 +393,7 @@ function Gear.install(M, deps)
     end
 
     local function lift(loc)
+        if loc.bag and not reachable(loc.bag) then return false end
         local inst = at(loc)
         if not inst or inst.locked then return false end
         G.cursor = { inst = inst, from = loc }
@@ -412,7 +438,7 @@ function Gear.install(M, deps)
         local sc = merge(name, overrides)
         reset()
         G.scenario = sc
-        G.titansGrip, G.canDualWield = sc.titansGrip == true, sc.dualWield ~= false
+        G.titansGrip, G.canDualWield = sc.titansGrip, sc.dualWield ~= false
         for slotName, key in pairs(sc.equipped or {}) do
             G.worn[assert(SLOT_IDS[slotName], "mock_gear: no slot " .. slotName)] = newInst(key)
         end
@@ -429,12 +455,17 @@ function Gear.install(M, deps)
         local id = G.nextSetID
         G.nextSetID = id + 1
         local set = { id = id, name = spec.name, icon = spec.icon or 134400, items = {}, ignored = {} }
+        for _, slotName in ipairs(spec.ignored or {}) do set.ignored[SLOT_IDS[slotName]] = true end
+        -- Every slot carries a value, as a client set always does: a listed one its item (false for
+        -- "wants this slot empty"), an unlisted one what is worn there now, as if saved this moment.
+        for _, slotID in ipairs(EQUIP_IDS) do
+            if not set.ignored[slotID] then set.items[slotID] = G.worn[slotID] or false end
+        end
         for slotName, key in pairs(spec.items or {}) do
             local slotID = SLOT_IDS[slotName]
             if key == false then set.items[slotID] = false
             else set.items[slotID] = select(1, G:find(key)) or false end
         end
-        for _, slotName in ipairs(spec.ignored or {}) do set.ignored[SLOT_IDS[slotName]] = true end
         G.sets[id] = set
         return id
     end
@@ -583,8 +614,8 @@ function Gear.install(M, deps)
     M.GetInventoryItemCooldown = function(unit, id)
         local i = invAt(unit, id)
         if not i then return 0, 0, 0 end
-        local cd = i.cooldown or { 0, 0, 1 }
-        return cd[1], cd[2], cd[3]
+        local cd = i.cooldown or { 0, 0, true }
+        return cd[1], cd[2], (cd[3] == true or cd[3] == 1) and 1 or 0
     end
     M.CanDualWield = function() return G.canDualWield end
     M.CursorHasItem = function() return G.cursor ~= nil end
@@ -613,24 +644,33 @@ function Gear.install(M, deps)
         if not G.cursor then return end
         local bag = invID - CONTAINER_BAG_OFFSET
         local b = G.bags[bag]
-        if not b then return end
+        if not b or not reachable(bag) then return end
         if not accepts(bag, G.cursor.inst) then return fail("ERR_ITEM_DOESNT_GO_INTO_BAG") end
         for slot = 1, b.size do
             if b.slots[slot] == nil then return dropInBag({ bag = bag, slot = slot }) end
         end
         return fail("ERR_BAG_FULL")
     end
+    -- The paper doll's flyout list: every item that fits `slotID` that is worn (PLAYER + slot,
+    -- the slot's own occupant included, as the client answers it), carried (PLAYER + BAGS + bag
+    -- * 256 + slot) or, while the bank is open, banked (BANK + BAGS + tab * 256 + slot).
     M.GetInventoryItemsForSlot = function(slotID, out)
         out = out or {}
-        for bag = BACKPACK, REAGENT_BAG do
-            local b = readable(bag)
-            for slot = 1, (b and b.size or 0) do
-                local i = b.slots[slot]
-                if i and fits(i, slotID) then
-                    out[PLAYER_BIT + BAGS_BIT + bag * 256 + slot] = i.def.id
+        for _, id in ipairs(EQUIP_IDS) do
+            local i = G.worn[id]
+            if i and fits(i, slotID) then out[PLAYER_BIT + id] = i.def.id end
+        end
+        local function scan(first, last, bits)
+            for bag = first, last do
+                local b = G.bags[bag]
+                for slot = 1, (b and reachable(bag) and b.size or 0) do
+                    local i = b.slots[slot]
+                    if i and fits(i, slotID) then out[bits + bag * 256 + slot] = i.def.id end
                 end
             end
         end
+        scan(BACKPACK, REAGENT_BAG, PLAYER_BIT + BAGS_BIT)
+        scan(BANK_FIRST, ACCOUNT_LAST, BANK_BIT + BAGS_BIT)
         return out
     end
 
@@ -659,11 +699,13 @@ function Gear.install(M, deps)
                  isReadable = false, hasLoot = false, hyperlink = linkOf(i), isFiltered = false,
                  hasNoValue = false, itemID = i.def.id, isBound = i.bound }
     end
+    -- The 12.x client answers `enable` as a boolean here (INV Fix B19), where the inventory call
+    -- above still answers a number: a fixture's cooldown is { start, duration, enabled }.
     function Container.GetContainerItemCooldown(bag, slot)
         local b = readable(bag)
         local i = b and b.slots[slot]
-        local cd = i and i.cooldown or { 0, 0, 1 }
-        return cd[1], cd[2], cd[3]
+        local cd = i and i.cooldown or { 0, 0, true }
+        return cd[1], cd[2], cd[3] == true or cd[3] == 1
     end
     function Container.GetBagName(bag)
         if bag == BACKPACK then return "Backpack" end
@@ -676,7 +718,7 @@ function Gear.install(M, deps)
     end
     function Container.PickupContainerItem(bag, slot)
         record("PickupContainerItem", bag, slot)
-        if not readable(bag) then return end
+        if not reachable(bag) then return end
         if G.cursor then
             local b = G.bags[bag]
             if slot < 1 or slot > b.size then return end
@@ -848,7 +890,7 @@ function Gear.install(M, deps)
     deps.sets.install(M, G, {
         record = record, queue = queue, where = where, fits = fits, lift = lift,
         equipFromCursor = equipFromCursor, freeSlot = freeSlot, dropInBag = dropInBag,
-        clearCursor = clearCursor,
+        clearCursor = clearCursor, reachable = reachable,
     }, EQUIP_IDS)
     return G
 end

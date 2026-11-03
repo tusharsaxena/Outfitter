@@ -239,7 +239,17 @@ end
 ---   fake.__calls        { { "Remove", args... }, ... } in call order
 ---   fake.__count(name)  how many times `name` was called
 --- With a fourth argument `body`, it installs, runs body(fake), restores however body leaves, and
---- re-raises a body error.
+--- re-raises a body error. Without one, the fake lasts for the case: tests/run.lua wraps every
+--- case so `fake.restoreAll()` runs when it ends, pass or fail, and an early `restore()` is fine
+--- (each restore runs once). Restores run newest first, so a key faked twice gets its original.
+local live = {}
+local function restoreAll()
+    for i = #live, 1, -1 do
+        local r = live[i]
+        live[i] = nil
+        r()
+    end
+end
 local function fake(NS, key, members, body)
     local calls = {}
     local f = { __calls = calls }
@@ -259,12 +269,20 @@ local function fake(NS, key, members, body)
     end })
     local prev = rawget(NS, key)
     rawset(NS, key, f)
-    local function restore() rawset(NS, key, prev) end
-    if body == nil then return f, restore end
+    local done = false
+    local function restore()
+        if done then return end
+        done = true
+        rawset(NS, key, prev)
+    end
+    if body == nil then
+        live[#live + 1] = restore
+        return f, restore
+    end
     local ok, err = pcall(body, f)
     restore()
     if not ok then error(err, 0) end
     return f
 end
 
-return { build = build, fake = fake, fixtures = Fixtures, gear = Gear, world = World }
+return { build = build, fake = fake, restoreFakes = restoreAll, fixtures = Fixtures, gear = Gear, world = World }

@@ -4,10 +4,11 @@
 --
 -- Shape of one scenario (every field optional):
 --   class, spec, level, faction        the player (applied through tests/mock_world.lua's state)
---   titansGrip = true                  a two-hander may sit in the off hand (Fury, INV §3.3 TGFix)
+--   titansGrip = true | false          force Titan's Grip on or off; left out, it follows class and
+--                                      spec (a Fury warrior, INV §3.3 TGFix), as the client's does
 --   equipped = { [slotName] = itemKey }
 --   bags = { [bagID] = { bag = itemKey, items = { [slot] = itemKey | { key, count, bound,
---            cooldown = { start, duration, enable }, durability = { cur, max } } } } }
+--            cooldown = { start, duration, enabled }, durability = { cur, max } } } } }
 --            Bag 0 is the backpack (16 slots, no bag item); bags 1-4 take their size and family
 --            from the bag item; bag 5 is the reagent bag.
 --   bank = { [tabID] = { size, items = { ... } } }   character bank tabs 6-11 (Enum.BagIndex)
@@ -73,7 +74,7 @@ S.full_bags = {
 
 -- Fury: two two-handers, the second in the off hand (Titan's Grip).
 S.tg_warrior = {
-    class = "WARRIOR", spec = 2, level = 80, faction = "Horde", titansGrip = true,
+    class = "WARRIOR", spec = 2, level = 80, faction = "Horde",
     equipped = { MainHandSlot = "greatsword", SecondaryHandSlot = "greataxe", HeadSlot = "head_plate" },
     bags = { [0] = { items = { [1] = "sword_1h", [2] = "sword_1h_b", [3] = "staff" } } },
 }
@@ -141,8 +142,8 @@ S.dual_wield = {
 S.cooldowns = {
     class = "WARRIOR", spec = 1, level = 80, faction = "Alliance",
     equipped = { Trinket0Slot = "trinket_use" },
-    bags = { [0] = { items = { [1] = { key = "trinket_use", cooldown = { 100, 120, 1 } },
-                               [2] = { key = "hearthstone", cooldown = { 0, 0, 1 } } } } },
+    bags = { [0] = { items = { [1] = { key = "trinket_use", cooldown = { 100, 120, true } },
+                               [2] = { key = "hearthstone", cooldown = { 0, 0, true } } } } },
 }
 
 -- Two Equipment Manager sets, one of them partly in the bags.

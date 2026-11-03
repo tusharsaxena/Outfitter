@@ -75,6 +75,9 @@ D.ARGENT_MOUNTS = {
         [36558] = true, -- Argent Battleworg
     }),
 }
+-- Any other faction value, nil before the faction data loads or a Neutral pandaren, reads the Horde
+-- set, as the legacy `if Alliance ... else <Horde>` did, so `ARGENT_MOUNTS[faction]` is never nil.
+setmetatable(D.ARGENT_MOUNTS, { __index = function() return D.ARGENT_MOUNTS.Horde end })
 
 -- Vigilance on Wings: Aviana's Guardian, every variant (OutfitterScripting.lua:1481-1484).
 D.VIGILANCE_NPCS = { [39710] = true, [40719] = true, [40720] = true, [40723] = true }

@@ -76,6 +76,7 @@ test("zones: every row has a unique SCREAMING_SNAKE id and a known kind", functi
     local seen = {}
     for i, row in ipairs(Z().rows) do
         assertTrue(type(row.id) == "string" and row.id:match("^[A-Z][A-Z0-9_]*$") ~= nil, "row " .. i .. " id")
+        -- red under: a second row with `id = "BG_AB"` in defaults/Zones.lua.
         assertFalse(seen[row.id] ~= nil, row.id .. " appears twice")
         seen[row.id] = true
         assertTrue(KINDS[row.kind] == true, row.id .. " kind " .. tostring(row.kind))
@@ -116,6 +117,7 @@ test("zones: a generic row matches by instance type and lists no map; a specific
     assertTrue(arena.instanceTypes.arena, "an unknown arena sets Arena")
     -- red under: `instanceTypes = { pvp = true, arena = true }` on PVP_ARENA (a bg would set Arena).
     assertFalse(arena.instanceTypes.pvp == true, "a battleground never sets Arena")
+    -- red under: `instanceTypes = { pvp = true, arena = true, party = true }` on PVP_BATTLEGROUND.
     assertFalse(bg.instanceTypes.party == true or bg.instanceTypes.none == true, "a dungeon is not a battleground")
 end)
 
@@ -342,12 +344,17 @@ test("trigger data: the Argent mounts are per faction, each with the two either 
     local m = D().ARGENT_MOUNTS
     assertEqual(setList(m.Alliance), "33790,33793,33794,33795,33800,33843,33870,34125,36557", "Alliance")
     assertEqual(setList(m.Horde), "33791,33792,33796,33798,33799,33842,33870,34125,36558", "Horde")
-    -- Keyed by the English token (H10): a localized second return must find nothing.
+    -- Keyed by the English token (H10): the table holds no localized second return.
     -- red under: a table also keyed `["Allianz"]` (the deDE second return).
     local keys = {}
     for k in pairs(m) do keys[#keys + 1] = k end
     table.sort(keys)
     assertEqual(table.concat(keys, ","), "Alliance,Horde", "ARGENT_MOUNTS' keys")
+    -- Legacy `if Alliance ... else <Horde>`: every other faction value reads the Horde set, so
+    -- `ARGENT_MOUNTS[faction]` is never nil (faction data not loaded yet, a Neutral pandaren).
+    -- red under: drop the __index fallback from D.ARGENT_MOUNTS (defaults/TriggerData.lua).
+    assertTrue(rawequal(m[nil], m.Horde), "a nil faction")
+    assertTrue(rawequal(m.Neutral, m.Horde), "Neutral")
 end)
 
 test("trigger data: the vehicle quests' NPCs are the legacy ids", function()
@@ -376,6 +383,7 @@ test("trigger data: DIFFICULTY_GROUPS are design §6.8.1 row 17's, no id in two 
     local seen = {}
     for _, key in ipairs(D().DIFFICULTY_ORDER) do
         assertTrue(g[key] ~= nil, key .. " is ordered but not a group")
+        -- red under: "raidNormal" listed twice in DIFFICULTY_ORDER (defaults/TriggerData.lua).
         assertFalse(seen[key], key .. " is ordered twice")
         seen[key] = true
     end

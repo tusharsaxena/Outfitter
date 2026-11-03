@@ -230,6 +230,21 @@ _G.OUTFITTERREBORN_TEST = Kit.expose{
     world            = mockmod.world,
 }
 
+-- The fake rule's "for the length of the case, restored after" (design §12): the kit has no per-case
+-- teardown, so every case registered through T.test ends by restoring the fakes it installed
+-- (T.fake without a body), pass or fail, before the next case runs.
+do
+    local T, kitTest = _G.OUTFITTERREBORN_TEST, Kit.test
+    T.test = function(name, fn, skipReason)
+        if type(fn) ~= "function" then return kitTest(name, fn, skipReason) end
+        return kitTest(name, function(...)
+            local ok, err = pcall(fn, ...)
+            mockmod.restoreFakes()
+            if not ok then error(err, 0) end
+        end, skipReason)
+    end
+end
+
 -- The typed-value gate (skinning-§1): what no kit category takes, each with its cause. None yet: the
 -- only colors typed so far are core/SkinSetup.lua's, which the kit reads as the seam.
 Kit.skinValues = { root = root, rows = {} }

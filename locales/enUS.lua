@@ -97,10 +97,10 @@ L["Whether the first-run skin picker was closed on this profile."] = "Whether th
 -- strings go in locales/enUS_Triggers.lua.
 
 -- P4.3 keys (defaults/Items.lua: the four slot labels no GlobalString carries)
-L["First Finger"] = "First Finger"
-L["Second Finger"] = "Second Finger"
-L["First Trinket"] = "First Trinket"
-L["Second Trinket"] = "Second Trinket"
+L["First finger"] = "First finger"
+L["Second finger"] = "Second finger"
+L["First trinket"] = "First trinket"
+L["Second trinket"] = "Second trinket"
 
 -- P4.4 keys (modules/PlayerState.lua, modules/ItemInfo.lua)
 
