@@ -199,7 +199,6 @@ local SUITES = {
 
     { name = "test_skin" },
 
-    { name = "test_refactor_pins",    pending = "P5 CCN splits" },
     { name = "test_skin_values", dir = "tests/_kit/" },
     { name = "test_skin_switch", dir = "tests/_kit/" },
     { name = "test_eol", dir = "tests/_kit/" },

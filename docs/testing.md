@@ -73,8 +73,9 @@ places in Lua, and the kit's sighted shadow is what the complexity suite measure
 ## The suites
 
 Every suite is declared in `SUITES` in `tests/run.lua`; a file that is not listed loads nothing, and
-the kit's inventory fails a `tests/test_*.lua` with no entry. Every suite is live but
-`test_refactor_pins`, held `pending` for the P5 complexity splits. The tables group and order
+the kit's inventory fails a `tests/test_*.lua` with no entry. Every suite is live: none is held
+`pending`. The P5 gate found no function above CCN 15, so the `test_refactor_pins` entry it
+reserved for green-before pins was dropped (design §13 step 1). The tables group and order
 the suites as design §9.3 catalogs them (the kit's own suites close the structural group, as
 there); the run order is `SUITES`' own, not this one. `test_packaging` fails when a declared suite
 has no row here, or a row leaves its §9.3 group or order.
@@ -94,11 +95,10 @@ has no row here, or a row leaves its §9.3 group or order.
 | `test_no_loadstring` | No code runs from text anywhere: no `loadstring`, `load(`, `setfenv`, `RunScript`, no script field on a trigger, no `CUSTOM` id |
 | `test_removed_apis` | No live file names an API, event or library the game or this rewrite removed (INV §18) |
 | `test_file_budget` | Every authored Lua file, `tests/` and `tools/` included, stays under 1000 lines |
-| `test_packaging` | What reaches players: the package folder, every maintainer file ignored, nothing ignored loaded, every media path resolves, the icon declaration is exactly what is drawn. Also the doc set's account of the rest: one `pending` suite, a row here per declared suite in its design §9.3 group and order, the retired-harness map, a `module-map.md` `## Not shipped` row per helper, and the README badge equal to `docs/test-cases.md` |
+| `test_packaging` | What reaches players: the package folder, every maintainer file ignored, nothing ignored loaded, every media path resolves, the icon declaration is exactly what is drawn. Also the doc set's account of the rest: no `pending` suite, a row here per declared suite in its design §9.3 group and order, the retired-harness map, a `module-map.md` `## Not shipped` row per helper, and the README badge equal to `docs/test-cases.md` |
 | `test_credits` | The landing credits, the README Credits block, the LICENSE copyright lines |
 | `test_bus` | The full catalog, its wire names, exactly one sender per key over every call site |
 | `test_mock_gear` | The domain mock's fidelity: plans move items for real, bag-full, the secret wrap, the Equipment Manager flake |
-| `test_refactor_pins` | Pending (P5 CCN splits): the green-before pins for any complexity decomposition |
 | kit `test_eol` | Every tracked file's line endings match `.gitattributes` |
 | kit `test_prose` | No tracked authored file carries a British spelling (localization-§5); waivers are per file and per word in `tests/prose_waivers.lua` |
 | kit `test_layout_cap` | Every file over the 1500-line cap is in the census in `ARCHITECTURE.md` |

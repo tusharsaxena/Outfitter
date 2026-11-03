@@ -1,7 +1,7 @@
 -- tests/test_packaging.lua — what reaches players (packaging, §1.6): the package folder is the TOC's
 -- basename, every maintainer file is ignored, nothing ignored is loaded, and every media path the
 -- addon names resolves under Interface\AddOns\OutfitterReborn\ to a shipped file. The tail holds the
--- doc set to the rest (P4.32): the one pending suite, docs/testing.md's suite and retired-harness
+-- doc set to the rest (P4.32): no pending suite, docs/testing.md's suite and retired-harness
 -- tables, docs/module-map.md's Not shipped rows, and the README badge against docs/test-cases.md.
 
 local T = _G.OUTFITTERREBORN_TEST
@@ -269,15 +269,15 @@ local function rowCovers(tok, path)
     return covers(tok, path)
 end
 
-test("packaging: SUITES holds one pending entry, test_refactor_pins for the P5 splits (P4.32)", function()
-    -- red under: `pending = "P4.x"` put back on any other SUITES line
+test("packaging: SUITES holds no pending entry, test_refactor_pins dropped at P5 (design §13 step 1)", function()
+    -- red under: `pending = "P4.x"` put back on any SUITES line
     local names, pending = declaredSuites()
     assertTrue(#names > 50, "the SUITES reader found " .. #names .. " suites")
     local held = {}
     for _, name in ipairs(names) do
         if pending[name] then held[#held + 1] = name .. " (" .. pending[name] .. ")" end
     end
-    assertEqual(table.concat(held, ", "), "test_refactor_pins (P5 CCN splits)")
+    assertEqual(table.concat(held, ", "), "")
 end)
 
 test("packaging: docs/testing.md's suite table names every declared suite and nothing else (P4.32)", function()

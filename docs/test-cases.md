@@ -75,7 +75,7 @@ Total.
 - packaging: the icon declaration is exactly what is drawn (design §1.4, P4.31)
 - packaging: each shipped icon set ships its license file beside it
 - packaging: the debug console's face resolves to a shipped font
-- packaging: SUITES holds one pending entry, test_refactor_pins for the P5 splits (P4.32)
+- packaging: SUITES holds no pending entry, test_refactor_pins dropped at P5 (design §13 step 1)
 - packaging: docs/testing.md's suite table names every declared suite and nothing else (P4.32)
 - packaging: docs/testing.md groups and orders the suites as design §9.3 does (M2 review)
 - packaging: docs/testing.md maps the retired harness's 144 cases, suite by suite (design §9.4)
@@ -1340,10 +1340,6 @@ Total.
 - skin: without the library a dialog's error line still draws of.dialog.error's red
 - skin: a switch marks the window, and its next tick recolors an item row's name
 
-### test_refactor_pins.lua (1)
-
-- test_refactor_pins.lua: suite not written yet (skipped: P5 CCN splits)
-
 ### test_skin_values.lua (3)
 
 - skin values: every host row carries its file, substring, why and cause id
@@ -1574,5 +1570,5 @@ Total.
 | test_diagnostics_contract.lua | 8 |
 | test_lizard_sighted.lua | 8 |
 | test_prose.lua | 15 |
-| Skipped | 2 |
+| Skipped | 1 |
 | **Total** | **1277** |
