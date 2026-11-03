@@ -47,10 +47,14 @@ places in Lua, and the kit's sighted shadow is what the complexity suite measure
   drift from what the client loads (testing-§9). It runs `OnInitialize` and `OnEnable` like the
   client, and `loadInstance` builds isolated instances (a library-absent load passes `libFiles = {}`).
   It exposes `_G.OUTFITTERREBORN_TEST` to the local suites.
-- **`tests/wow_mock.lua`** extends the kit's base mock with what this addon calls. The port adds
-  `tests/mock_gear.lua` (bags, bank, equipped items, the equip recorder, `C_EquipmentSet`) and
-  `tests/mock_world.lua` (instances and maps, auras with the restriction, forms, units, pets, CVars,
-  the character sheet's frames, `SecureCmdOptionParse`).
+- **`tests/wow_mock.lua`** extends the kit's base mock with what this addon calls, and installs the
+  two domain halves on every build: `tests/mock_gear.lua` (worn items, bags, the bank, the cursor and
+  item info, moving items for real and recording each call in `M.__equipCalls`; `C_EquipmentSet` is
+  in `tests/mock_gear_sets.lua`) and `tests/mock_world.lua` (instances and maps, add-on restrictions
+  and auras, forms, units, pets, quests, CVars, titles, protected frames, the character sheet's
+  frames, the tooltips). Both answer from `tests/fixtures/items.lua` and the named scenarios in
+  `tests/fixtures/inventories.lua` (`M.__gear:load("full_bags")`). It also carries `fake`, the
+  recorded stand-in a suite installs for a module that has not landed yet.
 - **`tests/fixtures/legacy/`** is the fork's behavior, captured at `7ea3dc3` by
   `tools/legacy_capture.lua` and never hand-edited (its README says how to regenerate it). The new
   suites assert against it: a *keep* pin asserts the legacy value, a *fix* pin the corrected one with
