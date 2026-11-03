@@ -32,6 +32,15 @@ one file with `git show v1.85.0:LibKa0s/OptionsCombat.lua`; `diff -r --strip-tra
 payloads against `git archive v1.85.0` is again empty bar the pruned icons. The CLAUDE.md provenance
 line names the tag, not a commit, so it does not move.
 
+A second re-cut followed after C14 (`01f97f6`): tag v1.85.0 now names `bea4ac8` (tagger date
+2026-11-03 14:10:58 +0530, the fourteenth re-cut, carrying R4-L2, R4-L3 and R4-SEP). The kit's vendor gate
+went red at HEAD on Core.lua. `git diff --stat e134d5b v1.85.0 -- LibKa0s testkit` moves Core,
+DebugLogWindow, SkinDefs, SkinDefsOthers, SkinEUI, SkinPaintControls and SkinPaintExtras, and no kit
+file; no `MINOR` constant moves, and the library's releasing.md hosts-owe line asks nothing of hosts
+beyond the re-copy. `P3: Re-sync LibKa0s to the v1.85.0 re-cut` re-copied the whole payload from
+`git archive v1.85.0` and re-ran the tag's `tools/prune-icons.lua` (20 declared, 22 kept);
+`diff -r --strip-trailing-cr` of both payloads against the tag is again empty bar the pruned icons.
+
 ## Per-major minors (3c)
 
 `grep 'local MAJOR, MINOR = "LibKa0s-'` over the copy. Every major is new to this addon.
