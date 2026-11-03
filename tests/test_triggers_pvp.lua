@@ -164,6 +164,8 @@ test("pvp: every map of every row wears its outfit over the generics, and the op
             want[#want + 1] = z.id
             -- red under: States_Zone's emit walking the rows in another order (a generic over the map's).
             assertEqual(logged(s, "wear"), table.concat(want, ","), z.id .. " map " .. mapID)
+            -- Precondition, not a pin: go(s, nil) below empties the stack each pass, so nothing is on to
+            -- come off here; a flicker within a row is pinned by "no flicker between the row's maps".
             assertEqual(logged(s, "remove"), "", z.id .. ": nothing to take off on the way in")
             clear(s)
             go(s, nil)
@@ -172,6 +174,8 @@ test("pvp: every map of every row wears its outfit over the generics, and the op
             for _, line in ipairs(s.st.log) do removed[#removed + 1] = s.byOutfit[line:match("^remove (.+)$")] end
             table.sort(removed)
             assertEqual(table.concat(removed, ","), table.concat(want, ","), z.id .. " left")
+            -- Consistency with the removal log above, not a separate pin: the recorded Stack clears a worn
+            -- mark only in Remove, so any mutation that leaves one on turns "left" red first.
             assertEqual(wornIds(s), "", z.id .. ": nothing left on")
         end
     end
@@ -183,6 +187,7 @@ test("pvp: a brawl wears only the generic battleground; an unknown arena still s
     for _, mapID in ipairs(s.NS.Zones.BRAWL_MAP_IDS) do
         clear(s)
         go(s, { type = "pvp", instanceID = mapID })
+        -- red under: genericsFor answering the arena generic for a pvp instance (a brawl wears PVP_ARENA).
         assertEqual(logged(s, "wear"), "PVP_BATTLEGROUND", "brawl " .. mapID)
         go(s, nil)
     end
@@ -204,8 +209,9 @@ test("pvp: leaving takes off only the outfits the trigger wore", function()
     clear(s)
     go(s, { type = "pvp", instanceID = 2106 })            -- the other WSG map, the generic already on
     go(s, { type = "pvp", instanceID = 489 })             -- a move between two maps of one row
-    assertEqual(logged(s, "wear"), "BG_WSG", "WSG once; the generic is no edge")
+    -- red under: States_Zone's emit clearing every state before it sets the new ones (a row flickers).
     assertEqual(logged(s, "remove"), "", "no flicker between the row's maps")
+    assertEqual(logged(s, "wear"), "BG_WSG", "WSG once; the generic is no edge")
 end)
 
 -- ── the spec toggles ──────────────────────────────────────────────────────────────────────────
@@ -216,6 +222,7 @@ test("pvp: a disabled spec keeps the outfit off, and the spec change puts it on 
         NS.SetByPath("trigger.BG_AV.spec2", false, by.BG_AV)
     end })
     go(s, { type = "pvp", instanceID = 30 })
+    -- red under: F.zone without `spec = true` (the disabled spec is ignored on the way in).
     assertEqual(logged(s, "wear"), "", "spec 2 is off for the AV outfit")
     go(s, { type = "pvp", instanceID = 529 })
     assertEqual(wornIds(s), "BG_AB")
@@ -232,6 +239,7 @@ test("pvp: a disabled spec keeps the outfit off, and the spec change puts it on 
     clear(s)
     go(s, nil)
     s.M.__fire(SPEC_EVENT)
+    -- red under: stateOn answering true for a non-STATE event (a spec change anywhere wears the outfit).
     assertEqual(logged(s, "wear"), "", "out of the zone a spec change wears nothing")
 end)
 

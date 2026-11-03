@@ -452,6 +452,32 @@ test("trade: cooking summons its fire pet 0.2 s on, saves the pet that was out, 
     assertNil(rec.triggerState.COOKING.pet, "the record goes with the restore")
 end)
 
+test("trade: a cooking wear that never reached its restore leaves no stale pet for the next one", function()
+    local NS, M = scene()
+    local calls = fakePets(NS)
+    M.__world.summonedPet = "BattlePet-0-00000000000A"
+    local id, st = bound(NS, "COOKING", { summonPierre = true })
+    local rec = NS.db.char.outfits[id]
+    M.__world.profession = { professionID = 185 }
+    M.__fire("TRADE_SKILL_SHOW")
+    assertEqual(rec.triggerState.COOKING.pet.saved, "BattlePet-0-00000000000A")
+    st.worn[id], st.did[id] = nil, false                 -- taken off by hand while cooking
+    M.__fire("TRADE_SKILL_CLOSE")
+    assertEqual(#calls, 1, "no DidEquip: no restore at this close")
+    M.__world.summonedPet = "BattlePet-0-00000000000B"   -- a later session, another pet out
+    M.__fire("TRADE_SKILL_SHOW")
+    -- red under: SavePet keeping a record a wear left behind (the legacy re-read the pet at each show).
+    assertEqual(rec.triggerState.COOKING.pet.saved, "BattlePet-0-00000000000B", "the pet out at this show")
+    M.__fire("TRADE_SKILL_CLOSE")
+    assertEqual(calls[#calls], "summon BattlePet-0-00000000000B@0.2", "the pet that was out comes back")
+    st.worn[id], st.did[id] = true, true                 -- worn by this trigger: a second show keeps the record
+    rec.triggerState.COOKING.pet = { saved = "BattlePet-0-00000000000B" }
+    M.__world.summonedPet = "BattlePet-0-000000000F1E"   -- the fire pet is out now
+    M.__fire("TRADE_SKILL_SHOW")
+    -- red under: SavePet dropping the record on every show (a second show would save the fire pet).
+    assertEqual(rec.triggerState.COOKING.pet.saved, "BattlePet-0-00000000000B", "once per wear")
+end)
+
 test("trade: cooking with randomPet picks among the enabled pets only, and dismisses when none was out", function()
     local NS, M = scene()
     local calls = fakePets(NS)

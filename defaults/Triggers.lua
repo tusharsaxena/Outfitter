@@ -119,7 +119,7 @@ C.rows = {
           { key = "trinkets",  type = "itemlist", label = L["Upper slot"] },
           { key = "trinkets2", type = "itemlist", label = L["Lower slot"] },
       } },
-    { id = "FEET_QUEUE", category = "GENERAL", icon = false,
+    { id = "FEET_QUEUE", category = "GENERAL", icon = false, refuseEM = true,
       name = L["Rocket Boots"],
       desc = L["The boots in the list with the earliest availability will automatically be equipped"],
       events = { "TIMER" }, ticker = 0.5,

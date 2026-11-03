@@ -187,7 +187,7 @@ local function cookingShow(ctx)
     if not cookingOpen() then return nil end
     local species = cookingPet(ctx)
     if species then
-        NS.TriggerEffects.SavePet(ctx)
+        NS.TriggerEffects.SavePet(ctx, not ctx:DidEquip())
         NS.Companion.SummonBySpecies(species, PET_DELAY)
     end
     return EQUIP

@@ -187,11 +187,31 @@ test("quest: the Multiphase Survey equips in Nagrand on quest 11880, five second
     M.__world:setMap(100)
     -- red under: the survey condition skipping its map check (on the quest anywhere equips).
     assertEqual(call(ns, "QUEST_MULTIPHASE_SURVEY", {}, "ZONE_CHANGED_NEW_AREA"), "unequip", "out of Nagrand")
+    -- The kit cannot trap `secret == 107` or `secret ~= true` (tests/_kit/secrets.lua: `==` against a
+    -- non-table is answered false without __eq), so the seam is asserted explicitly: each secret
+    -- answer must reach NS.Secrets before anything compares it.
+    local seamSaw = {}
+    local Sec = ns.Secrets
+    local plainNumber, plainTruth = Sec.PlainNumber, Sec.PlainTruth
+    Sec.PlainNumber = function(v, ...)
+        if T.isSecret(v) then seamSaw[#seamSaw + 1] = "number" end
+        return plainNumber(v, ...)
+    end
+    Sec.PlainTruth = function(v, ...)
+        if T.isSecret(v) then seamSaw[#seamSaw + 1] = "truth" end
+        return plainTruth(v, ...)
+    end
     M.__world.mapID = T.secret(107)
     assertEqual(call(ns, "QUEST_MULTIPHASE_SURVEY", {}, "ZONE_CHANGED_INDOORS"), "unequip", "a secret map is not Nagrand")
+    -- red under: bestMap comparing GetBestMapForUnit's answer without Secrets.PlainNumber.
+    assertEqual(table.concat(seamSaw, ","), "number", "the secret map went through the seam")
     M.__world:setMap(107)
     M.C_QuestLog.IsOnQuest = function() return T.secret(true) end
+    seamSaw = {}
     assertEqual(call(ns, "QUEST_MULTIPHASE_SURVEY", {}, "QUEST_LOG_UPDATE"), "unequip", "a secret answer is not on the quest")
+    -- red under: onSurvey comparing IsOnQuest's answer without Secrets.PlainTruth.
+    assertEqual(table.concat(seamSaw, ","), "truth", "the secret answer went through the seam")
+    Sec.PlainNumber, Sec.PlainTruth = plainNumber, plainTruth
 end)
 
 -- ── QUEST_TURNIN (row 28) and PET_BATTLE (row 36) ─────────────────────────────────────────────

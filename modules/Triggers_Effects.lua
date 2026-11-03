@@ -144,10 +144,15 @@ end
 
 -- ── the summoned pet (COOKING) ────────────────────────────────────────────────────────────────
 
---- Remember the summoned pet ("" for none), once per wear.
-function E.SavePet(ctx)
+--- Remember the summoned pet ("" for none), once per wear. `fresh` (a new wear: the trigger has not
+--- equipped the outfit) drops a record left by a wear that never reached its restore (taken off by
+--- hand, replaced, or a /reload: the record persists, the stack's DidEquip does not), so the pet put
+--- back is always the one that was out at this wear's start, as the legacy re-read it at every show.
+function E.SavePet(ctx, fresh)
     local persist = persistOf(ctx)
-    if not persist or persist.pet then return false end
+    if not persist then return false end
+    if fresh then persist.pet = nil end
+    if persist.pet then return false end
     persist.pet = { saved = Secrets.PlainString(Compat.SummonedPetGUID()) or "" }
     return true
 end

@@ -119,6 +119,7 @@ test("class: caster form wears 0.1 s late on the shapeshift layer and comes off 
     s.W:setForms(FORMS, 2)
     settle(s)
     assertEqual(log(s), "remove " .. id, "cat form: caster is off")
+    -- red under: F.druidCaster's unequip given the 0.1 s wear delay (the shape would wait in caster gear).
     assertEqual(delays(s), "", "taken off at once")
     clear(s)
     s.W:setForms(FORMS, 0)
@@ -142,8 +143,12 @@ test("class: each shape wears its own outfit on the shapeshift layer, Tree of Li
         settle(s)
         local want = shifted(s.ids[i])
         if i > 1 then want = "remove " .. s.ids[i - 1] .. "," .. want end
+        -- legacy: the Tree outfit never fires, cShapeshiftIDInfo has no 33891 (Outfitter.lua:1297-1307;
+        -- a Fix row of design §6.8.3, row 75, O27; INV §19 has no entry for it); fixed: Tree of Life
+        -- sets FORM_TREE and wears its outfit like every other shape.
         -- red under: dropping 33891 from FORM_SPELL_STATE (the Tree outfit never fired, O27).
         assertEqual(log(s), want, tid)
+        -- red under: F.druidForm's unequip delay without its InCombat test (2 s out of combat too).
         assertEqual(delays(s), "", tid .. ": no delay out of combat")
     end
     for i in ipairs(FORM_TRIGGER) do
@@ -203,6 +208,8 @@ test("class: Prowl and Shadowmeld feed the druid's Prowl outfit", function()
     local id = s.ids.prowl
     s.W:setAuras("player", "HELPFUL", { aura(5215) })
     settle(s)
+    -- legacy: only Shadowmeld (58984) fed STEALTH, so Prowl wore nothing (cSpellIDToSpecialID; a Fix
+    -- row of design §6.8.3, row 76, O27; INV §19 has no entry for it); fixed: Prowl 5215 feeds it.
     -- red under: dropping 5215 from AURA_SPELL_STATE (only Shadowmeld fed STEALTH, O27).
     assertEqual(log(s), "wear " .. id, "Prowl")
     s.W:setAuras("player", "HELPFUL", {})
@@ -240,6 +247,8 @@ test("class: Ghost Wolf and Feign Death wear their outfits on the aura and take 
     for _, c in ipairs({ { "SHAMAN", "SHAMAN_GHOST_WOLF", 2645 }, { "HUNTER", "HUNTER_FEIGN_DEATH", 5384 } }) do
         local s = scene(c[1], 1, function(NS) return { o = create(NS, c[2], c[2]) } end)
         local id = s.ids.o
+        -- Precondition, not a pin: the log asserted below counts from the stand-up. No mutation of the
+        -- simple family reaches it (a stand-up publishes no edge; test_states pins that rule).
         assertEqual(log(s), "", c[2] .. ": nothing at the stand-up")
         s.W:setAuras("player", "HELPFUL", { aura(c[3]) })
         settle(s)
@@ -249,6 +258,7 @@ test("class: Ghost Wolf and Feign Death wear their outfits on the aura and take 
         clear(s)
         s.W:setAuras("player", "HELPFUL", { aura(c[3] + 1) })
         settle(s)
+        -- red under: an off-by-one AURA_SPELL_STATE lookup in noteAura (a neighboring spell id feeds it).
         assertEqual(log(s), "", c[2] .. ": another aura is nothing")
     end
 end)
@@ -314,8 +324,11 @@ test("class: a spec outfit acts only when the spec changed, half a second late",
     assertEqual(log(s), "wear " .. two, "the new spec's outfit")
     assertEqual(delays(s), "0.5")
     clear(s)
+    s.st.worn[two] = nil                                 -- taken off by hand: only prevSpec keeps it off
     s.M.__fire("ACTIVE_PLAYER_SPECIALIZATION_CHANGED")
+    -- red under: F.spec skipping its prevSpec check on the spec-change event (a repeat re-wears it).
     assertEqual(log(s), "", "the same spec again: nothing")
+    s.st.worn[two] = true
     s.M.__spec = 1
     s.M.__fire("ACTIVE_PLAYER_SPECIALIZATION_CHANGED")
     -- The two bindings hear the event in the bus's order (CallbackHandler walks next()): read the set.
@@ -331,6 +344,7 @@ test("class: a stand-in class with fewer specs hides the spec toggles past its o
     for _, p in ipairs(d.params) do
         if p.specIndex then hidden[#hidden + 1] = tostring(p.hidden()) end
     end
+    -- red under: the spec toggle's hidden() answering false (a three-spec class would show spec4).
     assertEqual(table.concat(hidden, ","), "false,false,false,true")
     assertFalse(s.NS.Triggers.Get("SPEC_3") == nil)
 end)

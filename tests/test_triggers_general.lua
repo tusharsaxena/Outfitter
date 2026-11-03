@@ -319,6 +319,21 @@ test("general: FEET_QUEUE puts the soonest boots in FeetSlot, the swap cooldown 
     assertEqual(eq.__count("Request"), 1)
 end)
 
+test("general: FEET_QUEUE refuses an Equipment Manager set at bind, as TRINKET_QUEUE does", function()
+    local NS = fresh()
+    fakeStack(NS)
+    local em = NS.Outfits.Create("EM boots", {}, { trigger = "FEET_QUEUE" })
+    NS.db.char.outfits[em].kind = "em"
+    local own = NS.Outfits.Create("Own boots", {}, { trigger = "FEET_QUEUE" })
+    NS.TriggerBinder.BindAll()
+    -- red under: FEET_QUEUE's descriptor without refuseEM (design §6.8.1 row 8 is "as #7"): EM.SetItem
+    -- re-saves the set from what is worn, so the pick never lands and every 0.5 s tick saves it again.
+    assertTrue(NS.Triggers.Get("FEET_QUEUE").refuseEM)
+    assertFalse(NS.TriggerBinder.IsBound(em), "an Equipment Manager set is refused")
+    assertTrue(NS.TriggerBinder.IsBound(own), "a native outfit binds")
+    assertTrue(NS.TriggerBinder.Context(own).ticker ~= nil, "on its 0.5 s ticker")
+end)
+
 -- ── IN_ZONES ──────────────────────────────────────────────────────────────────────────────────
 
 test("general: IN_ZONES matches the best map or an ancestor, at most eight up", function()

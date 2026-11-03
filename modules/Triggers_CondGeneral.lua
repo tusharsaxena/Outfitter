@@ -7,8 +7,10 @@ local _, NS = ...
 -- function itself, `fn(ctx, event, ...) -> action, delay, layer, interrupt` (design §6.3), which
 -- modules/Triggers.lua's Finalize reads at call time: this file loads before Triggers.lua.
 --
--- Every condition answers nil for "no change" and allocates nothing per event (performance-§2). A
--- client read goes through the Secrets seam: a secret or unreadable answer is never compared, it is
+-- Every condition answers nil for "no change". Most allocate nothing per event; three allocate a
+-- little, on events that do not come in bursts: TARGET (CaptureTarget's answer table, per target
+-- change), IN_ZONES (the trimmed sub-zone string, per zone change) and TALENT_TREE (the "spec<n>"
+-- key, per spec event). A client read goes through the Secrets seam: a secret or unreadable answer is never compared, it is
 -- "no match" (TARGET, IN_ZONES) or "no change" (PVP_FLAGGED, INSTANCE_DIFFICULTY, TALENT_TREE).
 --
 -- MATCH KEYS ARE IDS (design §6.12): uiMapIDs, spellIDs, itemIDs, creatureIDs, difficultyIDs. The
@@ -180,7 +182,9 @@ function Cond.TRINKET_QUEUE(ctx)
 end
 
 --- As TRINKET_QUEUE for the feet: the listed boots usable soonest (the swap cooldown counted, as the
---- legacy FEET_QUEUE counted it).
+--- legacy FEET_QUEUE counted it). An Equipment Manager set is refused at bind too (refuseEM, design
+--- §6.8.1 row 8 "as #7"): EM.SetItem re-saves the set from what is worn, so the pick would never land
+--- and every tick would save the set again.
 function Cond.FEET_QUEUE(ctx)
     return runQueue(ctx, "FeetSlot", ctx.params.boots, nil, nil, false)
 end
