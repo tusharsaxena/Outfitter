@@ -161,7 +161,7 @@ local SUITES = {
     { name = "test_em_sync",          pending = "P4.10" },
     { name = "test_bank",             pending = "P4.10" },
 
-    { name = "test_optimize",         pending = "P4.12" },
+    { name = "test_optimize" },
 
     { name = "test_triggers",         pending = "P4.15" },
     { name = "test_trigger_binder",   pending = "P4.15" },

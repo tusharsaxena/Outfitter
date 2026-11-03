@@ -372,6 +372,19 @@ function O.SetItem(id, slot, item)
     return true
 end
 
+--- Replace a native outfit's items wholesale (the optimizer's Rebuild), then ONE Changed. False for
+--- an EM outfit: its rebuild goes through NS.EM.SetItems, which saves the set and wears it.
+--- @param id string
+--- @param items table  slot -> ItemRecord, copied in
+--- @return boolean
+function O.SetItems(id, items)
+    local rec = O.Get(id)
+    if not rec or rec.kind == "em" then return false end
+    rec.items = copy(items) or {}
+    O.Changed(id, "items")
+    return true
+end
+
 --- Stop using one slot (kind dispatch), then Changed.
 function O.ClearSlot(id, slot)
     local rec = O.Get(id)
