@@ -1,5 +1,5 @@
 local addonName, NS = ...
--- core/WidgetsSetup.lua — NS.MakeDropdown / NS.OpenMenu / NS.CloseMenu / NS.MakeTestStrip / NS.MakeDragHandle / NS.ShowCopy from LibKa0s-Widgets-1.0 (BP §6.13).
+-- core/WidgetsSetup.lua — NS.MakeDropdown / NS.OpenMenu / NS.CloseMenu / NS.MakeSearchBox / NS.MakeTestStrip / NS.MakeDragHandle / NS.ShowCopy from LibKa0s-Widgets-1.0 (BP §6.13).
 --
 -- A seam, nothing else (library-stack-§7): one file leases the major, so the art the controls draw
 -- is resolved once, here, and every control is handed this addon's skin owner. The library is
@@ -16,7 +16,7 @@ local addonName, NS = ...
 -- Every non-click close path of a window that opens a menu calls NS.CloseMenu(): the character
 -- sheet's OnHide, the outfit window's OnHide and each dialog's OnHide (design §7.2, §7.3, §7.6).
 --
--- DEGRADED (the library absent): NS.MakeDropdown and NS.MakeTestStrip answer nil, and the caller
+-- DEGRADED (the library absent): NS.MakeDropdown, NS.MakeSearchBox and NS.MakeTestStrip answer nil, and the caller
 -- draws no control rather than a dead one; NS.OpenMenu hands the same `fill` to the client's
 -- MenuUtil; NS.CloseMenu is a no-op, because no Ka0s menu can be open; NS.ShowCopy answers false
 -- and its caller prints the text instead.
@@ -45,17 +45,33 @@ end
 -- library hides the menu before a row's click runs, which retires the old 0.1/0.2 s auto-hide.
 
 --- A level of a description: the recorder a `fill` writes to, and each button's own nested level.
+--- Beside MenuUtil's CreateTitle and CreateButton it records CreateDivider, CreateCheckbox (a toggle
+--- row that keeps the menu open) and a row's SetTooltip, each under MenuUtil's own name and shape, so
+--- the client's menu reads the same `fill` on the degraded arm.
 local function newLevel()
     local level = { items = {} }
     function level:CreateTitle(text)
         self.items[#self.items + 1] = { label = text, title = true }
         return {}
     end
-    function level:CreateButton(text, onClick)
+    function level:CreateDivider()
+        self.items[#self.items + 1] = { divider = true }
+        return {}
+    end
+    local function row(self, text, onClick)
         local sub = newLevel()
         sub.label, sub.onClick, sub.enabled = text, onClick, true
         function sub.SetEnabled(_, on) sub.enabled = on and true or false end
+        -- MenuUtil's tooltip is `fn(tooltip, description)`; it is read once, here, into plain text.
+        function sub.SetTooltip(_, fn) sub.tooltip = fn end
         self.items[#self.items + 1] = sub
+        return sub
+    end
+    function level:CreateButton(text, onClick) return row(self, text, onClick) end
+    --- A toggle row: `isSelected(data)` draws its tick, `setSelected(data)` flips it, and the menu stays.
+    function level:CreateCheckbox(text, isSelected, setSelected, data)
+        local sub = row(self, text, nil)
+        sub.isSelected, sub.setSelected, sub.data = isSelected, setSelected, data
         return sub
     end
     return level
@@ -63,17 +79,45 @@ end
 
 local showLevel
 
---- One W.ContextMenu row: a title, or a button with its click, a submenu's mark and its disabled state.
+-- A row's tooltip as plain text: the recorded MenuUtil-shaped function, handed a capture of the one
+-- tooltip call it makes.
+local function tooltipText(item)
+    if type(item.tooltip) ~= "function" then return nil end
+    local text
+    local capture = {}
+    function capture.SetText(_, t) text = t end
+    function capture.AddLine(_, t) text = text and (text .. "\n" .. t) or t end
+    item.tooltip(capture, item)
+    return text
+end
+
+-- A toggle row's label: its tick when selected.
+local function checkLabel(item)
+    if item.isSelected(item.data) then return NS.Skin.MarkText(NS.Icon("confirm"), 0) .. " " .. item.label end
+    return item.label
+end
+
+local function checkRow(item, out)
+    out.label, out.keepOpen = checkLabel(item), true
+    out.onClick = function()
+        item.setSelected(item.data)
+        out.label = checkLabel(item)
+    end
+    return out
+end
+
+--- One W.ContextMenu row: a title, a divider, or a button with its click, a submenu's mark, its
+--- disabled state and its tooltip.
 local function menuRow(anchor, item)
     if item.title then return { label = item.label, title = true } end
+    if item.divider then return { divider = true } end
+    local out = { disabled = item.enabled == false or nil, tooltip = tooltipText(item) }
+    if item.isSelected then return checkRow(item, out) end
     local isSubmenu = #item.items > 0
-    local label = item.label
-    if isSubmenu then label = label .. " " .. NS.Skin.MarkText(NS.Icon("chevron-right"), 0) end
-    return {
-        label = label,
-        disabled = item.enabled == false or nil,
-        onClick = isSubmenu and function() showLevel(anchor, item) end or item.onClick,
-    }
+    out.label = item.label
+    if isSubmenu then out.label = out.label .. " " .. NS.Skin.MarkText(NS.Icon("chevron-right"), 0) end
+    out.onClick = isSubmenu and function() showLevel(anchor, item) end or item.onClick
+    return out
 end
 
 --- Open `level` at the cursor. The library hides the menu before a row's click, so a submenu's row
@@ -104,6 +148,23 @@ end
 --- open. Safe when none ever opened, and a no-op on a degraded install.
 function NS.CloseMenu()
     if W then W.CloseMenu() end
+end
+
+-- ── the search box ───────────────────────────────────────────────────────────────────────────────
+
+--- The flat filter box (the library's W.SearchBox, owned by this addon's skin), or nil when the
+--- library is absent: the caller then filters nothing. The icon chooser's (design §7.8).
+--- @param parent table
+--- @param width number|nil
+--- @param opts table|nil W.SearchBox's opts (`hint`, `onChange`); `owner` is this addon
+--- @return table|nil
+function NS.MakeSearchBox(parent, width, opts)
+    if not (W and W.SearchBox) then return nil end
+    local o = { owner = addonName }
+    if type(opts) == "table" then
+        for k, v in pairs(opts) do o[k] = v end
+    end
+    return W.SearchBox(parent, width, o)
 end
 
 -- ── the test-mode strip ──────────────────────────────────────────────────────────────────────────

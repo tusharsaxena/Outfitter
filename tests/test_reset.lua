@@ -5,7 +5,8 @@
 -- (design §9.3).
 --
 -- The Stack, the trigger binder and the Equipment Manager mirror land later (P4.9, P4.15, P4.10):
--- DeleteAll's calls into them run against recorded fakes (design §12, the fake rule).
+-- DeleteAll's calls into them run against recorded fakes (design §12, the fake rule). P4.21's two
+-- cases at the end run on the real modules: the popup's accept and the dialogs Reset all closes.
 
 local T = _G.OUTFITTERREBORN_TEST
 local test, assertEqual, assertTrue, assertFalse, assertNil =
@@ -220,4 +221,48 @@ test("reset: Delete all survives a record with no name (the old AskReset's strlo
     local ok, err = pcall(NS.Outfits.DeleteAll)
     assertTrue(ok, tostring(err))
     assertNil(NS.Outfits.Get("o3"))
+end)
+
+-- ── P4.21: the Delete all popup and the dialogs a reset closes ───────────────────────────────────
+
+test("reset: Delete all asks through OUTFITTERREBORN_DELETE_ALL, refuses in combat and stood down", function()
+    local _, NS, M = scene("DRUID")
+    local a = populate(NS)
+    local P = M.StaticPopupDialogs.OUTFITTERREBORN_DELETE_ALL
+    assertEqual(P.text, NS.L["Delete every outfit on this character and re-create the built-in ones? "
+        .. "Blizzard equipment sets come back as outfits. Your settings are not affected."])
+    assertEqual(P.button1, NS.L["Delete all outfits"])
+    assertTrue(NS.Popups.ShowDeleteAll() ~= false)
+    assertEqual(M.__popups[#M.__popups].which, "OUTFITTERREBORN_DELETE_ALL")
+    assertTrue(NS.Outfits.Get(a) ~= nil, "asking deleted")
+    P.OnAccept()
+    -- red under: the accept left unwired (the popup asks and nothing happens).
+    assertNil(NS.Outfits.Get(a))
+    assertTrue(NS.Outfits.FindByName("Normal") ~= nil, "the built-in outfits were not re-created")
+    local shown = #M.__popups
+    T.fake(NS, "PlayerState", { InCombat = function() return true end, Suspend = true, Resume = true })
+    M.__resetPrinted()
+    -- red under: ShowDeleteAll without the combat refusal (the popup opens in combat).
+    assertFalse(NS.Popups.ShowDeleteAll())
+    assertEqual(#M.__popups, shown)
+    assertTrue(table.concat(M.__printed(), "\n"):find("Outfits can't be deleted in combat.", 1, true) ~= nil)
+    T.fake(NS, "PlayerState", { InCombat = function() return false end, Suspend = true, Resume = true })
+    NS.SetByPath("enabled", false)
+    M.__resetPrinted()
+    assertFalse(NS.Popups.ShowDeleteAll())
+    assertEqual(#M.__popups, shown)
+    assertTrue(table.concat(M.__printed(), "\n"):find(NS.StoodDownRefusal(), 1, true) ~= nil)
+end)
+
+test("reset: Reset all closes every open dialog first, and a draft writes nothing", function()
+    local _, NS, M = scene()
+    local id = NS.Outfits.Create("Ride", { FeetSlot = { id = 0 } }, { trigger = "RIDING" })
+    assertTrue(NS.TriggerDialog.Open(id))
+    NS.OutfitDialog.OpenNew()
+    NS.ShowResetAll()
+    M.StaticPopupDialogs.OUTFITTERREBORN_RESET_ALL.OnAccept()
+    -- red under: NS.Dialogs.CloseAll skipping its registered dialogs on "reset".
+    assertFalse(NS.TriggerDialog.IsOpen(), "the trigger dialog outlived the reset")
+    assertFalse(NS.OutfitDialog.IsOpen(), "the outfit dialog outlived the reset")
+    assertNil(NS.Outfits.Get(id).triggerParams)
 end)

@@ -531,6 +531,17 @@ function O.SetFlag(id, key, value)
     return true
 end
 
+--- The stat cfg an outfit is built and rebuilt for (`rec.stat`, design §5.14), a copy of `cfg`; nil
+--- or an empty cfg clears it. The rebuild dialog's Done (modules/Dialog_Rebuild.lua).
+--- @return boolean
+function O.SetStat(id, cfg)
+    local rec = O.Get(id)
+    if not rec or (cfg ~= nil and type(cfg) ~= "table") then return false end
+    rec.stat = (cfg and #cfg > 0) and copy(cfg) or nil
+    O.Changed(id, "stat")
+    return true
+end
+
 --- The binding key (1-10) the outfit holds, or nil.
 function O.BindingOf(id)
     local b = store().bindings
