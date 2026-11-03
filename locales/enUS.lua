@@ -164,6 +164,12 @@ L["Total stats"] = "Total stats"
 L["Item level"] = "Item level"
 
 -- P4.12 keys (modules/Optimize.lua, modules/Optimize_Genetic.lua)
+L["Unknown stat ID: %s"] = "Unknown stat ID: %s"
+L["Checked %s outfits in %s seconds (%s outfits per second)"] = "Checked %s outfits in %s seconds (%s outfits per second)"
+L["Best outfit score: %s"] = "Best outfit score: %s"
+L["Warning: None of your items have that attribute"] = "Warning: None of your items have that attribute"
+L["Couldn't generate an outfit because no items with that stat were found"] = "Couldn't generate an outfit because no items with that stat were found"
+L["The outfit optimizer failed (%s); the details are in the debug console"] = "The outfit optimizer failed (%s); the details are in the debug console"
 
 -- P4.13 keys (modules/Companion.lua)
 
