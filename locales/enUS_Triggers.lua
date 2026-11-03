@@ -154,5 +154,6 @@ L["Trigger %s is not available"] = "Trigger %s is not available"
 -- P4.16a keys (modules/Triggers_CondGeneral.lua)
 
 -- P4.16b keys (modules/Triggers_CondTrade.lua)
+L["Requires Lockpicking"] = "Requires Lockpicking"
 
 -- P4.16c keys (modules/Triggers_CondQuest.lua)
