@@ -150,6 +150,13 @@ L["None"] = "None"
 L["Adding %s to %s outfit"] = "Adding %s to %s outfit"
 
 -- P4.10 keys (modules/EquipmentManager.lua, modules/Bank.lua)
+L["That name is too long for the Equipment Manager"] = "That name is too long for the Equipment Manager"
+L["Saved outfit to Equipment Manager"] = "Saved outfit to Equipment Manager"
+L["The bank must be open"] = "The bank must be open"
+L["Bank items can't be moved in combat."] = "Bank items can't be moved in combat."
+L["You must have your bank open to generate a missing items report"] = "You must have your bank open to generate a missing items report"
+L["Missing items (note that a missing item will be listed multiple times if it was used by multiple outfits):"] = "Missing items (note that a missing item will be listed multiple times if it was used by multiple outfits):"
+L["No items are missing"] = "No items are missing"
 
 -- P4.11 keys (modules/ItemStats.lua, modules/ItemStats_Sources.lua)
 L["Base stats"] = "Base stats"
