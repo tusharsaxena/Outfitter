@@ -56,6 +56,14 @@ places in Lua, and the kit's sighted shadow is what the complexity suite measure
   `tests/fixtures/inventories.lua` (`M.__gear:load("full_bags")`). It also carries `fake`, the
   recorded stand-in a suite installs for a module that has not landed yet. `tests/run.lua` wraps
   every `T.test` case so the fakes it installed are restored when it ends, pass or fail.
+- **The whole login and the unit instance.** `T.load()` logs in as the client does, so since P4.27
+  every instance holds the whole graph live (`OnEnable` resumes every module). A suite that pins one
+  module and drives its `Resume` itself loads through `tests/unit_load.lua` instead: the same load and
+  login with the resume walk emptied and the skin picker's login timer canceled. `test_disabled`,
+  `test_surface_parity`, `test_skeleton` and the secrets engine cases run on the whole login.
+- **`tests/spy.lua`** records calls on a REAL module's members and calls straight through: it replaced
+  the fakes of the dialogs, the icon chooser, the outfit menu, the outfit dialog and the popups once
+  those modules landed (P4.27).
 - **`tests/fixtures/legacy/`** is the fork's behavior, captured at `7ea3dc3` by
   `tools/legacy_capture.lua` and never hand-edited (its README says how to regenerate it). The new
   suites assert against it: a *keep* pin asserts the legacy value, a *fix* pin the corrected one with
@@ -70,23 +78,23 @@ the UI) join as their files land.
 
 | Suite | What it covers |
 |---|---|
-| `test_skeleton` | Registration under the folder name, the tagged printer, the DB defaults, the declared icons, the file headers, the bus wire names |
+| `test_skeleton` | Registration under the folder name, the tagged printer, the DB defaults, the declared icons, the file headers, the bus wire names, the login resume walk, the legacy guard |
 | `test_toc` | The TOC header: field order, Title, version, IconTexture, SavedVariables, the CurseForge project, no retired fields |
 | `test_loadorder` | The runner's load list is the TOC's; every path exists; the folder order; the `LOAD-BEARING` lines; no legacy file back |
 | `test_database` | The store: the migration stamp, a raising step, the profile and char walks, no `gOutfitter_*` reader, both `resolveRoot` functions |
 | `test_packaging` | What reaches players: the package folder, every maintainer file ignored, nothing ignored loaded, every media path resolves |
 | `test_vendor_sync` | `libs/LibKa0s/` and `tests/_kit/` are exactly the tag root `CLAUDE.md` names, icons pruned to its declaration |
-| `test_secrets` | The secret-value seam: the conversions, the bounded walk, the guards on both arms, the Compat accessors, the seam scan |
-| `test_bus` | The full catalog, its wire names, the one-sender rule over every call site |
+| `test_secrets` | The secret-value seam: the conversions, the bounded walk, the guards on both arms, the Compat accessors, the seam scan, and the engine on the whole login (secret links as empty slots, a secret level, the tooltip/compare/quick-slot/iteminfo guards, the balanced Equip count) |
+| `test_bus` | The full catalog, its wire names, exactly one sender per key over every call site |
 | `test_skinsetup` | The skin seam: the owner registration, the `of.*` tokens, the choice and the picker |
-| `test_surface_parity` | Every degrade stub carries the surface of what it stands in for |
+| `test_surface_parity` | Every degrade stub carries the surface of what it stands in for; every leased major has its row; the degraded login resumes the whole graph and stands it down and up |
 | `test_perf_harness` | The ten buckets in order with the one nest, the `perf` verb, the latch's `perf` hold |
 | `test_schema` | The settings rows, the write seam, its forward to the outfit instance, the reset's reach |
 | `test_settings` | Page registration and order, the General tabs, Master controls, the reset wording, the landing page |
 | `test_slash` | The reserved verbs, bare `/of`, help, the schema CLI, both chat commands, the macro-conditional wrapper |
 | `test_launcher` | The one LDB object, its static icon and label, the right-click menu, the tooltip line, the Minimap row |
 | `test_keybinds` | `Bindings.xml`, `NS.BINDINGS`, the hidden non-secure buttons and their press |
-| `test_disabled` | The disabled state is total: the kit's ten conformance steps |
+| `test_disabled` | The disabled state is total: the kit's ten conformance steps on the real addon, and the Outfitter cases (an active trigger, the Equip bracket, the hook bodies, the Dock driver, the LoadPass timer, the rebuild) |
 | `test_locale` | The locale gates: the TOC-derived enUS set, cross-file duplicates, the overlays' gates |
 | `test_glyphs` | The display-glyph guard over the addon's own Lua |
 | kit `test_skin_values`, `test_skin_switch` | The typed-color gate and the skin switch over `tests/skin_surfaces.lua` |

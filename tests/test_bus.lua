@@ -1,9 +1,9 @@
 -- tests/test_bus.lua — the bus seam (design §2.3, BP §6.11; P3 C7 part): NS.MSG is the full catalog
 -- with Ka0s_OutfitterReborn_<Pascal of the key> wire names, each unique and strict; the wire literals
--- live in core/Bus.lua only; at most one file sends each key, and it is the file §2.3 names; and the
+-- live in core/Bus.lua only; exactly one file sends each key, and it is the file §2.3 names; and the
 -- receiver record drops and replays on both arms; and every pseudo event a trigger consumes has a
--- producer, and the reverse (P4.15). At P4.27, with every sender landed, "at most one sender" tightens
--- to "exactly one".
+-- producer, and the reverse (P4.15). "At most one sender" tightened to "exactly one" at P4.27, when
+-- the last sender (core/OutfitterReborn.lua's LEGACY_DETECTED) landed.
 
 local T = _G.OUTFITTERREBORN_TEST
 local NS = T.NS
@@ -64,8 +64,9 @@ end
 
 -- Every `SendBus(NS.MSG.KEY` call site in `sources`, checked against `senders`: answers a sorted
 -- list of faults (a key sent from two files, or from a file other than its declared sender, or a
--- key the catalog does not declare). A bare `:SendMessage(` outside core/Bus.lua is a fault too:
--- every message leaves through NS.SendBus. Comments are stripped first, so prose can name a call.
+-- key the catalog does not declare, or a declared key no file sends). A bare `:SendMessage(` outside
+-- core/Bus.lua is a fault too: every message leaves through NS.SendBus. Comments are stripped first,
+-- so prose can name a call.
 local function senderFaults(sources, senders)
     local faults, seen = {}, {}
     local files = {}
@@ -91,6 +92,9 @@ local function senderFaults(sources, senders)
         local n = 0
         for _ in pairs(from) do n = n + 1 end
         if n > 1 then faults[#faults + 1] = key .. " has " .. n .. " sending files" end
+    end
+    for key in pairs(senders) do
+        if not seen[key] then faults[#faults + 1] = key .. " has no sender" end
     end
     table.sort(faults)
     return faults
@@ -161,21 +165,24 @@ test("bus: the Ka0s_OutfitterReborn_ literal appears in core/Bus.lua only", func
     assertTrue(count > 10, "the scan saw the authored files")
 end)
 
-test("bus: at most one file sends each key, and it is the §2.3 sender", function()
+test("bus: exactly one file sends each key, and it is the §2.3 sender", function()
+    -- red under: an empty NS.OnLoadPassDone in core/OutfitterReborn.lua (LEGACY_DETECTED has no sender).
     local faults = senderFaults(authoredSources(), SENDERS)
     assertEqual(table.concat(faults, "; "), "")
 end)
 
-test("bus: the sender scan catches a second sender, a wrong sender, a typo and a bare send", function()
+test("bus: the sender scan catches a second sender, a wrong sender, a typo, a bare send and a silent key", function()
     -- red under: senderFaults returning {} (the scan above would pass with no check at all).
     local faults = senderFaults({
         ["modules/Outfits.lua"]     = "NS.SendBus(NS.MSG.OUTFIT_ADDED, id)\nNS.SendBus( NS.MSG.OUTFIT_WORN, id)",
         ["modules/OutfitStack.lua"] = "NS.SendBus(NS.MSG.OUTFIT_WORN, id, 1)\nNS.SendBus(NS.MSG.NOPE)",
         ["modules/Bar.lua"]         = "NS.addon:SendMessage(NS.MSG.STACK_CHANGED)",
         ["core/Bus.lua"]            = "-- NS.SendBus(NS.MSG.KEY, ...)\naddon:SendMessage(name, ...)",
-    }, SENDERS)
+    }, { OUTFIT_ADDED = SENDERS.OUTFIT_ADDED, OUTFIT_WORN = SENDERS.OUTFIT_WORN,
+         STACK_CHANGED = SENDERS.STACK_CHANGED })
     assertEqual(table.concat(faults, "; "), table.concat({
         "OUTFIT_WORN has 2 sending files",
+        "STACK_CHANGED has no sender",
         "modules/Bar.lua calls SendMessage directly",
         "modules/OutfitStack.lua sends undeclared NOPE",
         "modules/Outfits.lua sends OUTFIT_WORN, which belongs to modules/OutfitStack.lua",

@@ -1,20 +1,39 @@
 local addonName, NS = ...
--- core/OutfitterReborn.lua — AceAddon registration, the NS.Print reclaim and the lifecycle kick.
+-- core/OutfitterReborn.lua — AceAddon registration, the NS.Print reclaim, the lifecycle kick (the login
+-- resume walk) and the legacy-addon guard.
 
 local addon = LibStub("AceAddon-3.0"):NewAddon(NS, addonName, "AceEvent-3.0", "AceTimer-3.0", "AceConsole-3.0")
 NS.addon = addon
+
+local L = NS.L
 
 -- AceConsole's embed stamped its own :Print over NS.Print; reclaim the tagged printer every settings
 -- file captured (architecture-§2: the SAME function object as NS.Util.print).
 NS.Print = NS.Util.print
 
---- The session's first LoadPass has finished (modules/Outfits_Seed.lua calls this once). The legacy
---- guard's LEGACY_DETECTED send lands here in P4.27 (design §4.7); until then there is nothing to do.
-function NS.OnLoadPassDone() end
+-- ── the legacy guard (design §4.7; owner ruling 2026-11-03: warn only) ─────────────────────────────
+-- The original Outfitter loaded beside this addon: both change gear and both own /outfitter. The
+-- guard WARNS and holds nothing: triggers bind and run as usual (test_trigger_binder pins that).
+
+--- Read once at login (OnEnable runs at PLAYER_LOGIN). The flag is set even while the addon stands
+--- down, because `/of diagnostics` answers then too; the warning is printed only when standing up: a
+--- disabled addon changes no gear, prints nothing, and its premise ("both change your gear") is false.
+local function checkLegacy()
+    if not NS.Compat.IsAddOnLoaded("Outfitter") then return end
+    NS.State.legacyLoaded = true
+    if NS.IsStoodDown() then return end
+    NS.Print(L["The old Outfitter addon is also loaded. Disable it: both change your gear and both own /outfitter."])
+end
+
+--- The session's first LoadPass has finished (modules/Outfits_Seed.lua calls this once). The one
+--- LEGACY_DETECTED send: held until here so nothing is dispatched before the LoadPass (design §2.3).
+function NS.OnLoadPassDone()
+    if NS.State.legacyLoaded then NS.SendBus(NS.MSG.LEGACY_DETECTED) end
+end
 
 --- Test mode's one line when combat ends it (modules/Preview.lua; as DpsRace's core/DpsRace.lua).
 function NS.SayTestModeEnded()
-    NS.Print(NS.L["Test mode ended: you entered combat."])
+    NS.Print(L["Test mode ended: you entered combat."])
 end
 
 function NS:OnInitialize()
@@ -36,4 +55,37 @@ function NS:OnInitialize()
     -- EAGER category registration; the page bodies stay lazy (options-ui-§1/§5).
     NS.CreateOptionsPanel()
     NS.Slash:Register()
+end
+
+--- The login: stood down (a stored `enabled = false`), nothing registers, nothing resumes. Standing
+--- up, it runs what the latch's stand-up runs (core/LifecycleSetup.lua): the host's game events, then
+--- every module in NS.LIFECYCLE_MODULES bottom to top, so PlayerState, Inventory and the stack come up
+--- before the binder that wears through them (design §5.12). A stand-down later and a stand-up after
+--- it walk the same list, so the login and a re-enable build the same set.
+function NS:OnEnable()
+    checkLegacy()
+    if NS.IsStoodDown() then return end
+    NS.RegisterGameEvents()
+    local modules = NS.LIFECYCLE_MODULES
+    for i = #modules, 1, -1 do NS[modules[i]].Resume() end
+    -- The first-run skin picker (core/SkinSetup.lua), once per session on a profile that has not
+    -- closed it: two seconds in, off the login spike, on an AceTimer the stand-down cancels. In combat
+    -- the show holds for PLAYER_REGEN_ENABLED.
+    addon:ScheduleTimer(function() NS.MaybeShowSkinPicker() end, 2)
+end
+
+-- ── the host's game events ──────────────────────────────────────────────────────────────────────
+
+--- The host's own game events, rebuilt from CURRENT settings on every stand-up (slash-commands-§7
+--- step 9). The host owns none: every game event this addon hears is a module's own target,
+--- registered in its Resume (the bar's combat rule reads PLAYER_STATE_CHANGED from PlayerState, and
+--- test mode's combat end is modules/Preview.lua's). The seam stays so the login and the latch's
+--- stand-up run one path, and so a host event added later has its home.
+function NS.RegisterGameEvents() end
+
+--- The `visibility` row's reaction (design §4.2): rebuild the host set (only while standing up) and
+--- re-decide the bar now; the bar's own SETTINGS_CHANGED receiver coalesces the same redraw.
+function NS.OnVisibilityChanged()
+    if not NS.IsStoodDown() then NS.RegisterGameEvents() end
+    NS.Bar.Refresh()
 end

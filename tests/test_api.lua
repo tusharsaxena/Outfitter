@@ -328,6 +328,12 @@ local function allowed(k, v)
     if k:find("^OutfitterReborn%u") and type(v) == "table" and type(v.GetObjectType) == "function" then
         return true
     end
+    -- LibKa0s-Options' first-run skin picker, which the login shows (P4.27) and the library names
+    -- after the owner: a frame, never a function or data.
+    if k:find("^LibKa0sSkinPickerOutfitterReborn%d+$") and type(v) == "table"
+        and type(v.GetObjectType) == "function" then
+        return true
+    end
     return false
 end
 
@@ -359,6 +365,7 @@ test("api: the allow-list scan catches a legacy global and passes an allowed one
     assertTrue(allowed("OutfitterRebornWearOutfit3", { GetObjectType = function() return "Button" end }))
     assertTrue(allowed("BINDING_NAME_CLICK OutfitterRebornWearOutfit3:LeftButton", "Wear outfit 3"))
     assertTrue(allowed("SLASH_OUTFITTERREBORN1", "/of"))
+    assertFalse(allowed("LibKa0sSkinPickerOutfitterReborn1", function() end), "a function under the picker's name")
     local planted = {}
     planted.Outfitter_FindOutfitByName = function() end
     assertEqual(table.concat(strays(planted, {}), ","), "Outfitter_FindOutfitByName")

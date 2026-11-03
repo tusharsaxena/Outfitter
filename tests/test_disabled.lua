@@ -1,20 +1,20 @@
 -- tests/test_disabled.lua — the disabled state is total (slash-commands-§7): all ten steps of the
--- conformance test, driven through the kit's recording mocks.
+-- conformance test, driven through the kit's recording mocks, on the REAL addon (P4.27).
 --
--- THE P3 BASELINE. No feature module exists before P4, so the addon as it stands registers nothing
--- at login and step 1's non-empty R_on would pass every later step trivially. The scene therefore
--- seeds a STAND-IN shaped exactly as a P4 module will be (design §5.12): a game-event set on the
--- addon object behind NS.RegisterGameEvents, which the latch's stand-up calls; a module in
--- NS.LIFECYCLE_MODULES with its own frame, a per-unit registration, an OnUpdate and a show decision,
--- whose Resume rebuilds from the stored settings; a bus receiver from NS.NewBusTarget; and an
--- AceTimer standing in for the LoadPass timer. Everything that stands it down and up is the real
--- latch (core/LifecycleSetup.lua), the real bus record (core/Bus.lua), the real dispatcher
--- (settings/Slash.lua), the real launcher and binding buttons (core/LauncherSetup.lua) and the real
--- skin picker (core/SkinSetup.lua). P4.27 replaces the stand-in with the real modules and adds the
--- Outfitter cases (design §9.3): the active-trigger seed below is pending until then.
+-- THE SCENE. One whole login (T.load: OnEnable resumes every module in NS.LIFECYCLE_MODULES), the
+-- first zone-in seeded through the real LoadPass, an outfit with an IN_DUNGEON trigger worn in a
+-- 5-man, the outfit bar and the docked window on screen, the slot checkboxes showing its selection,
+-- the first-run skin picker up, and the States poll, the bar and the Dock driver armed. Nothing is a
+-- stand-in: the latch (core/LifecycleSetup.lua), the bus record (core/Bus.lua), the dispatcher
+-- (settings/Slash.lua), the launcher and the binding buttons (core/LauncherSetup.lua), the skin
+-- picker (core/SkinSetup.lua) and every module stand down and up for real. The Outfitter cases at
+-- the end pin design §9.3's list: the trigger's events and timers, the Equip bracket, the equipment
+-- event, the latch-gated hook bodies, the Dock driver and the sheet button, the auto presses, the
+-- LoadPass timer and the Pawn/WeightsWatcher watch, and the rebuild from current state.
 
 local T = _G.OUTFITTERREBORN_TEST
 local test, assertEqual, assertTrue, assertFalse = T.test, T.assertEqual, T.assertTrue, T.assertFalse
+local installPaint = dofile(T.root .. "/tests/_kit/mock_paint.lua")
 
 -- slash-commands-§2's never-feature verbs: these keep answering, normally, while disabled. `skin` is
 -- NOT among them: §2 MUSTs its refusal and forbids listing it in `liveVerbs`.
@@ -26,7 +26,12 @@ local RESERVED = {
 -- Pinned here: no library constant carries it (slash-commands-§7, "Which refusal, by hold").
 local PERF_LINE = "Not available during a performance capture."
 
-local BINDING_BUTTONS = { "OutfitterRebornToggleWindow" }
+--- The 14 binding buttons, by global name (NS.BINDINGS, core/LauncherSetup.lua).
+local function bindingButtons(NS)
+    local out = {}
+    for _, row in ipairs(NS.BINDINGS) do out[#out + 1] = row.command:match("^CLICK (.-):LeftButton$") end
+    return out
+end
 
 local function regKey(r)
     return ("%s|%s|%s|%s"):format(tostring(r.target or r.owner), tostring(r.kind), tostring(r.event),
@@ -58,10 +63,6 @@ local function eventTargets(inst)
     return names, out
 end
 
-local function eventNames(inst)
-    return (eventTargets(inst))
-end
-
 local function refusalLine(inst)
     return inst.mocks.LibStub("LibKa0s-Slash-1.0").DISABLED_LINE_FORMAT:format("Ka0s Outfitter Reborn", "/of enable")
 end
@@ -73,108 +74,81 @@ local function printedBare(M)
     return out
 end
 
---- The stand-in for a P4 feature module (see the header). Its handlers are written the way the
---- pre-adoption addons wrote them, behind the one stood-down read: entering combat writes
---- `locked = true` and prints, the slash-commands-§7 failure in its purest form.
-local function installStandIn(NS, M)
-    local S = { heard = 0, wanted = true }
-    local frame = M.CreateFrame("Frame", nil, M.UIParent)
-    frame:Hide()
-    S.frame = frame
-
-    local function onCombat()
-        if NS.IsStoodDown() then return end
-        NS.db.profile.locked = true
-        NS.Print("entering combat")
+--- Fire every armed timer, a few rounds: the States poll repeats, so the queue never empties.
+local function settle(M)
+    for _ = 1, 4 do
+        if M.__fireTimers() == 0 then break end
     end
-    local function onWorld()
-        if NS.IsStoodDown() then return end
-        NS.Print("entering the world")
-    end
-    frame:SetScript("OnEvent", function(_, event)
-        if NS.IsStoodDown() then return end
-        NS.db.char.standInSeen = event
-        frame:Show()
-    end)
-
-    -- The addon object's own set: the latch's stand-down unregisters it wholesale
-    -- (addon:UnregisterAllEvents) and its stand-up calls this to rebuild it.
-    NS.RegisterGameEvents = function()
-        NS.SafeRegisterEvent(NS.addon, "PLAYER_REGEN_DISABLED", onCombat, NS.rejectedEvents)
-        NS.SafeRegisterEvent(NS.addon, "PLAYER_ENTERING_WORLD", onWorld, NS.rejectedEvents)
-    end
-
-    --- Show at the SOURCE: the decision reads the latch, so a stood-down module cannot be re-shown.
-    function S.Refresh()
-        frame:SetShown(S.wanted and not NS.IsStoodDown())
-    end
-    --- Rebuilt FROM CURRENT STATE: the locked setting decides one registration (step 9).
-    function S.Resume()
-        NS.SafeRegisterUnitEvent(frame, "UNIT_AURA", NS.rejectedEvents, "player")
-        if NS.GetSetting("locked") then
-            NS.SafeRegisterEvent(frame, "PLAYER_TARGET_CHANGED", nil, NS.rejectedEvents)
-        end
-        frame:SetScript("OnUpdate", function() S.heard = S.heard + 1 end)
-        S.Refresh()
-    end
-    function S.Suspend()
-        frame:UnregisterAllEvents()
-        frame:SetScript("OnUpdate", nil)
-        S.Refresh()
-    end
-
-    NS.StandIn = S
-    NS.LIFECYCLE_MODULES[#NS.LIFECYCLE_MODULES + 1] = "StandIn"
-
-    -- The module's own bus receiver: dropped by the record at stand-down and replayed at stand-up.
-    S.bus = assert(NS.NewBusTarget(), "no bus target (AceEvent absent?)")
-    S.bus:RegisterMessage(NS.MSG.SETTINGS_CHANGED, function() S.heard = S.heard + 1 end)
-
-    -- What the login path does once P4 lands: register the game events and resume every module the
-    -- latch walks, bottom to top as standUp does, so the baseline holds the real modules that have
-    -- landed (PlayerState from P4.4) beside the stand-in, and a stand-up rebuilds exactly that set.
-    NS.RegisterGameEvents()
-    for i = #NS.LIFECYCLE_MODULES, 1, -1 do
-        local m = NS[NS.LIFECYCLE_MODULES[i]]
-        if m and m.Resume then m.Resume() end
-    end
-    return S
 end
 
---- Baseline: enabled, the stand-in up and shown, the skin picker on screen, one AceTimer armed,
---- the stores watched and the records reset.
+--- The outfits a 5-man wears: one with the IN_DUNGEON trigger (its defaults equip in 5-man
+--- instances), worn at the zone-in.
+local function seedDungeon(NS, M)
+    local head = NS.ItemInfo.Snapshot(NS.ItemInfo.FromSlot("HeadSlot"))
+    local id = NS.Outfits.Create("Dungeon", { HeadSlot = head }, { trigger = "IN_DUNGEON" })
+    M.__world:setInstance({ type = "party", instanceID = 1001 })
+    M.__fire("PLAYER_ENTERING_WORLD")
+    settle(M)
+    return id
+end
+
+--- Baseline: the whole addon up on the geared scenario (see the header), the stores watched and the
+--- records reset. Answers inst, NS, M, S where S = { outfit = id, ctx = the binding's context }.
 local function scene(opts)
-    local inst = T.load(opts)
+    opts = opts or {}
+    -- The kit's paint recorder, so a font string is an object of its own and not the frame that made
+    -- it (mock_base.lua's "Known divergence"): without it the window's footer label hides the window.
+    local inst = T.load({ libFiles = opts.libFiles, mutate = function(M)
+        installPaint(M)
+        M.__gear:load("geared")
+    end })
     local NS, M = inst.NS, inst.mocks
-    local S = installStandIn(NS, M)
-    NS.addon:ScheduleTimer(function() NS.Print("the timer fired") end, 5)
+    M.__now = 100
+    M.__fire("PLAYER_ENTERING_WORLD")          -- the first zone-in arms the LoadPass
+    settle(M)
+    local S = { outfit = seedDungeon(NS, M) }
+    S.ctx = NS.TriggerBinder.Context(S.outfit)
+    assertTrue(NS.SetByPath("bar.shown", true))
+    M.__world:openCharacter()
+    NS.Dock.Open()
+    -- The client runs the window's OnShow when it shows (the base mock only flips the flag); the
+    -- Dock's OnShow hook is what arms the follow on the driver frame.
+    M.OutfitterRebornWindow:__fire("OnShow")
+    NS.Stack.Select(S.outfit)
+    settle(M)
     M.__watchSv("OutfitterRebornPerfDB")
     M.__resetSvWrites()
     M.__resetPrinted()
     return inst, NS, M, S
 end
 
---- The first-run skin picker, shown through the reserved verb (core/SkinSetup.lua NS.RunSkinVerb).
-local function showPicker(M, NS)
-    local before = #M.__shownFrames()
-    local win = NS.RunSkinVerb()
-    assertTrue(win ~= nil, "the fixture needs the skin picker on screen")
-    assertTrue(#M.__shownFrames() > before, "the picker showed no frame")
-    return win
+--- The frames this addon shows, by global name: the docked window, the sheet button and the slot
+--- checkboxes (the bar is NS.Bar.Frame(), the picker NS.RunSkinVerb()'s answer).
+local OWN_FRAMES = { "OutfitterRebornWindow", "OutfitterRebornSheetButton", "OutfitterRebornSlotEnables" }
+
+--- Every display the scene put on screen, as { label = frame }.
+local function displays(NS, M)
+    local out = { bar = NS.Bar.Frame(), picker = NS.RunSkinVerb() }
+    for _, name in ipairs(OWN_FRAMES) do out[name] = M._G[name] end
+    return out
 end
 
 test("Disabled 1: enabled, the addon registers something, arms something and shows something", function()
     local inst, NS, M, S = scene()
     assertTrue(#regKeys(inst) > 0, "the baseline registration set is empty; nothing below can fail")
     assertTrue(#M.__timers() > 0, "the baseline armed nothing; step 4 could not fail")
-    assertTrue(S.frame:IsShown(), "the stand-in is not on screen to be hidden")
+    for label, frame in pairs(displays(NS, M)) do
+        assertTrue(frame ~= nil and frame:IsShown(), label .. " is not on screen to be hidden")
+    end
+    assertTrue(NS.TriggerBinder.IsBound(S.outfit), "the dungeon outfit's trigger is not bound")
+    assertTrue(NS.Stack.IsWorn(S.outfit), "the dungeon outfit is not worn in the 5-man")
     assertFalse(NS.IsStoodDown())
 end)
 
 test("Disabled 2+3: disabling through the write seam leaves NO registration behind", function()
-    -- red under: drop `addon:UnregisterAllEvents()` from standDown in core/LifecycleSetup.lua (the
-    -- addon object keeps PLAYER_REGEN_DISABLED and PLAYER_ENTERING_WORLD), or drop the module walk
-    -- (the stand-in's frame keeps UNIT_AURA).
+    -- red under: drop the module walk from standDown in core/LifecycleSetup.lua (PlayerState, States,
+    -- Inventory and the binder's targets keep their events), or NS.BusStandDown() (every module's
+    -- bus receiver stays registered).
     local inst, NS = scene()
     local before = regKeys(inst)
     assertTrue(#before > 0)
@@ -188,10 +162,11 @@ test("Disabled 2+3 (combat): a held secure write and a held picker start go at s
     -- red under: drop `NS.SecureQueue.Clear()` from standDown in core/LifecycleSetup.lua (the queue's
     -- PLAYER_REGEN_ENABLED survives), or drop NS.HideSkinPicker() (the picker's one-shot survives).
     local inst, NS, M = scene()
+    NS.HideSkinPicker()                     -- the login's picker closed, so a start can be held
     local locked = true
     M.InCombatLockdown = function() return locked end
     local wrote = 0
-    assertFalse(NS.SecureQueue.Run("standin.attrs", function()
+    assertFalse(NS.SecureQueue.Run("test.attrs", function()
         wrote = wrote + 1
         NS.db.profile.locked = true
     end), "the write ran in lockdown")
@@ -242,41 +217,39 @@ for _, arm in ipairs({ { label = "live", opts = nil }, { label = "degraded", opt
 end
 
 test("Disabled 4: no timer, ticker or OnUpdate is left armed, and none re-arms", function()
-    -- red under: drop `addon:CancelAllTimers()` from standDown in core/LifecycleSetup.lua (the
-    -- stand-in LoadPass timer stays armed and prints when fired)
-    local _, NS, M, S = scene()
-    assertTrue(#M.__timers() >= 2, "the fixture needs the AceTimer and the OnUpdate armed")
+    -- red under: an empty States.Suspend in modules/States.lua (its repeating poll stays armed), or an
+    -- empty Dock.Suspend in modules/Dock.lua (the driver's OnUpdate survives).
+    local _, NS, M = scene()
+    assertTrue(#M.__timers() >= 2, "the fixture needs the States poll and the Dock driver armed")
     assertTrue(NS.SetByPath("enabled", false))
     local live = M.__timers()
     assertEqual(#live, 0, "still armed: " .. #live)
     M.__fireTimers()
     assertEqual(#M.__timers(), 0, "something re-armed itself while disabled")
     assertEqual(#M.__printed(), 0, "a canceled timer printed")
-    assertEqual(S.frame.__scripts and S.frame.__scripts.OnUpdate, nil, "the OnUpdate survived")
+    assertEqual(M.OutfitterRebornDockDriver.__scripts.OnUpdate, nil, "the Dock driver's OnUpdate survived")
 end)
 
 test("Disabled 5: every display that was shown is hidden, refused at the source", function()
     -- red under: drop NS.HideSkinPicker() from standDown in core/LifecycleSetup.lua (the picker
-    -- stays on screen), or the IsStoodDown read from the stand-in's show decision
-    local _, NS, M, S = scene()
-    local picker = showPicker(M, NS)
-    assertTrue(S.frame:IsShown())
+    -- stays on screen), or the IsStoodDown read from Bar.ShouldShow in modules/Bar.lua (a refresh
+    -- while down re-shows the bar).
+    local _, NS, M = scene()
+    local shown = displays(NS, M)
     assertTrue(NS.SetByPath("enabled", false))
-    assertFalse(S.frame:IsShown(), "the stand-in stayed on screen")
-    assertFalse(picker:IsShown(), "the skin picker stayed on screen")
+    for label, frame in pairs(shown) do assertFalse(frame:IsShown(), label .. " stayed on screen") end
     -- A show request while down is refused by the decision itself, not hidden after the fact.
-    S.Refresh()
-    assertFalse(S.frame:IsShown(), "the show decision re-showed a stood-down frame")
+    NS.Bar.Refresh()
+    NS.Dock.Open()
+    NS.SlotEnables.Show(NS.Stack.Selected())
     assertEqual(NS.MaybeShowSkinPicker(), nil, "the first-run picker showed while disabled")
-    assertFalse(picker:IsShown())
-    for _, name in ipairs(BINDING_BUTTONS) do
-        assertFalse(M._G[name]:IsShown(), name .. " is shown")
-    end
+    for label, frame in pairs(shown) do assertFalse(frame:IsShown(), label .. " re-showed while down") end
+    for _, name in ipairs(bindingButtons(NS)) do assertFalse(M._G[name]:IsShown(), name .. " is shown") end
 end)
 
 test("Disabled 6: every event fired anyway writes nothing, prints nothing, shows nothing", function()
     -- red under: make NS.IsStoodDown in core/LifecycleSetup.lua read only the `perf` hold (a disabled
-    -- addon then reads as up: the stand-in's combat handler writes `locked = true` and prints)
+    -- addon then reads as up: the EQUIPMENT_SETS_CHANGED handler syncs the new set into db.char).
     local inst, NS, M = scene()
     local events, holders = eventTargets(inst)
     assertTrue(#events > 0)
@@ -284,6 +257,9 @@ test("Disabled 6: every event fired anyway writes nothing, prints nothing, shows
     for _, e in ipairs(events) do if e == "PLAYER_REGEN_DISABLED" then combatEntry = true end end
     assertTrue(combatEntry, "the combat-entry event is in the baseline set")
     assertTrue(NS.SetByPath("enabled", false))
+    -- The world moves on while the addon is down: a new equipment set, which a running Equipment
+    -- Manager mirror would copy into db.char on EQUIPMENT_SETS_CHANGED.
+    M.__gear:addSet({ name = "Made while down" })
     M.__resetSvWrites()
     M.__resetPrinted()
     -- The kit's frame survey is weak-keyed: collect first, so an unreferenced frame dropping out
@@ -297,10 +273,10 @@ test("Disabled 6: every event fired anyway writes nothing, prints nothing, shows
             assertTrue(reached >= 1, event .. " reached no handler, so its silence proves nothing")
         end
     end
+    settle(M)
     assertEqual(#M.__svWrites(), 0, "a game event wrote SavedVariables while disabled")
     assertEqual(#M.__printed(), 0, "a game event printed while disabled: " .. tostring(M.__printed()[1]))
     assertEqual(#M.__shownFrames(), shownBefore, "a game event showed a frame while disabled")
-    assertFalse(NS.db.profile.locked == true, "entering combat locked the addon while disabled")
 end)
 
 --- A probe feature verb appended to THIS instance's table (the dispatcher holds the same table): it
@@ -467,9 +443,11 @@ test("Disabled 8: launcher clicks and the key binding write nothing and show not
     assertEqual(#M.__svWrites(), 0, "a launcher click wrote SavedVariables")
     assertEqual(#M.__shownFrames(), shownBefore, "a launcher click showed a frame")
 
-    -- The key binding (a CLICK binding): one refusal line, no handler, no write, no show.
+    -- The 14 key bindings (CLICK bindings): one refusal line each, no handler, no write, no show.
+    -- The two auto presses are among them, and `auto.enabled` stays as it was.
     local refusal = refusalLine(inst)
-    for _, name in ipairs(BINDING_BUTTONS) do
+    local auto = NS.GetSetting("auto.enabled")
+    for _, name in ipairs(bindingButtons(NS)) do
         M.__resetPrinted()
         local before = opened
         M._G[name]:__fire("OnClick", "LeftButton", true)
@@ -480,11 +458,14 @@ test("Disabled 8: launcher clicks and the key binding write nothing and show not
     end
     assertEqual(#M.__svWrites(), 0, "a key press wrote SavedVariables")
     assertEqual(#M.__shownFrames(), shownBefore, "a key press showed a frame")
+    -- red under: a binding OnClick in core/LauncherSetup.lua without its NS.StoodDownRefusal() read
+    -- (AutoOff then runs `/of auto off`, a live verb, and writes auto.enabled while disabled).
+    assertEqual(NS.GetSetting("auto.enabled"), auto, "an auto press changed auto.enabled while disabled")
 
     -- Enabled again, the perf hold alone: the capture line, never the disabled one, and no handler.
     assertTrue(NS.SetByPath("enabled", true))
     NS.Lifecycle:Hold(NS.HOLD_PERF)
-    for _, name in ipairs(BINDING_BUTTONS) do
+    for _, name in ipairs(bindingButtons(NS)) do
         M.__resetPrinted()
         local before = opened
         M._G[name]:__fire("OnClick", "LeftButton", true)
@@ -496,28 +477,36 @@ test("Disabled 8: launcher clicks and the key binding write nothing and show not
     NS.Lifecycle:Release(NS.HOLD_PERF)
 end)
 
+--- How many registrations `target` holds.
+local function holds(inst, target)
+    local n = 0
+    for _, r in ipairs(inst.mocks.__registrations()) do
+        if r.target == target or r.owner == target then n = n + 1 end
+    end
+    return n
+end
+
 test("Disabled 9: re-enabling restores the set FROM CURRENT STATE, not a snapshot", function()
-    local inst, NS = scene()
+    local inst, NS, M, S = scene()
     local on = table.concat(regKeys(inst), ",")
-    local onNames = eventNames(inst)
     assertTrue(NS.SetByPath("enabled", false))
     assertTrue(NS.SetByPath("enabled", true))
+    settle(M)
     assertEqual(table.concat(regKeys(inst), ","), on)
-    assertTrue(NS.StandIn.frame:IsShown(), "the stand-in did not come back on screen")
+    assertTrue(NS.Bar.Frame():IsShown(), "the bar did not come back on screen")
 
-    -- A setting changed while disabled comes back in the rebuilt set.
-    assertFalse(table.concat(eventNames(inst), ","):find("PLAYER_TARGET_CHANGED", 1, true) ~= nil)
+    -- A setting changed while disabled decides the rebuilt set: with auto.enabled off the binder
+    -- binds nothing on the way up, so the dungeon trigger's events stay unregistered.
+    local trigger = S.ctx.target
+    assertTrue(holds(inst, trigger) > 0, "the trigger holds no event to lose; nothing below can fail")
     assertTrue(NS.SetByPath("enabled", false))
-    assertTrue(NS.SetByPath("locked", true))
+    assertTrue(NS.SetByPath("auto.enabled", false))
     assertEqual(#regKeys(inst), 0, "a write while disabled registered something")
     assertTrue(NS.SetByPath("enabled", true))
-    -- The baseline's event names (the stand-in's and the landed modules') plus the one the setting adds.
-    local want = { PLAYER_TARGET_CHANGED = true }
-    for _, e in ipairs(onNames) do want[e] = true end
-    local wantNames = {}
-    for e in pairs(want) do wantNames[#wantNames + 1] = e end
-    table.sort(wantNames)
-    assertEqual(table.concat(eventNames(inst), ","), table.concat(wantNames, ","))
+    settle(M)
+    assertFalse(NS.TriggerBinder.IsBound(S.outfit), "the stand-up bound a trigger auto.enabled turned off")
+    assertEqual(holds(inst, trigger), 0, "the trigger's events came back from a snapshot")
+    assertTrue(#regKeys(inst) > 0, "the stand-up rebuilt nothing")
 end)
 
 test("Disabled 10: releasing ONE hold does not resurrect an addon the other holds down", function()
@@ -555,7 +544,165 @@ test("Disabled: a profile switch re-reads the stored switch while disabled", fun
     assertTrue(NS.IsDisabled(), "switching back did not re-take the hold")
 end)
 
-test("Disabled (Outfitter): an outfit's active IN_DUNGEON trigger holds no event and no timer while down",
-    function() end,
-    "pending P4.27: the trigger binder, the zone producer and the Equip bracket land in P4; the case "
-        .. "seeds an outfit with an active IN_DUNGEON trigger before the stand-down (design §9.3)")
+-- ── the Outfitter cases (design §9.3) ───────────────────────────────────────────────────────────
+
+test("Disabled (Outfitter): an outfit's active IN_DUNGEON trigger holds no event and no timer while down", function()
+    -- red under: an empty TriggerBinder.Suspend in modules/Triggers_Binder.lua (the binding's target
+    -- keeps PLAYER_ENTERING_WORLD and its timers).
+    local inst, NS, M, S = scene()
+    assertTrue(NS.Stack.IsWorn(S.outfit), "the trigger is not active; nothing below can fail")
+    assertTrue(holds(inst, S.ctx.target) > 0, "the binding holds no event")
+    S.ctx.target:ScheduleTimer(function() NS.Print("the trigger's timer fired") end, 5)
+    assertTrue(NS.SetByPath("enabled", false))
+    assertEqual(holds(inst, S.ctx.target), 0, "the dungeon trigger kept an event while down")
+    assertEqual(#M.__timers(), 0, "an AceTimer is live while down")
+    M.__resetPrinted()
+    M.__fireTimers()
+    assertEqual(#M.__printed(), 0, "the trigger's canceled timer fired")
+end)
+
+test("Disabled (Outfitter): the Equip bracket is zeroed, nothing is wanted and SFX is back, down and up", function()
+    -- red under: Equip.Suspend in modules/Equip.lua without its restoreSFX() (the swap's mute stays).
+    local _, NS, M = scene()
+    local E, st = NS.Equip, NS.Equip.__state
+    M.__cvars.Sound_EnableSFX = "1"
+    E.Batch(function()
+        E.Request()
+        st.sfxSaved = M.__cvars.Sound_EnableSFX     -- a swap's mute, mid-flight
+        M.__cvars.Sound_EnableSFX = "0"
+        assertTrue(st.depth > 0 and E.Pending(), "the fixture needs an open Batch and a pending update")
+        assertTrue(NS.SetByPath("enabled", false))
+    end)
+    assertEqual(st.depth, 0, "a Batch closing over the stand-down left a depth")
+    assertFalse(E.Pending(), "an update is still wanted while down")
+    assertEqual(M.__cvars.Sound_EnableSFX, "1", "the stand-down left the swap's SFX mute on")
+    assertTrue(NS.SetByPath("enabled", true))
+    assertEqual(st.depth, 0, "the stand-up left a depth")
+    assertEqual(M.__cvars.Sound_EnableSFX, "1")
+end)
+
+--- A stable rendering of a table, keys sorted, for a before/after compare.
+local function dump(v, seen)
+    if type(v) ~= "table" then return tostring(v) end
+    seen = seen or {}
+    if seen[v] then return "<cycle>" end
+    seen[v] = true
+    local keys = {}
+    for k in pairs(v) do keys[#keys + 1] = k end
+    table.sort(keys, function(a, b) return tostring(a) < tostring(b) end)
+    local out = {}
+    for _, k in ipairs(keys) do out[#out + 1] = tostring(k) .. "=" .. dump(v[k], seen) end
+    return "{" .. table.concat(out, ",") .. "}"
+end
+
+test("Disabled (Outfitter): PLAYER_EQUIPMENT_CHANGED while down leaves db.char unchanged", function()
+    -- Three independent gates hold it, so no single edit turns it red: the scan path's NS.IsStoodDown()
+    -- reads, Inventory's `active` flag and the bus stand-down. red under: all three together --
+    -- NS.IsStoodDown in core/LifecycleSetup.lua reading only the `perf` hold, `NS.BusStandDown()`
+    -- dropped from standDown, and Inv.Suspend in modules/Inventory.lua leaving `active` set (the scan
+    -- runs, the Watch hears INVENTORY_CHANGED and records the swap into db.char).
+    local inst, NS, M = scene()
+    local _, holders = eventTargets(inst)
+    assertTrue(NS.SetByPath("enabled", false))
+    local before = dump(NS.db.char)
+    -- A hand swap while down: the hero chest from bag 0 slot 5 onto the chest slot.
+    M.PickupContainerItem(0, 5)
+    M.PickupInventoryItem(5)
+    M.__gear:deliver()
+    for _, event in ipairs({ "PLAYER_EQUIPMENT_CHANGED", "UNIT_INVENTORY_CHANGED", "BAG_UPDATE",
+                             "BAG_UPDATE_DELAYED" }) do
+        M.__fire(event, event == "UNIT_INVENTORY_CHANGED" and "player" or 0)
+        for _, h in ipairs(holders[event] or {}) do M.__fireUnconditional(h.target, event, h.unit or 0) end
+    end
+    settle(M)
+    assertEqual(dump(NS.db.char), before, "db.char changed while down")
+end)
+
+--- What each latch-gated hook body did, as { effect = true|false }: the used-by line, a compare
+--- tooltip, the pet-summon stamp (a Compat.GetTime read), the quick slot's PreClick and the sheet
+--- button's re-show on the PaperDollFrame OnShow.
+local function hookEffects(NS, M)
+    local tip = M.GameTooltip
+    tip:SetBagItem(0, 1)
+    M.__world:tooltipPostCall(M.Enum.TooltipDataType.Item, tip, nil)
+    local usedBy = false
+    for i = 1, tip:NumLines() do
+        local text = tip["TextLeft" .. i]:GetText()
+        if type(text) == "string" and text:find("Equipment Sets: ", 1, true) == 1 then usedBy = true end
+    end
+    M.GameTooltip:SetHyperlink(T.fixtures.items.db.head_plate.link)
+    M.GameTooltip:Show()
+    M.GameTooltip_ShowCompareItem(M.GameTooltip)
+    local compares = 0
+    for i = 1, 10 do
+        local c = M["OutfitterRebornCompareTooltip" .. i]
+        if c and c:IsShown() then compares = compares + 1 end
+    end
+    local C, reads = NS.Compat, 0
+    local getTime = C.GetTime
+    C.GetTime = function() reads = reads + 1; return getTime() end
+    M.C_PetJournal.SummonPetByGUID("BattlePet-0-000000000001")
+    C.GetTime = getTime
+    M.__slotButtons.HeadSlot:__fire("PreClick", "LeftButton", false)
+    M.__world:closeCharacter()
+    M.__world:openCharacter()
+    return { usedBy = usedBy, compare = compares > 0, petStamp = reads > 0,
+             quickSlot = NS.QuickSlots.CurrentSlot() ~= nil,
+             sheetButton = M.OutfitterRebornSheetButton:IsShown() }
+end
+
+test("Disabled (Outfitter): the tooltip, compare, pet, quick-slot and PaperDoll hook bodies no-op while down", function()
+    -- red under: drop the NS.IsStoodDown() read from the Compare gate in modules/Tooltips_Compare.lua,
+    -- or the `button:Hide()` from Dock.Suspend in modules/Dock.lua (the sheet button is up through
+    -- the PaperDollFrame OnShow).
+    local _, NS, M = scene()
+    local greatsword = NS.ItemInfo.Snapshot(NS.ItemInfo.FromBag(0, 1))
+    NS.Outfits.Create("Hands", { MainHandSlot = greatsword,
+        HeadSlot = { id = 219001, invType = "INVTYPE_HEAD", quality = 3, level = 600, name = "Helm 1",
+                     link = "|cff0070dd|Hitem:219001::::::::80:::::::::|h[Helm 1]|h|r" } })
+    M.__world:setCompare(true, true)
+    local up = hookEffects(NS, M)
+    for what, acted in pairs(up) do assertTrue(acted, what .. " did not act standing up; its silence below proves nothing") end
+    assertTrue(NS.SetByPath("enabled", false))
+    M.__resetSvWrites()
+    M.__resetPrinted()
+    local down = hookEffects(NS, M)
+    for what, acted in pairs(down) do assertFalse(acted, what .. " acted while down") end
+    assertEqual(#M.__svWrites(), 0, "a hook body wrote SavedVariables while down")
+    assertEqual(#M.__printed(), 0, "a hook body printed while down")
+end)
+
+test("Disabled (Outfitter): the LoadPass timer and the Pawn/WeightsWatcher watch are canceled", function()
+    -- red under: an Outfits.Suspend in modules/Outfits_Seed.lua that leaves O.loadTimer armed, or a
+    -- Stats.Suspend in modules/ItemStats_Sources.lua that keeps its ADDON_LOADED watch.
+    local inst = T.load({ mutate = function(M) M.__gear:load("geared") end })
+    local NS, M = inst.NS, inst.mocks
+    M.__fire("PLAYER_ENTERING_WORLD")                -- the first zone-in arms the 1 s LoadPass
+    assertTrue(NS.Outfits.loadTimer ~= nil, "the LoadPass timer is not armed; nothing below can fail")
+    local function watching()
+        for _, r in ipairs(M.__registrations()) do
+            if r.event == "ADDON_LOADED" and r.kind == "event" and r.target ~= NS.addon then return true end
+        end
+        return false
+    end
+    assertTrue(watching(), "the Pawn/WeightsWatcher watch is not registered")
+    assertTrue(NS.SetByPath("enabled", false))
+    assertEqual(NS.Outfits.loadTimer, nil, "the LoadPass timer is still armed")
+    assertFalse(watching(), "the ADDON_LOADED watch survived the stand-down")
+    M.__fireTimers()
+    assertFalse(NS.db.char.seeded == true, "the LoadPass ran while down")
+end)
+
+test("Disabled (Outfitter): the stand-up rebuilds: an outfit added while down binds on resume", function()
+    local _, NS, M = scene()
+    assertTrue(NS.SetByPath("enabled", false))
+    local late = NS.Outfits.Create("Late", {}, { trigger = "IN_DUNGEON" })
+    assertFalse(NS.TriggerBinder.IsBound(late), "a binding was made while down")
+    assertTrue(NS.SetByPath("enabled", true))
+    settle(M)
+    -- red under: a TriggerBinder.Resume in modules/Triggers_Binder.lua without its BindAll() (the
+    -- stand-up rebinds nothing from the stored outfits).
+    assertTrue(NS.TriggerBinder.IsBound(late), "the outfit added while down did not bind on resume")
+    assertTrue(NS.Bar.Frame():IsShown(), "the bar did not come back")
+    assertTrue(M.OutfitterRebornSheetButton:IsShown(), "the sheet button did not come back")
+end)

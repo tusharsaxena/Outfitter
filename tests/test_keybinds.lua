@@ -198,7 +198,11 @@ test("keybinds: a key bound in the tab is the client's key; one set on the clien
 
     -- One key, one action: binding SHIFT-K again moves nothing, and a second key keeps the first.
     assertTrue(M.SetBinding("F7", SHOW))
-    while M.__fireTimers() > 0 do end
+    -- Bounded: the shared instance logs in with the whole graph live (P4.27), and the States poll is a
+    -- repeating timer, so the queue never empties; ten rounds settle every one-shot the bind arms.
+    for _ = 1, 10 do
+        if M.__fireTimers() == 0 then break end
+    end
     assertEqual(M.GetBindingAction("SHIFT-K"), SHOW)
     assertEqual(M.GetBindingAction("F7"), SHOW)
     M.clearBindings()

@@ -18,8 +18,13 @@ the port lands; the rest is in the tree today.
    profile callbacks), `RunMigrations`, `ApplySkinChoice`, `SyncEnabledHold` (so a disabled login
    registers nothing), `NS.Launcher:Register()`, `CreateOptionsPanel()` (eager categories, lazy
    bodies) and `NS.Slash:Register()` (`/of`, `/outfitter`).
-3. **`OnEnable`** (`PLAYER_LOGIN`): the latch's stand-up registers the game events of every module
-   (P4). Nothing is dispatched on the bus before this and the first LoadPass.
+3. **`OnEnable`** (`PLAYER_LOGIN`, `core/OutfitterReborn.lua`): the legacy guard first (a loaded
+   original Outfitter sets `NS.State.legacyLoaded` and, standing up, prints one warning; warn only, no
+   hold). Stood down, it stops there. Standing up, it runs what the latch's stand-up runs:
+   `NS.RegisterGameEvents()` (the host owns no game event; every one is a module's), then every
+   module in `NS.LIFECYCLE_MODULES` resumed bottom to top, so PlayerState, Inventory and the stack are
+   up before the binder wears through them. Last, the first-run skin picker's 2 s AceTimer. Nothing
+   is dispatched on the bus before this and the first LoadPass.
 4. **First `PLAYER_ENTERING_WORLD`** (P4): a 1 s AceTimer runs `NS.Outfits.LoadPass()`, which seeds
    the built-in outfits once per character (guarded by `char.seeded`), repairs stale ids, mirrors the
    Equipment Manager, and ends by binding every trigger. Its finish sends `LEGACY_DETECTED` when the

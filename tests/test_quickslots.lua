@@ -19,6 +19,9 @@
 -- No module QuickSlots calls is owned by a later group, so no case installs a fake (design §12).
 
 local T = _G.OUTFITTERREBORN_TEST
+-- A unit instance: the login without the resume walk, so the module under test is the one this
+-- suite stands up (tests/unit_load.lua).
+local unitLoad = dofile(T.root .. "/tests/unit_load.lua")(T)
 local test, assertEqual, assertTrue, assertFalse, assertNil =
     T.test, T.assertEqual, T.assertTrue, T.assertFalse, T.assertNil
 
@@ -40,7 +43,7 @@ local function QS(NS) return NS.QuickSlots end
 -- (Resume is the lifecycle's stand-up, which is where the hooks are built). `M.__flyout` records
 -- what the hooks asked of the client: the popout buttons clicked and the hides.
 local function flyoutInstance(scenario)
-    local inst = T.load({ mutate = function(M)
+    local inst = unitLoad({ mutate = function(M)
         if scenario then M.__gear:load(scenario) end
         local rec = { source = {}, clicked = {}, hidden = 0 }
         M.__flyout = rec
@@ -107,7 +110,7 @@ end
 -- the link, the name and base level, the upgrade track, and the upgrade answer `state.canUpgrade`
 -- (a function, so a case can make it raise).
 local function sortInstance()
-    local inst = T.load()
+    local inst = unitLoad()
     local M = inst.mocks
     local state = { items = {}, canUpgrade = function() return false end }
     local function recOf(link) return state.items[tonumber(link:match("item:(%d+)"))] end
@@ -171,7 +174,7 @@ end)
 test("quickslots: a client without the flyout functions builds the slot hooks and raises nothing", function()
     -- The bare mock: flyoutSettings is an empty table. hooksecurefunc on a missing member raises in
     -- the client, so this instance's raises too.
-    local inst = T.load({ mutate = function(M)
+    local inst = unitLoad({ mutate = function(M)
         local base = M.hooksecurefunc
         M.hooksecurefunc = function(t, name, fn)
             if type(t) == "table" and type(rawget(t, name)) ~= "function" then
@@ -296,7 +299,7 @@ test("quickslots: the sort counts the dense table, and 'place in bags' moves to 
 end)
 
 test("quickslots: a special entry anywhere but first stays where the flyout put it", function()
-    local inst = T.load()
+    local inst = unitLoad()
     local M, Sort = inst.mocks, QS(inst.NS).Sort
     M.EQUIPMENTFLYOUT_PLACEINBAGS_LOCATION = PLACE_IN_BAGS
     local t = { 11, PLACE_IN_BAGS, 12 }
@@ -401,7 +404,7 @@ end)
 -- ── the location read ────────────────────────────────────────────────────────────────────────────
 
 test("quickslots: a location reads its link through the seam; a secret, void or bogus one is nil", function()
-    local inst = T.load({ mutate = function(M) M.__gear:load("secret_slots") end })
+    local inst = unitLoad({ mutate = function(M) M.__gear:load("secret_slots") end })
     local Sort, M = QS(inst.NS).Sort, inst.mocks
     local link, loc = Sort.LocationItemLink(bagLoc(0, 2))
     assertEqual(link, DB.ring_plain_a.link, "a carried item's link")

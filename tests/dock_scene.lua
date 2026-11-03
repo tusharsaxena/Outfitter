@@ -11,12 +11,13 @@
 -- as the client runs them. Each wraps whatever the frame already has, so a protected frame keeps
 -- refusing in lockdown.
 --
--- The modules that have not landed are recorded fakes (design §12, the fake rule): the dialogs and
--- the icon chooser (P4.21) the window and the dock call into, the outfit menu and the outfit dialog
--- (P4.21) the rows and the footer open. Each carries Suspend/Resume, since the lifecycle walk reads
--- them on a stand-down.
+-- The dialogs, the icon chooser, the outfit menu and the outfit dialog (P4.21) the window, the dock,
+-- the rows and the footer call into are the REAL modules (their P4.19 fakes retired at P4.27, design
+-- §12): each member a suite counts is wrapped in a recorder that calls straight through, so a case
+-- asserts the call and the real module still answers it (tests/spy.lua).
 
 return function(T)
+    local spy = dofile(T.root .. "/tests/spy.lua")
     local installPaint = dofile(T.root .. "/tests/_kit/mock_paint.lua")
 
     local function recorders(M)
@@ -68,10 +69,10 @@ return function(T)
         NS.Equip.Resume()
         M.__fireTimers()
         local fakes = {
-            Dialogs     = T.fake(NS, "Dialogs", { CloseAll = true, Suspend = true, Resume = true }),
-            IconChooser = T.fake(NS, "IconChooser", { Close = true, Suspend = true, Resume = true }),
-            OutfitMenu  = T.fake(NS, "OutfitMenu", { Open = true }),
-            OutfitDialog = T.fake(NS, "OutfitDialog", { OpenNew = true }),
+            Dialogs      = spy(NS, "Dialogs", { "CloseAll" }),
+            IconChooser  = spy(NS, "IconChooser", { "Close" }),
+            OutfitMenu   = spy(NS, "OutfitMenu", { "Open" }),
+            OutfitDialog = spy(NS, "OutfitDialog", { "OpenNew" }),
         }
         NS.Stack.Resume()
         if opts.resume ~= false then

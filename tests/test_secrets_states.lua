@@ -6,7 +6,8 @@
 -- field read as no match); and Spirit's prevMana surviving a secret sample. Run against
 -- modules/States.lua with the client's issecretvalue installed (the kit's simulator).
 --
--- NS.Equip (P4.8), NS.Triggers (P4.15) and NS.Stack (P4.9) are recorded fakes (design §12).
+-- Final at P4.27: the whole login runs (T.load), so every state is produced through the real Equip,
+-- Triggers and Stack modules (their P4.14 fakes retired, design §12).
 
 local T = _G.OUTFITTERREBORN_TEST
 local test, assertEqual, assertTrue, assertFalse =
@@ -15,10 +16,6 @@ local test, assertEqual, assertTrue, assertFalse =
 local function scene()
     local inst = T.load()
     local NS, M = inst.NS, inst.mocks
-    T.fake(NS, "Equip", { Batch = function(fn, ...) return true, fn(...) end,
-                          SuspendedForLoad = function() return false end, Request = true, DelayUntil = true })
-    T.fake(NS, "Triggers", { ForState = function() return {} end })
-    T.fake(NS, "Stack", { IsWorn = function() return false end })
     local heard = {}
     NS.NewBusTarget():RegisterMessage(NS.MSG.STATE_CHANGED, function(_, id, on)
         heard[#heard + 1] = id .. "=" .. tostring(on)

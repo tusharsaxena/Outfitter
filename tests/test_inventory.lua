@@ -8,13 +8,16 @@
 -- them runs against a recorded fake (design §12, the fake rule); their own suites pin the real side.
 
 local T = _G.OUTFITTERREBORN_TEST
+-- A unit instance: the login without the resume walk, so the module under test is the one this
+-- suite stands up (tests/unit_load.lua).
+local unitLoad = dofile(T.root .. "/tests/unit_load.lua")(T)
 local test, assertEqual, assertTrue, assertFalse, assertNil =
     T.test, T.assertEqual, T.assertTrue, T.assertFalse, T.assertNil
 
 local DB = T.fixtures.items.db
 
 local function gearInstance(scenario, overrides)
-    return T.load({ mutate = function(M)
+    return unitLoad({ mutate = function(M)
         if scenario then M.__gear:load(scenario, overrides) end
     end })
 end

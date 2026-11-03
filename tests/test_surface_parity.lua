@@ -6,8 +6,10 @@
 -- no stub and is asserted to behave the same on both arms. C14 adds the degraded load's init /
 -- enable / version case and a row for every seam that landed before it: Options, Bus, Schema, Slash,
 -- Lifecycle, Launcher, DebugLog, Perf, Core, Media, Env, Compat and Secrets (the Skin facade's row is
--- tests/test_skinsetup.lua's). Each later seam brings its own row, and P4.27 closes the set (design
--- §9.3). A trimmed name in an `ignore` list is one this addon never calls.
+-- tests/test_skinsetup.lua's). Each later seam brought its own row, and P4.27 closed the set (design
+-- §9.3): every LibKa0s major the host leases has its row, and the degraded load runs the whole login
+-- walk and the latch over the real modules. A trimmed name in an `ignore` list is one this addon
+-- never calls.
 
 local T = _G.OUTFITTERREBORN_TEST
 local test, assertEqual, assertTrue, assertFalse, assertNil =
@@ -452,4 +454,95 @@ test("secure queue: Clear drops every waiting write and the registration", funct
         assertEqual(Q.Flush(), 0, arm)
         assertEqual(ran, 0, arm .. ": a cleared write ran")
     end)
+end)
+
+-- ── the closed set (P4.27) ────────────────────────────────────────────────────────────────────
+
+local function readFile(rel)
+    local f = assert(io.open(T.root .. "/" .. rel, "rb"))
+    local text = f:read("*a")
+    f:close()
+    return text
+end
+
+--- The LibKa0s majors the authored files lease, by short name ("Bus" for LibKa0s-Bus-1.0).
+local function leasedMajors()
+    local out, seen = {}, {}
+    for _, rel in ipairs(T.loadedAddonFiles) do
+        if rel:match("%.lua$") and not rel:match("^libs/") then
+            for name in readFile(rel):gmatch('LibStub%(?%s*"LibKa0s%-(%a+)%-1%.0"') do
+                if not seen[name] then
+                    seen[name] = true
+                    out[#out + 1] = name
+                end
+            end
+        end
+    end
+    table.sort(out)
+    return out
+end
+
+-- The suite that carries a major's row when it is not this one.
+local ROW_HOME = { Skin = "tests/test_skinsetup.lua" }
+
+--- The majors in `majors` whose home suite has no parity case naming them.
+local function uncovered(majors, sources)
+    local missing = {}
+    for _, name in ipairs(majors) do
+        local text = sources[ROW_HOME[name] or "tests/test_surface_parity.lua"] or ""
+        local found = false
+        for title in text:gmatch('\ntest%("([^"]+)"') do
+            local lower = title:lower()
+            if (lower:find("parity", 1, true) or lower:find("degraded", 1, true))
+                and lower:find("%f[%a]" .. name:lower() .. "%f[%A]") then
+                found = true
+            end
+        end
+        if not found then missing[#missing + 1] = name end
+    end
+    return missing
+end
+
+test("parity: every LibKa0s major the host leases has its parity row", function()
+    -- red under: retitle the Lifecycle case above without the word Lifecycle (its seam has no row).
+    local majors = leasedMajors()
+    assertTrue(#majors >= 16, "the lease scan found " .. #majors .. " majors; it is broken")
+    local sources = {
+        ["tests/test_surface_parity.lua"] = readFile("tests/test_surface_parity.lua"),
+        ["tests/test_skinsetup.lua"] = readFile("tests/test_skinsetup.lua"),
+    }
+    assertEqual(table.concat(uncovered(majors, sources), ", "), "")
+    -- The scan itself: a major with no row is reported.
+    assertEqual(table.concat(uncovered({ "Nope" }, sources), ","), "Nope")
+end)
+
+--- Every registration key of an instance, sorted.
+local function regKeys(inst)
+    local out = {}
+    for _, r in ipairs(inst.mocks.__registrations()) do
+        out[#out + 1] = ("%s|%s|%s|%s"):format(tostring(r.target or r.owner), tostring(r.kind),
+            tostring(r.event), tostring(r.unit))
+    end
+    table.sort(out)
+    return out
+end
+
+test("parity: the degraded load resumes every module at login, and stands them down and up", function()
+    -- red under: a module Resume that reaches a LibKa0s major with no stub (the degraded login raises
+    -- inside OnEnable and the walk stops short).
+    local d = T.load({ libFiles = {}, mutate = function(M) M.__gear:load("geared") end })
+    local NS, M = d.NS, d.mocks
+    assertFalse(NS.IsStoodDown())
+    assertTrue(NS.TriggerBinder.IsActive(), "the binder did not resume on the degraded login")
+    assertTrue(NS.Dock.Holder() ~= nil, "the dock did not install on the degraded login")
+    M.__fire("PLAYER_ENTERING_WORLD")
+    for _ = 1, 4 do if M.__fireTimers() == 0 then break end end
+    assertTrue(NS.db.char.seeded == true, "the degraded LoadPass did not run")
+    local up = table.concat(regKeys(d), ",")
+    assertTrue(#up > 0)
+    NS.RunVerb("disable")
+    assertEqual(#regKeys(d), 0, "the degraded stand-down left a registration")
+    assertEqual(#M.__timers(), 0, "the degraded stand-down left a timer")
+    NS.RunVerb("enable")
+    assertEqual(table.concat(regKeys(d), ","), up, "the degraded stand-up rebuilt another set")
 end)

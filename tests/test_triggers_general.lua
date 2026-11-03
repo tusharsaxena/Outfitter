@@ -10,6 +10,9 @@
 -- choice is test_inventory's to pin, the queue's own rules are pinned here.
 
 local T = _G.OUTFITTERREBORN_TEST
+-- A unit instance: the login without the resume walk, so the module under test is the one this
+-- suite stands up (tests/unit_load.lua).
+local unitLoad = dofile(T.root .. "/tests/unit_load.lua")(T)
 local test, assertEqual, assertTrue, assertFalse, assertNil =
     T.test, T.assertEqual, T.assertTrue, T.assertFalse, T.assertNil
 
@@ -36,7 +39,7 @@ local function call(ns, id, over, event, ...)
 end
 
 local function fresh(mutate)
-    local inst = T.load({ mutate = mutate })
+    local inst = unitLoad({ mutate = mutate })
     return inst.NS, inst.mocks
 end
 

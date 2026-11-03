@@ -8,6 +8,7 @@
 -- (design §12, the fake rule), as each reaction does here so the call is what the case asserts.
 
 local T = _G.OUTFITTERREBORN_TEST
+local spy = dofile(T.root .. "/tests/spy.lua")
 local NS = T.NS
 local test, assertEqual, assertTrue, assertNil = T.test, T.assertEqual, T.assertTrue, T.assertNil
 
@@ -137,10 +138,12 @@ test("settings: Delete all outfits closes Behavior with no heading and asks thro
     local btn = pairs_[1][1]
     assertEqual(btn.text, "Delete all outfits\226\128\166")
     assertNil(pairs_[1][2], "one button, alone on its line")
-    local popups = T.fake(NS, "Popups", { ShowDeleteAll = true })
-    btn.onClick()
-    -- red under: an onClick that calls NS.Outfits.DeleteAll directly, unconfirmed.
-    assertEqual(popups.__count("ShowDeleteAll"), 1)
+    spy(NS, "Popups", { "ShowDeleteAll" }, function(popups)
+        btn.onClick()
+        -- red under: an onClick that calls NS.Outfits.DeleteAll directly, unconfirmed.
+        assertEqual(popups.__count("ShowDeleteAll"), 1)
+    end)
+    T.mocks.StaticPopup_Hide("OUTFITTERREBORN_DELETE_ALL")
 end)
 
 -- ── Outfit Bar (design §4.2) ──────────────────────────────────────────────────────────────────

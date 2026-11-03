@@ -9,6 +9,9 @@
 -- cases at the end run on the real modules: the popup's accept and the dialogs Reset all closes.
 
 local T = _G.OUTFITTERREBORN_TEST
+-- A unit instance: the login without the resume walk, so the module under test is the one this
+-- suite stands up (tests/unit_load.lua).
+local unitLoad = dofile(T.root .. "/tests/unit_load.lua")(T)
 local test, assertEqual, assertTrue, assertFalse, assertNil =
     T.test, T.assertEqual, T.assertTrue, T.assertFalse, T.assertNil
 
@@ -37,7 +40,7 @@ local function diff(a, b, path)
 end
 
 local function scene(class)
-    local inst = T.load({ mutate = function(M)
+    local inst = unitLoad({ mutate = function(M)
         M.__gear:load("geared")
         if class then M.__world:setClass(class, 1) end
     end })

@@ -8,6 +8,9 @@
 -- (design §12, the fake rule), and their own suites pin the real behavior.
 
 local T = _G.OUTFITTERREBORN_TEST
+-- A unit instance: the login without the resume walk, so the module under test is the one this
+-- suite stands up (tests/unit_load.lua).
+local unitLoad = dofile(T.root .. "/tests/unit_load.lua")(T)
 local test, assertEqual, assertTrue, assertFalse, assertNil =
     T.test, T.assertEqual, T.assertTrue, T.assertFalse, T.assertNil
 
@@ -20,7 +23,7 @@ local SLOTS = {
 --- A fresh instance: a gear scenario, and a class (and spec) set before the files load.
 local function scene(opts)
     opts = opts or {}
-    local inst = T.load({ mutate = function(M)
+    local inst = unitLoad({ mutate = function(M)
         M.__gear:load(opts.scenario or "naked")
         if opts.class then M.__world:setClass(opts.class, opts.spec or 1) end
         if opts.faction then M.__units.player.faction = opts.faction end

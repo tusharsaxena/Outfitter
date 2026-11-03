@@ -8,6 +8,9 @@
 -- and Moves are the real modules, and the items move for real in tests/mock_gear.lua.
 
 local T = _G.OUTFITTERREBORN_TEST
+-- A unit instance: the login without the resume walk, so the module under test is the one this
+-- suite stands up (tests/unit_load.lua).
+local unitLoad = dofile(T.root .. "/tests/unit_load.lua")(T)
 local test, assertEqual, assertTrue, assertFalse, assertNil =
     T.test, T.assertEqual, T.assertTrue, T.assertFalse, T.assertNil
 
@@ -15,7 +18,7 @@ local DB = T.fixtures.items.db
 
 -- A fresh instance at t = 100 with PlayerState and Equip resumed.
 local function scene(scenario, overrides)
-    local inst = T.load({ mutate = function(M)
+    local inst = unitLoad({ mutate = function(M)
         if scenario then M.__gear:load(scenario, overrides) end
     end })
     local NS, M = inst.NS, inst.mocks

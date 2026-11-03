@@ -5,8 +5,8 @@ local addonName, NS = ...
 -- The tabs, in order (design §4.2): Master controls, Behavior, Tooltips, Skin, Keybindings. A schema
 -- tab's place is its group's first appearance in NS.Schema, so the Behavior and Tooltips rows register
 -- after the Master rows and before the skin rows. The Skin rows land here with the write seam they
--- need (core/SkinSetup.lua writes every half of a choice through NS.SetByPath). The Master reactions
--- are resolved at CALL time; the Behavior and Tooltips reactions call their modules directly.
+-- need (core/SkinSetup.lua writes every half of a choice through NS.SetByPath). Every reaction calls
+-- its module directly, resolved at CALL time (design §12: by P4.27 every module has landed).
 
 local L = NS.L
 local H = NS.Helpers
@@ -32,12 +32,6 @@ NS.LANDING = {
 -- the docked window follows the character sheet (O14).
 local DEBUG_CONSOLE_PATH = "state.debugConsole"
 local TEST_MODE_PATH = "state.testMode"
-
---- `module.fn(...)` when the module has landed; nothing otherwise (see the file header).
-local function call(module, fn, ...)
-    local m = NS[module]
-    if m and type(m[fn]) == "function" then return m[fn](...) end
-end
 
 local masterRows, masterTail = H.MasterControls({
     page                 = PAGE,
@@ -73,9 +67,9 @@ local ownStorage = {
         set = function(shown) NS.Launcher:SetShown(shown and true or false) end,
     },
     [TEST_MODE_PATH] = {
-        get = function() return call("Preview", "IsActive") == true end,
+        get = function() return NS.Preview.IsActive() == true end,
         set = function(on)
-            if on then call("Preview", "Start") else call("Preview", "Stop") end
+            if on then NS.Preview.Start() else NS.Preview.Stop() end
         end,
     },
 }
@@ -87,10 +81,10 @@ end
 -- Each composed row's reaction, attached here because the composer cannot know them.
 local reactions = {
     enabled    = function(v) NS.ApplyEnabled(v) end,
-    visibility = function() if NS.OnVisibilityChanged then NS.OnVisibilityChanged() end end,
-    scale      = function() call("Bar", "ApplyScale") end,
-    alpha      = function() call("Bar", "ApplyAlpha") end,
-    locked     = function(v) call("Bar", "SetLocked", v) end,
+    visibility = function() NS.OnVisibilityChanged() end,
+    scale      = function() NS.Bar.ApplyScale() end,
+    alpha      = function() NS.Bar.ApplyAlpha() end,
+    locked     = function(v) NS.Bar.SetLocked(v) end,
 }
 
 for _, row in ipairs(masterRows) do

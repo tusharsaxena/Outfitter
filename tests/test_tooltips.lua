@@ -11,6 +11,9 @@
 -- (design §12, the fake rule); test_triggers pins the real descriptor.
 
 local T = _G.OUTFITTERREBORN_TEST
+-- A unit instance: the login without the resume walk, so the module under test is the one this
+-- suite stands up (tests/unit_load.lua).
+local unitLoad = dofile(T.root .. "/tests/unit_load.lua")(T)
 local test, assertEqual, assertTrue, assertFalse, assertNil =
     T.test, T.assertEqual, T.assertTrue, T.assertFalse, T.assertNil
 
@@ -19,7 +22,7 @@ local PREFIX = "Equipment Sets: "
 
 -- A fresh instance on `scenario`, both hook sets built (Resume is the lifecycle's stand-up).
 local function scene(scenario)
-    local inst = T.load({ mutate = function(M) M.__gear:load(scenario or "geared") end })
+    local inst = unitLoad({ mutate = function(M) M.__gear:load(scenario or "geared") end })
     local NS, M = inst.NS, inst.mocks
     NS.Tooltips.Resume()
     NS.Compare.Resume()

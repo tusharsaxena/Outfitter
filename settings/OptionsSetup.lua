@@ -78,9 +78,7 @@ StaticPopupDialogs["OUTFITTERREBORN_RESET_ALL"] = {
     hideOnEscape = true,
     OnAccept     = function()
         -- Every open outfit dialog goes first: a draft over a reset profile writes nothing back.
-        -- modules/UIDialogs.lua lands in P4.21.
-        local Dialogs = NS.Dialogs
-        if Dialogs and Dialogs.CloseAll then Dialogs.CloseAll("reset") end
+        NS.Dialogs.CloseAll("reset")
         NS.Helpers.RestoreAllDefaults()
         NS.Print(L["All settings reset to defaults."])
     end,

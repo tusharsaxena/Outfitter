@@ -2,13 +2,15 @@
 -- decision, alpha, fades, position and lifecycle, and modules/Bar_Buttons.lua's icon ladder, clicks,
 -- drops and tooltip.
 --
--- NS.Preview lands in P4.22, NS.OutfitMenu in P4.21 and NS.Dock in P4.19: each runs against a recorded
--- fake (design §12, the fake rule). Outfits, Stack, Equip, Inventory, Triggers and OutfitTooltip are
+-- NS.Preview and NS.Dock run against recorded fakes (design §12, the fake rule), so a case sets test
+-- mode and the window's state itself; NS.OutfitMenu is the real menu under a recorder (tests/spy.lua,
+-- its fake retired at P4.27). Outfits, Stack, Equip, Inventory, Triggers and OutfitTooltip are
 -- the real modules, and the items move for real in tests/mock_gear.lua. The bar's frames are built
 -- lazily, so the kit's paint and layer recorders and this file's geometry recorder are installed after
 -- the load and still see every frame the bar makes.
 
 local T = _G.OUTFITTERREBORN_TEST
+local spy = dofile(T.root .. "/tests/spy.lua")
 local test, assertEqual, assertTrue, assertFalse, assertNil =
     T.test, T.assertEqual, T.assertTrue, T.assertFalse, T.assertNil
 
@@ -50,7 +52,7 @@ local function naked()
 end
 
 --- A fresh instance at t = 100 on the geared scenario, the engine resumed, the recorders in, the
---- three fakes installed, and the bar resumed with `bar.shown` on unless `opts.hidden`.
+--- two fakes and the menu recorder installed, and the bar resumed with `bar.shown` on unless `opts.hidden`.
 local function scene(opts)
     opts = opts or {}
     local inst = T.load({ mutate = function(M) M.__gear:load("geared") end })
@@ -71,7 +73,7 @@ local function scene(opts)
     local preview = T.fake(NS, "Preview", { IsActive = function() return ctl.preview end, Suspend = true,
                                             Resume = true })
     rawset(preview, "Source", { Rows = function() return ctl.previewRows end })
-    ctl.menu = T.fake(NS, "OutfitMenu", { Open = true })
+    ctl.menu = spy(NS, "OutfitMenu", { "Open" })
     if not opts.hidden then NS.db.profile.bar.shown = true end
     NS.Bar.Resume()
     M.__fireTimers()

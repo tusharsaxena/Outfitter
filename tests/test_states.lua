@@ -11,6 +11,9 @@
 -- NS.PlayerState (P4.4) and NS.Outfits (P4.6) take part.
 
 local T = _G.OUTFITTERREBORN_TEST
+-- A unit instance: the login without the resume walk, so the module under test is the one this
+-- suite stands up (tests/unit_load.lua).
+local unitLoad = dofile(T.root .. "/tests/unit_load.lua")(T)
 local test, assertEqual, assertTrue, assertFalse = T.test, T.assertEqual, T.assertTrue, T.assertFalse
 
 -- A fresh instance with the three fakes, PlayerState and States resumed, the first scans run, and
@@ -18,7 +21,7 @@ local test, assertEqual, assertTrue, assertFalse = T.test, T.assertEqual, T.asse
 -- `opts.worn[outfitId]` what Stack.IsWorn does; `opts.class` the player's class.
 local function scene(opts)
     opts = opts or {}
-    local inst = T.load({ mutate = function(M)
+    local inst = unitLoad({ mutate = function(M)
         if opts.class then M.__world:setClass(opts.class, 1) end
         if opts.mutate then opts.mutate(M) end
     end })

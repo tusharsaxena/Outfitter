@@ -96,9 +96,19 @@ local function build()
         Title   = "Ka0s Outfitter Reborn",
         Notes   = "Clothing and weapon management and automated equipment changes.",
     }
+    -- The pointer, in UI units (LibKa0s-Widgets places a context menu at it): the screen's corner.
+    M.GetCursorPosition = M.GetCursorPosition or function() return 0, 0 end
+
+    -- The addons the client reports loaded: this one alone, so neither Pawn, WeightsWatcher nor the
+    -- legacy Outfitter (core/OutfitterReborn.lua's guard, design §4.7) reads as present unless a case
+    -- adds it.
+    M.__loadedAddOns = { OutfitterReborn = true }
     M.C_AddOns = {
         GetAddOnMetadata = function(_, field) return M.__toc[field] end,
-        IsAddOnLoaded    = function() return true, true end,
+        IsAddOnLoaded    = function(name)
+            local on = M.__loadedAddOns[name] == true
+            return on, on
+        end,
     }
 
     -- LibSharedMedia-3.0: a recording registry (core/MediaSetup.lua registers the shipped faces).

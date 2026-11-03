@@ -12,6 +12,9 @@
 -- mock's IsFlying flag.
 
 local T = _G.OUTFITTERREBORN_TEST
+-- A unit instance: the login without the resume walk, so the module under test is the one this
+-- suite stands up (tests/unit_load.lua).
+local unitLoad = dofile(T.root .. "/tests/unit_load.lua")(T)
 local test, assertEqual, assertTrue, assertFalse, assertNil =
     T.test, T.assertEqual, T.assertTrue, T.assertFalse, T.assertNil
 
@@ -23,7 +26,7 @@ local RAGNAROS = "BattlePet-0-000000000003"   -- species 1426, "Lil' Ragnaros"
 -- moved to 110 s (clear of the 3 s window the stand-up opens), the journal's calls and the debug
 -- lines recorded.
 local function scene()
-    local inst = T.load()
+    local inst = unitLoad()
     local NS, M = inst.NS, inst.mocks
     -- Suspend and Resume: the stand-down walk reaches every NS.LIFECYCLE_MODULES entry.
     T.fake(NS, "Equip", { Batch = function(fn) fn() end, DelayUntil = true, Request = true,

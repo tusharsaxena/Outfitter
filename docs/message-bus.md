@@ -49,7 +49,7 @@ Senders marked P4 arrive with the port; until then the key is declared and nothi
 | `TOOLTIP_HIDDEN` | `modules/States.lua` (P4) | none | Trigger binder |
 | `TRIGGERS_REBOUND` | `modules/Triggers_Binder.lua` (P4) | `(count)` | Window (row badges), Diagnostics |
 | `PREVIEW_CHANGED` | `modules/Preview.lua` (P4) | `(active)` | Bar |
-| `LEGACY_DETECTED` | `core/OutfitterReborn.lua` (P4, from `NS.OnLoadPassDone`) | none | Diagnostics |
+| `LEGACY_DETECTED` | `core/OutfitterReborn.lua` (from `NS.OnLoadPassDone`, once, when the legacy addon is loaded) | none | Diagnostics |
 
 The four outfit-record messages are per kind on purpose: a receiver needs to know whether an outfit
 was added, deleted, edited or renamed, and `NS.Outfits` stays their only sender.

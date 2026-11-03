@@ -9,13 +9,16 @@
 -- schema seam are the real modules.
 
 local T = _G.OUTFITTERREBORN_TEST
+-- A unit instance: the login without the resume walk, so the module under test is the one this
+-- suite stands up (tests/unit_load.lua).
+local unitLoad = dofile(T.root .. "/tests/unit_load.lua")(T)
 local test, assertEqual, assertTrue, assertFalse, assertNil =
     T.test, T.assertEqual, T.assertTrue, T.assertFalse, T.assertNil
 
 -- A fresh instance at t = 100 whose bespoke ids answer from `conds` ({ [id] = fn }); everything
 -- else is the shipped catalog.
 local function scene(conds, mutate)
-    local inst = T.load({ mutate = mutate })
+    local inst = unitLoad({ mutate = mutate })
     local NS, M = inst.NS, inst.mocks
     M.__now = 100
     NS.TriggerConditions = conds or {}

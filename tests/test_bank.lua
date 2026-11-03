@@ -7,6 +7,9 @@
 -- against a recorded fake (design §12, the fake rule).
 
 local T = _G.OUTFITTERREBORN_TEST
+-- A unit instance: the login without the resume walk, so the module under test is the one this
+-- suite stands up (tests/unit_load.lua).
+local unitLoad = dofile(T.root .. "/tests/unit_load.lua")(T)
 local test, assertEqual, assertTrue, assertFalse, assertNil =
     T.test, T.assertEqual, T.assertTrue, T.assertFalse, T.assertNil
 
@@ -15,7 +18,7 @@ local BANK_FIRST, BANK_LAST = 6, 11
 -- A fresh instance at t = 100 on `scenario` (bank_open by default, its bank frame opened for the
 -- Inventory), PlayerState, Inventory and Equip resumed and the first scan settled.
 local function scene(scenario, overrides, closed)
-    local inst = T.load({ mutate = function(M) M.__gear:load(scenario or "bank_open", overrides) end })
+    local inst = unitLoad({ mutate = function(M) M.__gear:load(scenario or "bank_open", overrides) end })
     local NS, M = inst.NS, inst.mocks
     M.__now = 100
     NS.PlayerState.Resume()

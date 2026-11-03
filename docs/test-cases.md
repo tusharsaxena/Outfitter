@@ -8,7 +8,7 @@ Total.
 
 **Generated — do not hand-edit.** Regenerate with `lua tests/run.lua --list > docs/test-cases.md`.
 
-### test_skeleton.lua (10)
+### test_skeleton.lua (15)
 
 - skeleton: the addon registers with AceAddon under its folder name
 - skeleton: NS.Print is the tagged printer, reclaimed from AceConsole
@@ -20,6 +20,11 @@ Total.
 - skeleton: every authored Lua file opens with the NS bootstrap (an overlay, its gate) and a path comment
 - skeleton: the addon's source is Lua 5.1 only
 - skeleton: every literal debug tag the code writes is in docs/debug.md's tag register
+- skeleton: every module the latch walks has landed, with Suspend and Resume
+- skeleton: the login resumes every module bottom to top, and nothing while stood down
+- skeleton: a loaded legacy Outfitter is warned once, flagged, and LEGACY_DETECTED waits for the LoadPass
+- skeleton: a disabled login flags the legacy addon for /of diagnostics and prints nothing
+- skeleton: without the legacy addon nothing is said, flagged or sent
 
 ### test_toc.lua (5)
 
@@ -73,7 +78,7 @@ Total.
 - tests/_kit is the test kit that shipped with that release
 - the automated-test runner is recorded executable (100755)
 
-### test_secrets.lua (38)
+### test_secrets.lua (42)
 
 - secrets: NS.Secrets publishes the §2.2 surface and the NS aliases
 - secrets: the guards are NS.Compat's, routed through LibKa0s-Compat-1.0 when it loads
@@ -111,6 +116,10 @@ Total.
 - compat: BankBagIDs reads the character bank tabs, else the bank and its bags
 - compat: pickups, uses and the cursor route by location and report the call
 - compat: macro icons, Pawn scales and values, dual wield and BitAnd
+- secrets engine: a secret worn or carried link is an empty slot to the live scan
+- secrets engine: a secret player level lets an item through the live stats
+- secrets engine: tooltip, compare, quick slots and /of iteminfo refuse a secret link quietly
+- secrets engine: the Equip count is balanced after a raise inside a Batch
 - secrets seam: the scanner catches a securable read and nothing else (mutation self-test)
 - secrets seam: no securable client API is named outside the compat family, Secrets and States
 
@@ -121,8 +130,8 @@ Total.
 - bus: without LibKa0s the catalog is the same plain table
 - bus: every Sender line in core/Bus.lua names the §2.3 file
 - bus: the Ka0s_OutfitterReborn_ literal appears in core/Bus.lua only
-- bus: at most one file sends each key, and it is the §2.3 sender
-- bus: the sender scan catches a second sender, a wrong sender, a typo and a bare send
+- bus: exactly one file sends each key, and it is the §2.3 sender
+- bus: the sender scan catches a second sender, a wrong sender, a typo, a bare send and a silent key
 - bus: every pseudo event a descriptor consumes has a producer, and every produced one a consumer
 - bus: the live arm's record sends, drops at stand-down and replays at stand-up
 - bus: the library-absent arm's record does the same
@@ -153,7 +162,7 @@ Total.
 - skin seam: the degraded HudFont draws the face, a picked flag and no shadow
 - skin seam: each host-copy skin token is the live library's Ka0s Default value
 
-### test_surface_parity.lua (25)
+### test_surface_parity.lua (27)
 
 - parity: the degraded load still initializes, enables and answers /of version
 - parity: the Options stub carries every public member of the live Helpers surface
@@ -180,6 +189,8 @@ Total.
 - secure queue: a write out of lockdown drops the stale one under its key
 - secure queue: one raising write reaches the error handler and the rest still run
 - secure queue: Clear drops every waiting write and the registration
+- parity: every LibKa0s major the host leases has its parity row
+- parity: the degraded load resumes every module at login, and stands them down and up
 
 ### test_perf_harness.lua (9)
 
@@ -325,7 +336,7 @@ Total.
 - keybinds: NS.WearBoundOutfit refuses for a direct caller too
 - keybinds: one key per outfit: binding a key to a second outfit takes it off the first
 
-### test_disabled.lua (16)
+### test_disabled.lua (21)
 
 - Disabled 1: enabled, the addon registers something, arms something and shows something
 - Disabled 2+3: disabling through the write seam leaves NO registration behind
@@ -342,7 +353,12 @@ Total.
 - Disabled 10: releasing ONE hold does not resurrect an addon the other holds down
 - Disabled 10 (degraded): the library-absent latch holds the same order
 - Disabled: a profile switch re-reads the stored switch while disabled
-- Disabled (Outfitter): an outfit's active IN_DUNGEON trigger holds no event and no timer while down (skipped: pending P4.27: the trigger binder, the zone producer and the Equip bracket land in P4; the case seeds an outfit with an active IN_DUNGEON trigger before the stand-down (design §9.3))
+- Disabled (Outfitter): an outfit's active IN_DUNGEON trigger holds no event and no timer while down
+- Disabled (Outfitter): the Equip bracket is zeroed, nothing is wanted and SFX is back, down and up
+- Disabled (Outfitter): PLAYER_EQUIPMENT_CHANGED while down leaves db.char unchanged
+- Disabled (Outfitter): the tooltip, compare, pet, quick-slot and PaperDoll hook bodies no-op while down
+- Disabled (Outfitter): the LoadPass timer and the Pawn/WeightsWatcher watch are canceled
+- Disabled (Outfitter): the stand-up rebuilds: an outfit added while down binds on resume
 
 ### test_locale.lua (12)
 
@@ -1219,7 +1235,7 @@ Total.
 - menu: nothing opens for an unknown id or while stood down
 - menu: the class category reads the client's class name, the rest their own labels
 
-### test_dialogs.lua (15)
+### test_dialogs.lua (20)
 
 - dialogs: NS.Dialogs builds a MODAL, toplevel, clamped, Escape-closed frame that saves its place
 - dialogs: CloseAll closes every open dialog and its draft writes nothing
@@ -1236,8 +1252,13 @@ Total.
 - icons: the wildcard saves nil, a pick writes outfit.icon, Cancel discards, an EM outfit sets its set
 - icons: the sets, the search on named sets only, and the 6x5 grid
 - icons: it closes on an outside press but not its own, on Escape, on stand-down and with its opener
+- icons: a redraw that hides and re-shows the pooled opener keeps it open; its surface closing closes it
+- icons: a second click on the set dropdown closes its menu, and the next outside press closes the chooser
+- popups: Delete all accepted in combat refuses before it closes any dialog
+- new outfit and rename: the name box takes the keys when the dialog opens
+- progress: closing the window by Escape or its X cancels the search it shows
 
-### test_trigger_dialog.lua (9)
+### test_trigger_dialog.lua (11)
 
 - trigger dialog: NS.TriggerDialog and the nine field types are published
 - trigger dialog: every field type builds and round-trips its value
@@ -1248,6 +1269,8 @@ Total.
 - trigger dialog: the close button and Escape discard the draft
 - trigger dialog: the list editors add by capture, show names, and remove one entry
 - trigger dialog: no Source tab, no script text
+- trigger dialog: Add a buff... lists the helpful auras after a secret one
+- trigger dialog: a failed Done's error lines go once the value they named is fixed
 
 ### test_diagnostics.lua (12)
 
@@ -1354,23 +1377,23 @@ Total.
 
 | Suite | Cases |
 |-------|------:|
-| test_skeleton.lua | 10 |
+| test_skeleton.lua | 15 |
 | test_toc.lua | 5 |
 | test_loadorder.lua | 13 |
 | test_database.lua | 11 |
 | test_packaging.lua | 5 |
 | test_vendor_sync.lua | 3 |
-| test_secrets.lua | 38 |
+| test_secrets.lua | 42 |
 | test_bus.lua | 12 |
 | test_skinsetup.lua | 21 |
-| test_surface_parity.lua | 25 |
+| test_surface_parity.lua | 27 |
 | test_perf_harness.lua | 8 |
 | test_schema.lua | 25 |
 | test_settings.lua | 15 |
 | test_slash.lua | 44 |
 | test_launcher.lua | 12 |
 | test_keybinds.lua | 21 |
-| test_disabled.lua | 15 |
+| test_disabled.lua | 21 |
 | test_locale.lua | 11 |
 | test_glyphs.lua | 1 |
 | test_file_budget.lua | 2 |
@@ -1412,8 +1435,8 @@ Total.
 | test_triggers_parity.lua | 13 |
 | test_preview.lua | 14 |
 | test_outfit_menu.lua | 10 |
-| test_dialogs.lua | 15 |
-| test_trigger_dialog.lua | 9 |
+| test_dialogs.lua | 20 |
+| test_trigger_dialog.lua | 11 |
 | test_diagnostics.lua | 12 |
 | test_skin_values.lua | 3 |
 | test_skin_switch.lua | 3 |
@@ -1422,5 +1445,5 @@ Total.
 | test_diagnostics_contract.lua | 8 |
 | test_lizard_sighted.lua | 8 |
 | test_prose.lua | 15 |
-| Skipped | 7 |
-| **Total** | **1122** |
+| Skipped | 6 |
+| **Total** | **1146** |

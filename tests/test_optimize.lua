@@ -12,6 +12,9 @@
 -- what a wear does.
 
 local T = _G.OUTFITTERREBORN_TEST
+-- A unit instance: the login without the resume walk, so the module under test is the one this
+-- suite stands up (tests/unit_load.lua).
+local unitLoad = dofile(T.root .. "/tests/unit_load.lua")(T)
 local test, assertEqual, assertTrue, assertFalse, assertNil =
     T.test, T.assertEqual, T.assertTrue, T.assertFalse, T.assertNil
 
@@ -124,7 +127,7 @@ test("optimize: the simple picks equal the legacy smart fixtures (STA, ITEM_LEVE
     -- one fixture case). No fixture case depends on the ITEM_LEVEL list or the needsMainHand gate: each
     -- has its own case below.
     for _, case in ipairs(T.legacy.plans.smart) do
-        local NS = T.load().NS
+        local NS = unitLoad().NS
         local infos = {}
         for _, it in ipairs(case.items) do
             infos[#infos + 1] = item(it.code, it.invType, { slot = it.slot, meta = it.meta,
@@ -139,7 +142,7 @@ end)
 
 test("optimize: a better trinket bumps the current one to the alternate slot", function()
     -- red under: replace the current item without trying it in the alternate slot
-    local NS = T.load().NS
+    local NS = unitLoad().NS
     fakeStats(NS, { STA = { [21] = 3, [22] = 8, [23] = 5 } })
     local infos = { item(21, "INVTYPE_TRINKET"), item(22, "INVTYPE_TRINKET"), item(23, "INVTYPE_TRINKET") }
     local calls = run(NS, "t", { { stat = "STA" } }, infos)
@@ -149,10 +152,10 @@ end)
 test("optimize: ITEM_LEVEL never leaves the main hand empty where STA would", function()
     -- red under: give ITEM_LEVEL the STA combination list (the empty main hand wins the tie)
     local infos = function() return { item(31, "INVTYPE_WEAPON"), item(32, "INVTYPE_HOLDABLE") } end
-    local NS = T.load().NS
+    local NS = unitLoad().NS
     fakeStats(NS, { STA = { [31] = 0, [32] = 9 } })
     sameMap(ids(run(NS, "s", { { stat = "STA" } }, infos())[1].items), { SecondaryHandSlot = 32 }, "STA")
-    NS = T.load().NS
+    NS = unitLoad().NS
     fakeStats(NS, { ITEM_LEVEL = { [31] = 0, [32] = 9 } })
     sameMap(ids(run(NS, "i", { { stat = "ITEM_LEVEL" } }, infos())[1].items),
         { MainHandSlot = 31, SecondaryHandSlot = 32 }, "ITEM_LEVEL")
@@ -161,7 +164,7 @@ end)
 test("optimize: a dual wielder's only one-hander goes in the main hand, not the off hand", function()
     -- red under: drop pairAllowed's needsMainHand gate (the empty main hand and the weapon in the off
     -- hand comes first of the equal pairs)
-    local NS = T.load().NS
+    local NS = unitLoad().NS
     fakeStats(NS, { STA = { [61] = 5 } })
     sameMap(ids(run(NS, "one", { { stat = "STA" } }, { item(61, "INVTYPE_WEAPON") })[1].items),
         { MainHandSlot = 61 })
@@ -169,7 +172,7 @@ end)
 
 test("optimize: a one-hander goes in the off hand only when the player can dual wield (B15)", function()
     -- red under: drop the PS.CanDualWield gate on the weapon-in-off-hand pairs
-    local inst = T.load()
+    local inst = unitLoad()
     local NS, M = inst.NS, inst.mocks
     local infos = function() return { item(41, "INVTYPE_WEAPON"), item(42, "INVTYPE_WEAPON") } end
     fakeStats(NS, { STA = { [41] = 4, [42] = 6 } })
@@ -181,7 +184,7 @@ end)
 
 test("optimize: an empty simple result is delivered as nil, \"empty\" unless empties are allowed", function()
     -- red under: drop deliverItems' empty check (the empty table is delivered when empties are not allowed)
-    local NS = T.load().NS
+    local NS = unitLoad().NS
     fakeStats(NS, { STA = {} })
     local calls = run(NS, "e", { { stat = "STA" } }, { item(51, "INVTYPE_HEAD") })
     assertEqual(#calls, 1)
@@ -195,7 +198,7 @@ end)
 
 test("optimize: the cfg defaults to { { stat = \"STA\" } }, and a row with no stat reads STA", function()
     -- red under: a default cfg other than STA, or a nil cfg that raises
-    local NS = T.load().NS
+    local NS = unitLoad().NS
     fakeStats(NS, { STA = { [61] = 2 } })
     local calls, job = run(NS, "d", nil, { item(61, "INVTYPE_HEAD") })
     assertEqual(job.cfg[1].stat, "STA")
@@ -207,7 +210,7 @@ end)
 
 test("optimize: an unknown stat returns nil and the message, and delivers nothing (B16: no nil)", function()
     -- red under: format the message from the cfg table rather than the row's stat (prints "nil")
-    local NS = T.load().NS
+    local NS = unitLoad().NS
     fakeStats(NS, { STA = {} })
     local calls, job, err = run(NS, "u", { { stat = "BOGUS" } }, {})
     assertNil(job)
@@ -220,7 +223,7 @@ end)
 
 test("optimize: complex is #cfg > 1, a min or a max, or a stat marked complex", function()
     -- red under: an isComplex that answers true (a single plain row goes to the genetic search)
-    local NS = T.load().NS
+    local NS = unitLoad().NS
     local stats = fakeStats(NS, { A = { [71] = 1 }, B = { [71] = 1 } })
     local function complex(cfg) local _, job = run(NS, "c", cfg, { item(71, "INVTYPE_HEAD") }) return job.complex end
     assertFalse(complex({ { stat = "A" } }))
@@ -237,7 +240,7 @@ end)
 test("optimize: the result is delivered exactly once and never returned (B7)", function()
     -- red under: drop the job.done guard from both deliver and Opt.Cancel in modules/Optimize.lua (a
     -- finished job is delivered again)
-    local inst = T.load()
+    local inst = unitLoad()
     local NS, M = inst.NS, inst.mocks
     fakeStats(NS, { STA = { [81] = 2 }, HAS = { [81] = 1 } })
     local calls, job = run(NS, "once", { { stat = "STA" } }, { item(81, "INVTYPE_HEAD") })
@@ -262,7 +265,7 @@ end)
 test("optimize: on the real Stats and Inventory the result holds item records, no live objects", function()
     -- red under: deliver the cache infos rather than NS.ItemInfo.Snapshot copies (loc, bind and the
     -- score cache would be saved into the outfit)
-    local inst = T.load({ mutate = function(M) M.__gear:load("geared") end })
+    local inst = unitLoad({ mutate = function(M) M.__gear:load("geared") end })
     local NS = inst.NS
     local got
     NS.Optimize.Generate("Stamina", { { stat = "STA" } }, {}, function(items) got = items end)
@@ -298,7 +301,7 @@ local GA_SCORES = {
 local GA_CFG = { { stat = "A" }, { stat = "B" } }
 
 local function gaRun(seed, mutate)
-    local inst = T.load()
+    local inst = unitLoad()
     local NS, M = inst.NS, inst.mocks
     if mutate then mutate(M) end
     fakeStats(NS, GA_SCORES)
@@ -350,7 +353,7 @@ end)
 
 test("optimize: a two-hander empties the off hand in the genetic search unless gripped", function()
     -- red under: drop the genetic search's ungripped two-hander rule (fixHands keeps the shield)
-    local inst = T.load()
+    local inst = unitLoad()
     local NS, M = inst.NS, inst.mocks
     local scores = { A = { [131] = 10, [132] = 3 }, B = { [131] = 0, [132] = 0 } }
     fakeStats(NS, scores)
@@ -364,7 +367,7 @@ end)
 test("optimize: ties favor empty slots (Q6)", function()
     -- red under: drop the empty-slot count from scoreWithEmpty (the zero-score head stays in)
     for _, seed in ipairs({ 1, 2, 3, 4, 5 }) do
-        local inst = T.load()
+        local inst = unitLoad()
         local NS, M = inst.NS, inst.mocks
         fakeStats(NS, { A = { [141] = 0, [142] = 3 }, B = { [141] = 0, [142] = 0 } })
         local calls = run(NS, "tie", GA_CFG, { item(141, "INVTYPE_HEAD"), item(142, "INVTYPE_NECK") },
@@ -417,7 +420,7 @@ end)
 
 test("optimize: a zero elapsed time prints a finite rate (B16)", function()
     -- red under: divide by the elapsed time unguarded ("inf outfits per second")
-    local inst = T.load()
+    local inst = unitLoad()
     local NS, M = inst.NS, inst.mocks
     fakeStats(NS, GA_SCORES)
     run(NS, "z", GA_CFG, { item(101, "INVTYPE_HEAD") }, { rng = lcg(2) })
@@ -430,7 +433,7 @@ end)
 
 test("optimize: STARTED and DONE bracket the genetic search", function()
     -- red under: a deliver that leaves Running() on the finished genetic job
-    local inst = T.load()
+    local inst = unitLoad()
     local NS, M = inst.NS, inst.mocks
     fakeStats(NS, GA_SCORES)
     local started, done = hear(NS, "OPTIMIZE_STARTED"), hear(NS, "OPTIMIZE_DONE")
@@ -449,7 +452,7 @@ end)
 
 test("optimize: Cancel ends the ticker and delivers nil, \"canceled\" once", function()
     -- red under: leave the ticker armed on Cancel (the search keeps running and delivers later)
-    local inst = T.load()
+    local inst = unitLoad()
     local NS, M = inst.NS, inst.mocks
     fakeStats(NS, GA_SCORES)
     local base = #M.__timers()
@@ -470,7 +473,7 @@ end)
 
 test("optimize: a stand-down ends the search with nil, \"stood-down\"", function()
     -- red under: an Optimize.Suspend that does not cancel the running job
-    local inst = T.load()
+    local inst = unitLoad()
     local NS, M = inst.NS, inst.mocks
     fakeStats(NS, GA_SCORES)
     local progress = hear(NS, "OPTIMIZE_PROGRESS")
@@ -486,7 +489,7 @@ test("optimize: a stand-down ends the search with nil, \"stood-down\"", function
 end)
 
 test("optimize: a second search cancels the running one", function()
-    local inst = T.load()
+    local inst = unitLoad()
     local NS, M = inst.NS, inst.mocks
     fakeStats(NS, GA_SCORES)
     local first = run(NS, "one", GA_CFG, gaInventory(), { rng = lcg(4) })
@@ -501,7 +504,7 @@ end)
 
 test("optimize: a resume error is surfaced once and delivers nil, \"error\"", function()
     -- red under: deliver nothing on a resume error (the caller waits forever)
-    local inst = T.load()
+    local inst = unitLoad()
     local NS, M = inst.NS, inst.mocks
     local boom = false
     local scores = { A = { [151] = function() if boom then error("kaboom") end return 1 end }, B = { [151] = 0 } }
@@ -521,7 +524,7 @@ end)
 
 test("optimize: Trial answers the new-outfit dialog's no-items warning", function()
     -- red under: answer true for a simple cfg no item scores on
-    local NS = T.load().NS
+    local NS = unitLoad().NS
     fakeStats(NS, { STA = { [161] = 1 }, HAS = {} })
     local cache = NS.Inventory.NewCache({ item(161, "INVTYPE_HEAD") })
     T.fake(NS, "Inventory", { Cache = function() return cache end })
@@ -545,7 +548,7 @@ local ALL_SLOTS = {
 }
 
 local function rebuildScene()
-    local NS = T.load().NS
+    local NS = unitLoad().NS
     fakeStats(NS, { STA = { [171] = 9 } })
     local cache = NS.Inventory.NewCache({ item(171, "INVTYPE_HEAD") })
     T.fake(NS, "Inventory", { Cache = function() return cache end })
@@ -606,7 +609,7 @@ end)
 test("optimize: Rebuild with nothing to pick says so and leaves the outfit alone", function()
     -- red under: apply an empty result (the outfit emptied and worn), or drop Rebuild's unknown-outfit
     -- guard (it raises on a nil record)
-    local inst = T.load()
+    local inst = unitLoad()
     local NS, M = inst.NS, inst.mocks
     fakeStats(NS, { STA = {} })
     local cache = NS.Inventory.NewCache({ item(171, "INVTYPE_HEAD") })

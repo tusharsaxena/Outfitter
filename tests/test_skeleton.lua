@@ -2,11 +2,13 @@
 -- NS.Print is the tagged printer, the DB defaults load, the declared icons resolve, every authored
 -- file opens with the NS bootstrap, the bus wire names keep their shape, and the source stays Lua
 -- 5.1, and every literal debug tag the code writes is in docs/debug.md's register. The slash case
--- arrives with its seam (P3 C12).
+-- is tests/test_slash.lua's (P3 C12). P4.27 adds the login: every module the latch walks has landed
+-- and the login resumes each one, and the legacy guard (design §4.7) warns once, flags the state and
+-- sends LEGACY_DETECTED when the first LoadPass finishes.
 
 local T = _G.OUTFITTERREBORN_TEST
 local NS = T.NS
-local test, assertEqual, assertTrue = T.test, T.assertEqual, T.assertTrue
+local test, assertEqual, assertTrue, assertFalse = T.test, T.assertEqual, T.assertTrue, T.assertFalse
 
 test("skeleton: the addon registers with AceAddon under its folder name", function()
     local AceAddon = T.mocks.LibStub("AceAddon-3.0")
@@ -184,4 +186,112 @@ test("skeleton: every literal debug tag the code writes is in docs/debug.md's ta
         end
     end
     assertTrue(seen > 0, "no NS.Debug call was found; the scan is broken")
+end)
+
+-- ── the login (P4.27, design §4.7, §5.12) ─────────────────────────────────────────────────────
+
+test("skeleton: every module the latch walks has landed, with Suspend and Resume", function()
+    -- red under: a name in core/LifecycleSetup.lua's MODULES whose module publishes no NS table (the
+    -- login walk itself raises on it, so every instance fails to load).
+    assertEqual(#NS.LIFECYCLE_MODULES, 20, "design §5.12's list")
+    for _, name in ipairs(NS.LIFECYCLE_MODULES) do
+        local m = NS[name]
+        assertEqual(type(m), "table", "NS." .. name)
+        assertEqual(type(m.Suspend), "function", "NS." .. name .. ".Suspend")
+        assertEqual(type(m.Resume), "function", "NS." .. name .. ".Resume")
+    end
+end)
+
+test("skeleton: the login resumes every module bottom to top, and nothing while stood down", function()
+    -- red under: an NS:OnEnable in core/OutfitterReborn.lua that walks top to bottom, or skips the
+    -- walk (nothing resumes at login).
+    local order = {}
+    local inst = T.load({ enable = false })
+    for _, name in ipairs(inst.NS.LIFECYCLE_MODULES) do
+        local m = inst.NS[name]
+        local resume = m.Resume
+        m.Resume = function(...) order[#order + 1] = name; return resume(...) end
+    end
+    inst.mocks.LibStub("AceAddon-3.0"):EnableAddon(inst.NS)
+    local want = {}
+    for i = #inst.NS.LIFECYCLE_MODULES, 1, -1 do want[#want + 1] = inst.NS.LIFECYCLE_MODULES[i] end
+    assertEqual(table.concat(order, ","), table.concat(want, ","))
+    assertTrue(#inst.mocks.__timers() > 0, "the login armed nothing")
+
+    -- Stood down at login (a stored `enabled = false`): OnEnable returns before the walk.
+    local down = T.load({ enable = false })
+    local resumed = 0
+    for _, name in ipairs(down.NS.LIFECYCLE_MODULES) do
+        local m = down.NS[name]
+        local resume = m.Resume
+        m.Resume = function(...) resumed = resumed + 1; return resume(...) end
+    end
+    down.NS.ApplyEnabled(false)
+    down.mocks.LibStub("AceAddon-3.0"):EnableAddon(down.NS)
+    assertEqual(resumed, 0, "a stood-down login resumed a module")
+end)
+
+--- A login with the legacy Outfitter reported loaded beside this addon; `opts.disabled` logs in
+--- with `enabled = false` stored.
+local function legacyLogin(opts)
+    opts = opts or {}
+    local inst = T.load({ enable = false, mutate = function(M)
+        M.__loadedAddOns.Outfitter = true
+        M.__gear:load("geared")
+    end })
+    local ns, M = inst.NS, inst.mocks
+    if opts.disabled then ns.ApplyEnabled(false) end
+    local sent = 0
+    ns.NewBusTarget():RegisterMessage(ns.MSG.LEGACY_DETECTED, function() sent = sent + 1 end)
+    M.__resetPrinted()
+    M.LibStub("AceAddon-3.0"):EnableAddon(ns)
+    return ns, M, function() return sent end
+end
+
+local LEGACY_LINE = "The old Outfitter addon is also loaded. Disable it: both change your gear and both own /outfitter."
+
+local function legacyLines(M)
+    local n = 0
+    for _, line in ipairs(M.__printed()) do
+        if line:find(LEGACY_LINE, 1, true) then n = n + 1 end
+    end
+    return n
+end
+
+test("skeleton: a loaded legacy Outfitter is warned once, flagged, and LEGACY_DETECTED waits for the LoadPass", function()
+    -- red under: an empty checkLegacy in core/OutfitterReborn.lua (no line, no flag), or a send in
+    -- OnEnable instead of NS.OnLoadPassDone (the message goes out before the LoadPass).
+    local ns, M, sent = legacyLogin()
+    assertEqual(legacyLines(M), 1, "the warning, once")
+    assertTrue(ns.State.legacyLoaded, "the diagnostics flag")
+    assertEqual(sent(), 0, "LEGACY_DETECTED went out before the first LoadPass")
+    M.__fire("PLAYER_ENTERING_WORLD")
+    for _ = 1, 4 do if M.__fireTimers() == 0 then break end end
+    assertTrue(ns.db.char.seeded == true, "the first LoadPass did not run")
+    assertEqual(sent(), 1, "the first LoadPass sends LEGACY_DETECTED once")
+    -- Warn only (owner ruling 2026-11-03): nothing is held.
+    assertFalse(ns.IsStoodDown(), "the legacy guard stood the addon down")
+    assertTrue(ns.TriggerBinder.IsActive(), "the legacy guard held the trigger binder")
+end)
+
+test("skeleton: a disabled login flags the legacy addon for /of diagnostics and prints nothing", function()
+    -- red under: a checkLegacy that prints before its NS.IsStoodDown() read.
+    local ns, M = legacyLogin({ disabled = true })
+    assertTrue(ns.State.legacyLoaded, "the flag is set while stood down too")
+    assertEqual(legacyLines(M), 0, "a stood-down login printed the warning")
+end)
+
+test("skeleton: without the legacy addon nothing is said, flagged or sent", function()
+    local inst = T.load({ enable = false, mutate = function(M) M.__gear:load("geared") end })
+    local ns, M = inst.NS, inst.mocks
+    local sent = 0
+    ns.NewBusTarget():RegisterMessage(ns.MSG.LEGACY_DETECTED, function() sent = sent + 1 end)
+    M.__resetPrinted()
+    M.LibStub("AceAddon-3.0"):EnableAddon(ns)
+    M.__fire("PLAYER_ENTERING_WORLD")
+    for _ = 1, 4 do if M.__fireTimers() == 0 then break end end
+    assertEqual(legacyLines(M), 0)
+    assertFalse(ns.State.legacyLoaded == true)
+    -- red under: an NS.OnLoadPassDone that sends LEGACY_DETECTED unconditionally.
+    assertEqual(sent, 0, "LEGACY_DETECTED went out with no legacy addon")
 end)

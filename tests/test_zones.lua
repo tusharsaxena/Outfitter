@@ -10,6 +10,9 @@
 -- P4.14 under the heading at the bottom.
 
 local T = _G.OUTFITTERREBORN_TEST
+-- A unit instance: the login without the resume walk, so the module under test is the one this
+-- suite stands up (tests/unit_load.lua).
+local unitLoad = dofile(T.root .. "/tests/unit_load.lua")(T)
 local test, assertEqual, assertTrue, assertFalse = T.test, T.assertEqual, T.assertTrue, T.assertFalse
 local assertNil = T.assertNil
 
@@ -411,7 +414,7 @@ end)
 
 local function zoneScene(opts)
     opts = opts or {}
-    local inst = T.load()
+    local inst = unitLoad()
     local NS, M = inst.NS, inst.mocks
     local ctl = { worn = opts.worn or {}, forState = opts.forState or {} }
     local equip = T.fake(NS, "Equip", { Batch = function(fn, ...) return true, fn(...) end,

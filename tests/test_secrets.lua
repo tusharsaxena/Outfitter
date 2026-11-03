@@ -5,8 +5,10 @@
 -- hook, Equipment Manager, title, bank, cursor, macro-icon and Pawn reads, each plain-or-nil, each with
 -- its no-answer value when the API is absent), and the seam scan: no securable client API is named
 -- outside the compat family, core/Secrets.lua and modules/States.lua. The states part lives in
--- tests/test_secrets_states.lua (P4.14); the engine cases (PlayerIsFull, the aura scan, the balanced
--- count) join in P4.27.
+-- tests/test_secrets_states.lua (P4.14: PlayerIsFull, the aura scan, prevMana). The engine cases,
+-- final at P4.27, run on the whole login: a secret bag or worn link is an empty slot, a secret
+-- UnitLevel lets an item through, the tooltip, compare, quick-slot and `/of iteminfo` paths refuse a
+-- secret link quietly, and the Equip count is balanced after a raise.
 
 local T = _G.OUTFITTERREBORN_TEST
 local NS = T.NS
@@ -274,7 +276,8 @@ test("compat: CVars, the clock, the spec count and other addons", function()
         assertEqual(written.Sound_EnableSFX, "0")
         assertEqual(C.NumSpecializations(), 3)
         assertEqual(C.GetTime(), 12.5)
-        assertEqual(C.IsAddOnLoaded("Pawn"), true)
+        assertEqual(C.IsAddOnLoaded("OutfitterReborn"), true)
+        assertEqual(C.IsAddOnLoaded("Pawn"), false, "the mock loads no other addon")
         assertEqual(C.IsAddOnLoaded(nil), false)
     end)
     with({ C_AddOns = { IsAddOnLoaded = function(name) return name == "Pawn", name == "Pawn" end } }, function()
@@ -791,6 +794,85 @@ test("compat: macro icons, Pawn scales and values, dual wield and BitAnd", funct
     assertEqual(C.BitAnd(0x400, 0x7FF), 0x400)
     assertEqual(C.BitAnd(0x80000000, 0xFFFFFFFF), 0x80000000)
     assertEqual(C.BitAnd(nil, 1), 0, "a non-number is no bits")
+end)
+
+-- ── the engine, on the whole login (P4.27) ────────────────────────────────────────────────────
+
+--- The whole login on the secret_slots scenario (a secret helm worn and carried), zoned in, with the
+--- client's issecretvalue installed; `fn(ns, M)` runs inside, the simulator restored however it leaves.
+local function engine(fn)
+    local restore = T.installSecretValue()
+    local ok, err = pcall(function()
+        local inst = T.load({ mutate = function(M) M.__gear:load("secret_slots") end })
+        local ns, M = inst.NS, inst.mocks
+        M.__fire("PLAYER_ENTERING_WORLD")
+        for _ = 1, 4 do if M.__fireTimers() == 0 then break end end
+        fn(ns, M)
+    end)
+    restore()
+    if not ok then error(err, 0) end
+end
+
+local DB = T.fixtures.items.db
+
+test("secrets engine: a secret worn or carried link is an empty slot to the live scan", function()
+    engine(function(ns)
+        local cache = ns.Inventory.Cache()
+        -- red under: Compat.InventoryItemLink / ContainerItemLink handing the raw link through.
+        assertNil(cache.byID[DB.secret_helm.id], "the secret helm was cached")
+        assertTrue(cache.byID[DB.chest_plate.id] ~= nil, "the plain chest is cached; the scan ran")
+        assertFalse((ns.Inventory.Sync()), "a secret slot reads the same empty slot every time")
+    end)
+end)
+
+test("secrets engine: a secret player level lets an item through the live stats", function()
+    engine(function(ns, M)
+        M.UnitLevel = function() return T.secret(80) end
+        -- red under: an unreadable level read as 0 (an item with a minimum level would score 0).
+        assertTrue(ns.Stats.Get("STA"):Score(ns.ItemInfo.FromLink(DB.head_plate.link)) > 0)
+    end)
+end)
+
+test("secrets engine: tooltip, compare, quick slots and /of iteminfo refuse a secret link quietly", function()
+    engine(function(ns, M)
+        local tip = M.GameTooltip
+        tip:SetBagItem(0, 1)                                  -- the secret helm
+        assertTrue(pcall(M.__world.tooltipPostCall, M.__world, M.Enum.TooltipDataType.Item, tip, nil))
+        for i = 1, tip:NumLines() do
+            local text = tip["TextLeft" .. i]:GetText()
+            assertFalse(type(text) == "string" and text:find("Equipment Sets: ", 1, true) == 1,
+                "a used-by line for a secret link")
+        end
+        M.__world:setCompare(true, true)
+        tip:SetHyperlink(T.secret(DB.head_plate.link))
+        tip:Show()
+        assertTrue(pcall(M.GameTooltip_ShowCompareItem, tip), "the compare hook raised on a secret link")
+        local shown = 0
+        for i = 1, 10 do
+            local c = M["OutfitterRebornCompareTooltip" .. i]
+            if c and c:IsShown() then shown = shown + 1 end
+        end
+        assertEqual(shown, 0, "a compare tooltip for a secret link")
+        local PLAYER, BAGS = 0x00100000, 0x00200000
+        assertNil((ns.QuickSlots.Sort.LocationItemLink(PLAYER + BAGS + 1)), "a secret bag link")
+        assertNil((ns.QuickSlots.Sort.LocationItemLink(PLAYER + 1)), "a secret worn link")
+        local lines = ns.ItemInfo.LinkInfoLines(T.secret(DB.head_plate.link))
+        assertEqual(lines[2], ns.L["Not a readable item link."])
+    end)
+end)
+
+test("secrets engine: the Equip count is balanced after a raise inside a Batch", function()
+    engine(function(ns, M)
+        local errors = 0
+        M.geterrorhandler = function() return function() errors = errors + 1 end end
+        local E = ns.Equip
+        -- red under: an E.Batch that lowers the depth only on success (the count strands at 1).
+        local ok = pcall(E.Batch, function() error("a raise mid-swap") end)
+        assertTrue(not ok or errors == 1, "the raise was swallowed unseen")
+        assertEqual(E.__state.depth, 0, "the count stranded after a raise")
+        E.Request()
+        assertTrue(E.Pending(), "a request after the raise is not wanted")
+    end)
 end)
 
 -- ── the seam scan ─────────────────────────────────────────────────────────────────────────────

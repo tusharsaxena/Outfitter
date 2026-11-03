@@ -8,6 +8,9 @@
 -- rule), and test_equip_bracket pins the real behavior.
 
 local T = _G.OUTFITTERREBORN_TEST
+-- A unit instance: the login without the resume walk, so the module under test is the one this
+-- suite stands up (tests/unit_load.lua).
+local unitLoad = dofile(T.root .. "/tests/unit_load.lua")(T)
 local test, assertEqual, assertTrue, assertFalse, assertNil =
     T.test, T.assertEqual, T.assertTrue, T.assertFalse, T.assertNil
 
@@ -16,7 +19,7 @@ local DB = Items.db
 
 -- A fresh instance with a gear scenario loaded before the addon's files run.
 local function gearInstance(scenario, mutate)
-    return T.load({ mutate = function(M)
+    return unitLoad({ mutate = function(M)
         if scenario then M.__gear:load(scenario) end
         if mutate then mutate(M) end
     end })

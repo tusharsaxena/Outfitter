@@ -11,6 +11,9 @@
 -- tests/test_trigger_binder.lua), so a case reads exactly which wear, removal or delay a state asked for.
 
 local T = _G.OUTFITTERREBORN_TEST
+-- A unit instance: the login without the resume walk, so the module under test is the one this
+-- suite stands up (tests/unit_load.lua).
+local unitLoad = dofile(T.root .. "/tests/unit_load.lua")(T)
 local test, assertEqual, assertTrue, assertFalse, assertNil =
     T.test, T.assertEqual, T.assertTrue, T.assertFalse, T.assertNil
 
@@ -49,7 +52,7 @@ end
 -- A fresh instance at t = 100 for `class` in `spec`, with the outfits `make(NS)` creates bound and the
 -- producers resumed and settled. Answers { NS, M, W, st, equip, ids = make's answer }.
 local function scene(class, spec, make, mutate)
-    local inst = T.load({ mutate = function(M)
+    local inst = unitLoad({ mutate = function(M)
         M.__world:setClass(class, spec or 1)
         if mutate then mutate(M) end
     end })

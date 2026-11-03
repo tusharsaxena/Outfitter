@@ -247,5 +247,6 @@ L["Saves what you are wearing into the current Complete outfit, as /of update do
 -- P4.26 keys (modules/Diagnostics.lua)
 
 -- P4.27 keys (core/OutfitterReborn.lua: the legacy-addon warning, design §4.7)
+L["The old Outfitter addon is also loaded. Disable it: both change your gear and both own /outfitter."] = "The old Outfitter addon is also loaded. Disable it: both change your gear and both own /outfitter."
 
 -- P4.29 keys (settings/General.lua: the landing credits)

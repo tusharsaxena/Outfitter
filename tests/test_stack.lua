@@ -7,6 +7,9 @@
 -- the real modules, and the items move for real in tests/mock_gear.lua.
 
 local T = _G.OUTFITTERREBORN_TEST
+-- A unit instance: the login without the resume walk, so the module under test is the one this
+-- suite stands up (tests/unit_load.lua).
+local unitLoad = dofile(T.root .. "/tests/unit_load.lua")(T)
 local test, assertEqual, assertTrue, assertFalse, assertNil =
     T.test, T.assertEqual, T.assertTrue, T.assertFalse, T.assertNil
 
@@ -19,7 +22,7 @@ local SLOTS = {
 -- A fresh instance at t = 100: the gear scenario loaded, PlayerState, Inventory and Equip resumed and
 -- the first scan settled, the window (the Dock fake) closed unless `ctl.shown` is set.
 local function scene(scenario)
-    local inst = T.load({ mutate = function(M) M.__gear:load(scenario or "geared") end })
+    local inst = unitLoad({ mutate = function(M) M.__gear:load(scenario or "geared") end })
     local NS, M = inst.NS, inst.mocks
     M.__now = 100
     NS.PlayerState.Resume()
