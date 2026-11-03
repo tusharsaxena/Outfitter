@@ -44,8 +44,12 @@ function Ctx.luaFiles(includeLibraries)
 	local pipe = io.popen("git -C " .. ("%q"):format(root) .. " ls-files '*.lua'")
 	for line in pipe:lines() do
 		local rel = line
-		-- tests/ is the harness itself, not the addon.
-		local skip = rel:match("^tests/") or (not includeLibraries and rel:match("^Libraries/"))
+		-- tests/ is the harness itself, not the addon.  tools/ is maintainer
+		-- tooling that never ships, and libs/ is where the Ka0s conversion vendors
+		-- its libraries: neither is in the TOC, so the orphan, seam and
+		-- discipline checks must not walk them.
+		local skip = rel:match("^tests/") or rel:match("^tools/") or rel:match("^libs/")
+			or (not includeLibraries and rel:match("^Libraries/"))
 		if not skip then out[#out + 1] = rel end
 	end
 	pipe:close()

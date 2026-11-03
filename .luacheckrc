@@ -6,12 +6,14 @@
 -- else's, so it is excluded -- the syntax suite still parses every one of those
 -- files, BOM and all.
 --
--- tests/ IS ours and is linted.
+-- tests/ IS ours and is linted, apart from tests/fixtures/: those files are
+-- data written by tools/legacy_capture.lua, never edited by hand, and a lint
+-- finding in one is fixed by regenerating it.  tools/ is ours and is linted.
 
 std = "lua51"
 max_line_length = false
 codes = true
-exclude_files = {"Libraries/"}
+exclude_files = {"Libraries/", "tests/fixtures/"}
 
 -- The addon's own globals.  Outfitter predates addon namespaces: the table is a
 -- global, the public API is a set of globals, and the XML reaches text bindings

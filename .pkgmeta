@@ -29,7 +29,9 @@ ignore:
     - Textures/IconButtonHighlight.blp
     - Textures/Outfitter-Button-original.blp
 
-    # Developer tooling and repo furniture.
+    # Developer tooling and repo furniture.  tools/ holds generators that run on a
+    # desktop Lua, never in the client.
+    - tools
     - .luacheckrc
     - .gitignore
     - .github
