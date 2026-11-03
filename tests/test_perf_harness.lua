@@ -145,6 +145,20 @@ test("perf: the disabled hold outlasts the perf hold, and its refusal wins", fun
     assertFalse(NS.IsDisabled())
 end)
 
+-- Design §5.12, in stand-down order: jobs that want to equip cancel before the engine resets, and
+-- States resumes before TriggerBinder binds on the way up (the reverse walk).
+local MODULES = {
+    "Preview", "TriggerBinder", "States", "Optimize", "Companion", "EM", "Equip", "Stack",
+    "Outfits", "Inventory", "PlayerState", "Stats", "Tooltips", "Compare", "QuickSlots", "Bar",
+    "Dock", "SlotEnables", "Dialogs", "IconChooser",
+}
+
+test("lifecycle: the module list is design §5.12's, in its order", function()
+    local list = T.load().NS.LIFECYCLE_MODULES
+    assertEqual(#list, #MODULES, "the module list's length")
+    for i, name in ipairs(MODULES) do assertEqual(list[i], name, "position " .. i) end
+end)
+
 test("lifecycle: the module walk is top to bottom down, bottom to top up, and skips a missing module", function()
     -- red under: an unguarded NS[m].Suspend() (the missing module raises), or a forward stand-up walk.
     local NS = T.load().NS
@@ -156,14 +170,16 @@ test("lifecycle: the module walk is top to bottom down, bottom to top up, and sk
         }
     end
     NS.TestFirst, NS.TestBare, NS.TestLast = module("first"), {}, module("last")
-    local list = NS.LIFECYCLE_MODULES
-    assertEqual(#list, 0, "P3 declares no module; P4.0 fills the list")
+    -- The real list is swapped out for the four probes and put back, so the order seen is theirs alone.
+    local list, saved = NS.LIFECYCLE_MODULES, {}
+    for i = #list, 1, -1 do saved[i], list[i] = list[i], nil end
     list[1], list[2], list[3], list[4] = "TestFirst", "TestMissing", "TestBare", "TestLast"
     local ok, err = pcall(function()
         NS.lifecycle:Hold(NS.HOLD_PERF)
         NS.lifecycle:Release(NS.HOLD_PERF)
     end)
     for i = #list, 1, -1 do list[i] = nil end
+    for i = 1, #saved do list[i] = saved[i] end
     if not ok then error(err, 0) end
     assertEqual(table.concat(seen, ","), "down:first,down:last,up:last,up:first")
 end)

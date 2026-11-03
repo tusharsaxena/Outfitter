@@ -20,9 +20,11 @@ local L = NS.L
 
 -- Stand-down runs top to bottom; stand-up runs bottom to top. Jobs that want to equip cancel before
 -- the engine resets; States.Resume runs before TriggerBinder.BindAll on the way up (design §5.12).
--- EMPTY UNTIL P4.0, which declares the full list; a name whose module has not landed is skipped, so
--- the list can name modules before they exist.
-local MODULES = {}
+-- Declared whole in P4.0: a name whose module has not landed is skipped (the P4.0 stubs publish no NS
+-- table), so the list names every module before it exists.
+local MODULES = { "Preview", "TriggerBinder", "States", "Optimize", "Companion", "EM", "Equip", "Stack",
+                  "Outfits", "Inventory", "PlayerState", "Stats", "Tooltips", "Compare", "QuickSlots", "Bar",
+                  "Dock", "SlotEnables", "Dialogs", "IconChooser" }
 NS.LIFECYCLE_MODULES = MODULES
 
 --- Disabled means NOT RUNNING. Every registration goes -- not gated -- every timer is canceled, and

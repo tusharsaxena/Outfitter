@@ -1,0 +1,3 @@
+local _, NS = ...
+-- modules/Tooltips_Compare.lua — NS.Compare: up to five comparison tooltips (design §7.10). A P4.0 stub: P4.17 writes it.
+local _ = NS -- the stub's one read of NS: it publishes nothing, and an unread NS is lint 211

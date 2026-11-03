@@ -1,0 +1,3 @@
+local _, NS = ...
+-- modules/Triggers_Effects.lua — the triggers' save-and-restore side effects: auto-loot, tracking, click-to-move, bar page, pets. A P4.0 stub: P4.15 writes it.
+local _ = NS -- the stub's one read of NS: it publishes nothing, and an unread NS is lint 211

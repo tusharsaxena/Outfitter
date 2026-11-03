@@ -1,0 +1,3 @@
+local _, NS = ...
+-- defaults/TriggerData.lua — the aura, form, NPC, difficulty, map, skill-line and pet ID tables the triggers read (design §6.2). A P4.0 stub: P4.3 writes it.
+local _ = NS -- the stub's one read of NS: it publishes nothing, and an unread NS is lint 211

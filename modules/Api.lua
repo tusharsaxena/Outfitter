@@ -1,0 +1,3 @@
+local _, NS = ...
+-- modules/Api.lua — the public API, _G.OutfitterReborn.API.v1 (design §5.16). A P4.0 stub: P4.25 writes it.
+local _ = NS -- the stub's one read of NS: it publishes nothing, and an unread NS is lint 211

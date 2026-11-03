@@ -1,0 +1,3 @@
+local _, NS = ...
+-- modules/ItemStats_Sources.lua — the Pawn and WeightsWatcher stat sources (design §5.14). A P4.0 stub: P4.11 writes it.
+local _ = NS -- the stub's one read of NS: it publishes nothing, and an unread NS is lint 211

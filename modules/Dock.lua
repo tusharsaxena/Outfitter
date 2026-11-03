@@ -1,0 +1,3 @@
+local _, NS = ...
+-- modules/Dock.lua — NS.Dock: the sheet holder and button, the show model, follow and layer sync (design §7.2). A P4.0 stub: P4.19 writes it.
+local _ = NS -- the stub's one read of NS: it publishes nothing, and an unread NS is lint 211

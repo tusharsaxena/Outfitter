@@ -1,0 +1,3 @@
+local _, NS = ...
+-- modules/EquipmentManager.lua — NS.EM: the Blizzard Equipment Manager mirror (design §5.13). A P4.0 stub: P4.10 writes it.
+local _ = NS -- the stub's one read of NS: it publishes nothing, and an unread NS is lint 211

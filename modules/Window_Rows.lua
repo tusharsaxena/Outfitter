@@ -1,0 +1,3 @@
+local _, NS = ...
+-- modules/Window_Rows.lua — the outfit list's fixed rows and their secure children (design §7.3). A P4.0 stub: P4.19 writes it.
+local _ = NS -- the stub's one read of NS: it publishes nothing, and an unread NS is lint 211

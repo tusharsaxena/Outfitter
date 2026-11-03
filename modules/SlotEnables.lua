@@ -1,0 +1,3 @@
+local _, NS = ...
+-- modules/SlotEnables.lua — NS.SlotEnables: the tri-state slot checkboxes on the character sheet (design §7.4). A P4.0 stub: P4.19 writes it.
+local _ = NS -- the stub's one read of NS: it publishes nothing, and an unread NS is lint 211

@@ -1,0 +1,3 @@
+local _, NS = ...
+-- defaults/PreviewOutfits.lua — the test-mode placeholder outfits (design §8). A P4.0 stub: P4.22 writes it.
+local _ = NS -- the stub's one read of NS: it publishes nothing, and an unread NS is lint 211

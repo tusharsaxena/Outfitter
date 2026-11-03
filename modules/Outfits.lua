@@ -1,0 +1,3 @@
+local _, NS = ...
+-- modules/Outfits.lua — NS.Outfits: the outfit store, sole writer of db.char.outfits, order and bindings (design §5.6). A P4.0 stub: P4.6 writes it.
+local _ = NS -- the stub's one read of NS: it publishes nothing, and an unread NS is lint 211

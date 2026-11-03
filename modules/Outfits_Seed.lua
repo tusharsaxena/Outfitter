@@ -1,0 +1,3 @@
+local _, NS = ...
+-- modules/Outfits_Seed.lua — LoadPass: seeding the built-in outfits and repairing the store (design §5.7). A P4.0 stub: P4.6 writes it.
+local _ = NS -- the stub's one read of NS: it publishes nothing, and an unread NS is lint 211

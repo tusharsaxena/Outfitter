@@ -1,0 +1,3 @@
+local _, NS = ...
+-- modules/Triggers_CondGeneral.lua — the bespoke GENERAL trigger conditions (design §6.8). A P4.0 stub: P4.16a writes it.
+local _ = NS -- the stub's one read of NS: it publishes nothing, and an unread NS is lint 211

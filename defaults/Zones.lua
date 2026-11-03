@@ -1,0 +1,3 @@
+local _, NS = ...
+-- defaults/Zones.lua — NS.Zones.rows and BRAWL_MAP_IDS, the single zone source (design §6.5). A P4.0 stub: P4.3 writes it.
+local _ = NS -- the stub's one read of NS: it publishes nothing, and an unread NS is lint 211

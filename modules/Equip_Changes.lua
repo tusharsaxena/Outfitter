@@ -1,0 +1,3 @@
+local _, NS = ...
+-- modules/Equip_Changes.lua — NS.Changes: the pure change-list builder, unique-equip order and optimize rules (design §5.11). A P4.0 stub: P4.7 writes it.
+local _ = NS -- the stub's one read of NS: it publishes nothing, and an unread NS is lint 211

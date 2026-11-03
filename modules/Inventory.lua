@@ -1,0 +1,3 @@
+local _, NS = ...
+-- modules/Inventory.lua — NS.Inventory: the bag and equipment scan, its cache and the bank-open rules (design §5.4). A P4.0 stub: P4.5 writes it.
+local _ = NS -- the stub's one read of NS: it publishes nothing, and an unread NS is lint 211

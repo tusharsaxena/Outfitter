@@ -1,0 +1,3 @@
+local _, NS = ...
+-- modules/Inventory_Lists.lua — the missing, unused, BoE, warbound, in-use and cooldown lists and their sections (design §5.5). A P4.0 stub: P4.5 writes it.
+local _ = NS -- the stub's one read of NS: it publishes nothing, and an unread NS is lint 211

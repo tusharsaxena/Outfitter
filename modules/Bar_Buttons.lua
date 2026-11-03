@@ -1,0 +1,3 @@
+local _, NS = ...
+-- modules/Bar_Buttons.lua — the outfit bar's pooled buttons (design §7.7). A P4.0 stub: P4.20 writes it.
+local _ = NS -- the stub's one read of NS: it publishes nothing, and an unread NS is lint 211

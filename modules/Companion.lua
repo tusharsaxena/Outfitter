@@ -1,0 +1,3 @@
+local _, NS = ...
+-- modules/Companion.lua — NS.Companion: the battle-pet reconciler (design §5.15). A P4.0 stub: P4.13 writes it.
+local _ = NS -- the stub's one read of NS: it publishes nothing, and an unread NS is lint 211

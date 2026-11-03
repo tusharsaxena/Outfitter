@@ -1,0 +1,3 @@
+local _, NS = ...
+-- modules/OutfitStack.lua — NS.Stack: wear, remove, toggle, layers, recents, selection and title (design §5.8). A P4.0 stub: P4.9 writes it.
+local _ = NS -- the stub's one read of NS: it publishes nothing, and an unread NS is lint 211

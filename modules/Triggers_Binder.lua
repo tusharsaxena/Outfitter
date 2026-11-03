@@ -1,0 +1,3 @@
+local _, NS = ...
+-- modules/Triggers_Binder.lua — NS.TriggerBinder: bind, unbind, dispatch and apply (design §6.9). A P4.0 stub: P4.15 writes it.
+local _ = NS -- the stub's one read of NS: it publishes nothing, and an unread NS is lint 211

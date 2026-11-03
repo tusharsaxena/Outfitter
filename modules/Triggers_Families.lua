@@ -1,0 +1,3 @@
+local _, NS = ...
+-- modules/Triggers_Families.lua — NS.TriggerFamilies: the condition factories, guards and TooltipHasLine (design §6.6). A P4.0 stub: P4.15 writes it.
+local _ = NS -- the stub's one read of NS: it publishes nothing, and an unread NS is lint 211

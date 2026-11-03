@@ -1,0 +1,3 @@
+local _, NS = ...
+-- modules/Commands.lua — the slash outfit-verb handlers (design §4.3). A P4.0 stub: P4.24 writes it.
+local _ = NS -- the stub's one read of NS: it publishes nothing, and an unread NS is lint 211

@@ -1,0 +1,3 @@
+local _, NS = ...
+-- defaults/Items.lua — NS.ItemData: slots, inventory types, alternates, aliases, ignored items, phantoms and corrections (design §5.1). A P4.0 stub: P4.3 writes it.
+local _ = NS -- the stub's one read of NS: it publishes nothing, and an unread NS is lint 211

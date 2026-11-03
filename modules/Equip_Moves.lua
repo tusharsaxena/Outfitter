@@ -1,0 +1,3 @@
+local _, NS = ...
+-- modules/Equip_Moves.lua — pickup, moves to empty bag slots, empty-slot lists and /of unequip (design §5.11). A P4.0 stub: P4.7 writes it.
+local _ = NS -- the stub's one read of NS: it publishes nothing, and an unread NS is lint 211

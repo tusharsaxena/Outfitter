@@ -122,6 +122,83 @@ local SUITES = {
     "test_disabled",
     "test_locale",
     "test_glyphs",
+    "test_file_budget",
+    "test_removed_apis",
+    -- P4 suites (design §9.3), one line each, pending until the task in its `pending` writes the file.
+    -- That task drops the field in the same commit (design §12): the kit errors on a `pending` entry
+    -- whose file exists, and the line is the only one in this file the task may touch. The blank line
+    -- between two tasks' lines is the unchanged line that lets parallel flips merge cleanly.
+    { name = "test_mock_gear",        pending = "P4.1" },
+
+    { name = "test_slots",            pending = "P4.3" },
+    { name = "test_zones",            pending = "P4.3" },
+
+    { name = "test_itemlink",         pending = "P4.4" },
+
+    { name = "test_item_match",       pending = "P4.5" },
+    { name = "test_inventory",        pending = "P4.5" },
+
+    { name = "test_outfits",          pending = "P4.6" },
+    { name = "test_reset",            pending = "P4.6" },
+
+    { name = "test_equip_plan",       pending = "P4.7" },
+
+    { name = "test_item_stats",       pending = "P4.11" },
+
+    { name = "test_companion",        pending = "P4.13" },
+
+    { name = "test_states",           pending = "P4.14" },
+
+    { name = "test_quickslots",       pending = "P4.18" },
+
+    { name = "test_equip_bracket",    pending = "P4.8" },
+
+    { name = "test_tooltips",         pending = "P4.17" },
+
+    { name = "test_stack",            pending = "P4.9" },
+
+    { name = "test_em_sync",          pending = "P4.10" },
+    { name = "test_bank",             pending = "P4.10" },
+
+    { name = "test_optimize",         pending = "P4.12" },
+
+    { name = "test_triggers",         pending = "P4.15" },
+    { name = "test_trigger_binder",   pending = "P4.15" },
+    { name = "test_no_loadstring",    pending = "P4.15" },
+
+    { name = "test_api",              pending = "P4.25" },
+
+    { name = "test_triggers_general", pending = "P4.16a" },
+
+    { name = "test_triggers_trade",   pending = "P4.16b" },
+
+    { name = "test_triggers_quest",   pending = "P4.16c" },
+
+    { name = "test_triggers_class",   pending = "P4.16d" },
+    { name = "test_triggers_pvp",     pending = "P4.16d" },
+
+    { name = "test_dock",             pending = "P4.19" },
+    { name = "test_list_model",       pending = "P4.19" },
+    { name = "test_rows_secure",      pending = "P4.19" },
+    { name = "test_slot_enables",     pending = "P4.19" },
+
+    { name = "test_bar",              pending = "P4.20" },
+
+    { name = "test_triggers_parity",  pending = "P4.16e" },
+
+    { name = "test_preview",          pending = "P4.22" },
+
+    { name = "test_outfit_menu",      pending = "P4.21" },
+    { name = "test_dialogs",          pending = "P4.21" },
+    { name = "test_trigger_dialog",   pending = "P4.21" },
+
+    { name = "test_diagnostics",      pending = "P4.26" },
+
+    { name = "test_credits",          pending = "P4.29" },
+
+    { name = "test_skin",             pending = "P4.30" },
+
+    { name = "test_refactor_pins",    pending = "P5 CCN splits" },
     { name = "test_skin_values", dir = "tests/_kit/" },
     { name = "test_skin_switch", dir = "tests/_kit/" },
     { name = "test_eol", dir = "tests/_kit/" },

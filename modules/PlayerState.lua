@@ -1,0 +1,3 @@
+local _, NS = ...
+-- modules/PlayerState.lua — NS.PlayerState: the combat, dead, cast and spec flags (design §5.2). A P4.0 stub: P4.4 writes it.
+local _ = NS -- the stub's one read of NS: it publishes nothing, and an unread NS is lint 211

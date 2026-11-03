@@ -1,0 +1,3 @@
+local _, NS = ...
+-- modules/UIDialogs.lua — NS.Dialogs: the dialogs' shared chrome (design §7.6). A P4.0 stub: P4.21 writes it.
+local _ = NS -- the stub's one read of NS: it publishes nothing, and an unread NS is lint 211

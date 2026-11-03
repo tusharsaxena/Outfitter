@@ -1,0 +1,3 @@
+local _, NS = ...
+-- modules/Optimize_Genetic.lua — the genetic search coroutine with its seeded RNG (design §5.14). A P4.0 stub: P4.12 writes it.
+local _ = NS -- the stub's one read of NS: it publishes nothing, and an unread NS is lint 211

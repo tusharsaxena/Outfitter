@@ -1,0 +1,3 @@
+local _, NS = ...
+-- modules/Preview.lua — NS.Preview: test mode (design §8). A P4.0 stub: P4.22 writes it.
+local _ = NS -- the stub's one read of NS: it publishes nothing, and an unread NS is lint 211

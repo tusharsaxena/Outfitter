@@ -80,8 +80,69 @@ core\Database.lua
 
 # Defaults (the only place a default is hardcoded -- savedvariables-§2; pure data)
 defaults\Profile.lua
+defaults\Items.lua
+defaults\Zones.lua
+defaults\TriggerData.lua
+# LOAD-BEARING: reads NS.L at FILE SCOPE (trigger labels).
+defaults\Triggers.lua
+defaults\PreviewOutfits.lua
 
 # Modules -- each reaches the others at CALL time unless noted
+modules\PlayerState.lua
+modules\ItemInfo.lua
+modules\Inventory.lua
+modules\Inventory_Lists.lua
+modules\Outfits.lua
+modules\Outfits_Seed.lua
+modules\Outfits_Schema.lua
+modules\OutfitStack.lua
+modules\OutfitStack_Watch.lua
+modules\Equip.lua
+modules\Equip_Changes.lua
+modules\Equip_Moves.lua
+modules\EquipmentManager.lua
+modules\Bank.lua
+modules\ItemStats.lua
+modules\ItemStats_Sources.lua
+modules\Optimize.lua
+modules\Optimize_Genetic.lua
+modules\Companion.lua
+# LOAD-BEARING: NS.TriggerParams.TYPES, captured at FILE SCOPE by Triggers_Families and the Cond files.
+modules\Triggers_Params.lua
+# LOAD-BEARING: NS.TriggerFamilies and the guards G, captured at FILE SCOPE by the three Cond files.
+modules\Triggers_Families.lua
+modules\Triggers_CondGeneral.lua
+modules\Triggers_CondTrade.lua
+modules\Triggers_CondQuest.lua
+modules\Triggers_Effects.lua
+modules\Triggers.lua
+modules\Triggers_Binder.lua
+modules\States.lua
+modules\States_Zone.lua
+modules\Commands.lua
+modules\Popups.lua
+modules\Tooltips.lua
+modules\Tooltips_Compare.lua
+modules\OutfitTooltip.lua
+modules\Dock.lua
+modules\Window.lua
+modules\Window_ListModel.lua
+modules\Window_Rows.lua
+modules\SlotEnables.lua
+modules\OutfitMenu.lua
+modules\UIDialogs.lua
+modules\Dialog_Outfit.lua
+modules\Dialog_Trigger.lua
+modules\Dialog_TriggerFields.lua
+modules\Dialog_Rebuild.lua
+modules\Dialog_Progress.lua
+modules\IconChooser.lua
+modules\Bar.lua
+modules\Bar_Buttons.lua
+modules\QuickSlots.lua
+modules\QuickSlots_Sort.lua
+modules\Preview.lua
+modules\Api.lua
 modules\Diagnostics.lua
 
 # Settings (last -- depend on everything else being initialized)
@@ -92,4 +153,5 @@ settings\Slash.lua
 settings\OptionsSetup.lua
 # LOAD-BEARING: General registers FIRST and Profiles LAST; page order IS registration order.
 settings\General.lua
+settings\OutfitBar.lua
 settings\Profiles.lua

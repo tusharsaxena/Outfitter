@@ -1,0 +1,3 @@
+local _, NS = ...
+-- modules/Bank.lua — bank deposit, withdraw and the missing-items report (design §5.13). A P4.0 stub: P4.10 writes it.
+local _ = NS -- the stub's one read of NS: it publishes nothing, and an unread NS is lint 211

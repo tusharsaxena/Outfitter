@@ -1,0 +1,3 @@
+local _, NS = ...
+-- modules/Equip.lua — NS.Equip: the bracket that cannot strand, its gates, execution and SFX (design §5.10). A P4.0 stub: P4.8 writes it.
+local _ = NS -- the stub's one read of NS: it publishes nothing, and an unread NS is lint 211

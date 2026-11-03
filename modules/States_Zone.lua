@@ -1,0 +1,3 @@
+local _, NS = ...
+-- modules/States_Zone.lua — the zone producer, its derived tables and /of zone info (design §6.5). A P4.0 stub: P4.14 writes it.
+local _ = NS -- the stub's one read of NS: it publishes nothing, and an unread NS is lint 211

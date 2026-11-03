@@ -1,0 +1,3 @@
+local _, NS = ...
+-- modules/Dialog_TriggerFields.lua — the trigger parameter editor registry, nine field types (design §7.6). A P4.0 stub: P4.21 writes it.
+local _ = NS -- the stub's one read of NS: it publishes nothing, and an unread NS is lint 211

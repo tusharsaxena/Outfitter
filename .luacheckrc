@@ -53,6 +53,13 @@ files["core/Compat.lua"] = {
         "C_SpecializationInfo", "GetSpecialization", "GetSpecializationInfo", "GetNumSpecializations",
         "UnitFactionGroup", "UnitLevel", "UnitIsDeadOrGhost", "GetCVar", "SetCVar", "C_PlayerInfo",
         "IsAddOnLoaded",
+        -- P4.2's accessors (design §5.13): items, containers, the Equipment Manager, pets, tooltip data,
+        -- titles and macro icons. Every equipment call lives here and nowhere else.
+        "C_Container", "C_Item", "C_ItemUpgrade", "C_EquipmentSet", "C_PetJournal", "C_TooltipInfo",
+        "C_AzeriteEmpoweredItem", "GetInventoryItemLink", "GetInventoryItemID", "GetInventorySlotInfo",
+        "GetInventoryItemCooldown", "PickupInventoryItem", "EquipCursorItem", "ClearCursor", "CursorHasItem",
+        "GetCursorInfo", "SetCurrentTitle", "GetMacroIcons", "GetMacroItemIcons",
+        "EquipmentManager_GetLocationData", "PawnGetItemData", "GetNumTitles", "GetTitleName", "IsTitleKnown",
     },
 }
 
@@ -64,6 +71,76 @@ files["core/WidgetsSetup.lua"] = { read_globals = { "MenuUtil" } }
 
 -- A queued protected write that raises goes to the client's error handler, and the next one runs.
 files["core/SecureQueue.lua"] = { read_globals = { "geterrorhandler" } }
+
+-- ── the P4 modules' client reads (design §1.5), declared whole in P4.0 ────────────────────────────
+-- Each stanza names only what its files may touch. Every engine module not listed here names NO
+-- client global: it reads the client through NS.Compat (design §5), and luacheck makes that a fact.
+-- This file is a spine file (design §12): a task that needs another global hands it back.
+
+-- The state producers: auras (behind the restriction check), forms, movement, the unit reads the
+-- Secrets seam guards, and the GameTooltip OnShow/OnHide hooks.
+files["modules/States.lua"] = {
+    read_globals = {
+        "C_UnitAuras", "C_RestrictedActions", "GetShapeshiftFormInfo", "GetNumShapeshiftForms", "IsMounted",
+        "IsSwimming", "UnitOnTaxi", "UnitPower", "UnitPowerMax", "UnitHealth", "UnitHealthMax", "GameTooltip",
+    },
+}
+
+-- The zone producer: map IDs first, the zone texts only for /of zone's report (H9).
+files["modules/States_Zone.lua"] = {
+    read_globals = {
+        "C_Map", "GetInstanceInfo", "IsInInstance", "GetZoneText", "GetMinimapZoneText", "GetRealZoneText",
+    },
+}
+
+-- The trigger files: the reads their conditions make and the two effects that act on the client.
+local TRIGGER_READS = {
+    "IsFalling", "IsResting", "UnitIsPVP", "UnitGUID", "UnitIsPlayer", "UnitName", "UnitInVehicle",
+    "C_QuestLog", "C_TradeSkillUI", "C_Minimap", "SpellIsTargeting", "HasFullControl", "DoEmote",
+    "ChangeActionBarPage",
+}
+for _, f in ipairs({ "modules/Triggers_Params.lua", "modules/Triggers_Families.lua",
+                     "modules/Triggers_CondGeneral.lua", "modules/Triggers_CondTrade.lua",
+                     "modules/Triggers_CondQuest.lua", "modules/Triggers_Effects.lua",
+                     "modules/Triggers_Binder.lua" }) do
+    files[f] = { read_globals = TRIGGER_READS }
+end
+
+-- The tooltip lines and the compare tooltips: the post-call processor, the shopping tooltips, and the
+-- EQUIPMENT_SETS line the outfit line replaces.
+for _, f in ipairs({ "modules/Tooltips.lua", "modules/Tooltips_Compare.lua", "modules/OutfitTooltip.lua" }) do
+    files[f] = {
+        read_globals = {
+            "TooltipDataProcessor", "TooltipUtil", "GameTooltip", "ShoppingTooltip1", "ShoppingTooltip2",
+            "ConvertFormatStringToSearchPattern", "EQUIPMENT_SETS", "hooksecurefunc",
+        },
+    }
+end
+
+-- The dock, the window and the slot checkboxes sit on the character sheet and stack with it.
+for _, f in ipairs({ "modules/Dock.lua", "modules/Window.lua", "modules/Window_ListModel.lua",
+                     "modules/Window_Rows.lua", "modules/SlotEnables.lua" }) do
+    files[f] = {
+        read_globals = {
+            "CharacterFrame", "PaperDollFrame", "CharacterFrameCloseButton", "ToggleCharacter", "UISpecialFrames",
+            "GameTooltip", "SpellCanTargetItem", "SpellCanTargetItemID", "MerchantFrame", "CursorHasItem",
+        },
+    }
+end
+
+-- The flyout hooks.
+for _, f in ipairs({ "modules/QuickSlots.lua", "modules/QuickSlots_Sort.lua" }) do
+    files[f] = {
+        read_globals = {
+            "PaperDollItemsFrame", "EquipmentFlyout_Hide", "EquipmentFlyoutPopoutButton_OnClick", "hooksecurefunc",
+        },
+    }
+end
+
+-- The bar and the icon chooser take a dropped spell, item or macro as an icon.
+for _, f in ipairs({ "modules/Bar.lua", "modules/Bar_Buttons.lua", "modules/IconChooser.lua" }) do
+    files[f] = { read_globals = { "GetCursorInfo", "C_Spell", "C_Item", "GetMacroInfo", "IsAltKeyDown" } }
+end
 
 -- The published slash surface is colon-called by the host and the suites and forwards to the
 -- dispatcher upvalue.

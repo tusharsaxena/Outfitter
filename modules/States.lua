@@ -1,0 +1,3 @@
+local _, NS = ...
+-- modules/States.lua — NS.States: auras, forms, the poll, Dining, Spirit and the tooltip hooks (design §6.10). A P4.0 stub: P4.14 writes it.
+local _ = NS -- the stub's one read of NS: it publishes nothing, and an unread NS is lint 211

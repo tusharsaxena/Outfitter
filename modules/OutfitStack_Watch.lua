@@ -1,0 +1,3 @@
+local _, NS = ...
+-- modules/OutfitStack_Watch.lua — the temporary outfit, window-open recording and SWAP_COMPLETE (design §5.9). A P4.0 stub: P4.9 writes it.
+local _ = NS -- the stub's one read of NS: it publishes nothing, and an unread NS is lint 211
