@@ -71,7 +71,7 @@ the UI) join as their files land.
 | `test_database` | The store: the migration stamp, a raising step, the profile and char walks, no `gOutfitter_*` reader, both `resolveRoot` functions |
 | `test_packaging` | What reaches players: the package folder, every maintainer file ignored, nothing ignored loaded, every media path resolves |
 | `test_vendor_sync` | `libs/LibKa0s/` and `tests/_kit/` are exactly the tag root `CLAUDE.md` names, icons pruned to its declaration |
-| `test_secrets` | The secret-value seam: the conversions, the bounded walk, the guards on both arms, the seam scan |
+| `test_secrets` | The secret-value seam: the conversions, the bounded walk, the guards on both arms, the Compat accessors, the seam scan |
 | `test_bus` | The full catalog, its wire names, the one-sender rule over every call site |
 | `test_skinsetup` | The skin seam: the owner registration, the `of.*` tokens, the choice and the picker |
 | `test_surface_parity` | Every degrade stub carries the surface of what it stands in for |

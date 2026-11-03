@@ -60,6 +60,8 @@ files["core/Compat.lua"] = {
         "GetInventoryItemCooldown", "PickupInventoryItem", "EquipCursorItem", "ClearCursor", "CursorHasItem",
         "GetCursorInfo", "SetCurrentTitle", "GetMacroIcons", "GetMacroItemIcons",
         "EquipmentManager_GetLocationData", "PawnGetItemData", "GetNumTitles", "GetTitleName", "IsTitleKnown",
+        "ItemLocation", "hooksecurefunc", "MAX_EQUIPMENT_SETS_PER_PLAYER", "PawnGetAllScales", "PawnIsScaleVisible",
+        "CanDualWield",
     },
 }
 
