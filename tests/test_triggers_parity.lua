@@ -255,6 +255,7 @@ test("parity: the retired rows are exactly INV §18's presets, and Custom is dro
     table.sort(got)
     assertEqual(table.concat(got, ","), table.concat(RETIRED, ","))
     assertEqual(NOT_CAPTURED.Custom.drop, "H1")
+    -- red under: a CUSTOM row added to defaults/Triggers.lua
     assertNil(Tr.Get("Custom"))
     assertNil(Tr.Get("CUSTOM"))
 end)
@@ -310,6 +311,7 @@ end)
 test("parity: no retired pseudo event survives in any descriptor", function()
     for _, d in ipairs(Tr.All()) do
         for _, ev in ipairs(d.events) do
+            -- red under: "CITY" (or the legacy "GAMETOOLTIP_SHOW") added to RESTING's events
             assertNil(NEVER_PRODUCED[ev], d.id .. " listens to " .. ev)
             assertNil(EVENT_RENAME[ev], d.id .. " still names the legacy " .. ev)
             assertNil(STATE_RENAME[ev], d.id .. " still names the legacy state " .. ev)
@@ -444,6 +446,7 @@ test("parity: a class row is offered to its own class only, as the legacy menu f
         return false
     end
     assertTrue(has(Tr.List("TRADE", "ROGUE"), "LOCKPICKING"))
+    -- red under: modules/Triggers.lua's visible() answering true for every class
     assertTrue(not has(Tr.List("TRADE", "DRUID"), "LOCKPICKING"))
     assertTrue(has(Tr.List("CLASS", "ROGUE"), "ROGUE_STEALTH"))
     assertTrue(not has(Tr.List("CLASS", "ROGUE"), "DRUID_BEAR"))

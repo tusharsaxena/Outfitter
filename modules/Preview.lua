@@ -26,6 +26,14 @@ local bus   -- the module's own bus target, built at the first start or resume
 
 local function debug(fmt, ...) NS.Debug("Test", fmt, ...) end
 
+-- The General row's Test mode checkbox reads IsActive() only when a refresher runs: every start and
+-- stop repaints an open panel in place (options-ui-§15), whoever turned it (the launcher, the strip,
+-- the skin picker's eye, combat, the stand-down, `/of test`). NS.Helpers is resolved at call time.
+local function repaintPanel()
+    local H = NS.Helpers
+    if H and type(H.RefreshScalars) == "function" then H.RefreshScalars() end
+end
+
 local function onPlayerState(_, key, value)
     if key == "combat" and value == true and Preview.active then Preview.Stop("combat") end
 end
@@ -53,6 +61,7 @@ function Preview.Start()
     -- The bar it shows only for test mode goes away again at the end (Bar.ShouldShow decides).
     Preview.openedBar = NS.GetSetting("bar.shown") ~= true
     NS.SendBus(NS.MSG.PREVIEW_CHANGED, true)
+    repaintPanel()
     debug("on (bar opened=%s)", tostring(Preview.openedBar))
     return true
 end
@@ -65,6 +74,7 @@ function Preview.Stop(reason)
     Preview.active, NS.State.testMode, Preview.openedBar = false, false, false
     if reason == "combat" then NS.SayTestModeEnded() end
     NS.SendBus(NS.MSG.PREVIEW_CHANGED, false)
+    repaintPanel()
     debug("off (%s)", reason or "switch")
     return true
 end
@@ -82,7 +92,9 @@ end
 --- The stand-down ends test mode silently: the player turned the addon off, not the mode. The bar
 --- hides itself in its own Suspend, so nothing is sent.
 function Preview.Suspend()
+    local was = Preview.active
     Preview.active, NS.State.testMode, Preview.openedBar = false, false, false
+    if was then repaintPanel() end
 end
 
 --- The stand-up: test mode stays off; the combat receiver is in place for the next start.

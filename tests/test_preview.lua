@@ -321,3 +321,30 @@ test("preview: Diagnose reports the mode, the bar it opened and the sample count
     assertEqual(d.outfits, 5)
     assertEqual(NS.Preview.Source.Rows(), NS.PreviewOutfits.Rows())
 end)
+
+test("preview: every start and stop, from any source, repaints an open settings panel", function()
+    -- options-ui-§15: the General checkbox follows every start and stop, not only its own click.
+    local NS, M = scene()
+    local paints = 0
+    NS.Helpers.RefreshScalars = function() paints = paints + 1 end
+    NS.Preview.Toggle()                               -- the launcher's entry and `/of test`
+    -- red under: a Start that does not call NS.Helpers.RefreshScalars
+    assertEqual(paints, 1, "a start did not repaint the panel")
+    NS.Preview.Stop("switch")                          -- the strip's right-click
+    -- red under: a Stop that does not call NS.Helpers.RefreshScalars
+    assertEqual(paints, 2, "a stop did not repaint the panel")
+    NS.Preview.Start()
+    NS.SendBus(NS.MSG.PLAYER_STATE_CHANGED, "combat", true)
+    settle(M)
+    assertFalse(NS.Preview.IsActive())
+    assertEqual(paints, 4, "the combat stop did not repaint the panel")
+    NS.Preview.Start()
+    NS.lifecycle:Hold("test")
+    -- red under: a Suspend that does not call NS.Helpers.RefreshScalars
+    assertEqual(paints, 6, "the stand-down did not repaint the panel")
+    NS.lifecycle:Release("test")
+    settle(M)
+    NS.Preview.Stop()
+    -- red under: a Stop that repaints while already off
+    assertEqual(paints, 6, "a no-op stop repainted the panel")
+end)

@@ -2,9 +2,10 @@ local addonName, NS = ...
 -- core/DebugLogSetup.lua — NS.DebugLog, the one debug console from LibKa0s-DebugLog-1.0; publishes the
 -- gated sink NS.Debug and the console's change gates (debug-logging-§5, §8, §9).
 --
--- Tags (one word each, design §1.1): Equip, Stack, Trigger, Zone, Dock, Bar, EM and Opt for the
--- engine and the UI, plus the seams' own Set (core/Database.lua), Skin (core/SkinSetup.lua) and Perf
--- (core/PerfSetup.lua). A trigger id, an outfit name or a slot goes in the message, never in the tag.
+-- Tags (one word each, design §1.1): Equip, Stack, Trigger, States, Zone, Dock, Bar, EM, Opt, Pet and
+-- Test for the engine and the UI, plus the seams' own Set (core/Database.lua), Skin (core/SkinSetup.lua)
+-- and Perf (core/PerfSetup.lua). docs/debug.md's ## Tags is the register (tests/test_skeleton.lua holds
+-- every literal tag to it). A trigger id, an outfit name or a slot goes in the message, never the tag.
 
 local L = NS.L
 local lib = LibStub and LibStub("LibKa0s-DebugLog-1.0", true)

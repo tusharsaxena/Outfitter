@@ -1,7 +1,8 @@
 -- tests/test_skeleton.lua — the scaffold's own contract: the addon registers under its folder name,
 -- NS.Print is the tagged printer, the DB defaults load, the declared icons resolve, every authored
 -- file opens with the NS bootstrap, the bus wire names keep their shape, and the source stays Lua
--- 5.1. The slash case arrives with its seam (P3 C12).
+-- 5.1, and every literal debug tag the code writes is in docs/debug.md's register. The slash case
+-- arrives with its seam (P3 C12).
 
 local T = _G.OUTFITTERREBORN_TEST
 local NS = T.NS
@@ -156,4 +157,31 @@ test("skeleton: the addon's source is Lua 5.1 only", function()
             assertTrue(code:find(rule[1]) == nil, rel .. " uses " .. rule[2])
         end
     end
+end)
+
+--- The tags of docs/debug.md's `## Tags` table, as a set.
+local function documentedTags()
+    local f = assert(io.open(T.root .. "/docs/debug.md", "r"))
+    local text = f:read("*a")
+    f:close()
+    local section = text:match("\n## Tags\r?\n(.-)\n## ") or text:match("\n## Tags\r?\n(.*)$") or ""
+    local tags = {}
+    for tag in section:gmatch("\n| `([%w]+)` |") do tags[tag] = true end
+    return tags
+end
+
+test("skeleton: every literal debug tag the code writes is in docs/debug.md's tag register", function()
+    local documented, seen = documentedTags(), 0
+    assertTrue(documented.Init and documented.Set, "the register parse found no rows; nothing below can fail")
+    for _, rel in ipairs(T.loadedAddonFiles) do
+        local f = assert(io.open(T.root .. "/" .. rel, "r"))
+        local code = f:read("*a")
+        f:close()
+        for tag in code:gmatch('NS%.Debug%(%s*"([^"]+)"') do
+            seen = seen + 1
+            -- red under: docs/debug.md without its `Test` row (modules/Preview.lua writes it)
+            assertTrue(documented[tag] == true, rel .. " writes the undocumented debug tag " .. tag)
+        end
+    end
+    assertTrue(seen > 0, "no NS.Debug call was found; the scan is broken")
 end)

@@ -115,7 +115,7 @@ end
 local function debugEvents(desc)
     for _, e in ipairs(desc.events) do
         if not (T.IsPseudo(e) or e:find("^[%u_]+$")) then
-            NS.Debug("Triggers", "%s: event %s is neither a pseudo key nor a game event", desc.id, e)
+            NS.Debug("Trigger", "%s: event %s is neither a pseudo key nor a game event", desc.id, e)
         end
     end
 end

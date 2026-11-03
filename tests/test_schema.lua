@@ -97,6 +97,17 @@ test("schema: bar.position reads and writes profile.windows.bar as `POINT X Y`",
         assertFalse((NSi.SetByPath("bar.position", bad)), "accepted " .. bad)
     end
     assertEqual(NSi.db.profile.windows.bar.point, "BOTTOMRIGHT", "a refused write moved the bar")
+    -- red under: a decode that takes any tonumber() answer (Lua parses inf, nan and 1e400; a drag
+    -- never produces them, and the bar would anchor off-screen and persist it).
+    for _, bad in ipairs({ "TOPLEFT 1e400 0", "TOPLEFT nan 0", "TOPLEFT 0 inf", "TOPLEFT -inf 0",
+                           "TOPLEFT 0 -1e400", "TOPLEFT 0 -nan" }) do
+        assertFalse((NSi.SetByPath("bar.position", bad)), "accepted " .. bad)
+    end
+    local p2 = NSi.db.profile.windows.bar
+    assertEqual(p2.x, -12, "a refused non-finite write moved the bar")
+    -- red under: a storedPosition that hands a non-finite store to the reader (prints %d of inf).
+    NSi.db.profile.windows.bar = { point = "TOPLEFT", x = math.huge, y = 0 }
+    assertEqual(NSi.GetSetting("bar.position"), "TOPLEFT 200 -200", "a non-finite store reads as the default")
 end)
 
 test("schema: resetting bar.position copies the default and never aliases it", function()

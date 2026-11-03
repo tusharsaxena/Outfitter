@@ -28,20 +28,27 @@ end
 --- `{ point, x, y }` as `POINT X Y`.
 local function encode(p) return p.point .. " " .. coord(p.x) .. " " .. coord(p.y) end
 
---- `POINT X Y` as `{ point, x, y }`, or nil when it is not a corner and two numbers.
+--- A real offset: a number that is neither NaN nor infinite. Lua's tonumber parses "nan", "inf" and
+--- "1e400", which no drag can produce and which would anchor the bar off-screen.
+local function finite(n)
+    -- NaN fails both comparisons, so the one range test refuses it with the infinities.
+    return type(n) == "number" and n > -math.huge and n < math.huge
+end
+
+--- `POINT X Y` as `{ point, x, y }`, or nil when it is not a corner and two finite numbers.
 local function decode(v)
     if type(v) ~= "string" then return nil end
     local point, x, y = v:match("^%s*(%u+)%s+(%S+)%s+(%S+)%s*$")
     x, y = tonumber(x), tonumber(y)
-    if not (point and CORNERS[point] and x and y) then return nil end
+    if not (point and CORNERS[point] and finite(x) and finite(y)) then return nil end
     return { point = point, x = x, y = y }
 end
 
 --- The bar's stored place, or the default's while the store cannot answer (before InitDB) or holds
---- no corner, which is what the bar itself falls back to.
+--- no corner (the bar's own fallback) or a non-finite offset (which the row never writes).
 local function storedPosition()
     local p = NS.db and NS.db.profile and NS.db.profile.windows and NS.db.profile.windows.bar
-    if type(p) == "table" and CORNERS[p.point] and type(p.x) == "number" and type(p.y) == "number" then
+    if type(p) == "table" and CORNERS[p.point] and finite(p.x) and finite(p.y) then
         return p
     end
     return D.windows.bar
