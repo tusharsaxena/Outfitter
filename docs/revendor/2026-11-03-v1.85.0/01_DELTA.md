@@ -41,6 +41,16 @@ beyond the re-copy. `P3: Re-sync LibKa0s to the v1.85.0 re-cut` re-copied the wh
 `git archive v1.85.0` and re-ran the tag's `tools/prune-icons.lua` (20 declared, 22 kept);
 `diff -r --strip-trailing-cr` of both payloads against the tag is again empty bar the pruned icons.
 
+A third re-cut followed during P4.4: tag v1.85.0 now names `2a78817` (tagger date 2026-11-03
+16:09:21 +0530, the fifteenth re-cut, carrying R4-L4). The kit's vendor gate went red at HEAD on
+SkinPaintControls.lua. `git diff --stat bea4ac8 v1.85.0 -- LibKa0s testkit` is
+`LibKa0s/SkinPaintControls.lua` alone (`CONTROLS_MINOR` 16 -> 17: `S.IconBorder`'s new `opts.hud`),
+and no kit file. The releasing.md hosts-owe list names HUD hosts only; this addon edges no icon
+through `S.IconBorder`, so it owes nothing beyond the re-copy. `P4: Re-sync LibKa0s to the v1.85.0
+re-cut` re-copied that file from `git archive v1.85.0` and re-ran the tag's `tools/prune-icons.lua`
+(20 declared, 22 kept, 0 removed); `diff -r --strip-trailing-cr` of both payloads against the tag is
+again empty bar the pruned icons.
+
 ## Per-major minors (3c)
 
 `grep 'local MAJOR, MINOR = "LibKa0s-'` over the copy. Every major is new to this addon.
