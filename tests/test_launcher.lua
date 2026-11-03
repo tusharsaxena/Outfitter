@@ -1,8 +1,8 @@
 -- tests/test_launcher.lua — the launcher descriptor (one LDB object, registered twice), its static
 -- icon and label, the library's right-click menu onto the shared handlers, the status tooltip's one
 -- host line and the Minimap button row (launcher-§1/§2/§3, design §4.5). The key bindings are
--- tests/test_keybinds.lua's. P3 C13 pins the scaffold; P4.24 adds the host line for empty, temp and
--- named stacks and the icon held static across outfit changes (design §9.3).
+-- tests/test_keybinds.lua's. P3 C13 pinned the scaffold; P4.24 the host line for empty, temp and
+-- named stacks, the icon held static across outfit changes and the Locked entry's verbs (design §9.3).
 
 local T = _G.OUTFITTERREBORN_TEST
 local test, assertEqual, assertTrue, assertFalse = T.test, T.assertEqual, T.assertTrue, T.assertFalse
@@ -198,4 +198,63 @@ test("launcher: library-absent, no button, said once, and the row still writes t
     NS.Launcher:SetShown(false)
     assertEqual(NS.db.global.minimap.hide, true)
     assertFalse(NS.Launcher:IsShown())
+end)
+
+-- ── the host line and the static icon on the real stack (P4.24, design §4.5) ─────────────────────
+
+--- A fresh instance at t = 100 on the geared scenario with the engine resumed; every module real.
+local function scene()
+    local inst = T.load({ mutate = function(M) M.__gear:load("geared") end })
+    local M = inst.mocks
+    M.__now = 100
+    inst.NS.PlayerState.Resume()
+    inst.NS.Inventory.Resume()
+    inst.NS.Equip.Resume()
+    M.__fireTimers()
+    return inst
+end
+
+test("launcher: the host line reads None, Custom or the outfit's name off the real stack", function()
+    -- red under: an onTooltipShow that prints the top outfit's name with no temp case (St.CurrentInfo)
+    local inst = scene()
+    local NS = inst.NS
+    assertTrue(hasLine(tooltipLines(inst), "Current outfit: None"), "an empty stack")
+    local id = NS.Outfits.Create("Fishing Gear", { HeadSlot = { id = 0 } })
+    NS.Stack.Wear(id, { now = true })
+    assertTrue(hasLine(tooltipLines(inst), "Current outfit: Fishing Gear"), "a named outfit on top")
+    NS.db.char.stack[#NS.db.char.stack + 1] = { temp = { WristSlot = { id = 0 } } }
+    assertTrue(hasLine(tooltipLines(inst), "Current outfit: Custom"), "a temp on top")
+end)
+
+test("launcher: the icon and label stay put across outfit changes (H6)", function()
+    -- red under: an OUTFIT_WORN receiver that sets the broker's icon to the outfit's
+    local inst = scene()
+    local NS, obj = inst.NS, broker(inst)
+    local icon, label = obj.icon, obj.label
+    local id = NS.Outfits.Create("Fishing Gear", { HeadSlot = { id = 0 } })
+    NS.Outfits.Get(id).icon = 136245
+    NS.Stack.Wear(id, { now = true })
+    inst.mocks.__fireTimers()
+    assertEqual(obj.icon, icon)
+    assertEqual(obj.label, label)
+    NS.Stack.Remove(id, { now = true })
+    assertEqual(obj.icon, icon)
+    assertEqual(obj.label, label)
+end)
+
+test("launcher: the Locked entry runs the lock and unlock verbs (launcher-§2)", function()
+    -- red under: a toggleLock that writes `locked` itself instead of running the verb
+    local inst = scene()
+    local NS = inst.NS
+    local verbs = {}
+    local run = NS.RunVerb
+    NS.RunVerb = function(verb, rest)
+        verbs[#verbs + 1] = verb
+        return run(verb, rest)
+    end
+    openMenu(inst):Click("Locked")
+    assertEqual(NS.db.profile.locked, true)
+    openMenu(inst):Click("Locked")
+    assertEqual(NS.db.profile.locked, false)
+    assertEqual(table.concat(verbs, ","), "lock,unlock")
 end)

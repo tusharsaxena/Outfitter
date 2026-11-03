@@ -316,16 +316,26 @@ local function addProbeVerb(NS)
     return probe
 end
 
---- Walk every verb while disabled; returns how many feature (non-reserved) verbs were checked.
+--- The verbs that answer while disabled: the reserved ones and the host's live verbs (`auto`, `zone`,
+--- `iteminfo`, settings/Slash.lua's HOST_LIVE_VERBS, design §4.3.2), as the dispatcher reads them.
+local function liveSet(NS)
+    local live = {}
+    for verb in pairs(RESERVED) do live[verb] = true end
+    for _, verb in ipairs(NS.Slash.LIVE_VERBS) do live[verb] = true end
+    return live
+end
+
+--- Walk every verb while disabled; returns how many feature (non-live) verbs were checked.
 local function verbsWhileDisabled(NS, M, refusal)
     local features = 0
+    local live = liveSet(NS)
     for _, row in ipairs(NS.COMMANDS) do
         local verb = row[1]
         M.__resetPrinted()
         M.__resetSvWrites()
         NS.Slash:OnSlash(verb)
         local out = printedBare(M)
-        if RESERVED[verb] then
+        if live[verb] then
             -- `help` may name the disabled state above its index; refused means the line ALONE.
             assertFalse(#out == 1 and out[1] == refusal, verb .. " was refused while disabled")
         else
@@ -350,8 +360,9 @@ local function verbsUnderPerfHold(NS, M, refusal)
     NS.Lifecycle:Hold(NS.HOLD_PERF)
     assertEqual(NS.StoodDownRefusal(), PERF_LINE)
     local features = 0
+    local live = liveSet(NS)
     for _, row in ipairs(NS.COMMANDS) do
-        if not RESERVED[row[1]] then
+        if not live[row[1]] then
             features = features + 1
             M.__resetPrinted()
             NS.Slash:OnSlash(row[1])

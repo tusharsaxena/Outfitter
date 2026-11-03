@@ -1,8 +1,11 @@
 -- tests/test_slash.lua — the slash descriptor's reserved part (design §4.3): the verb table, bare /of,
 -- help and the landing rows, enable/disable through the seam, the debug and perf verbs, the schema
 -- CLI, resetall, both chat commands, the H25 macro-conditional routing and the library-absent
--- dispatcher. P4.24 adds the outfit verbs, their parity with the README and the manual, and the
--- legacy command lines (design §9.3).
+-- dispatcher; then (P4.24) the outfit verbs of design §4.3.2 on the real modules: their order, their
+-- parity with /of help, the README's Usage and the user manual, the live set on both arms, the
+-- outfit-argument rules, the lines legacy printed (fixtures/legacy/commands.lua), the old-verb table
+-- and each verb's route. NS.Popups lands with P4.21 (parallel, group J): the deleteall case fakes it
+-- (design §12, the fake rule).
 
 local T = _G.OUTFITTERREBORN_TEST
 local test, assertEqual, assertTrue, assertFalse = T.test, T.assertEqual, T.assertTrue, T.assertFalse
@@ -262,10 +265,10 @@ test("slash: the stub's live-verb set is the library's LIVE_VERBS, no more and n
     assertEqual(table.concat(got, ","), table.concat(want, ","))
 end)
 
-test("slash: the live dispatcher's live set is the library's LIVE_VERBS and nothing more yet", function()
-    -- P4.24 appends auto, zone and iteminfo (design §4.3.2) on both arms.
+test("slash: the live dispatcher's live set is the library's LIVE_VERBS, then auto, zone and iteminfo", function()
+    -- red under: drop "zone" from HOST_LIVE_VERBS in settings/Slash.lua
     local lib = T.mocks.LibStub("LibKa0s-Slash-1.0")
-    assertEqual(table.concat(T.NS.Slash.LIVE_VERBS, ","), table.concat(lib.LIVE_VERBS, ","))
+    assertEqual(table.concat(T.NS.Slash.LIVE_VERBS, ","), table.concat(lib.LIVE_VERBS, ",") .. ",auto,zone,iteminfo")
 end)
 
 test("slash: the stub carries no library string but the refusal format", function()
@@ -283,4 +286,371 @@ test("slash: the stub carries no library string but the refusal format", functio
             assertFalse(b:find(pattern) ~= nil, key .. " copied into the stub: " .. b)
         end
     end
+end)
+
+-- ── the outfit verbs (P4.24, design §4.3.2) ──────────────────────────────────────────────────────
+
+local OUTFIT_VERBS = { "show", "hide", "wear", "unwear", "toggle", "update", "deposit", "depositunique",
+    "depositothers", "withdraw", "withdrawothers", "missing", "unequip", "updatetitle", "auto", "zone",
+    "iteminfo", "test", "lock", "unlock", "deleteall" }
+
+--- A fresh instance at t = 100 on a gear scenario, PlayerState, Inventory and Equip resumed and the
+--- first scan settled (the bank frame opened when `opened`). Every other module is the real one.
+local function scene(scenario, opened)
+    local inst = T.load({ mutate = function(M) M.__gear:load(scenario or "geared") end })
+    local NS, M = inst.NS, inst.mocks
+    M.__now = 100
+    NS.PlayerState.Resume()
+    NS.Inventory.Resume()
+    NS.Equip.Resume()
+    if opened then M.__gear:openBank() end
+    M.__fireTimers()
+    NS.Inventory.Sync()
+    M.__resetPrinted()
+    return NS, M
+end
+
+--- Every worn slot as an outfit stores it (the empty marker for an empty slot): a Complete outfit.
+local function wornItems(NS)
+    local items = {}
+    for _, s in ipairs(NS.ItemData.SLOT_NAMES) do
+        local info = NS.ItemInfo.FromSlot(s)
+        items[s] = info and NS.ItemInfo.Snapshot(info) or { id = 0 }
+    end
+    return items
+end
+
+--- Wrap `tbl[name]` so its calls are recorded and still run: the real module answers.
+local function spy(tbl, name)
+    local calls, real = {}, tbl[name]
+    tbl[name] = function(...)
+        calls[#calls + 1] = { ... }
+        return real(...)
+    end
+    return calls
+end
+
+local function readSource(path)
+    local f = assert(io.open(T.root .. "/" .. path, "rb"))
+    local src = f:read("*a")
+    f:close()
+    return src
+end
+
+--- The `## <heading>` section of a markdown file, up to the next `## `.
+local function section(path, heading)
+    local text = readSource(path)
+    local from = assert(text:find("\n## " .. heading .. "\r?\n"), path .. " has no ## " .. heading)
+    local to = text:find("\n## ", from + 1, true)
+    return text:sub(from, to and (to - 1) or #text)
+end
+
+test("slash: the outfit verbs follow the reserved ones, in design §4.3.2's order", function()
+    local names = {}
+    for i = #RESERVED + 1, #T.NS.COMMANDS do names[#names + 1] = T.NS.COMMANDS[i][1] end
+    assertEqual(table.concat(names, ","), table.concat(OUTFIT_VERBS, ","))
+end)
+
+test("slash: every verb is in /of help, the README's Usage and the user manual", function()
+    -- red under: drop the `/of zone` row from docs/users-manual.md's Slash commands table
+    local inst = T.load()
+    inst.mocks.__resetPrinted()
+    inst.NS.Slash:OnSlash("help")
+    local help = table.concat(inst.mocks.__printed(), "\n") .. "\n"
+    local usage = section("README.md", "Usage")
+    local manual = section("docs/users-manual.md", "Slash commands")
+    for _, row in ipairs(inst.NS.COMMANDS) do
+        local want = "/of " .. row[1]
+        assertTrue(help:find(want .. "[^%w]") ~= nil, "help lacks " .. want)
+        assertTrue(usage:find("`" .. want .. "[%s`]") ~= nil, "README Usage lacks " .. want)
+        assertTrue(manual:find("`" .. want .. "[%s`]") ~= nil, "the manual's Slash commands lacks " .. want)
+    end
+end)
+
+test("slash: auto, zone and iteminfo answer while disabled on both arms; wear is refused", function()
+    -- red under: drop "iteminfo" from HOST_LIVE_VERBS (both arms read the one list)
+    for _, opts in ipairs({ {}, { libFiles = {} } }) do
+        local inst = T.load(opts)
+        local NS, M = inst.NS, inst.mocks
+        NS.RunVerb("disable")
+        assertTrue(NS.IsDisabled())
+        local refusal = NS.Slash:DisabledLine()
+        for _, verb in ipairs({ "auto", "zone", "iteminfo" }) do
+            M.__resetPrinted()
+            NS.Slash:OnSlash(verb)
+            local out = bare(M)
+            assertTrue(#out > 0, verb .. " printed nothing")
+            assertFalse(out[1] == refusal, verb .. " was refused while disabled")
+        end
+        M.__resetPrinted()
+        NS.Slash:OnSlash("wear Normal")
+        local out = bare(M)
+        assertEqual(#out, 1)
+        assertEqual(out[1], refusal, "wear is a feature verb")
+    end
+end)
+
+-- ── the outfit argument (Commands.ResolveOutfit, INV §4) ─────────────────────────────────────────
+
+test("slash: an outfit name matches case-insensitively, and every wear passes now and hw", function()
+    -- red under: a Commands.Wear that drops `hw = true` (INV §16 quirk 22)
+    local NS = scene()
+    local id = NS.Outfits.Create("Fishing Gear", { HeadSlot = { id = 0 } })
+    local wear = spy(NS.Stack, "Wear")
+    local remove = spy(NS.Stack, "Remove")
+    local toggle = spy(NS.Stack, "Toggle")
+    NS.Slash:OnSlash("wear fishing GEAR")
+    assertEqual(wear[1][1], id)
+    assertTrue(wear[1][2].now and wear[1][2].hw, "wear: now and hw")
+    assertTrue(NS.Stack.IsWorn(id))
+    NS.Slash:OnSlash("unwear Fishing Gear")
+    assertEqual(remove[1][1], id)
+    assertTrue(remove[1][2].now and remove[1][2].hw, "unwear: now and hw")
+    assertFalse(NS.Stack.IsWorn(id))
+    NS.Slash:OnSlash("toggle FISHING gear")
+    assertEqual(toggle[1][1], id)
+    assertTrue(toggle[1][2].now and toggle[1][2].hw, "toggle: now and hw")
+    assertTrue(NS.Stack.IsWorn(id))
+end)
+
+test("slash: an empty argument means the current Complete outfit, or says there is none", function()
+    -- red under: a ResolveOutfit that answers nil for "" without the line (a silent no-op)
+    local NS, M = scene()
+    NS.Slash:OnSlash("wear")
+    assertEqual(table.concat(bare(M), "|"), "No Complete outfit is equipped.")
+    local normal = NS.Outfits.Create("Everyday", wornItems(NS))
+    NS.Stack.Wear(normal, { now = true })
+    -- The only Complete outfit is put straight back by the remove's fallback walk, so the call is read.
+    local remove = spy(NS.Stack, "Remove")
+    M.__resetPrinted()
+    NS.Slash:OnSlash("unwear")
+    assertEqual(remove[1] and remove[1][1], normal, "the empty argument did not name the Complete outfit")
+    assertEqual(#M.__printed(), 0)
+end)
+
+test("slash: an outfit argument opening with `[` is decided by the client's parser", function()
+    local NS, M = scene()
+    local tank = NS.Outfits.Create("Tank", { HeadSlot = { id = 0 } })
+    local dps = NS.Outfits.Create("DPS", { HeadSlot = { id = 0 } })
+    M.__spec = 2
+    NS.Slash.Route("wear [spec:1] Tank; DPS")
+    assertTrue(NS.Stack.IsWorn(dps), "spec 2 wears the second clause")
+    assertFalse(NS.Stack.IsWorn(tank))
+    M.__resetPrinted()
+    NS.Slash.Route("wear [spec:1] Tank")
+    assertEqual(#M.__printed(), 0, "no clause: a silent no-op")
+    assertFalse(NS.Stack.IsWorn(tank))
+end)
+
+--- The lines legacy printed (fixtures/legacy/commands.lua), in this addon's words. Each rename has
+--- its reason: the article and the full stop are design §4.3.2's keys; the zone table is no longer
+--- named by its code name (cInstanceMapIDZoneIDs).
+local LEGACY_RENAMES = {
+    ["No Complete outfit is equipped"] = "No Complete outfit is equipped.",
+    ["Couldn't find outfit named NoSuchOutfit"] = "Couldn't find an outfit named NoSuchOutfit.",
+    ["This map has no entry in cInstanceMapIDZoneIDs"] = "This map has no entry in the zone table",
+}
+
+local function legacyLines(run)
+    local out = {}
+    for i, l in ipairs(run.lines) do
+        l = l:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", ""):gsub("^%[ERROR%] ", ""):gsub("^%[Outfitter%] ", "")
+        out[i] = LEGACY_RENAMES[l] or l
+    end
+    return out
+end
+
+test("slash: wear, wear <unknown> and zone print the lines legacy printed (fixtures/legacy)", function()
+    -- red under: a missing-name line without the article ("Couldn't find outfit named %s.")
+    local runs = {}
+    for _, run in ipairs(T.legacy.commands.runs) do runs[run.input] = run end
+    for _, input in ipairs({ "wear", "wear NoSuchOutfit", "zone" }) do
+        local NS, M = scene()
+        M.__world.instance = { name = "Somewhere", type = "none" }
+        NS.Slash:OnSlash(input)
+        local want = legacyLines(runs[input])
+        if input == "zone" then
+            for _, l in ipairs(NS.Equip.Diagnostic()) do want[#want + 1] = l end
+        end
+        assertEqual(table.concat(bare(M), "|"), table.concat(want, "|"), input)
+    end
+end)
+
+test("slash: /of zone routes to Commands.Zone: the zone lines, then the equipment bracket's", function()
+    local NS, M = scene()
+    local zone = spy(NS.Commands, "Zone")
+    NS.Slash:OnSlash("zone")
+    assertEqual(#zone, 1, "the verb did not reach Commands.Zone")
+    local want = NS.States.ZoneInfo()
+    for _, l in ipairs(NS.Equip.Diagnostic()) do want[#want + 1] = l end
+    assertEqual(table.concat(bare(M), "|"), table.concat(want, "|"))
+end)
+
+-- ── the old verbs (design §4.3.2) ────────────────────────────────────────────────────────────────
+
+test("slash: the dropped verbs are unknown commands, and no /unequip is registered", function()
+    -- red under: keep a `sound` row in NS.COMMANDS
+    local NS, M = scene()
+    for _, verb in ipairs({ "sound", "errors", "daxdax", "summary", "rating", "itemstats" }) do
+        M.__resetPrinted()
+        NS.Slash:OnSlash(verb .. " on")
+        assertTrue(anyLine(M, "unknown command '" .. verb .. "'"), verb .. " is still a verb")
+    end
+    local console = M.LibStub("AceConsole-3.0")
+    assertEqual(console.commands.unequip, nil, "bare /unequip is registered (H5 drops it)")
+end)
+
+test("slash: `set equip.muteSounds` is the old `sound`, and its echo is not inverted", function()
+    local NS, M = scene()
+    NS.Slash:OnSlash("set equip.muteSounds true")
+    assertEqual(NS.GetSetting("equip.muteSounds"), true)
+    assertTrue(anyLine(M, "true") and not anyLine(M, "false"), "the echo: " .. tostring(bare(M)[1]))
+    M.__resetPrinted()
+    NS.Slash:OnSlash("set equip.muteSounds false")
+    assertEqual(NS.GetSetting("equip.muteSounds"), false)
+    assertTrue(anyLine(M, "false") and not anyLine(M, "true"), "the echo: " .. tostring(bare(M)[1]))
+    NS.Slash:OnSlash("set equip.showErrors false")
+    assertEqual(NS.GetSetting("equip.showErrors"), false, "the old `errors off`")
+end)
+
+test("slash: `reset bar.position` is the old `reset bar`; `deleteall` is the old `reset`", function()
+    local NS = scene()
+    local default = NS.GetSetting("bar.position")
+    NS.Slash:OnSlash("set bar.position TOPLEFT 10 -10")
+    assertFalse(NS.GetSetting("bar.position") == default, "the set did not move the bar")
+    NS.Slash:OnSlash("reset bar.position")
+    assertEqual(NS.GetSetting("bar.position"), default)
+    local popups = T.fake(NS, "Popups", { ShowDeleteAll = true })
+    NS.Slash:OnSlash("deleteall")
+    assertEqual(popups.__count("ShowDeleteAll"), 1, "deleteall asks through the one popup")
+    NS.SetByPath("enabled", false)
+    NS.Slash:OnSlash("deleteall")
+    assertEqual(popups.__count("ShowDeleteAll"), 1, "deleteall ran while disabled")
+end)
+
+test("slash: `auto` writes auto.enabled; on/off and enable/disable are synonyms; bare reads it", function()
+    -- red under: an AUTO_WORDS table without `disable`
+    local NS, M = scene()
+    for _, case in ipairs({ { "off", false }, { "on", true }, { "disable", false }, { "enable", true } }) do
+        M.__resetPrinted()
+        NS.Slash:OnSlash("auto " .. case[1])
+        assertEqual(NS.GetSetting("auto.enabled"), case[2], "auto " .. case[1])
+        assertTrue(anyLine(M, "auto.enabled"), "auto " .. case[1] .. " echoes the stored value")
+    end
+    M.__resetPrinted()
+    NS.Slash:OnSlash("auto")
+    assertTrue(anyLine(M, "auto.enabled"), "bare auto reads the setting")
+    M.__resetPrinted()
+    NS.Slash:OnSlash("auto maybe")
+    assertEqual(NS.GetSetting("auto.enabled"), true, "an unknown word wrote")
+    assertEqual(#M.__printed(), 1, "an unknown word answers one line")
+    assertTrue(NS.SetByPath("enabled", false))
+    NS.Slash:OnSlash("auto off")
+    assertEqual(NS.GetSetting("auto.enabled"), false, "auto is live while disabled")
+    assertEqual(NS.db.profile.enabled, false, "auto touched the addon switch")
+end)
+
+test("slash: `lock` and `unlock` write the Lock frame row and echo it", function()
+    local NS, M = scene()
+    NS.Slash:OnSlash("lock")
+    assertEqual(NS.db.profile.locked, true)
+    assertTrue(anyLine(M, "locked"))
+    NS.Slash:OnSlash("unlock")
+    assertEqual(NS.db.profile.locked, false)
+end)
+
+-- ── each verb's route ────────────────────────────────────────────────────────────────────────────
+
+test("slash: `show` and `hide` open and close the window; no window toggle verb (C35)", function()
+    local NS = scene()
+    local opened, closed = spy(NS.Dock, "Open"), spy(NS.Dock, "Close")
+    NS.Slash:OnSlash("show")
+    NS.Slash:OnSlash("hide")
+    assertEqual(#opened, 1)
+    assertEqual(#closed, 1)
+    local src = readSource("settings/Slash.lua")
+    assertTrue(src:find("no window-toggle verb", 1, true) ~= nil, "the declined SHOULD is not recorded")
+end)
+
+test("slash: `update` snapshots the named or Complete outfit, or says there is none", function()
+    -- red under: an Update that skips the title (the legacy verb ran inside HasHWEvent)
+    local NS, M = scene()
+    NS.Slash:OnSlash("update")
+    assertEqual(table.concat(bare(M), "|"), "No Complete outfit is equipped.")
+    local id = NS.Outfits.Create("Everyday", wornItems(NS))
+    NS.Outfits.SetFlag(id, "titleID", 3)
+    local set = spy(NS.Outfits, "SetToCurrent")
+    M.__resetPrinted()
+    NS.Slash:OnSlash("update everyday")
+    assertEqual(set[1][1], id)
+    assertTrue(anyLine(M, "Updated the outfit 'Everyday'"))
+    assertEqual(M.__world.currentTitle, 3, "the update's wear did not set the title")
+end)
+
+test("slash: `updatetitle` re-applies the worn outfit's title", function()
+    local NS, M = scene()
+    local id = NS.Outfits.Create("Hat", { HeadSlot = { id = 0 } })
+    NS.Outfits.SetFlag(id, "titleID", 2)
+    NS.Stack.Wear(id, { now = true })
+    assertFalse(M.__world.currentTitle == 2, "a wear with no hardware event set the title")
+    NS.Slash:OnSlash("updatetitle")
+    assertEqual(M.__world.currentTitle, 2)
+end)
+
+test("slash: the bank verbs and `missing` print the refusal while the bank is closed", function()
+    local NS, M = scene()
+    NS.Outfits.Create("Lower", { HeadSlot = { id = 0 } })
+    for _, verb in ipairs({ "deposit", "depositunique", "depositothers", "withdraw", "withdrawothers" }) do
+        M.__resetPrinted()
+        NS.Slash:OnSlash(verb .. " lower")
+        assertEqual(table.concat(bare(M), "|"), "The bank must be open", verb)
+    end
+    M.__resetPrinted()
+    NS.Slash:OnSlash("missing")
+    -- red under: a Missing that prints nothing when the report answers nil
+    assertEqual(table.concat(bare(M), "|"), "You must have your bank open to generate a missing items report")
+end)
+
+test("slash: `withdrawothers` brings every other outfit's banked items (INV §3.7 Fix)", function()
+    local NS, M = scene("bank_open", true)
+    local function rec(key)
+        local _, loc = M.__gear:find(key)
+        return NS.ItemInfo.Snapshot(NS.ItemInfo.FromBag(loc.bag, loc.slot))
+    end
+    NS.Outfits.Create("Kept", { LegsSlot = rec("legs_plate") })
+    NS.Outfits.Create("Other", { FeetSlot = rec("feet_plate") })
+    NS.Slash:OnSlash("withdrawothers kept")
+    local _, feet = M.__gear:find("feet_plate")
+    local _, legs = M.__gear:find("legs_plate")
+    assertTrue(feet.bag ~= nil and feet.bag < 6, "the other outfit's feet stayed in the bank")
+    assertTrue(legs.bag ~= nil and legs.bag >= 6, "the kept outfit's legs left the bank")
+    M.__resetPrinted()
+    NS.Slash:OnSlash("missing")
+    assertTrue(#M.__printed() > 0, "the report printed nothing")
+end)
+
+test("slash: `unequip` takes the argument, moves one item, and stops after a miss", function()
+    -- red under: an unequip row that prints the miss line a second time
+    local NS, M = scene()
+    assertTrue(NS.ItemInfo.FromSlot("HeadSlot") ~= nil, "the scenario wears a helm")
+    NS.Slash:OnSlash("unequip nosuchitem")
+    assertEqual(table.concat(bare(M), "|"), "Couldn't find an item named nosuchitem")
+    assertTrue(NS.ItemInfo.FromSlot("HeadSlot") ~= nil)
+    NS.Slash:OnSlash("unequip 1")
+    M.__fireTimers()
+    assertEqual(NS.ItemInfo.FromSlot("HeadSlot"), nil, "slot 1 was not emptied")
+end)
+
+test("slash: `iteminfo` prints the link's fields through the secret-safe reader", function()
+    local NS, M = scene()
+    local link = "|cffffffff|Hitem:6948::::::::|h[Hearthstone]|h|r"
+    NS.Slash.Route("iteminfo " .. link)
+    assertEqual(table.concat(bare(M), "|"), table.concat(NS.ItemInfo.LinkInfoLines(link), "|"))
+end)
+
+test("slash: `test` flips test mode", function()
+    local NS = scene()
+    local toggled = spy(NS.Preview, "Toggle")
+    NS.Slash:OnSlash("test")
+    assertEqual(#toggled, 1)
 end)

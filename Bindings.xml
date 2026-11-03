@@ -6,7 +6,20 @@
 	     and none carries a header, so Options -> Keybindings shows a "Ka0s Outfitter Reborn" section
 	     with no blank row. No default key: the player picks one there or on the General page's
 	     Keybindings tab. The button names are permanent; renaming one unbinds every player's key. Not
-	     listed in the TOC: the client reads this file by name. The Show window key is first; the
-	     wear, automation and update keys follow it in P4.24. -->
+	     listed in the TOC: the client reads this file by name. The Show window key is first, then the
+	     ten wear keys, the two automation keys and the update key (design §4.4). -->
 	<Binding name="CLICK OutfitterRebornToggleWindow:LeftButton" category="BINDING_HEADER_OUTFITTERREBORN"/>
+	<Binding name="CLICK OutfitterRebornWearOutfit1:LeftButton" category="BINDING_HEADER_OUTFITTERREBORN"/>
+	<Binding name="CLICK OutfitterRebornWearOutfit2:LeftButton" category="BINDING_HEADER_OUTFITTERREBORN"/>
+	<Binding name="CLICK OutfitterRebornWearOutfit3:LeftButton" category="BINDING_HEADER_OUTFITTERREBORN"/>
+	<Binding name="CLICK OutfitterRebornWearOutfit4:LeftButton" category="BINDING_HEADER_OUTFITTERREBORN"/>
+	<Binding name="CLICK OutfitterRebornWearOutfit5:LeftButton" category="BINDING_HEADER_OUTFITTERREBORN"/>
+	<Binding name="CLICK OutfitterRebornWearOutfit6:LeftButton" category="BINDING_HEADER_OUTFITTERREBORN"/>
+	<Binding name="CLICK OutfitterRebornWearOutfit7:LeftButton" category="BINDING_HEADER_OUTFITTERREBORN"/>
+	<Binding name="CLICK OutfitterRebornWearOutfit8:LeftButton" category="BINDING_HEADER_OUTFITTERREBORN"/>
+	<Binding name="CLICK OutfitterRebornWearOutfit9:LeftButton" category="BINDING_HEADER_OUTFITTERREBORN"/>
+	<Binding name="CLICK OutfitterRebornWearOutfit10:LeftButton" category="BINDING_HEADER_OUTFITTERREBORN"/>
+	<Binding name="CLICK OutfitterRebornAutoOn:LeftButton" category="BINDING_HEADER_OUTFITTERREBORN"/>
+	<Binding name="CLICK OutfitterRebornAutoOff:LeftButton" category="BINDING_HEADER_OUTFITTERREBORN"/>
+	<Binding name="CLICK OutfitterRebornUpdateOutfit:LeftButton" category="BINDING_HEADER_OUTFITTERREBORN"/>
 </Bindings>

@@ -24,7 +24,7 @@ change is test-first and ends with the green gate ([testing.md](testing.md)). Ev
    (`settings/Slash.lua`), after `version` for an outfit verb. Wrap a feature verb in `feature(fn)` so
    it refuses while the addon is stood down.
 2. A verb that must answer while disabled (read-only, or one setting) goes in `HOST_LIVE_VERBS`.
-3. Outfit-verb handlers live in `modules/Commands.lua` (P4.24); the dispatcher stays in `settings/`.
+3. Outfit-verb handlers live in `modules/Commands.lua`; the dispatcher stays in `settings/`.
 4. Pin it in `tests/test_slash.lua`; `/of help` and the landing page list it automatically, and the
    tables in [slash-dispatch.md](slash-dispatch.md) and `ARCHITECTURE.md` gain the row.
 

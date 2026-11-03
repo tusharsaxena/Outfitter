@@ -105,9 +105,9 @@ LibKa0s-Slash), behind a host routing wrapper that runs macro conditionals throu
 | `version` | Print the addon version |
 
 The outfit verbs (`show`, `hide`, `wear`, `unwear`, `toggle`, `update`, the bank verbs, `auto`,
-`zone`, `iteminfo`, `test`, `lock`, `unlock`, `deleteall` and the rest) arrive with
-`modules/Commands.lua` in P4.24. The live-while-disabled rules, the macro-conditional routing and the
-full designed verb set are in [`slash-dispatch.md`](slash-dispatch.md).
+`zone`, `iteminfo`, `test`, `lock`, `unlock`, `deleteall` and the rest) follow `version`, with their
+handlers in `modules/Commands.lua`. The live-while-disabled rules, the macro-conditional routing and
+the full verb set are in [`slash-dispatch.md`](slash-dispatch.md).
 
 ## Event Subscriptions
 

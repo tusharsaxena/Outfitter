@@ -1,18 +1,32 @@
 -- tests/test_keybinds.lua — the key bindings as the player meets them (launcher-§6, options-ui-§20,
 -- design §4.4): Bindings.xml in the addon's own category, NS.BINDINGS in file order with its labels,
 -- the hidden non-secure buttons and their press, and the General page's last tab, `Keybindings`,
--- drawn by the library. P3 C13 pins the first row, Show window; P4.24 adds the other 13 (the wear
--- keys with their anti-panic and announce rules, AutoOn, AutoOff, UpdateOutfit) and their cases.
+-- drawn by the library. P3 C13 pinned the first row, Show window; P4.24 the other 13 (the ten wear
+-- keys with their anti-panic and announce rules, AutoOn, AutoOff, UpdateOutfit) on the real modules.
 -- Capture, conflict and settings-window cases are the library's (testing-§8) and are not repeated.
 
 local T = _G.OUTFITTERREBORN_TEST
 local test, assertEqual, assertTrue, assertFalse = T.test, T.assertEqual, T.assertTrue, T.assertFalse
 
 local SHOW = "CLICK OutfitterRebornToggleWindow:LeftButton"
+local function wearKey(n) return "CLICK OutfitterRebornWearOutfit" .. n .. ":LeftButton" end
+local AUTO_ON = "CLICK OutfitterRebornAutoOn:LeftButton"
+local AUTO_OFF = "CLICK OutfitterRebornAutoOff:LeftButton"
+local UPDATE = "CLICK OutfitterRebornUpdateOutfit:LeftButton"
 local COMMANDS = { SHOW }
 local LABELS = {
     [SHOW] = "Toggle outfit window",
+    [AUTO_ON] = "Turn on automatic outfit changes",
+    [AUTO_OFF] = "Turn off automatic outfit changes",
+    [UPDATE] = "Update outfit to equipped items",
 }
+for n = 1, 10 do
+    COMMANDS[#COMMANDS + 1] = wearKey(n)
+    LABELS[wearKey(n)] = "Wear outfit " .. n
+end
+COMMANDS[#COMMANDS + 1] = AUTO_ON
+COMMANDS[#COMMANDS + 1] = AUTO_OFF
+COMMANDS[#COMMANDS + 1] = UPDATE
 
 local ctxOf = setmetatable({}, { __mode = "k" })   -- panel -> the ctx its renderer was handed
 
@@ -211,4 +225,201 @@ test("keybinds: the General Defaults tooltip says it leaves key bindings alone",
     local tip = T.mocks.__subcategories["General"].defaultsTooltip
     assertEqual(type(tip), "string", "no Defaults tooltip on the General page")
     assertTrue(tip:find(T.NS.Helpers.KEYBINDS_UNCHANGED, 1, true) ~= nil, tip)
+end)
+
+-- ── the wear, automation and update keys (P4.24, design §4.4) ────────────────────────────────────
+
+--- A fresh instance at t = 100 on the geared scenario, PlayerState, Inventory and Equip resumed and
+--- the first scan settled; every module is the real one.
+local function scene()
+    local inst = T.load({ mutate = function(M) M.__gear:load("geared") end })
+    local NS, M = inst.NS, inst.mocks
+    M.__now = 100
+    NS.PlayerState.Resume()
+    NS.Inventory.Resume()
+    NS.Equip.Resume()
+    M.__fireTimers()
+    NS.Inventory.Sync()
+    M.__resetPrinted()
+    return NS, M
+end
+
+local function press(M, command)
+    local name = command:match("^CLICK (.-):LeftButton$")
+    M._G[name]:__fire("OnClick", "LeftButton", true)
+end
+
+--- Every worn slot as an outfit stores it: a Complete outfit.
+local function wornItems(NS)
+    local items = {}
+    for _, s in ipairs(NS.ItemData.SLOT_NAMES) do
+        local info = NS.ItemInfo.FromSlot(s)
+        items[s] = info and NS.ItemInfo.Snapshot(info) or { id = 0 }
+    end
+    return items
+end
+
+local function messages(M)
+    local out = {}
+    for i, m in ipairs(M.UIErrorsFrame.__messages) do out[i] = m.text end
+    return table.concat(out, "|")
+end
+
+test("keybinds: Wear outfit 1 is assigned through the tab like any other row", function()
+    local M, NS = T.mocks, T.NS
+    M.clearBindings()
+    local _, rows = showGeneral(M, NS, "Keybindings")
+    rows = assert(rows, "the Keybindings tab drew no rows")
+    assertEqual(rows[2].command, wearKey(1))
+    assertEqual(T.keybindThroughTab(rows[2], 1, "1", { shift = true }), M.KEY_BOUND)
+    assertEqual(M.GetBindingKey(wearKey(1)), "SHIFT-1")
+    M.clearBindings()
+    showGeneral(M, NS, nil)
+end)
+
+test("keybinds: a wear key wears a Complete outfit now and toggles any other, anti-panic 0.75 s", function()
+    -- red under: a WearBoundOutfit that prints on the ignored repeat
+    local NS, M = scene()
+    local O, St = NS.Outfits, NS.Stack
+    local normal = O.Create("Everyday", wornItems(NS))
+    local hat = O.Create("Hat", { HeadSlot = { id = 0 } })
+    O.SetBinding(normal, 1)
+    O.SetBinding(hat, 2)
+    press(M, wearKey(1))
+    assertTrue(St.IsWorn(normal))
+    assertEqual(NS.Equip.Pending(), false, "a key wear updates now")
+    M.__now = 102
+    press(M, wearKey(2))
+    assertTrue(St.IsWorn(hat))
+    M.__now = 102.5
+    press(M, wearKey(2))
+    assertTrue(St.IsWorn(hat), "a repeat within 0.75 s toggled")
+    M.__now = 103.0                     -- 0.5 s after the ignored press: its clock refreshed
+    press(M, wearKey(2))
+    assertTrue(St.IsWorn(hat), "the window did not refresh on the ignored press")
+    M.__now = 104
+    press(M, wearKey(2))
+    assertFalse(St.IsWorn(hat), "a press after the window toggles off")
+    M.__now = 106
+    press(M, wearKey(1))
+    assertTrue(St.IsWorn(normal), "a Complete outfit's key re-wears, never toggles off")
+    assertEqual(#M.__printed(), 0, "a key press printed: " .. tostring(M.__printed()[1]))
+end)
+
+test("keybinds: the press clears trigger.disabled and is a hardware event (a title is set)", function()
+    local NS, M = scene()
+    local O = NS.Outfits
+    local hat = O.Create("Hat", { HeadSlot = { id = 0 } })
+    O.Get(hat).trigger = { id = "FISHING", disabled = true }
+    O.SetFlag(hat, "titleID", 3)
+    O.SetBinding(hat, 4)
+    press(M, wearKey(4))
+    assertTrue(NS.Stack.IsWorn(hat))
+    assertFalse(O.Get(hat).trigger.disabled == true, "the key did not clear Disabled")
+    assertEqual(M.__world.currentTitle, 3, "the press wore without hw")
+end)
+
+test("keybinds: an unbound key says so", function()
+    -- red under: a WearBoundOutfit that returns silently for an unbound key
+    local NS, M = scene()
+    press(M, wearKey(5))
+    local out = {}
+    for i, l in ipairs(M.__printed()) do out[i] = (l:gsub("^|cff00ffff%[OR%]|r ", "")) end
+    assertEqual(table.concat(out, "|"), "No outfit is bound to key 5.")
+    assertTrue(NS ~= nil)
+end)
+
+test("keybinds: the key announces on UIErrorsFrame in the outfit color, unless announceKeys is off", function()
+    -- red under: an announce that ignores equip.announceKeys
+    local NS, M = scene()
+    local O = NS.Outfits
+    local hat = O.Create("Hat", { HeadSlot = { id = 0 } })
+    O.SetBinding(hat, 3)
+    press(M, wearKey(3))
+    M.__now = 102
+    press(M, wearKey(3))
+    assertEqual(messages(M), "Hat equipped|Hat unequipped")
+    local c, m = NS.Constants.OUTFIT_MESSAGE_COLOR, M.UIErrorsFrame.__messages[1]
+    assertEqual(m.r, c.r); assertEqual(m.g, c.g); assertEqual(m.b, c.b)
+    assertEqual(c.r .. "," .. c.g .. "," .. c.b, "0.2,0.75,0.3")
+    assertTrue(NS.SetByPath("equip.announceKeys", false))
+    M.__now = 104
+    press(M, wearKey(3))
+    assertTrue(NS.Stack.IsWorn(hat))
+    assertEqual(#M.UIErrorsFrame.__messages, 2, "announced with announceKeys off")
+end)
+
+test("keybinds: AutoOn and AutoOff write auto.enabled through the auto verb", function()
+    local NS, M = scene()
+    local verbs = {}
+    local run = NS.RunVerb
+    NS.RunVerb = function(verb, rest)
+        verbs[#verbs + 1] = verb .. " " .. tostring(rest)
+        return run(verb, rest)
+    end
+    press(M, AUTO_OFF)
+    assertEqual(NS.GetSetting("auto.enabled"), false)
+    press(M, AUTO_ON)
+    assertEqual(NS.GetSetting("auto.enabled"), true)
+    assertEqual(table.concat(verbs, ","), "auto off,auto on")
+end)
+
+test("keybinds: UpdateOutfit with no Complete outfit prints the line and raises nothing", function()
+    local NS, M = scene()
+    press(M, UPDATE)
+    local out = {}
+    for i, l in ipairs(M.__printed()) do out[i] = (l:gsub("^|cff00ffff%[OR%]|r ", "")) end
+    assertEqual(table.concat(out, "|"), "No Complete outfit is equipped.")
+    local normal = NS.Outfits.Create("Everyday", wornItems(NS))
+    NS.Stack.Wear(normal, { now = true })
+    M.__resetPrinted()
+    press(M, UPDATE)
+    assertTrue(anyLine(M, "Updated the outfit 'Everyday'"), "the key did not update the Complete outfit")
+end)
+
+test("keybinds: every button refuses through the one helper before its handler, AutoOn/AutoOff too", function()
+    -- red under: an OnClick that runs the handler before NS.StoodDownRefusal()
+    local NS, M = scene()
+    local ran = {}
+    NS.WearBoundOutfit = function(n) ran[#ran + 1] = "wear" .. n end
+    NS.RunVerb = function(verb) ran[#ran + 1] = verb end
+    NS.Dock.Toggle = function() ran[#ran + 1] = "toggle" end
+    for _, hold in ipairs({ "disabled", "perf" }) do
+        if hold == "disabled" then NS.SetByPath("enabled", false) else NS.lifecycle:Hold(NS.HOLD_PERF) end
+        local refusal = NS.StoodDownRefusal()
+        for _, command in ipairs(COMMANDS) do
+            M.__resetPrinted()
+            press(M, command)
+            assertEqual(#M.__printed(), 1, command .. " under " .. hold)
+            assertTrue(M.__printed()[1]:find(refusal, 1, true) ~= nil, command .. " under " .. hold)
+        end
+        if hold == "disabled" then NS.SetByPath("enabled", true) else NS.lifecycle:Release(NS.HOLD_PERF) end
+    end
+    assertEqual(table.concat(ran, ","), "", "a handler ran while stood down")
+    assertEqual(NS.GetSetting("auto.enabled"), true, "a press wrote auto.enabled while stood down")
+end)
+
+test("keybinds: NS.WearBoundOutfit refuses for a direct caller too", function()
+    local NS, M = scene()
+    local hat = NS.Outfits.Create("Hat", { HeadSlot = { id = 0 } })
+    NS.Outfits.SetBinding(hat, 1)
+    NS.SetByPath("enabled", false)
+    M.__resetPrinted()
+    NS.WearBoundOutfit(1)
+    assertFalse(NS.Stack.IsWorn(hat), "the handler wore while disabled")
+    assertTrue(anyLine(M, "is disabled"))
+end)
+
+test("keybinds: one key per outfit: binding a key to a second outfit takes it off the first", function()
+    local NS = scene()
+    local O = NS.Outfits
+    local a = O.Create("A", { HeadSlot = { id = 0 } })
+    local b = O.Create("B", { HeadSlot = { id = 0 } })
+    O.SetBinding(a, 1)
+    O.SetBinding(b, 1)
+    assertEqual(O.BoundTo(1), b)
+    assertEqual(O.BindingOf(a), nil)
+    O.SetBinding(b, 2)
+    assertEqual(O.BoundTo(1), nil, "an outfit holds one key")
+    assertEqual(O.BoundTo(2), b)
 end)

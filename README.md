@@ -57,7 +57,25 @@ outfit owns. That's what separates a complete outfit from an accessory you can
 layer over one. Give an outfit a script and it equips itself: when you start
 fishing, enter a battleground, shift into bear form, sit down to eat.
 
-`/outfitter help` lists the available slash commands in-game.
+`/of help` lists the slash commands in-game; `/outfitter` is an alias for `/of`.
+An outfit name may be a macro conditional, as in `/of wear [spec:1] Tank; DPS`.
+
+- `/of config` opens the settings panel, `/of skin` the skin picker
+- `/of enable` and `/of disable` turn the whole addon on and off
+- `/of list`, `/of get`, `/of set`, `/of reset` and `/of resetall` read and write settings
+- `/of debug`, `/of diagnostics`, `/of perf` and `/of version` are for troubleshooting
+- `/of show` and `/of hide` open and close the outfit window
+- `/of wear`, `/of unwear` and `/of toggle` take an outfit name, or none for the current Complete outfit
+- `/of update` saves what you're wearing into an outfit
+- `/of deposit`, `/of depositunique`, `/of depositothers`, `/of withdraw` and `/of withdrawothers` move outfits in and out of the open bank
+- `/of missing` lists outfit items you no longer have (bank open)
+- `/of unequip` moves one item, by name or slot number, to your bags
+- `/of updatetitle` re-applies the worn outfit's title
+- `/of auto on` and `/of auto off` turn automatic outfit changes on and off
+- `/of zone` and `/of iteminfo` show what the addon sees
+- `/of test` shows sample outfits on the outfit bar
+- `/of lock` and `/of unlock` lock and unlock the outfit bar
+- `/of deleteall` deletes every outfit on the character, after asking
 
 The [user
 manual](https://github.com/tusharsaxena/Outfitter/blob/master/docs/users-manual.md)
