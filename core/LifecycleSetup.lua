@@ -140,8 +140,12 @@ function NS.StoodDownRefusal()
     if NS.IsDisabled() then
         local Sl = NS.Slash
         if Sl and Sl.DisabledLine then return Sl:DisabledLine() end
-        -- Before settings/Slash.lua lands (or with it absent): the dispatcher's line, in plain text.
-        return L["%s is disabled. Enable it with %s enable."]:format(NS.BRAND, NS.SLASH)
+        -- Before settings/Slash.lua lands (or with it absent): the same library line Sl:DisabledLine
+        -- builds, formatted the same way, so the wording does not change when the dispatcher arrives.
+        local SlashLib = LibStub and LibStub("LibKa0s-Slash-1.0", true)
+        -- The library is vendored and in the TOC; its absence leaves the same words, uncolored.
+        local fmt = SlashLib and SlashLib.DISABLED_LINE_FORMAT or "%s is disabled \226\128\148 enable it with %s"
+        return fmt:format(tostring(NS.BRAND or NS.SLASH), NS.SLASH .. " enable")
     end
     return L["Not available during a performance capture."]
 end

@@ -133,7 +133,8 @@ test("perf: the disabled hold outlasts the perf hold, and its refusal wins", fun
     assertTrue(NS.Perf.Suspend())
     NS.ApplyEnabled(false)
     assertTrue(NS.IsDisabled())
-    assertEqual(NS.StoodDownRefusal(), "Ka0s Outfitter Reborn is disabled. Enable it with /of enable.",
+    assertEqual(NS.StoodDownRefusal(),
+        "Ka0s Outfitter Reborn is disabled \226\128\148 enable it with |cFFFFFF00/of enable|r",
         "the capture line answered while the addon is disabled")
     assertTrue(NS.Perf.Resume())
     assertTrue(NS.IsStoodDown(), "releasing perf stood a disabled addon up")

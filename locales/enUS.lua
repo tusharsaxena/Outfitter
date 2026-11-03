@@ -13,5 +13,4 @@ NS.L = L
 L["Ka0s Outfitter Reborn"] = "Ka0s Outfitter Reborn"
 
 -- Stand-down (core/LifecycleSetup.lua)
-L["%s is disabled. Enable it with %s enable."] = "%s is disabled. Enable it with %s enable."
 L["Not available during a performance capture."] = "Not available during a performance capture."
