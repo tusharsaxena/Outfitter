@@ -63,10 +63,10 @@ the cap; `modules/Diagnostics.lua` supplies this addon's sections:
 | `identity` | Stored and code schema versions; the profile; `enabled` and whether the latch is down; the active holds |
 | `settings` | Every setting that differs from its default, and `enabled` always |
 | `state` | Outfit count and how many carry a trigger; whether the old Outfitter is loaded; test mode |
-| `rejected` | Every event name the client refused at registration |
-
-P4.26 adds the zone producer's view, the equipment bracket's depth, pending update and last error,
-and the faulted trigger bindings.
+| `zone` | What `/of zone` shows first: the instance with its map id, a map the zone table misses, and the zone outfits in force or "No zone outfits apply here" |
+| `equip` | The equipment bracket's depth and pending update, the next update, the last error, and the STUCK line when the count outruns the running batches |
+| `bindings` | Every trigger binding switched off for the session with the error that did it (`outfitId:triggerId`), and the trigger ids no descriptor answers |
+| `rejected` | Every event name the client refused at registration, the core's and the trigger binder's |
 
 To send a report: `/of debug on`, reproduce the bug, `/of diagnostics`, then open the console with
 `/of debug` if it is not open, press **Copy** and send the whole text. The report redacts nothing, so

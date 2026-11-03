@@ -193,7 +193,7 @@ local SUITES = {
     { name = "test_dialogs" },
     { name = "test_trigger_dialog" },
 
-    { name = "test_diagnostics",      pending = "P4.26" },
+    { name = "test_diagnostics" },
 
     { name = "test_credits",          pending = "P4.29" },
 
