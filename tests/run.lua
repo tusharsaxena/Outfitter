@@ -195,7 +195,7 @@ local SUITES = {
 
     { name = "test_diagnostics" },
 
-    { name = "test_credits",          pending = "P4.29" },
+    { name = "test_credits" },
 
     { name = "test_skin",             pending = "P4.30" },
 

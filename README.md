@@ -108,19 +108,33 @@ instead, which is why those still work.
 
 John Stephen ([mundocani](https://www.curseforge.com/members/mundocani/projects))
 designed and wrote [Outfitter](https://www.curseforge.com/wow/addons/outfitter)
-between 2006 and 2018.
+between 2006 and 2018 and released it under the MIT license. This fork keeps that
+license and his copyright; see `LICENSE`.
 
-aDd1kTeD2Ka0s maintains Outfitter Reborn and updated it for WoW Midnight.
+aDd1kTeD2Ka0s maintains Ka0s Outfitter Reborn and rebuilt it for WoW Midnight.
 
-The community has kept it going since.
+The community kept it going in between.
 [Nulian](https://www.curseforge.com/members/nulian/projects) did the Dragonflight
-work this fork builds on, and NokeHarrier, kionik and UppyDan carried it through
-the 9.x patches.
+work this fork builds on, with Coremeeko2 asking for it loudest, and NokeHarrier,
+kionik and UppyDan carried it through the 9.x patches. Bruce Quinton wrote the
+pet battle trigger.
 
-Localizations, and the libraries bundled under `libs/`, come from their
-respective authors.
+The old About panel thanked these people, and they're still thanked here:
 
-## License
+- Contributing developers: AoR_Derangement, binul, Bodar, Bruce Quinton, chullah, Dicebar, Dridzt, durandal42, Dussander, Echobravo, elaundar, EmForAce, Irozal, Kal_Zakath13, LaoTseu, MacGregor, Nulian, Silarn, slippycheeze, Smurfy and XMinionX
+- Testers: Casard, DanoPDX, Denrax, docthis, elusif, gtmsece, HunterZ, iceeagle, Irdx, Katlefiya, Militis, rasmoe, saltorio, TigaFIN and Whishann
+- German translation: Ani, Dessa and Zokrym
+- French translation: Ekhurr, Jullye, Negwe and Quetzaco
+- Spanish translation: Marosth and Marutak
+- Chinese translation: AndyAska and xingdvd
+- Russian translation: Delika
+- Korean translation: a translator the old credits never named
+- Supporters: Asgeirr, Blam, Blessmie, Blitzi, Burnaron, Calind, Chirily, Ciev, Colina, Dankris, Dhaktar, Droodwrmycar, Emmerald, Extropianus, Faizal, Feliany, Fusyion, Haguen, Hellrush, Jiminimonka, Klaxon, Kristi H., Lawrence C., Leara, Maelmoor, Matt R., Maumau, Mythris, Nagem, Nounchok, Richard F., Steikfrit, Teldra, Tharca, Thoresen, Thorgils, Valerya, Xentric, Y C, Zanoroy, Zendex and Zetac
+- Friends in the Thorium Brotherhood: Airmid, Fizzlebang, Pistachio, Pitchifus, Tiae and the guild Bloodforged
 
-MIT. Copyright © 2006–2018 John Stephen; see `LICENSE`. The fork is distributed
-under the same terms.
+The settings, the outfit window and the outfit bar draw their icons from
+[Open Iconic](https://github.com/iconic/open-iconic) by Waybury (MIT), and the
+mark on an outfit that has a trigger is from
+[Phosphor](https://github.com/phosphor-icons/core) (MIT). Only the icons this addon
+draws are included, bundled inside the LibKa0s payload with each set's license
+file beside it.
