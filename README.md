@@ -60,7 +60,7 @@ fishing, enter a battleground, shift into bear form, sit down to eat.
 `/outfitter help` lists the available slash commands in-game.
 
 The [user
-manual](https://github.com/tusharsaxena/Outfitter/blob/master/UsersManual.md)
+manual](https://github.com/tusharsaxena/Outfitter/blob/master/docs/users-manual.md)
 covers all of it, including writing your own scripts.
 
 ## What no longer works
@@ -99,7 +99,7 @@ The community has kept it going since.
 work this fork builds on, and NokeHarrier, kionik and UppyDan carried it through
 the 9.x patches.
 
-Localisations, and the libraries bundled under `Libraries/`, come from their
+Localisations, and the libraries bundled under `libs/`, come from their
 respective authors.
 
 ## Licence
