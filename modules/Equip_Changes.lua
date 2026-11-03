@@ -30,7 +30,7 @@ local Compat = NS.Compat
 local OH, MH = "SecondaryHandSlot", "MainHandSlot"
 local TWO_HAND, ONE_HAND = "TwoHandSlot", "Weapon0Slot"
 local MAX_PASSES = 20      -- Unique.Order's re-rank bound (OutfitterEquipment.lua:186)
-local MAX_STEPS = 64       -- Opt.Apply's loop bound
+local MAX_STEPS = 64       -- Opt.Apply's loop bound: visits, not progress (no real plan nears it)
 
 local function newChange(slot, itemName)
     return { slot = slot, slotID = Compat.InventorySlotID(slot), itemName = itemName, unique = {} }
@@ -323,7 +323,10 @@ local function fixSwap(changes, i, c1, j, c2)
     return splice(changes, i, j, SWAP[kind](c1, c2))
 end
 
+-- Opt.Rules is the table Apply dispatches through, so a test can stand a rule in for one that
+-- never advances and see the step bound hold.
 local RULES = {}
+Opt.Rules = RULES
 
 -- Titan's Grip fix first: it clears the off hand before any main/off-hand move.
 function RULES.tgfix(changes, i, c)
@@ -393,7 +396,7 @@ function Opt.Apply(changes)
         steps = steps + 1
         local c = changes[i]
         local kind = classify(c)
-        if kind then i = RULES[kind](changes, i, c, didSlot) end
+        if kind then i = Opt.Rules[kind](changes, i, c, didSlot) end
         i = i + 1
     end
     return changes

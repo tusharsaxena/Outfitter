@@ -87,6 +87,7 @@ local formCache = {}               -- [form index] = state id: the runtime form-
 local auraSpells = {}              -- the plain spell ids of the last scan, for PlayerHasSpell
 local feigning = false
 local auraStealth, formStealth = false, false
+local formsRead = false            -- a form poll (or the scan's own read) has run since the stand-up
 local prevMana, sentAt             -- Spirit: the last plain mana reading, the last cast's send time
 local active = false               -- resumed
 local diningWatched = false
@@ -228,7 +229,26 @@ local function readAuras(want, spells)
     end
 end
 
+local readForms
+
+-- Rogue Stealth is a form with no aura (FORM_SPELL_STATE only): until the first form poll after a
+-- stand-up, read the forms here, or the merge below would see formStealth false and take a worn
+-- Stealth outfit off for the 0.01 s until the poll puts it back.
+local function primeFormStealth()
+    if formsRead then return end
+    formsRead = true
+    local _, on = readForms()
+    formStealth = on == "STEALTH"
+end
+
+-- Riding: on a mount and not on a taxi. The aura scan reads it as well as the poll, since mounting
+-- fires UNIT_AURA (UpdateAuraStates ran UpdateMountedState, Outfitter.lua:4768).
+local function applyMounted()
+    S.Set("MOUNTED", Secrets.PlainTruth(IsMounted()) == true and Secrets.PlainTruth(UnitOnTaxi("player")) ~= true)
+end
+
 local function applyAuras(want)
+    primeFormStealth()
     for _, id in ipairs(AURA_STATES) do
         local on = want[id] == true
         if id == "STEALTH" then
@@ -240,6 +260,7 @@ local function applyAuras(want)
         end
         S.Set(id, on)
     end
+    applyMounted()
 end
 
 local pollForms
@@ -249,7 +270,7 @@ local function scheduleFormPoll(delay)
     formTimer = target:ScheduleTimer(pollForms, delay)
 end
 
---- Scan the player's auras and set every aura state, inside one Batch; then publish AURAS_SCANNED
+--- Scan the player's auras and set every aura state and MOUNTED, inside one Batch; then publish AURAS_SCANNED
 --- and poll the forms 0.01 s later. Perf bucket auraScan.
 local function scanAuras()
     if combatTimer then target:CancelTimer(combatTimer) end
@@ -282,7 +303,7 @@ end
 
 -- The forms the client lists: the states seen inactive (in index order) and the active one. An index
 -- whose spell id cannot be read answers from the cache; a druid in no form is FORM_CASTER.
-local function readForms()
+readForms = function()
     local off, on = {}, nil
     local n = Secrets.PlainNumber(GetNumShapeshiftForms()) or 0
     for index = 1, n do
@@ -310,6 +331,7 @@ local function setForm(id, on)
 end
 
 local function applyForms(off, on)
+    formsRead = true
     for _, id in ipairs(off) do setForm(id, false) end
     if on then setForm(on, true) end
 end
@@ -326,7 +348,7 @@ end
 -- ── the poll ──────────────────────────────────────────────────────────────────────────────────
 
 local function applyPoll()
-    S.Set("MOUNTED", Secrets.PlainTruth(IsMounted()) == true and Secrets.PlainTruth(UnitOnTaxi("player")) ~= true)
+    applyMounted()
     S.Set("SWIMMING", Secrets.PlainTruth(IsSwimming()) == true)
 end
 
@@ -444,7 +466,7 @@ function S.Suspend()
     if diningFrame then diningFrame:UnregisterAllEvents() end
     diningWatched = false
     for id in pairs(state) do state[id] = nil end
-    auraSpells, feigning, auraStealth, formStealth = {}, false, false, false
+    auraSpells, feigning, auraStealth, formStealth, formsRead = {}, false, false, false, false
     prevMana, sentAt = nil, nil
     S.SuspendZone()
 end

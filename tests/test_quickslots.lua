@@ -59,9 +59,22 @@ local function flyoutInstance(scenario)
         frame:Hide()
         M.EquipmentFlyout_Hide = function()
             rec.hidden = rec.hidden + 1
+            frame.button = nil
             frame:Hide()
         end
-        M.EquipmentFlyoutPopoutButton_OnClick = function(popout) rec.clicked[#rec.clicked + 1] = popout end
+        -- The client's toggle (EquipmentFlyoutPopoutButton_OnClick): it keys on flyoutLocked, and
+        -- EquipmentFlyout_Hide above leaves the lock as it was.
+        M.EquipmentFlyoutPopoutButton_OnClick = function(popout)
+            rec.clicked[#rec.clicked + 1] = popout
+            if popout.flyoutLocked then
+                popout.flyoutLocked, popout.reversed = false, false
+                M.EquipmentFlyout_Hide()
+            else
+                popout.flyoutLocked, popout.reversed = true, true
+                frame.button = popout.owner
+                frame:Show()
+            end
+        end
         for _, b in pairs(M.__slotButtons) do b.popoutButton = { owner = b } end
     end })
     QS(inst.NS).Resume()
@@ -355,6 +368,34 @@ test("quickslots: a click on the button the flyout is open on closes it", functi
     buttons.LegsSlot:__fire("PostClick", "LeftButton", false)
     assertEqual(rec.hidden, 1, "a flyout open on another button is not this click's to close")
     assertEqual(#rec.clicked, 1, "the empty slot opens its own")
+end)
+
+test("quickslots: an empty slot opened, closed and clicked again opens again", function()
+    local _, _, M = flyoutInstance("secret_slots")
+    local legs = M.__slotButtons.LegsSlot
+    local flyout = M.EquipmentFlyoutFrame
+    legs:__fire("PostClick", "LeftButton", false)
+    assertTrue(flyout:IsVisible() and flyout.button == legs, "the first click opens it")
+    legs:__fire("PostClick", "LeftButton", false)
+    assertFalse(flyout:IsVisible(), "the second closes it")
+    -- red under: closing with a bare EquipmentFlyout_Hide (the lock stays set, and this click only
+    -- unlocks it: the flyout stays shut).
+    assertFalse(legs.popoutButton.flyoutLocked, "the close cleared the popout's lock")
+    assertFalse(legs.popoutButton.reversed, "and turned its arrow back")
+    legs:__fire("PostClick", "LeftButton", false)
+    assertTrue(flyout:IsVisible() and flyout.button == legs, "the third opens it again")
+end)
+
+test("quickslots: a lock left set by a flyout closed elsewhere does not swallow the open", function()
+    local _, _, M = flyoutInstance("secret_slots")
+    local legs = M.__slotButtons.LegsSlot
+    legs:__fire("PostClick", "LeftButton", false)
+    M.EquipmentFlyout_Hide()                    -- Escape, or another frame closing it: the lock stays
+    assertTrue(legs.popoutButton.flyoutLocked)
+    legs:__fire("PostClick", "LeftButton", false)
+    -- red under: one popout click for the open (it reads the stale lock and only unlocks).
+    assertTrue(M.EquipmentFlyoutFrame:IsVisible(), "the click opened the flyout")
+    assertTrue(legs.popoutButton.flyoutLocked)
 end)
 
 -- ── the location read ────────────────────────────────────────────────────────────────────────────

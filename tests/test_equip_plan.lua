@@ -150,8 +150,10 @@ test("equip plan: a missing item reports through showError and plans nothing for
     end })
     assertEqual(#changes, 0)
     assertEqual(got.item.id, 77)
+    -- red under: handing showError the missing item itself as the claimed duplicate.
     assertNil(got.dup, "nothing claimed")
     assertEqual(got.slot, "HeadSlot")
+    -- red under: calling ctx.showError without checking it is there (Build raises).
     assertEqual(#build({ HeadSlot = rec(77) }, {}), 0, "no showError in ctx is fine")
 end)
 
@@ -239,6 +241,7 @@ test("equip plan: Unique.Order runs at most 20 passes", function()
     assertEqual(promoted, 1 + 20, "L0 and one link per pass")
     assertEqual(chain[#chain].rank, 2, "the links past the bound stay mixed")
     assertEqual(chain[1].slot, "L0", "rank 1 first")
+    -- red under: dropping Unique.Order's closing `c.seq = nil` walk.
     assertNil(chain[1].seq, "no sort scratch is left on a change")
 end)
 
@@ -305,11 +308,19 @@ test("equip plan: trinket and main/off-hand swaps take the same re-order", funct
                 "MainHandSlot- MainHandSlot<SecondaryHandSlot SecondaryHandSlot<0/1")
 end)
 
-test("equip plan: optimize is bounded", function()
-    local list = {}
-    for i = 1, 80 do list[i] = ch(i % 2 == 0 and OH or MH, i % 3 == 0 and BAG1 or nil) end
-    NS().Changes.Opt.Apply(list)
-    assertTrue(#list >= 80, "it returned")
+test("equip plan: optimize is bounded at 64 visits, even by a rule that never advances", function()
+    -- A fresh instance: the rule stood in below must not leak into the shared one.
+    local Opt = T.load().NS.Changes.Opt
+    local visits = 0
+    Opt.Rules.swap = function(_, i)
+        visits = visits + 1
+        if visits > 1000 then error("Opt.Apply is unbounded") end
+        return i - 1   -- the loop's i + 1 lands on this change again: a true cycle
+    end
+    local ok, err = pcall(Opt.Apply, { ch("Finger0Slot", BAG1) })
+    -- red under: dropping `steps < MAX_STEPS` from Opt.Apply's loop (the stand-in raises at 1001).
+    assertTrue(ok, "Apply raised: " .. tostring(err))
+    assertEqual(visits, 64, "the guard counts visits: 64 of them, then it returns")
 end)
 
 -- ── Build over the client's gear ──────────────────────────────────────────────────────────────
@@ -355,6 +366,7 @@ test("equip plan: ForMoves lists each found item's location in slot order, filte
     assertTrue(changes[1].from == infos[1].loc and changes[2].from == infos[2].loc and changes[3].from == infos[3].loc,
                "Head, Feet, Neck: SLOT_NAMES order")
     assertEqual(changes[1].itemName, "Item1")
+    -- red under: ForMoves tagging each move with the slot it was listed under.
     assertNil(changes[1].slot, "a move has no target slot")
     local banked = C.ForMoves(items, cache, function(i) return i.loc.bag == 6 end)
     assertEqual(#banked, 1, "the filter decides")
@@ -389,6 +401,8 @@ test("equip plan: EmptyBankSlots lists the open bank's tabs only", function()
     assertEqual(#slots, 95 + 98, "tab 6 and tab 7's free slots")
     for _, s in ipairs(slots) do assertTrue(s.bag == 6 or s.bag == 7, "bank tab " .. s.bag) end
     N = gear("bank_closed")
+    -- red under: falling back to the carried bags when the bank answers no slots (the backpack has
+    -- room in bank_closed).
     assertEqual(#N.Moves.EmptyBankSlots(), 0, "nothing while the bank is closed")
 end)
 
@@ -408,6 +422,7 @@ end)
 test("equip plan: ToEmpty with the bags full prints the error key's line and moves nothing", function()
     local N, M = gear("full_bags")
     local loc = { slotID = SLOT_IDS.HeadSlot, slotName = "HeadSlot" }
+    -- red under: ToEmpty going on to the pickups when no slot takes the item.
     assertFalse(N.Moves.ToEmpty(loc, N.Moves.EmptyBagSlots()), "refused")
     assertTrue(M.__gear:equipped("HeadSlot") ~= nil, "still worn")
     assertTrue(printed(M):find("because all bags are full", 1, true) ~= nil, "the bags-full line")
@@ -432,6 +447,7 @@ test("equip plan: ToEmpty tries a specialty bag first, and never drops gear into
     assertTrue(inst ~= nil and inst.def.id == T.fixtures.items.db.herb_silverleaf.id, "the herb went to the herb bag")
     -- Gear with only the herb bag free: refused.
     N, M = gear("specialty_bags")
+    -- red under: pickTarget's general pass taking a slot of any family (the helm goes among the herbs).
     assertFalse(N.Moves.ToEmpty({ slotID = SLOT_IDS.HeadSlot, slotName = "HeadSlot" }, N.Moves.EmptyBagSlots()),
                 "no general slot")
     assertTrue(M.__gear:equipped("HeadSlot") ~= nil, "the helm stays on")
@@ -469,6 +485,8 @@ test("equip plan: UnequipByName returns after a name it cannot find (INV §19)",
     assertEqual(#M.__equipCalls, n, "no cursor call")
     ok = N.Moves.UnequipByName(tostring(SLOT_IDS.HeadSlot))
     assertTrue(ok)
+    -- red under: the miss test reading only the slot name, not what the slot holds (ToEmpty answers
+    -- true for an empty location).
     ok, msg = N.Moves.UnequipByName(tostring(SLOT_IDS.HeadSlot))
     assertFalse(ok, "an empty slot number has nothing to unequip")
     assertEqual(msg, "Couldn't find an item named " .. SLOT_IDS.HeadSlot)

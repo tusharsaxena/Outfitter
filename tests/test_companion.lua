@@ -19,8 +19,9 @@ local SQUIRREL = "BattlePet-0-000000000001"   -- species 39, "Mechanical Squirre
 local CAT      = "BattlePet-0-000000000002"   -- species 40, "Bombay Cat", renamed "Whiskers"
 local RAGNAROS = "BattlePet-0-000000000003"   -- species 1426, "Lil' Ragnaros"
 
--- A fresh instance: Equip and States faked, PlayerState and Companion resumed, the clock at 100 s
--- (clear of the 3 s summon window), the journal's calls and the debug lines recorded.
+-- A fresh instance: Equip and States faked, PlayerState and Companion resumed at 100 s, the clock then
+-- moved to 110 s (clear of the 3 s window the stand-up opens), the journal's calls and the debug
+-- lines recorded.
 local function scene()
     local inst = T.load()
     local NS, M = inst.NS, inst.mocks
@@ -34,6 +35,7 @@ local function scene()
     M.__now = 100
     NS.PlayerState.Resume()
     NS.Companion.Resume()
+    M.__now = 110
     M.__world.petCalls = {}
     return inst, NS, M, feign, debug
 end
@@ -89,6 +91,8 @@ end)
 
 test("companion: a nil, secret or unknown name answers false and never raises", function()
     local _, NS, M = scene()
+    -- legacy: raises (`nameToFind:lower()` on a nil name, Outfitter.lua:8251; INV §3.10 Fix); fixed:
+    -- false, and nothing scheduled.
     -- red under: the legacy `nameToFind:lower()` on a nil name (INV §3.10 Fix).
     local ok, res = pcall(NS.Companion.SummonByName, nil)
     assertTrue(ok, "a nil name raised: " .. tostring(res))
@@ -181,6 +185,8 @@ test("companion: the dismiss watch gives up at its 60 s deadline", function()
     NS.Companion.DismissByGUID(RAGNAROS)
     tick(M, 58)
     assertEqual(pending(M), 1, "still watching inside the deadline")
+    -- legacy: watching forever (Outfitter.lua:8355-8358; INV §19 "The companion retry is uncapped");
+    -- fixed: given up 60 s after the ask.
     -- red under: the legacy watch with no cap (it reschedules every second forever).
     tick(M, 3)
     assertEqual(pending(M), 0, "the watch stopped at the deadline")
@@ -276,6 +282,8 @@ test("companion: blocked retries are capped at 30, with a debug line", function(
     NS.Companion.SummonByGUID(SQUIRREL)   -- try 1, blocked
     tick(M, 28)                           -- tries 2 .. 29
     assertEqual(pending(M), 1, "still retrying under the cap")
+    -- legacy: retrying every second forever (Outfitter.lua:8337-8340; INV §19 "The companion retry is
+    -- uncapped"); fixed: given up at try 30.
     -- red under: the legacy retry with no cap (INV §3.10 Fix).
     tick(M)                               -- try 30: the cap
     assertEqual(pending(M), 0, "gave up at the cap")
@@ -283,6 +291,53 @@ test("companion: blocked retries are capped at 30, with a debug line", function(
     M.__world:setFlag("IsFlying", false)
     tick(M, 2)
     assertEqual(#calls(M), 0, "the abandoned wish never fires")
+end)
+
+test("companion: a dismiss asked in flight outlasts the flight and catches the pet re-summoned on landing", function()
+    local _, NS, M = scene()
+    M.__world.summonedPet = RAGNAROS
+    M.__world:setFlag("IsFlying", true)
+    assertTrue(NS.Companion.DismissByGUID(RAGNAROS))   -- the cooking window closed while airborne
+    M.__world.summonedPet = nil                        -- the game put the pet away for the flight
+    tick(M, 90)
+    -- legacy: retrying until the flight ended (Outfitter.lua:8337-8340), kept; the cap is the
+    -- dismiss's own (600 blocked passes), and the 60 s watch runs from the landing.
+    -- red under: a blocked dismiss counting against the summon's 30-try cap (abandoned at 30 s).
+    assertEqual(pending(M), 1, "still waiting out the flight")
+    M.__world:setFlag("IsFlying", false)
+    tick(M, 30)
+    assertEqual(pending(M), 1, "watching after the landing")
+    M.__world.summonedPet = RAGNAROS                   -- the game re-summons it on landing
+    tick(M)
+    assertEqual(#calls(M), 1, "dismissed")
+    assertEqual(calls(M)[1], RAGNAROS)
+    assertEqual(pending(M), 0)
+end)
+
+test("companion: a dismiss blocked for good gives up at its own cap, with a debug line", function()
+    local _, NS, M, _, debug = scene()
+    M.__world:setFlag("IsFlying", true)
+    NS.Companion.DismissByGUID(RAGNAROS)   -- try 1, blocked
+    tick(M, 598)
+    assertEqual(pending(M), 1, "still retrying under the cap")
+    -- red under: a blocked dismiss with no try cap (the deadline it re-arms never comes).
+    tick(M)
+    assertEqual(pending(M), 0, "gave up at try 600")
+    assertTrue(found(debug, "gave up (tries)"))
+end)
+
+test("companion: a stand-up opens the 3 s window, as the legacy initialization did", function()
+    local _, NS, M = scene()
+    NS.Companion.Suspend()
+    NS.Companion.Resume()
+    local ok, why = NS.Companion.CanAct()
+    -- red under: a Resume that hooks without stamping lastSummonCall (Outfitter.lua:5286 stamped it).
+    assertFalse(ok, "a summon asked at the stand-up went through at once")
+    assertEqual(why, "recent")
+    NS.Companion.SummonByGUID(CAT)
+    assertEqual(#calls(M), 0, "it waits")
+    tick(M, 3)
+    assertEqual(#calls(M), 1, "and goes through once the window has passed")
 end)
 
 -- ── the lifecycle ─────────────────────────────────────────────────────────────────────────────

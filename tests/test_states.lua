@@ -260,6 +260,21 @@ test("states: STEALTH is the aura's or the form's, so neither edge drops the oth
     assertEqual(table.concat(s.heard, ","), "STEALTH=false")
 end)
 
+test("states: a stand-up in rogue Stealth with the Stealth outfit on publishes no STEALTH edge", function()
+    local s = scene({ class = "ROGUE", forState = { STEALTH = { "STEALTH" } } })
+    local id = s.NS.Outfits.Create("Sneak", {}, { trigger = "STEALTH" })
+    s.ctl.worn[id] = true
+    s.W:setForms({ { spellID = 1784 } }, 1)                    -- in Stealth, a form with no aura
+    s.S.Suspend()                                              -- a /reload, a re-enable
+    s.S.Resume()
+    clear(s.heard)
+    for _ = 1, 3 do s.M.__fireTimers() end                     -- the scan at 0, then the form poll
+    -- red under: the scan's STEALTH merge reading formStealth before any form poll since the
+    -- stand-up (STEALTH=false, then STEALTH=true 0.01 s later: the outfit comes off and goes on).
+    assertEqual(table.concat(s.heard, ","), "", "no edge on the stand-up")
+    assertTrue(s.S.IsActive("STEALTH"))
+end)
+
 -- ── the forms ─────────────────────────────────────────────────────────────────────────────────
 
 local FORMS = { { spellID = 5487 }, { spellID = 768 }, { spellID = 783 }, { spellID = 24858 }, { spellID = 33891 } }
@@ -355,6 +370,16 @@ test("states: the 0.5 s poll sets MOUNTED (not on a taxi) and SWIMMING inside on
     s.W:setFlag("IsSwimming", false)
     s.M.__fireTimers()
     assertFalse(s.S.IsActive("SWIMMING"))
+end)
+
+test("states: the aura scan reads MOUNTED too, so mounting does not wait for the poll", function()
+    local s = scene()
+    s.W:setFlag("IsMounted", true)
+    s.M.__fire("UNIT_AURA", "player")                          -- mounting fires one; no timer runs
+    -- legacy: UpdateAuraStates ran UpdateMountedState in its bracket (Outfitter.lua:4768), kept.
+    -- red under: MOUNTED set only from the 0.5 s poll (up to half a second late).
+    assertTrue(s.S.IsActive("MOUNTED"), "riding from the scan")
+    assertEqual(table.concat(s.heard, ","), "MOUNTED=true")
 end)
 
 -- ── Dining ────────────────────────────────────────────────────────────────────────────────────

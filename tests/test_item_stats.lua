@@ -113,6 +113,27 @@ test("stats: ItemStats maps the tokens, TOTAL_STATS sums the nine, ITEM_LEVEL is
     assertNil(NS.Stats.ItemStats(nil), "no link, no stats")
 end)
 
+test("stats: an item the client has no stats for yet scores 0 and keeps its item level", function()
+    -- legacy: 0 (statsForLink always answered an object, and the score was `or 0`;
+    -- MC2ItemStatsLib.lua:57-61, OutfitterItemStats.lua:148); kept: still a candidate, not dropped.
+    -- red under: Stats.ItemStats answering nil when Compat.ItemStats does (the item drops out).
+    local inst = T.load()
+    local NS = inst.NS
+    inst.mocks.C_Item.GetItemStats = function() return nil end
+    local s = NS.Stats.ItemStats(DB.head_plate.link)
+    assertTrue(s ~= nil, "no stats object")
+    assertEqual(s.values.ITEM_LEVEL, DB.head_plate.level, "the level is read on its own")
+    assertEqual(s.values.TOTAL_STATS, 0)
+    assertEqual(NS.Stats.Get("STA"):Score(info(NS, "head_plate")), 0, "scores 0, not nil")
+    assertEqual(NS.Stats.Get("ITEM_LEVEL"):Score(info(NS, "head_plate")), DB.head_plate.level)
+end)
+
+test("stats: the built-in category's label is the client's PLAYERSTAT_BASE_STATS", function()
+    -- red under: labeling the category with L["Base stats"] alone (a deDE client reads English)
+    local NS = deInstance(function(M) M.PLAYERSTAT_BASE_STATS = "Grundwerte" end).NS
+    assertEqual(category(NS, "Stat").label, "Grundwerte")
+end)
+
 test("stats: a combined primary key scores for each primary it names, and counts once in the total (O20)", function()
     -- red under: drop the alias lists (STR, AGI and INT then read 0 on adaptive gear)
     local inst = T.load()

@@ -82,12 +82,14 @@ local function totalOf(raw)
 end
 
 --- `{ values = { [statID] = n }, minLevel = n|nil }` for `link`, or nil when the link is unreadable
---- (absent, secret) or the client has no stats for it. A stat the item lacks is absent from values.
+--- (absent, secret). A stat the item lacks is absent from values. Stats the client cannot answer
+--- (not cached yet, or sealed) read as none, so the item still scores 0 on them and keeps its
+--- ITEM_LEVEL, which is read on its own: the legacy library always answered a stats object, and
+--- its score was `GetUncachedItemScore(item) or 0` (OutfitterItemStats.lua:148 at 7ea3dc3).
 function Stats.ItemStats(link)
     link = Secrets.PlainString(link)
     if not link then return nil end
-    local raw = Compat.ItemStats(link)
-    if not raw then return nil end
+    local raw = Compat.ItemStats(link) or {}
     local values = {}
     for _, row in ipairs(STAT_KEYS) do values[row[1]] = firstOf(raw, row[2]) end
     values.TOTAL_STATS = totalOf(raw)
@@ -173,7 +175,9 @@ BUILTIN_STATS[#BUILTIN_STATS + 1] = Stats.NewStat("ITEM_LEVEL", L["Item level"],
 
 -- A category: { id, label, stats = function() -> stat[] }. A function, so a source whose list can
 -- change (Pawn's visible scales) answers its current one.
-local BUILTIN = { id = "Stat", label = L["Base stats"], stats = function() return BUILTIN_STATS end }
+-- The label is the client's own PLAYERSTAT_BASE_STATS (the legacy Name), so every locale reads it.
+local BUILTIN = { id = "Stat", label = globalLabel("PLAYERSTAT_BASE_STATS", L["Base stats"]),
+                  stats = function() return BUILTIN_STATS end }
 local categories = { BUILTIN }
 
 --- The registered categories, built-in first. A fresh array; the categories are the live ones.

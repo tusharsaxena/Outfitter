@@ -86,19 +86,31 @@ local function flyoutOpenOn(button)
     return flyout:IsVisible() and flyout.button == button
 end
 
+-- The popout's own click handler toggles on its flyoutLocked: locked, it unlocks, hides the flyout
+-- and turns the arrow back; unlocked, it locks, shows the flyout and reverses the arrow. Every open
+-- and every close of a locked flyout goes through it, so Blizzard keeps its own state and this file
+-- writes none of it. A bare EquipmentFlyout_Hide leaves the lock set, and the next click on the slot
+-- would then only unlock it.
 local function postClick(button)
     if not active() then return end
+    local popout = button.popoutButton
     if flyoutOpenOn(button) then
-        EquipmentFlyout_Hide()
+        if popout and popout.flyoutLocked then
+            EquipmentFlyoutPopoutButton_OnClick(popout)
+        else
+            EquipmentFlyout_Hide()
+        end
         return
     end
-    -- If there's an item on the cursor after clicking or the slot is empty then open the flyout. The
-    -- popout's own click handler sets its flyoutLocked, so Blizzard keeps its state.
+    -- If there's an item on the cursor after clicking or the slot is empty then open the flyout.
     local cursorHasItem = _G.CursorHasItem
     local cursorItem = type(cursorHasItem) == "function" and Secrets.PlainTruth(cursorHasItem()) == true
-    if cursorItem or not Compat.InventoryItemLink(button.id or button:GetID()) then
-        if button.popoutButton then EquipmentFlyoutPopoutButton_OnClick(button.popoutButton) end
-    end
+    local empty = not Compat.InventoryItemLink(button.id or button:GetID())
+    if not popout or not (cursorItem or empty) then return end
+    -- A lock left set by a flyout closed some other way would make this click its unlock: clear it
+    -- through the handler first, so the open always opens (the legacy PostClick forced it open).
+    if popout.flyoutLocked then EquipmentFlyoutPopoutButton_OnClick(popout) end
+    EquipmentFlyoutPopoutButton_OnClick(popout)
 end
 
 -- Post-hook `settings[name]` with `fn` when the client has that function (hooksecurefunc raises on a

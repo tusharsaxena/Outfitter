@@ -12,16 +12,19 @@ local _, NS = ...
 -- removed, so its body reads the latch first.
 --
 -- THE CAP (INV §3.10 Fix; the legacy retry ran forever). A blocked pass retries in 1 s and counts a
--- try: at MAX_TRIES it gives up with a debug line. A dismiss also carries a deadline 60 s out, which
--- bounds the auto-summon watch below as well.
+-- try: a summon gives up at MAX_TRIES with a debug line. A dismiss carries a deadline 60 s out, which
+-- bounds the auto-summon watch below; a blocked pass re-arms it, so the watch's 60 s run from the
+-- moment the player can act again (a dismiss asked in flight still catches the pet the game
+-- re-summons on landing, as the legacy one did). Its blocked passes are capped at MAX_DISMISS_TRIES.
 --
 -- SECRETS. Every name and GUID goes through NS.Secrets.PlainString first (Compat does it too), so a
 -- nil or secret value answers false and never raises (INV §3.10 Fix). GUIDs compared here are
 -- plain strings from Compat.
 --
 -- STAND-DOWN (slash-commands-§7). Suspend cancels the ticker and drops the wish; Resume installs the
--- hook once and is otherwise a no-op (a wish does not survive a stand-down). A public call made while
--- stood down answers false and arms nothing.
+-- hook once and stamps the summon time, so the 3 s window also follows every stand-up, as it
+-- followed the legacy initialization (Outfitter.lua:5285-5286). A wish does not survive a
+-- stand-down, and a public call made while stood down answers false and arms nothing.
 --
 -- CALLS (at call time, no nil guard; design §12): NS.PlayerState for combat, death and the cast
 -- flags; NS.States.IsFeigning (P4.14); NS.Compat for the journal, the clock and IsFlying.
@@ -31,14 +34,15 @@ NS.Companion = Companion
 
 local Compat, Secrets = NS.Compat, NS.Secrets
 
-local MAX_TRIES       = 30   -- blocked passes before a wish is abandoned
-local RETRY_DELAY     = 1    -- seconds between passes
-local DISMISS_WINDOW  = 60   -- a dismiss (and its auto-summon watch) gives up this long after it is asked
-local SUMMON_COOLDOWN = 3    -- seconds after any SummonPetByGUID call before the next one is safe
+local MAX_TRIES         = 30    -- blocked passes before a summon is abandoned
+local MAX_DISMISS_TRIES = 600   -- blocked passes before a dismiss is abandoned (ten minutes of flight)
+local RETRY_DELAY       = 1     -- seconds between passes
+local DISMISS_WINDOW    = 60    -- a dismiss watch's length: from the ask, or its last blocked pass
+local SUMMON_COOLDOWN   = 3     -- seconds after any SummonPetByGUID call before the next one is safe
 
 local want            -- nil | { act = "summon"|"dismiss", guid, tries, deadline }
 local ticker          -- the pending reconcile, an AceTimer handle
-local lastSummonCall  -- Compat.GetTime() of the last SummonPetByGUID call, nil before the first
+local lastSummonCall  -- Compat.GetTime() of the last SummonPetByGUID call, or of the last stand-up
 local timers          -- the AceTimer target
 local hooked = false
 
@@ -94,11 +98,15 @@ local function giveUp(why)
     want = nil
 end
 
---- Come back in a second, unless the wish has run out: `blocked` passes count against MAX_TRIES,
---- and every pass of a dismiss is bounded by its deadline.
+--- Come back in a second, unless the wish has run out: `blocked` passes count against the act's
+--- cap, and every pass of a dismiss is bounded by its deadline, which a blocked pass re-arms.
 local function retry(blocked)
-    if blocked then want.tries = want.tries + 1 end
-    if want.tries >= MAX_TRIES then return giveUp("tries") end
+    local dismiss = want.act == "dismiss"
+    if blocked then
+        want.tries = want.tries + 1
+        if dismiss then want.deadline = Compat.GetTime() + DISMISS_WINDOW end
+    end
+    if want.tries >= (dismiss and MAX_DISMISS_TRIES or MAX_TRIES) then return giveUp("tries") end
     if want.deadline and Compat.GetTime() >= want.deadline then return giveUp("deadline") end
     schedule(RETRY_DELAY)
 end
@@ -222,8 +230,10 @@ function Companion.Suspend()
     want = nil
 end
 
---- The stand-up: install the SummonPetByGUID hook the first time; nothing else to rebuild.
+--- The stand-up: install the SummonPetByGUID hook the first time, and open the 3 s window (the
+--- legacy initialization stamped the call time as well as hooking it).
 function Companion.Resume()
     if not timers then timers = LibStub("AceTimer-3.0"):Embed({}) end
     if not hooked then hooked = Compat.HookPetSummon(onSummonCall) end
+    lastSummonCall = Compat.GetTime()
 end
