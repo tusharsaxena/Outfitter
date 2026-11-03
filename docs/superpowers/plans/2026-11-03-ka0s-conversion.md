@@ -26,7 +26,7 @@ Research outputs live in `docs/superpowers/specs/2026-11-03-*.md`.
 | Id | Phase | Status | Evidence |
 |---|---|---|---|
 | P0 | Branch + this plan | done | branch created |
-| P1 | Understand: Outfitter feature inventory, DpsRace blueprint, standard digest | pending | specs/ |
+| P1 | Understand: Outfitter feature inventory, DpsRace blueprint, standard digest | done | specs/2026-11-03-{outfitter-feature-inventory,dpsrace-blueprint,standard-checklist}.md |
 | P2 | Design: target module map, schema, launcher, test mode, skin surfaces | pending | specs/2026-11-03-design.md |
 | P3 | Scaffold: libs (Ace3, LibKa0s, LSM, LDB, LibDBIcon), TOC, core seams, tests/_kit, locales | pending | |
 | P4 | Port: engine, scripting, optimize/stats, UI, bar, quick slots, settings, launcher, test mode | pending | |
