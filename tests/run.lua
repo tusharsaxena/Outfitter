@@ -141,7 +141,7 @@ local SUITES = {
     { name = "test_outfits" },
     { name = "test_reset" },
 
-    { name = "test_equip_plan",       pending = "P4.7" },
+    { name = "test_equip_plan" },
 
     { name = "test_item_stats",       pending = "P4.11" },
 
