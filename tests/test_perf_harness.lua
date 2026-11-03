@@ -83,11 +83,12 @@ end)
 
 -- ── the perf hold ──────────────────────────────────────────────────────────────────────────────
 
---- The registrations an instance holds for one event.
-local function regsFor(mocks, event)
+--- The registrations an instance holds for one event, on `target` (the addon object): a module that
+--- lands its own registration of the same event (Inventory's BAG_UPDATE, P4.5) is not the stand-in's.
+local function regsFor(mocks, event, target)
     local n = 0
     for _, reg in ipairs(mocks.__registrations()) do
-        if reg.event == event then n = n + 1 end
+        if reg.event == event and reg.target == target then n = n + 1 end
     end
     return n
 end
@@ -108,7 +109,7 @@ test("perf: Suspend takes the perf hold and stands the addon down; Resume stands
     end
     NS.RegisterGameEvents()
     calls = {}
-    assertEqual(regsFor(M, "BAG_UPDATE"), 1, "the baseline holds no registration; nothing below can fail")
+    assertEqual(regsFor(M, "BAG_UPDATE", NS.addon), 1, "the baseline holds no registration; nothing below can fail")
 
     assertFalse(NS.IsStoodDown())
     assertNil(NS.StoodDownRefusal(), "a refusal while standing up")
@@ -117,13 +118,13 @@ test("perf: Suspend takes the perf hold and stands the addon down; Resume stands
     assertTrue(NS.lifecycle:IsHeld(NS.HOLD_PERF))
     assertTrue(NS.IsStoodDown())
     assertFalse(NS.IsDisabled(), "the perf hold reads as the disabled hold")
-    assertEqual(regsFor(M, "BAG_UPDATE"), 0, "a registration survived the perf hold")
+    assertEqual(regsFor(M, "BAG_UPDATE", NS.addon), 0, "a registration survived the perf hold")
     assertEqual(NS.StoodDownRefusal(), "Not available during a performance capture.")
     assertFalse(NS.Perf.Suspend(), "a second Suspend took the hold twice")
 
     assertTrue(NS.Perf.Resume(), "Resume refused")
     assertFalse(NS.IsStoodDown())
-    assertEqual(regsFor(M, "BAG_UPDATE"), 1, "Resume did not rebuild the registrations")
+    assertEqual(regsFor(M, "BAG_UPDATE", NS.addon), 1, "Resume did not rebuild the registrations")
     assertEqual(table.concat(calls, ","), "busDown,busUp,events")
 end)
 
