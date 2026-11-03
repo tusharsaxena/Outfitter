@@ -175,8 +175,8 @@ local SUITES = {
 
     { name = "test_triggers_quest",   pending = "P4.16c" },
 
-    { name = "test_triggers_class",   pending = "P4.16d" },
-    { name = "test_triggers_pvp",     pending = "P4.16d" },
+    { name = "test_triggers_class" },
+    { name = "test_triggers_pvp" },
 
     { name = "test_dock",             pending = "P4.19" },
     { name = "test_list_model",       pending = "P4.19" },
