@@ -167,7 +167,7 @@ local SUITES = {
     { name = "test_trigger_binder",   pending = "P4.15" },
     { name = "test_no_loadstring",    pending = "P4.15" },
 
-    { name = "test_api",              pending = "P4.25" },
+    { name = "test_api" },
 
     { name = "test_triggers_general", pending = "P4.16a" },
 
