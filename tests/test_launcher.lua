@@ -129,10 +129,12 @@ test("launcher: while disabled every entry but Enabled and Open settings is gray
     assertFalse(inst.NS.IsDisabled(), "Enabled works in the off state")
 end)
 
-test("launcher: the tooltip's host line is the stack's label, absent until the stack lands", function()
+test("launcher: the tooltip's host line is the stack's label, absent without a stack", function()
     -- red under: an onTooltipShow that reads NS.Stack unguarded. It raises inside the library's
     -- pcall and every other line still draws, so only the library's debug line says so.
     local inst = T.load()
+    local realStack = inst.NS.Stack
+    inst.NS.Stack = nil
     local logged = {}
     local realDebug = inst.NS.Debug
     inst.NS.Debug = function(tag, fmt, ...) logged[#logged + 1] = tostring(tag) .. ": " .. fmt:format(...) end
@@ -144,7 +146,9 @@ test("launcher: the tooltip's host line is the stack's label, absent until the s
     inst.NS.Stack = { CurrentLabel = function() return "Fishing" end }
     lines = tooltipLines(inst)
     assertTrue(hasLine(lines, "Current outfit: Fishing"), "the host line")
-    inst.NS.Stack = nil
+    inst.NS.Stack = realStack
+    lines = tooltipLines(inst)
+    assertTrue(hasLine(lines, "Current outfit: None"), "the real stack's label for an empty stack (P4.9)")
 end)
 
 test("launcher: the Minimap button row hides and shows the real button", function()

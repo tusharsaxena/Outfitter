@@ -145,6 +145,9 @@ L["No equipment errors this session"] = "No equipment errors this session"
 L["Equipment updates are STUCK (count %d) -- reload to clear"] = "Equipment updates are STUCK (count %d) -- reload to clear"
 
 -- P4.9 keys (modules/OutfitStack.lua, modules/OutfitStack_Watch.lua)
+L["Custom"] = "Custom"
+L["None"] = "None"
+L["Adding %s to %s outfit"] = "Adding %s to %s outfit"
 
 -- P4.10 keys (modules/EquipmentManager.lua, modules/Bank.lua)
 

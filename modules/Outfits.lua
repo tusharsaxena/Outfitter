@@ -430,13 +430,16 @@ function O.UnknownSlots(id, cache)
 end
 
 --- Window-open recording (Outfitter.lua:1938-1983, OutfitterOutfits.lua:46): the new items go into
---- the outfit, except over a slot in the "unknown" state. The model reads no frame.
+--- the outfit, except over a slot in the "unknown" state. The model reads no frame. The Watch passes
+--- the unknown set as it stood BEFORE the swap (modules/OutfitStack_Watch.lua): read after it, every
+--- slot the outfit uses that the player just changed would read "unknown" and nothing would record.
 --- @param id string
 --- @param items table  slot -> ItemRecord
-function O.AddNewItems(id, items)
+--- @param unknown table|nil  slot -> true; default: the slots unknown now (O.UnknownSlots)
+function O.AddNewItems(id, items, unknown)
     local rec = O.Get(id)
     if not rec then return end
-    local unknown = O.UnknownSlots(id, NS.Inventory.Cache())
+    unknown = unknown or O.UnknownSlots(id, NS.Inventory.Cache())
     for slot, item in pairs(items) do
         if not unknown[slot] then kindOf(rec).SetItem(rec, slot, item) end
     end

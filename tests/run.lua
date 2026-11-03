@@ -156,7 +156,7 @@ local SUITES = {
 
     { name = "test_tooltips" },
 
-    { name = "test_stack",            pending = "P4.9" },
+    { name = "test_stack" },
 
     { name = "test_em_sync",          pending = "P4.10" },
     { name = "test_bank",             pending = "P4.10" },
