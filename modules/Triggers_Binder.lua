@@ -261,13 +261,15 @@ end
 
 --- Bind one outfit's trigger (design §6.9). Quietly false for no trigger, a disabled one, an unknown
 --- or not-yet-available id (one line), a TRINKET_QUEUE on an Equipment Manager set, or a binding
---- faulted this session. Rebinding an already-bound outfit unbinds it first.
+--- faulted this session. Rebinding an already-bound outfit unbinds it first; a worn outfit's effects
+--- stay applied only when the same trigger binds again, else its onSuspend restores them.
 --- @param id string
 --- @return boolean bound
 function B.Bind(id)
-    unbind(id, true)
     local rec = NS.Outfits.Get(id)
     local desc = bindable(rec)
+    local old = bound[id]
+    unbind(id, old ~= nil and desc ~= nil and old.desc.id == desc.id)
     if not desc then return false end
     local t = targetFor(id)
     local ctx = setmetatable({
@@ -308,8 +310,7 @@ local function flushDirty()
     table.sort(ids)
     for _, id in ipairs(ids) do
         dirty[id] = nil
-        unbind(id, true)
-        if active then B.Bind(id) end
+        if active then B.Bind(id) else unbind(id, false) end
     end
 end
 

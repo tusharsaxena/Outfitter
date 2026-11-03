@@ -30,6 +30,12 @@ local function scene(scenario)
     return NS, M, root and root.API and root.API.v1
 end
 
+-- The session's first LoadPass (seed, repair, stack, binder): nothing is dispatched before it (INV §6.4).
+local function firstPass(NS)
+    NS.Outfits.LoadPass()
+    return NS
+end
+
 local function snapOf(NS, info) return NS.ItemInfo.Snapshot(info) end
 
 -- Every error the client's handler would have shown, in order.
@@ -184,6 +190,7 @@ end)
 
 test("api: a subscriber hears added, edited, renamed, worn, removed and deleted, as fn(event, id, ...)", function()
     local NS, _, v1 = scene()
+    firstPass(NS)
     local heard = {}
     assertTrue(v1.RegisterOutfitEvent(function(event, id, ...)
         heard[#heard + 1] = { event = event, id = id, extra = { ... } }
@@ -213,8 +220,21 @@ test("api: a subscriber hears added, edited, renamed, worn, removed and deleted,
     end
 end)
 
+test("api: nothing is dispatched before the session's first LoadPass (INV §6.4)", function()
+    local NS, _, v1 = scene()
+    local heard = {}
+    assertTrue(v1.RegisterOutfitEvent(function(event) heard[#heard + 1] = event end))
+    NS.Outfits.Create("Early", { HeadSlot = { id = 0 } })
+    NS.Outfits.LoadPass()
+    -- red under: a dispatch with no first-LoadPass gate (the seed's OUTFIT_ADDEDs reach the subscriber).
+    assertEqual(#heard, 0, "the load's own sends stay inside the addon")
+    NS.Outfits.Create("Late", { HeadSlot = { id = 0 } })
+    assertEqual(table.concat(heard, ","), "OUTFIT_ADDED")
+end)
+
 test("api: a raising subscriber is isolated, and a return value is never an error", function()
     local NS, M, v1 = scene()
+    firstPass(NS)
     local errs = catchErrors(M)
     local order = {}
     v1.RegisterOutfitEvent(function() order[#order + 1] = "first"; error("boom") end)
@@ -233,6 +253,7 @@ end)
 
 test("api: Unregister stops the calls, a second Register is one subscription, a non-function is refused", function()
     local NS, _, v1 = scene()
+    firstPass(NS)
     local n = 0
     local function fn() n = n + 1 end
     assertTrue(v1.RegisterOutfitEvent(fn))
@@ -251,6 +272,7 @@ end)
 
 test("api: a subscriber that unregisters itself mid-dispatch does not skip the next one", function()
     local NS, _, v1 = scene()
+    firstPass(NS)
     local order = {}
     local first
     first = function() order[#order + 1] = "first"; v1.UnregisterOutfitEvent(first) end
@@ -263,6 +285,7 @@ end)
 
 test("api: a stand-down silences the subscribers and a stand-up brings them back", function()
     local NS, _, v1 = scene()
+    firstPass(NS)
     local n = 0
     v1.RegisterOutfitEvent(function() n = n + 1 end)
     NS.ApplyEnabled(false)

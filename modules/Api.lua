@@ -17,10 +17,12 @@ local _, NS = ...
 -- messages and calls each subscriber as fn(event, id, ...): event is the catalog key
 -- ("OUTFIT_ADDED"), never the wire name, and `...` is the rest of the message's payload (the name of a
 -- deleted outfit; the old and new names of a rename). Each call is xpcall-isolated and a raise goes to
--- the client's error handler; a returned value is ignored, never an error (INV §6.4's Fix). The bus
--- record drops the receiver at a stand-down and replays it at the stand-up.
+-- the client's error handler; a returned value is ignored, never an error (INV §6.4's Fix). Nothing
+-- is dispatched before the session's first LoadPass has run (the legacy `Initialized` guard, INV
+-- §6.4): the seed's and the repair's sends stay inside the addon. The bus record drops the receiver
+-- at a stand-down and replays it at the stand-up.
 --
--- CALLS (at call time, no nil guard; design §12): NS.Outfits.FindByName/Get/UsingItem and
+-- CALLS (at call time, no nil guard; design §12): NS.Outfits.FindByName/Get/UsingItem/FirstPassDone and
 -- NS.Stack.Wear/Remove/CurrentInfo.
 
 local API = {}
@@ -121,6 +123,7 @@ end
 -- A snapshot of the list, so a subscriber that unregisters (itself or another) mid-call changes the
 -- next dispatch, not this one. Lua 5.1's xpcall forwards no arguments: they travel in a closure.
 local function dispatch(key, ...)
+    if not NS.Outfits.FirstPassDone() then return end
     local n, args = select("#", ...), { ... }
     local list = { unpack(subscribers) }
     for _, fn in ipairs(list) do

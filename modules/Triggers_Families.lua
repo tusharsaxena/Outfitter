@@ -69,9 +69,16 @@ function G.vashjir(ctx)
     return false
 end
 
+-- The active spec, read from the client as the legacy scripts did (GetSpecialization()). Not
+-- NS.PlayerState.Spec(): a binding can hear ACTIVE_PLAYER_SPECIALIZATION_CHANGED before PlayerState
+-- has refreshed that cache (CallbackHandler walks its targets in next() order).
+local function liveSpec()
+    return Secrets.PlainNumber(Compat.GetSpecialization())
+end
+
 --- The spec toggle for the active spec is off.
 function G.specOff(ctx)
-    local spec = NS.PlayerState.Spec()
+    local spec = liveSpec()
     return spec ~= nil and ctx.params["spec" .. spec] == false
 end
 
@@ -322,7 +329,7 @@ end
 --- only when the spec actually changed, and the half-second delay lets an artifact equip properly.
 function F.spec(args)
     return function(ctx)
-        local spec = NS.PlayerState.Spec()
+        local spec = liveSpec()
         if spec == ctx.state.prevSpec then return nil end
         ctx.state.prevSpec = spec
         if spec == args.index then return EQUIP, 0.5 end

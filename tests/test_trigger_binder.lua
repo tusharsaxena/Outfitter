@@ -267,6 +267,38 @@ test("binder: this outfit's own wear runs its effects, a stand-down restores the
     assertTrue(st.worn[id], "the outfit itself is the stack's")
 end)
 
+test("binder: a rebind onto the same trigger keeps a worn outfit's effects; disabling or switching restores them", function()
+    local NS, M = scene()
+    M.__cvars.autoLootDefault = "0"
+    local id = NS.Outfits.Create("Stealth", {}, { trigger = "ROGUE_STEALTH" })
+    NS.SetByPath("trigger.ROGUE_STEALTH.autoLoot", true, id)
+    local st = fakeStack(NS)
+    fakeEquip(NS)
+    NS.TriggerBinder.BindAll()
+    state(NS, "STEALTH", true)
+    assertEqual(M.__cvars.autoLootDefault, "1")
+    assertTrue(NS.SetByPath("outfit.trigger.combatDisabled", true, id))
+    M.__fireTimers()
+    assertTrue(NS.TriggerBinder.IsBound(id))
+    assertEqual(M.__cvars.autoLootDefault, "1", "the same trigger rebound: its effects stay applied")
+    assertTrue(NS.SetByPath("outfit.trigger.disabled", true, id))
+    M.__fireTimers()
+    assertFalse(NS.TriggerBinder.IsBound(id))
+    -- red under: the rebind unbinding with keepEffects always, as flushDirty and B.Bind did (auto loot
+    -- stays on for good).
+    assertEqual(M.__cvars.autoLootDefault, "0", "disabled: the restore ran")
+    assertTrue(NS.SetByPath("outfit.trigger.disabled", false, id))
+    M.__fireTimers()
+    st.worn[id] = nil                      -- taken off meanwhile: the next wear applies the effects again
+    state(NS, "STEALTH", true)
+    assertEqual(M.__cvars.autoLootDefault, "1")
+    assertTrue(NS.SetByPath("outfit.trigger.id", "SWIMMING", id))
+    M.__fireTimers()
+    assertEqual(NS.TriggerBinder.Context(id).desc.id, "SWIMMING")
+    -- red under: keepEffects for any rebind that binds something (not only the same trigger id).
+    assertEqual(M.__cvars.autoLootDefault, "0", "switched: the restore ran")
+end)
+
 -- ── auto.enabled, the legacy addon, the messages ──────────────────────────────────────────────
 
 test("binder: auto.enabled off unbinds all and on rebinds, through SETTINGS_CHANGED alone", function()

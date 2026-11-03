@@ -456,6 +456,21 @@ test("triggers: gathering, the vehicle quests and the spec rows", function()
     assertEqual(call(ns, "SPEC_2", {}, "BIND"), "unequip")
 end)
 
+test("triggers: a spec change reads the client's spec, not PlayerState's cache of it", function()
+    local ns, M = finalized(nil, function(M) M.__world:setClass("WARRIOR", 1) end)
+    ns.PlayerState.Refresh()
+    local ctx = ctxFor(ns, "SPEC_2")
+    assertEqual(ctx.desc.condition(ctx, "BIND"), "unequip")
+    -- The binding hears ACTIVE_PLAYER_SPECIALIZATION_CHANGED before PlayerState does (CallbackHandler
+    -- walks its targets in next() order): the cache still says spec 1.
+    M.__spec = 2
+    -- red under: F.spec reading NS.PlayerState.Spec() (the old spec equals prevSpec: no swap).
+    local a, d = ctx.desc.condition(ctx, "ACTIVE_PLAYER_SPECIALIZATION_CHANGED")
+    assertEqual(a, "equip"); assertEqual(d, 0.5)
+    -- red under: G.specOff reading NS.PlayerState.Spec() (the enabled old spec keeps the outfit on).
+    assertEqual(call(ns, "BG_AV", { params = { spec2 = false } }, "ACTIVE_PLAYER_SPECIALIZATION_CHANGED"), "unequip")
+end)
+
 -- ── the effects ───────────────────────────────────────────────────────────────────────────────
 
 test("triggers: the effects record what they changed and restore exactly that", function()

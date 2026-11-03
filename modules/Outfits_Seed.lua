@@ -201,6 +201,10 @@ function O.LoadPass()
     end
 end
 
+--- The session's first LoadPass has run (the public API dispatches nothing before it, INV §6.4).
+--- @return boolean
+function O.FirstPassDone() return firstDone end
+
 -- ── the timer and the lifecycle ───────────────────────────────────────────────────────────────
 
 local events, timers
