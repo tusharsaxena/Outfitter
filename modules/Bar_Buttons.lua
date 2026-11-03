@@ -20,9 +20,6 @@ local _, NS = ...
 --
 -- CALLS (at call time, no nil guard; design §12): NS.Stack, NS.Outfits, NS.OutfitMenu.Open,
 -- NS.OutfitTooltip.Show, NS.Triggers.Get, NS.SetByPath.
---
--- luacheck: read globals GameTooltip
--- (P4.20 handback: GameTooltip belongs in the Bar stanza of .luacheckrc; this line goes when it lands.)
 
 local Bar = NS.Bar
 

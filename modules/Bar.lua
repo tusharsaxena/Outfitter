@@ -29,9 +29,6 @@ local _, NS = ...
 --
 -- CALLS (at call time, no nil guard; design §12): NS.Outfits, NS.Preview.IsActive/Source,
 -- NS.PlayerState.InCombat; the buttons call NS.Stack, NS.OutfitMenu, NS.OutfitTooltip, NS.Triggers.
---
--- luacheck: read globals UIFrameFadeOut UIFrameFadeRemoveFrame
--- (P4.20 handback: these two belong in the Bar stanza of .luacheckrc; this line goes when they land.)
 
 local Bar = {}
 NS.Bar = Bar

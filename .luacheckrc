@@ -108,6 +108,7 @@ local TRIGGER_READS = {
     "C_QuestLog", "C_TradeSkillUI", "C_Minimap", "SpellIsTargeting", "HasFullControl", "DoEmote",
     "ChangeActionBarPage", "IsInInstance", "C_Map", "GameTooltip", "C_Spell", "C_Item", "C_PetJournal",
     "C_UnitAuras", "GetCursorInfo", "GetMinimapZoneText", "GetNormalizedRealmName", "GetActionBarPage",
+    "GetInstanceInfo",
 }
 for _, f in ipairs({ "modules/Triggers_Params.lua", "modules/Triggers_Families.lua",
                      "modules/Triggers_CondGeneral.lua", "modules/Triggers_CondTrade.lua",
@@ -155,7 +156,12 @@ end
 
 -- The bar and the icon chooser take a dropped spell, item or macro as an icon.
 for _, f in ipairs({ "modules/Bar.lua", "modules/Bar_Buttons.lua", "modules/IconChooser.lua" }) do
-    files[f] = { read_globals = { "GetCursorInfo", "C_Spell", "C_Item", "GetMacroInfo", "IsAltKeyDown" } }
+    files[f] = {
+        read_globals = {
+            "GetCursorInfo", "C_Spell", "C_Item", "GetMacroInfo", "IsAltKeyDown",
+            "UIFrameFadeOut", "UIFrameFadeRemoveFrame", "GameTooltip",
+        },
+    }
 end
 
 -- The published slash surface is colon-called by the host and the suites and forwards to the

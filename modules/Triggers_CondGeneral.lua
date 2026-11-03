@@ -19,8 +19,7 @@ local _, NS = ...
 -- NS.TriggerParams.CaptureTarget, NS.Inventory.NextCooldownItem/SlotItemActive/Cache, NS.Outfits.SetItem,
 -- NS.ItemInfo.Snapshot, NS.Equip.Batch/Request.
 --
--- CLIENT READS: the trigger stanza in .luacheckrc; GetInstanceInfo, which that stanza does not
--- declare, is taken off `_G` by name (as modules/Triggers_Families.lua takes IsInInstance).
+-- CLIENT READS: the trigger stanza in .luacheckrc.
 
 NS.TriggerConditions = NS.TriggerConditions or {}    -- architecture-§3 idempotent; Finalize reads it
 local Cond = NS.TriggerConditions
@@ -78,7 +77,7 @@ end
 --- GetInstanceInfo's 3rd return (0 in the open world) in an enabled group -> EQUIP; otherwise the
 --- outfit comes off only if this trigger put it on. An unreadable difficulty changes nothing.
 function Cond.INSTANCE_DIFFICULTY(ctx)
-    local get = _G.GetInstanceInfo
+    local get = GetInstanceInfo
     if not get then return nil end
     local _, _, difficultyID = get()
     difficultyID = Secrets.PlainNumber(difficultyID)

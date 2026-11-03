@@ -102,12 +102,15 @@ test("launcher: each menu entry runs the shared handler", function()
     openMenu(inst):Click("Locked")
     assertEqual(NS.db.profile.locked, false)
 
-    -- Show window is the Show window key's handler: the settings panel until the window lands (P4.19).
-    local opened = 0
-    NS.OpenOptionsPanel = function() opened = opened + 1 end
+    -- Show window is the Show window key's handler: it toggles the outfit window (P4.19).
+    -- red under: a toggleWindow that still opens the settings panel.
+    local toggled, settings = 0, 0
+    NS.Dock.Toggle = function() toggled = toggled + 1 end
+    NS.OpenOptionsPanel = function() settings = settings + 1 end
     openMenu(inst):Click("Show window")
-    assertEqual(opened, 1)
-    assertFalse(openMenu(inst):Find("Show window").isSelected(), "no outfit window is shown yet")
+    assertEqual(toggled, 1)
+    assertEqual(settings, 0, "Show window opened the settings panel")
+    assertFalse(openMenu(inst):Find("Show window").isSelected(), "the outfit window is not shown")
     assertFalse(openMenu(inst):Find("Test mode").isSelected(), "test mode is off with no preview")
     openMenu(inst):Click("Test mode")                      -- no preview yet: nothing to toggle, no raise
 

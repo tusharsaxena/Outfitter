@@ -120,9 +120,9 @@ end)
 test("keybinds: the Show window press runs the launcher's Show window handler", function()
     local inst = T.load()
     local opened = 0
-    inst.NS.OpenOptionsPanel = function() opened = opened + 1 end
+    inst.NS.Dock.Toggle = function() opened = opened + 1 end
     inst.mocks._G.OutfitterRebornToggleWindow:__fire("OnClick", "LeftButton", true)
-    assertEqual(opened, 1, "the press did not reach the handler (the settings panel until P4.19)")
+    assertEqual(opened, 1, "the press did not reach the handler (NS.Dock.Toggle)")
 end)
 
 test("keybinds: a press while stood down refuses through the one helper, with the verb's line", function()
@@ -131,7 +131,7 @@ test("keybinds: a press while stood down refuses through the one helper, with th
     local inst = T.load()
     local NS, M = inst.NS, inst.mocks
     local opened = 0
-    NS.OpenOptionsPanel = function() opened = opened + 1 end
+    NS.Dock.Toggle = function() opened = opened + 1 end
     NS.SetByPath("enabled", false)
     M.__resetPrinted()
     M._G.OutfitterRebornToggleWindow:__fire("OnClick", "LeftButton", true)

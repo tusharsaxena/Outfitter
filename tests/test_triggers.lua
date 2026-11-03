@@ -3,8 +3,8 @@
 -- (modules/Triggers_Params.lua), the families, guards and TooltipHasLine (modules/Triggers_Families.lua)
 -- and the save-and-restore effects (modules/Triggers_Effects.lua).
 --
--- The binder is tests/test_trigger_binder.lua. The bespoke conditions land in P4.16a-c (their own
--- suites); a case here that needs every descriptor bound gives each bespoke id a stand-in condition
+-- The binder is tests/test_trigger_binder.lua. The bespoke conditions (P4.16a-c) have their own
+-- suites; a case here that needs every descriptor bound gives each bespoke id a stand-in condition
 -- through NS.TriggerConditions before re-running Finalize.
 
 local T = _G.OUTFITTERREBORN_TEST
@@ -13,7 +13,8 @@ local test, assertEqual, assertTrue, assertFalse, assertNil =
 
 local NS = T.NS
 
--- The bespoke ids (no family): P4.16a, P4.16b and P4.16c write their conditions.
+-- The bespoke ids (no family), whose conditions P4.16a, P4.16b and P4.16c wrote. This suite answers
+-- them with stand-ins; the real conditions are covered by the test_triggers_* suites.
 local BESPOKE = {
     IN_DUNGEON = true, INSTANCE_DIFFICULTY = true, HAS_BUFF = true, TARGET = true, TRINKET_QUEUE = true,
     FEET_QUEUE = true, IN_ZONES = true, TALENT_TREE = true, PVP_FLAGGED = true,
@@ -30,7 +31,7 @@ local function allBespoke(fn)
     return out
 end
 
--- A fresh instance with every bespoke id answered by `fn` (a stand-in until P4.16 lands).
+-- A fresh instance with every bespoke id answered by `fn` (stand-ins for the real P4.16 conditions).
 local function finalized(fn, mutate)
     local inst = T.load({ mutate = mutate })
     inst.NS.TriggerConditions = allBespoke(fn or function() return nil end)

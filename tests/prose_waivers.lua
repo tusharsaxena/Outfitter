@@ -23,5 +23,8 @@ return {
         -- The same field: tests/test_em_sync.lua sets it on the rebuild's 10 s AceTimer handle so the
         -- mock, which fires every queued timer at once, holds that cancel off.
         ["tests/test_em_sync.lua"] = { cancelled = true },
+        -- The same field: tests/test_triggers_trade.lua counts the live looping tickers, skipping a
+        -- handle the mock AceTimer has marked `cancelled`.
+        ["tests/test_triggers_trade.lua"] = { cancelled = true },
     },
 }

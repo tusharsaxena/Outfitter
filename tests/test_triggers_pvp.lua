@@ -235,7 +235,7 @@ test("pvp: a disabled spec keeps the outfit off, and the spec change puts it on 
     assertEqual(logged(s, "wear"), "", "out of the zone a spec change wears nothing")
 end)
 
-test("pvp: every zone trigger honours each of the four spec toggles", function()
+test("pvp: every zone trigger honors each of the four spec toggles", function()
     local s = scene()
     for _, z in ipairs(s.NS.Zones.rows) do
         local ctx = s.NS.TriggerBinder.Context(s.byTrigger[z.id])

@@ -4,8 +4,8 @@ local addonName, NS = ...
 -- the one table they are declared in (design §4.5).
 --
 -- P3 C13 lands the Show window binding only. P4.24 adds the other 13 rows to BUTTONS below (the ten
--- wear keys, AutoOn, AutoOff, UpdateOutfit) and NS.WearBoundOutfit; P4.19 points toggleWindow at
--- NS.Dock.Toggle.
+-- wear keys, AutoOn, AutoOff, UpdateOutfit) and NS.WearBoundOutfit. toggleWindow is NS.Dock.Toggle
+-- (P4.19).
 
 local Launcher = LibStub and LibStub("LibKa0s-Launcher-1.0", true)
 local L = NS.L
@@ -16,10 +16,9 @@ local function minimapTable()
 end
 
 --- THE Show window handler: the launcher menu's entry and the Show window key both call it, so the
---- press and the menu cannot differ (launcher-§6). The outfit window lands in P4.19; until then it
---- opens the settings panel, the one surface the scaffold has.
+--- press and the menu cannot differ (launcher-§6). It shows or hides the outfit window (P4.19).
 local function toggleWindow()
-    NS.OpenOptionsPanel()
+    NS.Dock.Toggle()
 end
 
 --- Run a verb by name, or `fallback` while the verb is not in NS.COMMANDS yet. `lock` and `unlock`
@@ -119,8 +118,8 @@ NS.Launcher = Launcher:New({
     setEnabled     = function(on) NS.RunVerb(on and "enable" or "disable") end,
     isLocked       = function() return NS.GetSetting("locked") == true end,
     toggleLock     = toggleLock,
-    -- Test mode and the outfit window land in P4.22 and P4.19; until then the first answers off and
-    -- does nothing, and Show window opens the settings panel (toggleWindow above).
+    -- Test mode lands in P4.22; until then it answers off and does nothing. Show window toggles the
+    -- outfit window (toggleWindow above).
     isTestMode     = function() return NS.Preview ~= nil and NS.Preview.IsActive() end,
     toggleTestMode = function() if NS.Preview then NS.Preview.Toggle() end end,
     isWindowShown  = function() return NS.Dock ~= nil and NS.Dock.IsShown() end,
