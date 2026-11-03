@@ -26,7 +26,7 @@ Senders marked P4 arrive with the port; until then the key is declared and nothi
 | Key | Sender | Payload | Receivers |
 |---|---|---|---|
 | `SETTINGS_CHANGED` | `settings/Schema.lua` (the announce) | `(path, value)`, settings paths only | Trigger binder (`auto.enabled`), Bar (`bar.*`), Window |
-| `PROFILE_CHANGED` | `core/Database.lua` | `(key)` | Everything that re-applies a profile |
+| `PROFILE_CHANGED` | `core/Database.lua` | `(key)` | Everything that re-applies a profile; the Trigger binder calls `SetActive` from the new profile's `auto.enabled` itself, so `NS.ApplyProfile` must not |
 | `OUTFIT_ADDED` | `modules/Outfits.lua` (P4) | `(id)` | Window, Bar, Trigger binder (`Bind(id)`), API v1 |
 | `OUTFIT_DELETED` | `modules/Outfits.lua` (P4) | `(id, name)` | Window, Bar, Trigger binder (unbind), API v1 |
 | `OUTFIT_EDITED` | `modules/Outfits.lua` (P4), also for the instance-row writes the `NS.OutfitSchema` announce makes | `(id, what)` | Window, Bar, Tooltips, Trigger binder (coalesced rebind on `what == "trigger"`), API v1 |
@@ -53,3 +53,8 @@ Senders marked P4 arrive with the port; until then the key is declared and nothi
 
 The four outfit-record messages are per kind on purpose: a receiver needs to know whether an outfit
 was added, deleted, edited or renamed, and `NS.Outfits` stays their only sender.
+
+The public API v1 (`modules/Api.lua`) relays the six `OUTFIT_*` messages to its subscribers as
+`fn(event, id, ...)`: `event` is the catalog key, never the wire name, and `...` is the rest of
+the bus payload above. While the addon is stood down, `WearOutfit` and
+`RemoveOutfit` return false; the reads still answer.

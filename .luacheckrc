@@ -106,7 +106,8 @@ files["modules/States_Zone.lua"] = {
 local TRIGGER_READS = {
     "IsFalling", "IsResting", "UnitIsPVP", "UnitGUID", "UnitIsPlayer", "UnitName", "UnitInVehicle",
     "C_QuestLog", "C_TradeSkillUI", "C_Minimap", "SpellIsTargeting", "HasFullControl", "DoEmote",
-    "ChangeActionBarPage",
+    "ChangeActionBarPage", "IsInInstance", "C_Map", "GameTooltip", "C_Spell", "C_Item", "C_PetJournal",
+    "C_UnitAuras", "GetCursorInfo", "GetMinimapZoneText", "GetNormalizedRealmName", "GetActionBarPage",
 }
 for _, f in ipairs({ "modules/Triggers_Params.lua", "modules/Triggers_Families.lua",
                      "modules/Triggers_CondGeneral.lua", "modules/Triggers_CondTrade.lua",
@@ -114,6 +115,8 @@ for _, f in ipairs({ "modules/Triggers_Params.lua", "modules/Triggers_Families.l
                      "modules/Triggers_Binder.lua" }) do
     files[f] = { read_globals = TRIGGER_READS }
 end
+-- The trigger catalog: the zone text a captured zone trigger reads.
+files["modules/Triggers.lua"] = { read_globals = { "GetRealZoneText" } }
 
 -- The tooltip lines and the compare tooltips: the post-call processor, the shopping tooltips, and the
 -- EQUIPMENT_SETS line the outfit line replaces.
