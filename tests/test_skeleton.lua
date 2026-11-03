@@ -112,13 +112,20 @@ test("skeleton: every declared icon resolves to a shipped path", function()
     assertTrue(NS.Constants.FONT_MONO:find("OutfitterReborn", 1, true) ~= nil, "the mono face is the shipped one")
 end)
 
-test("skeleton: every authored Lua file opens with the NS bootstrap and a path comment", function()
+test("skeleton: every authored Lua file opens with the NS bootstrap (an overlay, its gate) and a path comment", function()
     for _, rel in ipairs(T.loadedAddonFiles) do
         local f = assert(io.open(T.root .. "/" .. rel, "r"))
         local first = (f:read("*l") or ""):gsub("\r$", "")
         local second = (f:read("*l") or ""):gsub("\r$", "")
         f:close()
-        assertTrue(first == "local addonName, NS = ..." or first == "local _, NS = ...", rel .. ": " .. first)
+        -- A translation's first statement is its own locale gate instead (localization-§1, §6): an
+        -- ungated overlay overwrites enUS on every client. tests/test_locale.lua pins the gate itself.
+        local overlay = rel:match("^locales/(%l%l%u%u)[%w_]*%.lua$")
+        if overlay and overlay ~= "enUS" then
+            assertEqual(first, 'if GetLocale() ~= "' .. overlay .. '" then return end', rel .. ": " .. first)
+        else
+            assertTrue(first == "local addonName, NS = ..." or first == "local _, NS = ...", rel .. ": " .. first)
+        end
         assertTrue(second:find("-- " .. rel .. " — ", 1, true) == 1, rel .. " line 2: " .. second)
     end
 end)

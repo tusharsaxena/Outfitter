@@ -32,6 +32,16 @@ libs\LibDBIcon-1.0\lib.xml
 # Locales
 # LOAD-BEARING: creates NS.L, which core\LauncherSetup.lua, defaults\*.lua and every settings\ file read at FILE SCOPE.
 locales\enUS.lua
+# LOAD-BEARING: reads NS.L (created by locales\enUS.lua) at FILE SCOPE.
+locales\enUS_Triggers.lua
+# LOAD-BEARING: reads NS.L (created by locales\enUS.lua) at FILE SCOPE.
+locales\enUS_Window.lua
+locales\deDE.lua
+locales\frFR.lua
+locales\zhCN.lua
+locales\zhTW.lua
+locales\koKR.lua
+locales\ruRU.lua
 
 # Core -- dependency-correct order (layout-§1)
 # LOAD-BEARING: NS.PREFIX, NS.name, NS.BRAND and the version fallback every file below reads.

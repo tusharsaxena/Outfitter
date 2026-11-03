@@ -121,6 +121,8 @@ local SUITES = {
     "test_launcher",
     "test_keybinds",
     "test_disabled",
+    "test_locale",
+    "test_glyphs",
     { name = "test_skin_values", dir = "tests/_kit/" },
     { name = "test_skin_switch", dir = "tests/_kit/" },
     { name = "test_eol", dir = "tests/_kit/" },
