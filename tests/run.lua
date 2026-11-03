@@ -189,9 +189,9 @@ local SUITES = {
 
     { name = "test_preview" },
 
-    { name = "test_outfit_menu",      pending = "P4.21" },
-    { name = "test_dialogs",          pending = "P4.21" },
-    { name = "test_trigger_dialog",   pending = "P4.21" },
+    { name = "test_outfit_menu" },
+    { name = "test_dialogs" },
+    { name = "test_trigger_dialog" },
 
     { name = "test_diagnostics",      pending = "P4.26" },
 
