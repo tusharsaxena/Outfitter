@@ -209,15 +209,20 @@ function Sl:DisabledLine() return cli:DisabledLine() end
 -- parser decides the clause, then the one dispatcher runs what it chose: host ROUTING ahead of the
 -- library, not a second dispatcher. A message carrying a hyperlink (`|h`, as `/of iteminfo <link>`
 -- does) is never parsed, because an item name may hold `[` or `;`.
+--
+-- Only a message OPENING with `[` is parsed at the top level. A `;` after a verb belongs to that
+-- verb's argument: parsing `wear [spec:1] Tank; DPS` whole would return the unconditional first
+-- clause `wear [spec:1] Tank` and drop `; DPS`, so the argument parse (Sl.ParseArgument) could never
+-- reach its second clause.
 
 --- True when `text` is a conditional the client parser should decide.
 local function isConditional(text)
     if text:find("|h", 1, true) then return false end
-    return text:sub(1, 1) == "[" or text:find(";", 1, true) ~= nil
+    return text:sub(1, 1) == "["
 end
 
---- The whole message: a leading `[` or any `;` goes through SecureCmdOptionParse first. A message no
---- clause matches is a silent no-op, as the old addon's was (INV §4).
+--- The whole message: a leading `[` goes through SecureCmdOptionParse first. A message no clause
+--- matches is a silent no-op, as the old addon's was (INV §4).
 function Sl.Route(msg)
     msg = tostring(msg or "")
     if isConditional(msg) then

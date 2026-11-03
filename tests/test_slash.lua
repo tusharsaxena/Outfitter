@@ -189,8 +189,8 @@ test("slash H25: a message carrying a hyperlink is never parsed", function()
 end)
 
 test("slash H25: an outfit verb's argument is decided alone", function()
-    -- `/of wear [spec:1] Tank; DPS`: the top-level parse keeps the whole first clause (it opens with
-    -- no condition), so the argument carries its own; modules/Commands.lua (P4.24) decides it here.
+    -- `/of wear [spec:1] Tank; DPS`: the message opens with a verb, so the top level passes it whole
+    -- and the argument carries its own; modules/Commands.lua (P4.24) decides it here.
     local inst = T.load()
     local Sl, M = inst.NS.Slash, inst.mocks
     assertEqual(Sl.ParseArgument("[spec:1] Tank; DPS"), "Tank")
@@ -200,6 +200,22 @@ test("slash H25: an outfit verb's argument is decided alone", function()
     assertEqual(Sl.ParseArgument("Tank; DPS"), "Tank; DPS", "an argument not opening with `[` is the name")
     M.__modifiers.shift = true
     assertEqual(Sl.ParseArgument("[mod:shift] Fishing; Normal"), "Fishing")
+end)
+
+test("slash H25: a verb's `;` reaches the argument parse whole", function()
+    -- Route then ParseArgument, as the outfit verbs (P4.24) will compose them: a top-level split at
+    -- the `;` would keep `wear [spec:1] Tank` and drop `; DPS`, a silent no-op on any other spec.
+    local inst, seen = routeSpy()
+    local Sl, M = inst.NS.Slash, inst.mocks
+    M.__spec = 2
+    Sl.Route("wear [spec:1] Tank; DPS")
+    assertEqual(seen[1], "wear [spec:1] Tank; DPS", "the top level split a verb's argument")
+    assertEqual(Sl.ParseArgument((seen[1]:match("^%S+%s+(.*)$"))), "DPS", "the second clause was lost")
+    M.__spec = 1
+    Sl.Route("wear [spec:1] Tank; DPS")
+    assertEqual(Sl.ParseArgument((seen[2]:match("^%S+%s+(.*)$"))), "Tank")
+    Sl.Route("version; help")
+    assertEqual(seen[3], "version; help", "a `;` with no leading `[` is not a top-level conditional")
 end)
 
 test("slash H25: both chat commands are registered on the routing wrapper", function()
