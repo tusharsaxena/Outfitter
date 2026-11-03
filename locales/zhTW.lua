@@ -19,6 +19,7 @@ L["Bank"] = "銀行" -- legacy: cBankCategoryTitle
 L["Battleground"] = "戰場" -- legacy: cBattlegroundOutfit
 L["Birthday Suit"] = "生日裝" -- legacy: cNakedOutfit
 L["Can't deposit %s because all bank bags are full"] = "無法存入 %s，因為所有銀行欄位已滿" -- legacy: cDepositBagsFullError
+L["Can't find item %s for slot %s"] = "無法找到物品 %s" -- legacy: cItemNotFoundError
 L["Can't put %s in the %s slot because it's already being used in another slot"] = "無法將 %s 裝在 %s 部位，因為它已用於其他部位" -- legacy: cItemAlreadyUsedError
 L["Can't remove %s because all bags are full"] = "無法卸下 %s，因為所有包包已滿" -- legacy: cBagsFullError
 L["Can't withdraw %s because all bags are full"] = "無法提領 %s，因為所有包包已滿" -- legacy: cWithdrawBagsFullError
@@ -102,4 +103,3 @@ L["^Use:.*for (%d+) sec"] = "^使用: .* 持續 (%d+) 秒" -- legacy: cUseDurati
 
 -- untranslated: _G.BINDING_HEADER_OUTFITTER_TITLE, cNoItemsWithStat, cOutfitterTabTitle
 -- untranslated: cScriptCategoryName.PVP, cTitle
--- format mismatch: cItemNotFoundError

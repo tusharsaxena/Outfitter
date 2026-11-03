@@ -14,6 +14,7 @@ L["Adding %s to %s outfit"] = "Füge %s zum %s Outfit." -- legacy: cAddingItem
 L["Are you sure you want to rebuild the outfit %s?"] = "Bist du sicher dass du das %s Outfit verändern willst?" -- legacy: cConfirmRebuildMsg
 L["Battleground"] = "Schlachtfeld" -- legacy: cBattlegroundOutfit
 L["Birthday Suit"] = "Unbekleidet" -- legacy: cNakedOutfit
+L["Can't find item %s for slot %s"] = "Kann %s nicht finden." -- legacy: cItemNotFoundError
 L["Can't remove %s because all bags are full"] = "%s kann nicht enfernt werden da alle Taschen voll sind." -- legacy: cBagsFullError
 L["Complete outfits"] = "Vollständige Ausrüstungen" -- legacy: cCompleteOutfits
 L["Custom"] = "Benutzerdefiniert" -- legacy: cCustomScript
@@ -53,4 +54,3 @@ L["^Use:.*for (%d+) sec"] = "^Benutzen:.*(%d+) Sek%. lang" -- legacy: cUseDurati
 -- untranslated: cDepositOthersToBank, cMore, cMultiphaseSurveyOutfit, cNameLabel, cNoItemsWithStat
 -- untranslated: cNormalOutfit, cOutfitBar, cOutfitterTabTitle, cPlayerTitle, cShowInOutfitBar
 -- untranslated: cSpellcastOutfit, cTitle, cWithdrawOthersFromBank
--- format mismatch: cItemNotFoundError

@@ -431,6 +431,13 @@ if not Skin then
         return NS.SKIN_FALLBACK[name] or (NS.SKIN_TOKENS[name] and NS.SKIN_TOKENS[name].default)
     end
     S.Color = color
+    -- Text given a color token's name draws that token, as the live Text does (SkinPaintExtras minor 5):
+    -- a dialog's error line keeps of.dialog.error's red without the library. A role (body, muted ...)
+    -- is no token, so it stays the template's color.
+    S.Text = function(fs, role)
+        local r, g, b, a = color(role)
+        if r and fs and fs.SetTextColor then fs:SetTextColor(r, g, b, a) end
+    end
     S.Resolve = function(kind, value, fromSkin)
         if fromSkin or value == S.FROM_SKIN then return S.Token(kind) end
         return value

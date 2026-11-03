@@ -377,11 +377,11 @@ Total.
 - locale: no locale key carries a retired string
 - locale: NS.L is never handed to a descriptor's L
 - rekey: the tool names the conversion base the legacy capture was taken at
-- rekey: a translation is kept only when its English is an enUS key and its directives match
-- rekey: format directives compare as a multiset, %% left out
+- rekey: a translation is kept only when its English is an enUS key and its directives are safe
+- rekey: a translation's directives must be an in-order prefix of its English's, %% left out
 - rekey: a rendered overlay is gated first, notes its fields, and writes only on its locale
 - locale: each overlay covers the legacy translations it re-keys
-- locale: every overlay translation carries its English's format directives
+- locale: every overlay translation can be formatted with its English's arguments
 - locale: the overlays carry the legacy translations
 
 ### test_glyphs.lua (2)
@@ -1308,7 +1308,7 @@ Total.
 - credits: the README credits exactly the icon sets this build ships
 - credits: LICENSE keeps John Stephen's copyright with the Ka0s line directly under it
 
-### test_skin.lua (12)
+### test_skin.lua (13)
 
 - skin: every owner token a source file names is registered
 - skin: every skin primitive a source file calls is in the library's VOCAB
@@ -1321,6 +1321,7 @@ Total.
 - skin: the sheet button's logo is a cropped square icon
 - skin: no source file writes inline icon markup by hand (W.IconText crops it)
 - skin: a switch recolors a dialog's error line through of.dialog.error
+- skin: without the library a dialog's error line still draws of.dialog.error's red
 - skin: a switch marks the window, and its next tick recolors an item row's name
 
 ### test_refactor_pins.lua (1)
@@ -1549,7 +1550,7 @@ Total.
 | test_trigger_dialog.lua | 11 |
 | test_diagnostics.lua | 12 |
 | test_credits.lua | 8 |
-| test_skin.lua | 12 |
+| test_skin.lua | 13 |
 | test_skin_values.lua | 3 |
 | test_skin_switch.lua | 85 |
 | test_eol.lua | 2 |
@@ -1558,4 +1559,4 @@ Total.
 | test_lizard_sighted.lua | 8 |
 | test_prose.lua | 15 |
 | Skipped | 3 |
-| **Total** | **1259** |
+| **Total** | **1260** |

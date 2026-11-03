@@ -19,6 +19,7 @@ L["Bank"] = "Банк" -- legacy: cBankCategoryTitle
 L["Battleground"] = "Поля боёв" -- legacy: cBattlegroundOutfit
 L["Birthday Suit"] = "Парадный комплект" -- legacy: cNakedOutfit
 L["Can't deposit %s because all bank bags are full"] = "Не могу поместить %s в банк, так как в банке нет места" -- legacy: cDepositBagsFullError
+L["Can't find item %s for slot %s"] = "Не могу найти %s" -- legacy: cItemNotFoundError
 L["Can't put %s in the %s slot because it's already being used in another slot"] = "Не могу поместить %s в ячейку %s, потому что предмет уже используется в другой ячейке" -- legacy: cItemAlreadyUsedError
 L["Can't remove %s because all bags are full"] = "Не могу снять %s, так как сумки заполнены" -- legacy: cBagsFullError
 L["Can't withdraw %s because all bags are full"] = "Не могу взять %s, так как сумки заполнены" -- legacy: cWithdrawBagsFullError
@@ -104,4 +105,3 @@ L["^Use:.*Lasts (%d+) sec"] = "^Использование:.*Время дейс
 L["^Use:.*for (%d+) sec"] = "^Использование:.*на (%d+) сек." -- legacy: cUseDurationTooltipLineFormat
 
 -- untranslated: _G.BINDING_HEADER_OUTFITTER_TITLE, cNoItemsWithStat, cTitle
--- format mismatch: cItemNotFoundError

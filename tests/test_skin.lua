@@ -317,6 +317,23 @@ test("skin: a switch recolors a dialog's error line through of.dialog.error", fu
     assertTrue(moved, "no skin moved of.dialog.error, so the walk proved nothing")
 end)
 
+test("skin: without the library a dialog's error line still draws of.dialog.error's red", function()
+    -- red under: the degraded facade's Text left a noop (core/SkinSetup.lua), so the line keeps
+    -- GameFontHighlightSmall's white and every refused Done's reason shows white.
+    local loaded = T.load({ libFiles = {} })
+    local NS, M = loaded.NS, loaded.mocks
+    local restore = dofile(T.root .. "/tests/_kit/mock_paint.lua")(M)
+    local parent = M.CreateFrame("Frame", nil, M.UIParent)
+    local fs = NS.Dialogs.ErrorLine(parent)
+    local r, g, b = textColor(M, fs)
+    assertTrue(near(r, 1) and near(g, 0.33) and near(b, 0.33), "the degraded error line is not of.dialog.error's red")
+    -- A role is no token: it keeps the template's color and does not raise.
+    local label = parent:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    NS.Skin.Text(label, "body")
+    assertEqual(textColor(M, label), nil, "a role is not painted without the library")
+    restore()
+end)
+
 test("skin: a switch marks the window, and its next tick recolors an item row's name", function()
     -- red under: modules/Window.lua without its NS.Skin.OnLooksChanged listener (an item's name keeps
     -- the last skin's quality color until something else dirties the list).

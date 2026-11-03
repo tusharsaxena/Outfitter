@@ -16,6 +16,7 @@ L["Bank"] = "Banque" -- legacy: cBankCategoryTitle
 L["Battleground"] = "Champs de Bataille" -- legacy: cBattlegroundOutfit
 L["Birthday Suit"] = "Nu(e)" -- legacy: cNakedOutfit
 L["Can't deposit %s because all bank bags are full"] = "Impossible de déposer %s. Tous les sacs de la banque sont pleins." -- legacy: cDepositBagsFullError
+L["Can't find item %s for slot %s"] = "%s est introuvable" -- legacy: cItemNotFoundError
 L["Can't put %s in the %s slot because it's already being used in another slot"] = "Impossible d' équiper %s à la place '%s' car il est déjà utilisé à un autre endroit." -- legacy: cItemAlreadyUsedError
 L["Can't remove %s because all bags are full"] = "Impossible d'enlever %s, tous les sacs sont pleins" -- legacy: cBagsFullError
 L["Can't withdraw %s because all bags are full"] = "Impossible de récupérer %s. Tous vos sacs sont pleins." -- legacy: cWithdrawBagsFullError
@@ -55,4 +56,3 @@ L["^Use:.*for (%d+) sec"] = "^Utiliser:.*pendant (%d+) seconds" -- legacy: cUseD
 -- untranslated: cMore, cMultiphaseSurveyOutfit, cNoItemsWithStat, cNone, cOddsNEndsOutfits
 -- untranslated: cOutfitBar, cOutfitterTabTitle, cPlayerTitle, cShowInOutfitBar, cSpellcastOutfit
 -- untranslated: cTitle, cWithdrawOthersFromBank
--- format mismatch: cItemNotFoundError

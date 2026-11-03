@@ -135,6 +135,5 @@ The old About panel thanked these people, and they're still thanked here:
 The settings, the outfit window and the outfit bar draw their icons from
 [Open Iconic](https://github.com/iconic/open-iconic) by Waybury (MIT), and the
 mark on an outfit that has a trigger is from
-[Phosphor](https://github.com/phosphor-icons/core) (MIT). Only the icons this addon
-draws are included, bundled inside the LibKa0s payload with each set's license
-file beside it.
+[Phosphor](https://github.com/phosphor-icons/core) by Phosphor Icons (MIT). Only the
+icons this addon draws are included, and each set's license file ships beside them.

@@ -16,8 +16,9 @@
 -- GetLocale() guard, and what it writes is a subset of the enUS keys. Coverage: every field a legacy
 -- locale translated (tests/fixtures/legacy/locale_keys.lua) is accounted for by its overlay — a line
 -- whose `-- legacy:` note names it, or an `untranslated` / `format mismatch` note — unless the legacy
--- English it translated is one the port retired (LEGACY_RETIRED below). Each kept translation
--- carries the same format directives as its English, so string.format cannot raise on it.
+-- English it translated is one the port retired (LEGACY_RETIRED below). Each kept translation's
+-- format directives, in order, are a prefix of its English's, so string.format cannot raise when
+-- the port formats it with the English's arguments (it ignores arguments left over).
 --
 -- red under: delete an entry another file reads from any enUS file; or leave an entry behind after
 -- its last reader goes; or write one key in two enUS files; or drop a topic line's LOAD-BEARING
@@ -538,6 +539,7 @@ local function coverageProblems(rel, have, want, english, out)
     end
 end
 
+-- red under: change M.BASE; or reorder or drop an entry of M.LOCALES.
 test("rekey: the tool names the conversion base the legacy capture was taken at", function()
     local M = rekeyTool()
     local _, commit = legacyFields()
@@ -547,32 +549,54 @@ test("rekey: the tool names the conversion base the legacy capture was taken at"
     assertEqual(table.concat(locales, " "), "deDE frFR zhCN zhTW koKR ruRU", "the six overlays, in TOC order")
 end)
 
-test("rekey: a translation is kept only when its English is an enUS key and its directives match", function()
+-- red under: drop M.rekey's isKey check (Gone is kept); or its `en == nil` check (cZ is not
+-- orphaned); or its formatSafe check (cC is kept); or compare directives as a multiset again (cC is
+-- kept, its one %d matching the English's %d); or require the English's directives exactly (cG is
+-- held back, as cItemNotFoundError was); or let a shared English's later field overwrite the first.
+test("rekey: a translation is kept only when its English is an enUS key and its directives are safe", function()
     local M = rekeyTool()
-    local english = { cA = "New Outfit", cB = "Gone", cC = "%s equipped", cD = "Name:", cE = "None", cF = "None" }
-    local overlay = { cA = "Neues Outfit", cB = "Weg", cC = "ausgerüstet", cD = "Name:", cE = "Keins",
-        cF = "Nichts", cZ = "Waise" }
-    local keys = { ["New Outfit"] = true, ["%s equipped"] = true, ["Name:"] = true, None = true }
+    local english = { cA = "New Outfit", cB = "Gone", cC = "%s equipped %d", cD = "Name:", cE = "None", cF = "None",
+        cG = "Can't find item %s for slot %s" }
+    local overlay = { cA = "Neues Outfit", cB = "Weg", cC = "%d ausgerüstet %s", cD = "Name:", cE = "Keins",
+        cF = "Nichts", cG = "Kann %s nicht finden.", cZ = "Waise" }
+    local keys = { ["New Outfit"] = true, ["%s equipped %d"] = true, ["Name:"] = true, None = true,
+        ["Can't find item %s for slot %s"] = true }
     local r = M.rekey(english, function(s) return keys[s] == true end, overlay)
     assertEqual(r.entries["New Outfit"].text, "Neues Outfit", "an English match is kept")
     assertEqual(r.entries.Gone, nil, "a retired English is not kept")
     assertEqual(table.concat(r.dropped, ","), "cB", "the retired field is reported dropped")
     assertEqual(table.concat(r.orphaned, ","), "cZ", "a field with no legacy English is orphaned")
-    assertEqual(table.concat(r.formats, ","), "cC", "a translation that lost its %s is held back")
+    assertEqual(table.concat(r.formats, ","), "cC", "a translation whose directives are reordered is held back")
+    assertEqual(r.entries["Can't find item %s for slot %s"] and r.entries["Can't find item %s for slot %s"].text,
+        "Kann %s nicht finden.", "a translation that uses fewer of its English's arguments is kept")
     assertEqual(table.concat(r.untranslated, ","), "cD", "a translation equal to its English gets no line")
     assertEqual(r.entries.None.text, "Keins", "the first field in sorted order wins a shared English")
     assertEqual(table.concat(r.entries.None.fields, ","), "cE,cF", "both fields are named on the line")
     assertEqual(table.concat(r.conflicts, ","), "cF (kept cE)", "the loser is reported")
 end)
 
-test("rekey: format directives compare as a multiset, %% left out", function()
+-- red under: sort M.formats' letters (the reorder is read as safe); or keep `%%` in M.formats
+-- (`100%% sure` reads `% s` as a directive); or make M.formatSafe demand equality (the prefix
+-- cases go red); or make it accept any count up to the English's (the reorder and type cases).
+test("rekey: a translation's directives must be an in-order prefix of its English's, %% left out", function()
     local M = rekeyTool()
-    assertEqual(M.formats("%s and %d%%"), M.formats("%d und %s"), "reordered directives match")
-    assertTrue(M.formats("%s and %s") ~= M.formats("%s"), "a lost %s is caught")
+    assertEqual(M.formats("%s and %d%%"), "s,d", "the directives in order, %% left out")
     assertEqual(M.formats("Next update in %.1f s"), "f", "a precision directive")
-    assertEqual(M.formats("100%%"), "", "%% is not a directive")
+    assertEqual(M.formats("100%% sure"), "", "%% is not a directive, nor is `% s` after it")
+    assertTrue(M.formatSafe("%s and %d", "%s und %d"), "the same directives")
+    assertTrue(M.formatSafe("Can't find item %s for slot %s", "Kann %s nicht finden."), "fewer, in order")
+    assertTrue(M.formatSafe("%s and %d", "nichts"), "none")
+    assertFalse(M.formatSafe("%s and %d", "%d und %s"), "reordered across types")
+    assertFalse(M.formatSafe("%s", "%s und %s"), "one more than the English has")
+    assertFalse(M.formatSafe("%s and %d", "%d"), "another type at its place")
+    assertFalse(M.formatSafe("%s%%", "%s %d"), "%% does not count as the English's second directive")
+    -- The rule is string.format's own: leftover arguments are ignored, a directive with none raises.
+    assertEqual(("Kann %s nicht finden."):format("X", "Y"), "Kann X nicht finden.", "leftover arguments")
+    assertFalse(pcall(string.format, "%s und %s", "X"), "a directive with no argument raises")
 end)
 
+-- red under: write M.render's gate after the header; or end a line LF; or drop the end notes; or
+-- quote a `"` or a newline unescaped.
 test("rekey: a rendered overlay is gated first, notes its fields, and writes only on its locale", function()
     local M = rekeyTool()
     local r = { entries = { ['Say "hi"\n'] = { text = 'Sag "hallo"\n', fields = { "cHi" } } },
@@ -588,6 +612,8 @@ test("rekey: a rendered overlay is gated first, notes its fields, and writes onl
     assertEqual(NS.L['Say "hi"\n'], 'Sag "hallo"\n', "the quoting round-trips")
 end)
 
+-- red under: delete a kept translation's line, or a field from an end note, in any overlay; or
+-- keep a field LEGACY_RETIRED lists; or make the note reader read a stray comment.
 test("locale: each overlay covers the legacy translations it re-keys", function()
     local legacy = legacyFields()
     -- Mutation self-test: the note reader sees a line's fields and the end notes, nothing else.
@@ -607,20 +633,26 @@ test("locale: each overlay covers the legacy translations it re-keys", function(
     assertEqual(#problems, 0, #problems .. " coverage problem(s):\n" .. table.concat(problems, "\n", 1, math.min(#problems, 20)))
 end)
 
-test("locale: every overlay translation carries its English's format directives", function()
+-- red under: add a `%s` to a translation in any overlay, or swap a translation's `%s` for `%d`; or
+-- hold back cItemNotFoundError again (its translations use one of the English's two %s).
+test("locale: every overlay translation can be formatted with its English's arguments", function()
     local M = rekeyTool()
     local bad = {}
     for _, o in ipairs(overlayFiles()) do
         local NS = { L = {} }
         T.Loader.loadSource(readFile(o.rel), "@" .. o.rel, NS, { GetLocale = function() return o.locale end })
         for key, text in pairs(NS.L) do
-            if M.formats(key) ~= M.formats(text) then bad[#bad + 1] = o.rel .. ": " .. key end
+            if not M.formatSafe(key, text) then bad[#bad + 1] = o.rel .. ": " .. key end
         end
+        -- Legacy shipped every locale's cItemNotFoundError with one %s and formatted it with two
+        -- arguments (OutfitterEquipment.lua at 7ea3dc3); the translation is carried, not dropped.
+        assertTrue(NS.L["Can't find item %s for slot %s"] ~= nil, o.rel .. " carries cItemNotFoundError's translation")
     end
     table.sort(bad)
-    assertEqual(#bad, 0, #bad .. " translation(s) whose directives differ:\n" .. table.concat(bad, "\n", 1, math.min(#bad, 20)))
+    assertEqual(#bad, 0, #bad .. " translation(s) whose directives are unsafe:\n" .. table.concat(bad, "\n", 1, math.min(#bad, 20)))
 end)
 
+-- red under: empty an overlay to its gate and header; or let the tool keep nothing.
 test("locale: the overlays carry the legacy translations", function()
     -- The re-key is not an empty pass: each overlay keeps a share of what its legacy file translated.
     for _, o in ipairs(overlayFiles()) do

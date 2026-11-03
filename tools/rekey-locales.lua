@@ -14,8 +14,10 @@
 --      §4.6) has English no enUS file carries, so its translation falls away here and the string
 --      falls back to the port's English;
 --   3. holds back a translation equal to its English (the key's own fallback already answers it)
---      and one whose format directives (%s, %d, %.1f ...) do not match its English as a multiset,
---      since string.format would raise on it;
+--      and one whose format directives (%s, %d, %.1f ...), read in order, are not a prefix of its
+--      English's: the port formats the translation with the English's arguments, and string.format
+--      raises on a directive the arguments do not answer (one more, or one of another type at its
+--      place) but ignores arguments left over, so a translation that uses fewer is safe;
 --   4. writes L["<English>"] = "<translation>" sorted by key, each line ending in a `-- legacy:`
 --      note naming the field(s) it came from, and closes with `-- untranslated:` and
 --      `-- format mismatch:` notes naming the fields step 3 held back (tests/test_locale.lua reads
@@ -31,7 +33,7 @@
 -- The legacy files are run, not parsed: they build strings with `..` and tables. Running text is
 -- banned in everything the client loads or the suite runs (tests/test_no_loadstring.lua); tools/ is
 -- outside that rule, as tools/legacy_capture.lua is, and the suite reaches this file's pure half
--- only (M.rekey, M.render, M.formats). `dofile`d, it runs nothing and returns M.
+-- only (M.rekey, M.render, M.formats, M.formatSafe). `dofile`d, it runs nothing and returns M.
 
 local M = {}
 
@@ -113,12 +115,20 @@ end
 
 -- ── the pure half ───────────────────────────────────────────────────────────────────────────
 
---- A string's format directives as a sorted list of conversion letters, `%%` left out.
+--- A string's format directives as its conversion letters in order, comma-joined, `%%` left out.
 function M.formats(s)
     local out = {}
     for conv in s:gsub("%%%%", ""):gmatch("%%[%d%$]*[-+ #0]*%d*%.?%d*([sdifgGeExXcoqu])") do out[#out + 1] = conv end
-    table.sort(out)
     return table.concat(out, ",")
+end
+
+--- True when `text` can be formatted with the arguments `en` takes: its directives, in order, are a
+--- prefix of `en`'s (each is one letter, so a string prefix is a list prefix). string.format
+--- ignores arguments left over, so fewer is safe; one more, or one of another type at its place,
+--- would raise or misread an argument.
+function M.formatSafe(en, text)
+    local want, have = M.formats(en), M.formats(text)
+    return want:sub(1, #have) == have
 end
 
 --- Re-keys one locale. `english` is the legacy English { [field] = string }, `isKey(s)` answers
@@ -136,7 +146,7 @@ function M.rekey(english, isKey, overlay)
             r.dropped[#r.dropped + 1] = field
         elseif text == en then
             r.untranslated[#r.untranslated + 1] = field
-        elseif M.formats(en) ~= M.formats(text) then
+        elseif not M.formatSafe(en, text) then
             r.formats[#r.formats + 1] = field
         else
             local e = r.entries[en]

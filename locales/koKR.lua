@@ -16,6 +16,7 @@ L["Bank"] = "은행" -- legacy: cBankCategoryTitle
 L["Battleground"] = "전장" -- legacy: cBattlegroundOutfit
 L["Birthday Suit"] = "벗기" -- legacy: cNakedOutfit
 L["Can't deposit %s because all bank bags are full"] = "가방이 가득 차서 %s|1을;를; 벗을 수 없습니다." -- legacy: cDepositBagsFullError
+L["Can't find item %s for slot %s"] = "%s 아이템을 찾을 수 없습니다." -- legacy: cItemNotFoundError
 L["Can't put %s in the %s slot because it's already being used in another slot"] = "%s|1은;는; 이미 다른 슬롯에서 사용중이므로 %s 슬롯에 착용할 수 없습니다." -- legacy: cItemAlreadyUsedError
 L["Can't remove %s because all bags are full"] = "가방이 가득 차서 %s|1을;를; 벗을 수 없습니다." -- legacy: cBagsFullError
 L["Can't withdraw %s because all bags are full"] = "가방이 가득 차서 %s|1을;를; 벗을 수 없습니다." -- legacy: cWithdrawBagsFullError
@@ -59,4 +60,3 @@ L["^Use:.*for (%d+) sec"] = "^사용 효과: (%d+) seconds" -- legacy: cUseDurat
 -- untranslated: _G.BINDING_HEADER_OUTFITTER_TITLE, cArgentTournamentOutfit, cDepositOthersToBank
 -- untranslated: cMore, cMultiphaseSurveyOutfit, cNoItemsWithStat, cOutfitBar, cOutfitterTabTitle
 -- untranslated: cPlayerTitle, cShowInOutfitBar, cSpellcastOutfit, cTitle, cWithdrawOthersFromBank
--- format mismatch: cItemNotFoundError

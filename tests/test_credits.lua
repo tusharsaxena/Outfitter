@@ -133,7 +133,12 @@ test("credits: the README credits exactly the icon sets this build ships", funct
             assertFalse(has(body, set), "README Credits names " .. set .. ", which does not ship")
         end
     end
-    assertTrue(has(body, "Waybury"), "Open Iconic is credited to Waybury")
+    -- red under: drop "by Waybury" or "by Phosphor Icons" from the README's Credits (documentation-§1
+    -- item 12: each MIT set is named with its author).
+    if shipped[""] then assertTrue(has(body, "Waybury"), "Open Iconic is credited to Waybury") end
+    if shipped.ph then assertTrue(has(body, "Phosphor Icons"), "Phosphor is credited to Phosphor Icons") end
+    -- red under: name LibKa0s anywhere in the Credits (item 12: credit names the set, never LibKa0s).
+    assertFalse(has(body, "LibKa0s"), "README Credits names LibKa0s")
 end)
 
 -- ── LICENSE ─────────────────────────────────────────────────────────────────────────────────────
