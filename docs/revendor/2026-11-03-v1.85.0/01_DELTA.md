@@ -66,6 +66,21 @@ and skin tasks (P4.19, P4.30; recorded on the P4.30 row of design §12). `P4: Re
 removed); `diff -r --strip-trailing-cr` of both payloads against the tag is again empty bar the pruned
 icons.
 
+A fifth re-cut followed during the group J review fixes of P4: tag v1.85.0 now names `79d043d`
+(tagger date 2026-11-04 00:33:17 +0530, the seventeenth re-cut, carrying R6-L1 and R6-REL). The
+kit's vendor gate went red at HEAD on OptionsSkinPicker.lua. `git diff --stat 17d18aa v1.85.0 --
+LibKa0s testkit` is `LibKa0s/OptionsSkinPicker.lua` alone (132 insertions, 11 deletions:
+`PICKER_MINOR` 10 -> 11, `spec.preview`, the skin picker's preview contract), and no kit file. The
+Options major stays 37, so the table below does not move. The releasing.md hosts-owe line owes
+nothing in the re-vendor commit itself; its item (1), `spec.preview` in place of `onPreview`, names
+the hosts with a preview and not this addon, and this addon's `onPreview` (core/SkinSetup.lua) keeps
+minor 10's one-shot eye under minor 11. That line also says Outfitter's copy stays at 10 and is not
+re-vendored, but this addon's provenance line names the tag and its vendor gate reads the tag's
+blobs, so the copy follows the tag. `P4: Re-sync LibKa0s to the v1.85.0 re-cut` re-copied the whole
+payload from `git archive v1.85.0` and re-ran the tag's `tools/prune-icons.lua` (20 declared, 22
+kept, 5818 removed); `diff -r --strip-trailing-cr` of both payloads against the tag is again empty
+bar the pruned icons.
+
 ## Per-major minors (3c)
 
 `grep 'local MAJOR, MINOR = "LibKa0s-'` over the copy. Every major is new to this addon.
