@@ -32,6 +32,7 @@ The TOC (`OutfitterReborn.toc`) is the load order and the authority on it.
 | `core/State.lua` | `NS.State`: session-only flags (`debug`, `testMode`, `legacyLoaded`) |
 | `core/EnvSetup.lua` | `NS.Meta`, `NS.Version` (LibKa0s-Env) |
 | `core/CoreSetup.lua` | `NS.Print`, `NS.SafeToString`, the `SafeRegister*` family, the window chrome (LibKa0s-Core) |
+| `core/Bus.lua` | `NS.MSG`, `NS.NewBusTarget`, `NS.SendBus`, `NS.BusStandDown`/`BusStandUp` (LibKa0s-Bus) |
 | `core/OutfitterReborn.lua` | `NewAddon`, the `NS.Print` reclaim, `OnInitialize` |
 | `core/Database.lua` | AceDB, the profile callbacks, the migration runner, both `resolveRoot` functions |
 | `defaults/Profile.lua` | `NS.defaults`, the only place a default is hardcoded |
@@ -55,8 +56,9 @@ the port.
 
 ## Message Bus
 
-No messages yet. `core/Bus.lua` brings the catalog (`NS.MSG`, wire names
-`Ka0s_OutfitterReborn_<Pascal>`) in the next commits.
+`core/Bus.lua` declares the full catalog (`NS.MSG`, 25 keys, wire names
+`Ka0s_OutfitterReborn_<Pascal>`), each with its one sending file on a `Sender:` line. Nothing
+sends yet; each sender arrives with its module.
 
 ## Slash Commands
 

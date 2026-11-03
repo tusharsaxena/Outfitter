@@ -1,7 +1,7 @@
 -- tests/test_skeleton.lua — the scaffold's own contract: the addon registers under its folder name,
 -- NS.Print is the tagged printer, the DB defaults load, the declared icons resolve, every authored
--- file opens with the NS bootstrap, and the source stays Lua 5.1. The slash and bus cases arrive
--- with their seams (P3 C7, C12).
+-- file opens with the NS bootstrap, the bus wire names keep their shape, and the source stays Lua
+-- 5.1. The slash case arrives with its seam (P3 C12).
 
 local T = _G.OUTFITTERREBORN_TEST
 local NS = T.NS
@@ -78,6 +78,16 @@ test("skeleton: the logo paths derive from the folder name", function()
     end
     assertEqual(type(C.LAYERS.STRATA), "table")
     assertEqual(type(C.LAYERS.LEVEL), "table")
+end)
+
+test("skeleton: every NS.MSG wire name is Ka0s_OutfitterReborn_<PascalCase>", function()
+    local count = 0
+    for key, wire in pairs(NS.MSG) do
+        count = count + 1
+        assertEqual(type(wire), "string", key)
+        assertTrue(wire:match("^Ka0s_OutfitterReborn_%u%a+$") ~= nil, key .. " = " .. tostring(wire))
+    end
+    assertEqual(count, 25, "the full §2.3 catalog")
 end)
 
 -- The CLAUDE.md declaration (§1.4), read back from the file the vendoring gate reads.
