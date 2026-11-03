@@ -1,20 +1,21 @@
--- Line endings are mixed per file in this repo and must stay that way: a
--- whole-file re-ending buries the real change in a diff nobody can review.
+-- Line endings are CRLF in every addon file, pinned by .gitattributes
+-- (`* text=auto eol=crlf`; only *.sh and *.py are LF).  The index stores LF
+-- and checkout writes CRLF, so an LF or mixed file on disk is a straggler that
+-- bypassed git's filters.
 local Ctx = ...
 local Kit = Ctx.Kit
 
 Kit.suite("line endings")
 
--- The shipped state, pinned.  Upstream wrote some files CRLF and some LF and
--- there is no value in normalising them -- only in noticing when one flips.
+-- The pinned state: every root-level addon file is CRLF on disk.
 local EXPECTED = {
-	["Compat.lua"] = "lf",
-	["Deprecated.lua"] = "lf",
-	["Outfitter.lua"] = "lf",
+	["Compat.lua"] = "crlf",
+	["Deprecated.lua"] = "crlf",
+	["Outfitter.lua"] = "crlf",
 	["OutfitterAbout.lua"] = "crlf",
-	["OutfitterBar.lua"] = "lf",
-	["OutfitterEquipment.lua"] = "lf",
-	["OutfitterInventory.lua"] = "lf",
+	["OutfitterBar.lua"] = "crlf",
+	["OutfitterEquipment.lua"] = "crlf",
+	["OutfitterInventory.lua"] = "crlf",
 	["OutfitterItemStats.lua"] = "crlf",
 	["OutfitterLDB.lua"] = "crlf",
 	["OutfitterMinimapButton.lua"] = "crlf",
@@ -42,7 +43,7 @@ local function styleOf(src)
 	return "lf"
 end
 
-Kit.test("each addon file keeps the line endings it shipped with", function()
+Kit.test("each addon file is CRLF on disk", function()
 	local wrong = {}
 	for rel, want in pairs(EXPECTED) do
 		local got = styleOf(Ctx.read(rel))

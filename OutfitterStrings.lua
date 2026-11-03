@@ -228,7 +228,7 @@ Outfitter.cUnequipOutfitMessageFormat = "Outfitter: %s unequipped"
 
 Outfitter.cAboutTitle = "About Outfitter Reborn"
 Outfitter.cAboutAuthor = "Originally created by John Stephen"
-Outfitter.cAboutMaintainer = "Updated for WoW Midnight by aDd1kTeD2Ka0s"
+Outfitter.cAboutMaintainer = "Updated for WoW Midnight by aDd1kTeD2Ka0s"
 Outfitter.cAboutCopyright = "Copyright 2006 - 2018 John Stephen"
 Outfitter.cAboutThanks = "Many thanks to all fans and supporters."
 

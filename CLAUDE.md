@@ -66,11 +66,11 @@ rather than wiring the live code back to it.
 
 ## Gotchas
 
-- **Line endings are mixed, per file, and must be preserved.** `Outfitter.lua`,
-  `OutfitterInventory.lua`, `OutfitterBar.lua` and `Deprecated.lua` are LF;
-  `OutfitterItemStats.lua`, `OutfitterScripting.lua`, `OutfitterQuickSlots.lua`
-  and every `OutfitterStrings*.lua` are CRLF. Check before editing — a
-  whole-file re-ending buries the real change.
+- **Line endings are CRLF everywhere, pinned by `.gitattributes`; `*.sh` and
+  `*.py` are LF.** The repository stores LF and every checkout writes CRLF, so a
+  file a tool writes LF is corrected the moment it is staged. To fix one on disk,
+  `rm <path> && git checkout -- <path>`, then check that its CR count equals its
+  LF count.
 - **Secret values (12.0).** Never compare, format, concatenate or do arithmetic
   on anything from `UnitHealth`, `UnitPower`, `UnitStat`, `UnitLevel`, item
   links or aura fields without going through `OutfitterAPI`. An error here
