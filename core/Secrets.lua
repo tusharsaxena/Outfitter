@@ -2,7 +2,7 @@ local _, NS = ...
 -- core/Secrets.lua — NS.Secrets, the ONLY file that inspects a value that may be secret (BP §6.9):
 -- the secret guards (NS.Compat's, which core/Compat.lua routes through LibKa0s-Compat-1.0 with its
 -- stub arm), plain-value conversion and the bounded array walk; plus the NS.IsSecret, NS.Unsecret and
--- NS.SafeNumber aliases that replace the legacy OutfitterAPI helpers.
+-- NS.SafeNumber aliases that replace the legacy Outfitter API helpers.
 --
 -- THE CONTRACT (WoW 12.0 secret values): while an addon restriction is active, health, power, stats,
 -- levels, item links and aura fields may arrive SECRET. Tainted code may store one, pass it, put it in
@@ -62,7 +62,7 @@ function Secrets.IsSealed(v)
     return not Secrets.CanAccess(v)
 end
 
---- `v` itself when it is plain, nil when it is sealed. The legacy OutfitterAPI:Unsecret.
+--- `v` itself when it is plain, nil when it is sealed. The legacy API's Unsecret.
 --- @param v any
 --- @return any
 function Secrets.Unsecret(v)
@@ -90,7 +90,7 @@ function Secrets.PlainString(v)
     return v
 end
 
---- `v` as a plain number, or `fallback` when it is not one. The legacy OutfitterAPI:UnsecretNumber:
+--- `v` as a plain number, or `fallback` when it is not one. The legacy API's UnsecretNumber:
 --- a secret health sample reads as `fallback`, and the caller takes its conservative branch.
 --- @param v any
 --- @param fallback any
@@ -171,7 +171,7 @@ function Secrets.SafeIterate(t, max)
 end
 
 -- ---------------------------------------------------------------------------
--- The NS aliases (BP §6.9): the names the legacy OutfitterAPI helpers had, one hop shorter
+-- The NS aliases (BP §6.9): the names the legacy Outfitter API helpers had, one hop shorter
 -- ---------------------------------------------------------------------------
 
 NS.IsSecret = Secrets.IsSecret

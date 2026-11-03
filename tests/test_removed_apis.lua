@@ -9,7 +9,7 @@
 --   VoidStorage*, VoidTransfer*, GetVoidItem*,   void storage, removed by the game
 --     VOID_STORAGE_*, VOID_TRANSFER_*
 --   UNIT_MANA, CHARACTER_POINTS_CHANGED          events the client no longer fires
---   LibBabble                                    the deleted Libraries/ locale libs (H15)
+--   LibBabble                                    the deleted locale libraries (H15)
 --
 -- Live means what the client loads: every file the TOC lists (walked from the TOC, never a hand list),
 -- the TOC itself and Bindings.xml. A Lua comment may name a retired API to say why it is not called;

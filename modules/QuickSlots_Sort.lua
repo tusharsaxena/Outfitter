@@ -11,7 +11,7 @@ local _, NS = ...
 --   * A location unpacks through Compat.FlyoutLocationData. The legacy EquipmentManager_UnpackLocation
 --     fallback (Deprecated.QuickSlots.UnpackLocation) is retired.
 --   * Links come through Compat.ContainerItemLink and Compat.InventoryItemLink, which hand a secret
---     link back as nil (the Secrets seam's PlainString, the legacy OutfitterAPI:Unsecret), and an item
+--     link back as nil (the Secrets seam's PlainString, the legacy API's Unsecret), and an item
 --     location is the addon's plain `loc` table, which only Compat turns into the client's ItemLocation.
 --   * C_ItemUpgrade.CanUpgradeItem is pcall'd inside Compat.CanUpgradeItem, which answers nil on a
 --     raise, on a missing API and when no item is there: the "nil when it won't" below.
