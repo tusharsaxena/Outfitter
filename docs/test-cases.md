@@ -28,7 +28,7 @@ Total.
 - toc: the SavedVariables are the addon's two, derived from the folder name
 - toc: none of the dropped fields is back
 
-### test_loadorder.lua (9)
+### test_loadorder.lua (13)
 
 - load order: the runner loaded exactly the TOC's files, in the TOC's order
 - load order: every derived path exists on disk
@@ -39,6 +39,10 @@ Total.
 - load order: the namespace loads first in core and the printer before the addon object
 - load order: core/Compat.lua precedes core/Secrets.lua and never captures NS.Secrets at file scope
 - load order: the compat family is exactly core/Compat.lua
+- load order: the defaults, modules and settings lines are design §1.2's, in its order
+- load order: every .lua in the addon's folders is in the TOC (no orphan the client never loads)
+- load order: the domain files load data first, then parameters, families, conditions, registry, binder
+- load order: the domain lines carry their LOAD-BEARING notes
 
 ### test_database.lua (10)
 
@@ -155,7 +159,7 @@ Total.
 - secure queue: one raising write reaches the error handler and the rest still run
 - secure queue: Clear drops every waiting write and the registration
 
-### test_perf_harness.lua (8)
+### test_perf_harness.lua (9)
 
 - perf: the descriptor declares the ten buckets in order, the SavedVariable and the one latch
 - perf: equipExecute is the one bucket declared within another, and within equipUpdate
@@ -163,6 +167,7 @@ Total.
 - perf: no shipped file notes a dynamic or undeclared bucket key
 - perf: Suspend takes the perf hold and stands the addon down; Resume stands it back up
 - perf: the disabled hold outlasts the perf hold, and its refusal wins
+- lifecycle: the module list is design §5.12's, in its order
 - lifecycle: the module walk is top to bottom down, bottom to top up, and skips a missing module
 - lifecycle: without the library the stub latch keeps both holds and the Perf stub is inert
 
@@ -287,6 +292,184 @@ Total.
 
 - glyphs: display strings use only characters every shipped skin face draws
 
+### test_file_budget.lua (2)
+
+- file budget: the counter and the filter measure what the gate claims (mutation self-test)
+- file budget: every authored .lua is under 1000 lines
+
+### test_removed_apis.lua (2)
+
+- removed APIs: the scanner catches a retired name in code and lets a comment through (mutation self-test)
+- removed APIs: no live file names a retired API, event or library
+
+### test_mock_gear.lua (1)
+
+- test_mock_gear.lua: suite not written yet (skipped: P4.1)
+
+### test_slots.lua (1)
+
+- test_slots.lua: suite not written yet (skipped: P4.3)
+
+### test_zones.lua (1)
+
+- test_zones.lua: suite not written yet (skipped: P4.3)
+
+### test_itemlink.lua (1)
+
+- test_itemlink.lua: suite not written yet (skipped: P4.4)
+
+### test_item_match.lua (1)
+
+- test_item_match.lua: suite not written yet (skipped: P4.5)
+
+### test_inventory.lua (1)
+
+- test_inventory.lua: suite not written yet (skipped: P4.5)
+
+### test_outfits.lua (1)
+
+- test_outfits.lua: suite not written yet (skipped: P4.6)
+
+### test_reset.lua (1)
+
+- test_reset.lua: suite not written yet (skipped: P4.6)
+
+### test_equip_plan.lua (1)
+
+- test_equip_plan.lua: suite not written yet (skipped: P4.7)
+
+### test_item_stats.lua (1)
+
+- test_item_stats.lua: suite not written yet (skipped: P4.11)
+
+### test_companion.lua (1)
+
+- test_companion.lua: suite not written yet (skipped: P4.13)
+
+### test_states.lua (1)
+
+- test_states.lua: suite not written yet (skipped: P4.14)
+
+### test_quickslots.lua (1)
+
+- test_quickslots.lua: suite not written yet (skipped: P4.18)
+
+### test_equip_bracket.lua (1)
+
+- test_equip_bracket.lua: suite not written yet (skipped: P4.8)
+
+### test_tooltips.lua (1)
+
+- test_tooltips.lua: suite not written yet (skipped: P4.17)
+
+### test_stack.lua (1)
+
+- test_stack.lua: suite not written yet (skipped: P4.9)
+
+### test_em_sync.lua (1)
+
+- test_em_sync.lua: suite not written yet (skipped: P4.10)
+
+### test_bank.lua (1)
+
+- test_bank.lua: suite not written yet (skipped: P4.10)
+
+### test_optimize.lua (1)
+
+- test_optimize.lua: suite not written yet (skipped: P4.12)
+
+### test_triggers.lua (1)
+
+- test_triggers.lua: suite not written yet (skipped: P4.15)
+
+### test_trigger_binder.lua (1)
+
+- test_trigger_binder.lua: suite not written yet (skipped: P4.15)
+
+### test_no_loadstring.lua (1)
+
+- test_no_loadstring.lua: suite not written yet (skipped: P4.15)
+
+### test_api.lua (1)
+
+- test_api.lua: suite not written yet (skipped: P4.25)
+
+### test_triggers_general.lua (1)
+
+- test_triggers_general.lua: suite not written yet (skipped: P4.16a)
+
+### test_triggers_trade.lua (1)
+
+- test_triggers_trade.lua: suite not written yet (skipped: P4.16b)
+
+### test_triggers_quest.lua (1)
+
+- test_triggers_quest.lua: suite not written yet (skipped: P4.16c)
+
+### test_triggers_class.lua (1)
+
+- test_triggers_class.lua: suite not written yet (skipped: P4.16d)
+
+### test_triggers_pvp.lua (1)
+
+- test_triggers_pvp.lua: suite not written yet (skipped: P4.16d)
+
+### test_dock.lua (1)
+
+- test_dock.lua: suite not written yet (skipped: P4.19)
+
+### test_list_model.lua (1)
+
+- test_list_model.lua: suite not written yet (skipped: P4.19)
+
+### test_rows_secure.lua (1)
+
+- test_rows_secure.lua: suite not written yet (skipped: P4.19)
+
+### test_slot_enables.lua (1)
+
+- test_slot_enables.lua: suite not written yet (skipped: P4.19)
+
+### test_bar.lua (1)
+
+- test_bar.lua: suite not written yet (skipped: P4.20)
+
+### test_triggers_parity.lua (1)
+
+- test_triggers_parity.lua: suite not written yet (skipped: P4.16e)
+
+### test_preview.lua (1)
+
+- test_preview.lua: suite not written yet (skipped: P4.22)
+
+### test_outfit_menu.lua (1)
+
+- test_outfit_menu.lua: suite not written yet (skipped: P4.21)
+
+### test_dialogs.lua (1)
+
+- test_dialogs.lua: suite not written yet (skipped: P4.21)
+
+### test_trigger_dialog.lua (1)
+
+- test_trigger_dialog.lua: suite not written yet (skipped: P4.21)
+
+### test_diagnostics.lua (1)
+
+- test_diagnostics.lua: suite not written yet (skipped: P4.26)
+
+### test_credits.lua (1)
+
+- test_credits.lua: suite not written yet (skipped: P4.29)
+
+### test_skin.lua (1)
+
+- test_skin.lua: suite not written yet (skipped: P4.30)
+
+### test_refactor_pins.lua (1)
+
+- test_refactor_pins.lua: suite not written yet (skipped: P5 CCN splits)
+
 ### test_skin_values.lua (3)
 
 - skin values: every host row carries its file, substring, why and cause id
@@ -367,7 +550,7 @@ Total.
 |-------|------:|
 | test_skeleton.lua | 9 |
 | test_toc.lua | 5 |
-| test_loadorder.lua | 9 |
+| test_loadorder.lua | 13 |
 | test_database.lua | 10 |
 | test_packaging.lua | 5 |
 | test_vendor_sync.lua | 3 |
@@ -375,7 +558,7 @@ Total.
 | test_bus.lua | 11 |
 | test_skinsetup.lua | 21 |
 | test_surface_parity.lua | 25 |
-| test_perf_harness.lua | 7 |
+| test_perf_harness.lua | 8 |
 | test_schema.lua | 15 |
 | test_settings.lua | 10 |
 | test_slash.lua | 23 |
@@ -384,6 +567,8 @@ Total.
 | test_disabled.lua | 15 |
 | test_locale.lua | 11 |
 | test_glyphs.lua | 1 |
+| test_file_budget.lua | 2 |
+| test_removed_apis.lua | 2 |
 | test_skin_values.lua | 3 |
 | test_skin_switch.lua | 3 |
 | test_eol.lua | 2 |
@@ -391,5 +576,5 @@ Total.
 | test_diagnostics_contract.lua | 8 |
 | test_lizard_sighted.lua | 8 |
 | test_prose.lua | 15 |
-| Skipped | 4 |
-| **Total** | **271** |
+| Skipped | 46 |
+| **Total** | **280** |
