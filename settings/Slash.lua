@@ -9,7 +9,7 @@ local L = NS.L
 local function out(line) NS.Print(line) end
 
 local cli   -- built at the bottom, once NS.COMMANDS exists; handlers reach it at CALL time
-local doEnabled, doDebug, doPerf
+local doEnabled, doDebug, doPerf, doAuto, writeRow
 
 --- A feature verb's handler behind the stand-down: the dispatcher refuses every feature verb while the
 --- `disabled` hold is taken, and this answers the `perf` hold's line (slash-commands-§7, "Which
@@ -25,7 +25,14 @@ end
 -- Positional triples {name, desc, fn}: a table of named fields is invisible to the library. The
 -- reserved verbs come first, in the DpsRace order, and mean the same thing in every Ka0s addon
 -- (slash-commands-§2); `diagnostics` has no alias of any kind. The outfit verbs (design §4.3.2) follow
--- `version` and arrive with modules/Commands.lua in P4.24.
+-- `version`; their handlers are modules/Commands.lua's, reached at call time.
+--
+-- Declined SHOULD (standalone-windows :52): `show` and `hide` exist, but there is no window-toggle verb,
+-- because `toggle` has been the outfit verb in players' macros since before this fork (C35;
+-- docs/slash-dispatch.md). The old verbs map as design §4.3.2's table says: `sound` and `errors` are
+-- `/of set equip.muteSounds|equip.showErrors`, `reset bar` is `/of reset bar.position`, the old
+-- `reset` is `deleteall`, the old automation `enable`/`disable` is `auto on|off`; `summary`, `rating`,
+-- `itemstats` and the bare `/unequip` are gone (INV §18, H5).
 NS.COMMANDS = {
     { "help",        L["Show this help"],                          function() cli:PrintHelp() end },
     { "config",      L["Open the settings panel"],                 function() NS.OpenOptionsPanel() end },
@@ -46,6 +53,42 @@ NS.COMMANDS = {
                                                                    function() NS.DebugLog:RunDiagnostics() end },
     { "perf",        L["Performance capture; try /of perf help"], function(rest) doPerf(rest) end },
     { "version",     L["Print the addon version"],                 function() cli:CliVersion() end },
+    { "show",        L["Show the outfit window on the character sheet"], feature(function() NS.Dock.Open() end) },
+    { "hide",        L["Hide the outfit window"],                  feature(function() NS.Dock.Close() end) },
+    { "wear",        L["Wear an outfit (default: the current Complete outfit)"],
+                                                                   feature(function(rest) NS.Commands.Wear(rest) end) },
+    { "unwear",      L["Take an outfit off"],                      feature(function(rest) NS.Commands.Unwear(rest) end) },
+    { "toggle",      L["Wear an outfit, or take it off if it is worn"],
+                                                                   feature(function(rest) NS.Commands.Toggle(rest) end) },
+    { "update",      L["Update an outfit to the items you have equipped"],
+                                                                   feature(function(rest) NS.Commands.Update(rest) end) },
+    { "deposit",     L["Put an outfit's items in the bank (bank must be open)"],
+                                                                   feature(function(rest) NS.Commands.Bank("Deposit", rest) end) },
+    { "depositunique", L["Put in the bank only the items no other outfit uses"],
+                                                                   feature(function(rest) NS.Commands.Bank("DepositUnique", rest) end) },
+    { "depositothers", L["Put every other outfit's items in the bank"],
+                                                                   feature(function(rest) NS.Commands.Bank("DepositOthers", rest) end) },
+    { "withdraw",    L["Take an outfit's items out of the bank"],  feature(function(rest) NS.Commands.Bank("Withdraw", rest) end) },
+    { "withdrawothers", L["Take every other outfit's items out of the bank"],
+                                                                   feature(function(rest) NS.Commands.Bank("WithdrawOthers", rest) end) },
+    { "missing",     L["List the outfit items you no longer have (bank must be open)"],
+                                                                   feature(function() NS.Commands.Missing() end) },
+    -- Moves.UnequipByName prints its own miss and full-bags lines, so nothing is printed here.
+    { "unequip",     L["Move one equipped item to your bags"],
+                                                                   feature(function(rest) NS.Moves.UnequipByName(rest) end) },
+    { "updatetitle", L["Re-apply the title of the outfit you are wearing"],
+                                                                   feature(function() NS.Stack.UpdateTitle(true) end) },
+    -- Live (HOST_LIVE_VERBS): one setting, as `set` is; the key bindings refuse it themselves.
+    { "auto",        L["Automatic outfit changes: /of auto on, off, or no word to see the state"],
+                                                                   function(rest) doAuto(rest) end },
+    { "zone",        L["Show what Outfitter knows about where you are"], function() NS.Commands.Zone() end },
+    { "iteminfo",    L["Print an item link's fields"], function(rest) NS.Commands.ItemInfo(rest) end },
+    { "test",        L["Sample outfits on the outfit bar: /of test"], feature(function() NS.Preview.Toggle() end) },
+    -- slash-commands-§8: the Lock frame row's path, through the one seam.
+    { "lock",        L["Lock the outfit bar in place"],            feature(function() writeRow("locked", true) end) },
+    { "unlock",      L["Unlock the outfit bar to move it"],        feature(function() writeRow("locked", false) end) },
+    { "deleteall",   L["Delete every outfit on this character (asks first)"],
+                                                                   feature(function() NS.Popups.ShowDeleteAll() end) },
 }
 
 --- Run one verb's handler by name: the launcher's Enabled entry and the AutoOn/AutoOff/Update key
@@ -66,9 +109,9 @@ NS.SLASH_LIVE_VERBS = {
 }
 
 --- The host verbs that also answer while disabled, on BOTH arms: the descriptor's `liveVerbs` below
---- (the library's LIVE_VERBS plus these) and the library-absent stub's gate. Empty until P4.24 adds
---- `auto` (one setting, as `get`/`set` are), `zone` and `iteminfo` (read-only) with their verbs.
-local HOST_LIVE_VERBS = {}
+--- (the library's LIVE_VERBS plus these) and the library-absent stub's gate. `auto` writes one
+--- setting, as `get`/`set` do; `zone` and `iteminfo` are read-only (design §4.3.2).
+local HOST_LIVE_VERBS = { "auto", "zone", "iteminfo" }
 local HOST_LIVE = {}
 for _, verb in ipairs(HOST_LIVE_VERBS) do HOST_LIVE[verb] = true end
 
@@ -168,22 +211,42 @@ cli = SlashLib:New({
 })
 Sl.__dispatcher = cli
 
---- `enable` / `disable`: the composed `enabled` row, through the seam, echoed by the CLI so the stored
---- value is what the player reads back (slash-commands-§2). Degraded, the write goes through the
---- seam's writeThrough list and is acknowledged only if it landed (options-ui-§1); a written-through
---- value runs no onChange, so ApplyEnabled stands in for it.
-function doEnabled(want)
-    if not degraded and NS.FindSchemaRow("enabled") then
-        cli:CliSet("enabled " .. tostring(want))
+--- One boolean row from a verb: through the CLI, echoed so the stored value is what the player reads
+--- back (slash-commands-§2, §8). Degraded, or on a load where the row is hollow, the write goes through
+--- the seam's writeThrough list (`enabled`, `locked`, `auto.enabled`) and is acknowledged only if it
+--- landed (options-ui-§1). A written-through value runs no onChange, so `apply`, when given, stands in.
+function writeRow(path, want, apply)
+    if not degraded and NS.FindSchemaRow(path) then
+        cli:CliSet(path .. " " .. tostring(want))
         return
     end
-    local ok, err = NS.SetByPath("enabled", want)
+    local ok, err = NS.SetByPath(path, want)
     if ok then
-        NS.ApplyEnabled(want)
-        out(L["%s = %s"]:format("enabled", tostring(want)))
+        if apply then apply(want) end
+        out(L["%s = %s"]:format(path, tostring(want)))
     else
         out(tostring(err))
     end
+end
+
+--- `enable` / `disable`: the composed `enabled` row; written through, ApplyEnabled is its onChange.
+function doEnabled(want)
+    writeRow("enabled", want, NS.ApplyEnabled)
+end
+
+-- `/of auto` words: on/off, with the old verbs' `enable`/`disable` as synonyms (design §4.3.2).
+local AUTO_WORDS = { on = true, enable = true, off = false, disable = false }
+
+--- `auto`: write `auto.enabled`, or read it back with no word.
+function doAuto(rest)
+    local word = tostring(rest or ""):match("^%s*(%S*)"):lower()
+    if word == "" then
+        if degraded then return out(L["%s = %s"]:format("auto.enabled", tostring(NS.GetSetting("auto.enabled")))) end
+        return cli:CliGet("auto.enabled")
+    end
+    local want = AUTO_WORDS[word]
+    if want == nil then return out(L["%s auto takes on or off"]:format(NS.SLASH)) end
+    writeRow("auto.enabled", want)
 end
 
 --- `diagnostics` is tested FIRST (debug-logging-§14), then `on`/`off`; any other word, or none,

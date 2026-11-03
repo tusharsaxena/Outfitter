@@ -13,12 +13,12 @@ second dispatcher:
   through `SecureCmdOptionParse`. A nil result (no clause matched) is a silent no-op, as in a Blizzard
   macro. The chosen clause then goes to the dispatcher.
 - An outfit verb whose **argument** opens with `[` passes that argument alone through
-  `SecureCmdOptionParse` (P4.24), so `/of wear [spec:1] Tank; DPS` wears "Tank" in spec 1 and "DPS"
+  `SecureCmdOptionParse` (`NS.Slash.ParseArgument`, called by `NS.Commands.ResolveOutfit`), so `/of wear [spec:1] Tank; DPS` wears "Tank" in spec 1 and "DPS"
   otherwise. A `;` after a verb belongs to that verb's argument.
 
 The help header reads `[OR] v1.1.0 — slash commands (/outfitter is an alias for /of)`.
 
-## Commands today
+## The reserved verbs
 
 The reserved verbs come first, in the order every Ka0s addon uses, and mean the same thing in all of
 them (slash-commands-§2).
@@ -47,7 +47,7 @@ with /of enable`. The `list`, `get`, `set` and `reset` verbs reach settings only
 `NS.RunVerb(verb, rest)` runs one verb's handler by name, so the launcher's Enabled entry and the
 AutoOn, AutoOff and Update key bindings reach the same handler as the typed verb.
 
-## The outfit verbs (P4.24)
+## The outfit verbs
 
 Added after `version`, with their handlers in `modules/Commands.lua`:
 
@@ -79,8 +79,8 @@ sheet button toggle the window. The comment above `NS.COMMANDS` records the same
 
 **Outfit arguments.** Matched case-insensitively by name; case and spacing are kept. An empty argument
 means the current Complete outfit; a name that matches nothing prints "Couldn't find an outfit named
-…". Every wear, unwear, toggle and update counts as a hardware event, so an outfit's trigger state is
-cleared the way a click clears it.
+…". Every wear, unwear, toggle and update counts as a hardware event, so the outfit's title is set
+the way a click sets it. Only a key binding also clears the outfit's trigger Disabled flag.
 
 **Old verbs** map onto the new surface: `sound on|off` → `/of set equip.muteSounds false|true`,
 `errors on|off` → `/of set equip.showErrors …`, `reset bar` → `/of reset bar.position`, the old

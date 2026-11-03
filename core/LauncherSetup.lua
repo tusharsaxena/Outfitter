@@ -1,11 +1,10 @@
 local addonName, NS = ...
 -- core/LauncherSetup.lua — the ONE LibDataBroker launcher, registered twice (minimap button and broker
--- row) through LibKa0s-Launcher-1.0, the key-binding buttons (launcher-§6, design §4.4) and NS.BINDINGS,
--- the one table they are declared in (design §4.5).
+-- row) through LibKa0s-Launcher-1.0, the 14 key-binding buttons (launcher-§6, design §4.4), NS.BINDINGS,
+-- the one table they are declared in, and NS.WearBoundOutfit, the ten wear keys' handler (design §4.5).
 --
--- P3 C13 lands the Show window binding only. P4.24 adds the other 13 rows to BUTTONS below (the ten
--- wear keys, AutoOn, AutoOff, UpdateOutfit) and NS.WearBoundOutfit. toggleWindow is NS.Dock.Toggle
--- (P4.19).
+-- CALLS (at call time): NS.Dock.Toggle, NS.Stack.WearBound, NS.RunVerb (settings/Slash.lua), NS.Print.
+-- Players' old Outfitter key assignments do not carry over (H11): the names below are new.
 
 local Launcher = LibStub and LibStub("LibKa0s-Launcher-1.0", true)
 local L = NS.L
@@ -21,19 +20,27 @@ local function toggleWindow()
     NS.Dock.Toggle(true)
 end
 
---- Run a verb by name, or `fallback` while the verb is not in NS.COMMANDS yet. `lock` and `unlock`
---- arrive with the outfit verbs in P4.24; until then the menu's Locked entry writes the one setting
---- those verbs write, through the same seam.
-local function runVerbOr(verb, fallback)
-    for _, entry in ipairs(NS.COMMANDS or {}) do
-        if entry[1] == verb then return entry[3]("") end
-    end
-    return fallback()
+--- The menu's Locked entry runs the `lock` or `unlock` verb, so the menu and the verb are one handler
+--- (launcher-§2, slash-commands-§8).
+local function toggleLock()
+    return NS.RunVerb(NS.GetSetting("locked") and "unlock" or "lock")
 end
 
-local function toggleLock()
-    local locked = NS.GetSetting("locked") == true
-    return runVerbOr(locked and "unlock" or "lock", function() NS.SetByPath("locked", not locked) end)
+--- THE wear keys' handler (design §4.4). NS.Stack.WearBound owns the anti-panic rule and the wear: a
+--- Complete outfit is worn now, anything else toggles now, and the press clears the trigger's
+--- Disabled and is a hardware event. An ignored repeat says nothing; an unbound key says so. With
+--- `equip.announceKeys` on, the result goes to the error frame in the outfit color (INV §5).
+--- @param n number  the key, 1..10
+function NS.WearBoundOutfit(n)
+    local line = NS.StoodDownRefusal()        -- the button asked already; a direct caller has not
+    if line then return NS.Print(line) end
+    local worn, rec, ignored = NS.Stack.WearBound(n)
+    if ignored then return end
+    if not rec then return NS.Print(L["No outfit is bound to key %d."]:format(n)) end
+    if NS.GetSetting("equip.announceKeys") == false then return end
+    local c = NS.Constants.OUTFIT_MESSAGE_COLOR
+    local text = (worn and L["%s equipped"] or L["%s unequipped"]):format(tostring(rec.name))
+    _G.UIErrorsFrame:AddMessage(text, c.r, c.g, c.b)
 end
 
 -- ── The key bindings (launcher-§6, design §4.4) ─────────────────────────────────────────────────
@@ -47,6 +54,32 @@ local BUTTONS = {
       handler = toggleWindow,
       label   = L["Toggle outfit window"],
       tooltip = L["Shows or hides the outfit window, as the launcher's Show window entry does."] },
+}
+for n = 1, 10 do
+    BUTTONS[#BUTTONS + 1] = {
+        name    = "OutfitterRebornWearOutfit" .. n,
+        handler = function() NS.WearBoundOutfit(n) end,
+        label   = L["Wear outfit %d"]:format(n),
+        tooltip = L["Wears the outfit you gave key %d in its menu. A Complete outfit is put on again; any other is taken off if it is worn."]:format(n),
+    }
+end
+BUTTONS[#BUTTONS + 1] = {
+    name    = "OutfitterRebornAutoOn",
+    handler = function() NS.RunVerb("auto", "on") end,
+    label   = L["Turn on automatic outfit changes"],
+    tooltip = L["Lets outfits with a trigger equip themselves again, as /of auto on does."],
+}
+BUTTONS[#BUTTONS + 1] = {
+    name    = "OutfitterRebornAutoOff",
+    handler = function() NS.RunVerb("auto", "off") end,
+    label   = L["Turn off automatic outfit changes"],
+    tooltip = L["Stops every trigger, as /of auto off does. Outfits you wear by hand are unaffected."],
+}
+BUTTONS[#BUTTONS + 1] = {
+    name    = "OutfitterRebornUpdateOutfit",
+    handler = function() NS.RunVerb("update", "") end,
+    label   = L["Update outfit to equipped items"],
+    tooltip = L["Saves what you are wearing into the current Complete outfit, as /of update does."],
 }
 
 local function clickCommand(button) return "CLICK " .. button .. ":LeftButton" end

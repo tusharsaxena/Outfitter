@@ -152,9 +152,12 @@ Each outfit picks its own icon, chosen from the whole icon set:
 
 ## The minimap button
 
-Left-click opens the outfit menu, so you can switch without opening the character
-sheet. Drag it around the minimap edge to reposition it. Hide it from Options if
-you'd rather use a LibDataBroker display.
+Left-click opens the settings panel. Right-click opens a short menu: turn the
+addon on or off, lock the outfit bar, try test mode, show the outfit window, or
+open the settings or the skin picker. Hovering it shows the outfit you're
+wearing. Switching outfits lives on the outfit bar, the window, `/of wear` and the
+key bindings. Hide the button from the General page if you'd rather use a
+LibDataBroker display.
 
 ## QuickSlots
 
@@ -179,42 +182,78 @@ your Pawn scales instead of picking stats by hand.
 
 ## Key bindings
 
-Ten outfits can be bound to keys, plus two extra bindings. Assign an outfit to
-one of the ten slots from its menu, then set the key in WoW's own Key Bindings
-window — the bindings live in a section named after the addon.
+There are 14 bindings, in a section named after the addon in WoW's own Key
+Bindings window and on the Keybindings tab of the General settings page:
 
-The two extras are **Disable automation** and **Enable automation**, which toggle
-every script without opening anything.
+- **Toggle outfit window**
+- **Wear outfit 1** to **Wear outfit 10**. Give an outfit one of the ten keys from
+  its menu. A Complete outfit is put on; any other outfit is put on, or taken off
+  if you're wearing it. A second press within 0.75 seconds is ignored.
+- **Turn on automatic outfit changes** and **Turn off automatic outfit changes**
+- **Update outfit to equipped items**, which saves what you're wearing into the
+  current Complete outfit
+
+A wear key says "Hat equipped" on screen unless you turn off **Announce outfit
+changes from key bindings**. Keys you bound in the old Outfitter don't carry over.
 
 ## Slash commands
 
-`/outfitter help` lists these in-game.
+`/of help` lists these in-game, and `/outfitter` is an alias for `/of`. An outfit
+name is matched without regard to case; leave it out and the command uses the
+Complete outfit you're wearing. A name may also be a macro conditional:
+`/of wear [spec:1] Tank; DPS` wears Tank on your first specialization and DPS on
+any other. While the addon is turned off, the commands that change gear answer
+with one line saying how to turn it back on.
 
 | Command | Effect |
 | --- | --- |
-| `/outfitter wear <outfit>` | Wear an outfit |
-| `/outfitter unwear <outfit>` | Remove an outfit |
-| `/outfitter toggle <outfit>` | Wear it, or remove it if it's already on |
-| `/outfitter update [outfit]` | Update an outfit from what you're wearing |
-| `/outfitter updatetitle` | Refresh your player title from equipped items |
-| `/outfitter deposit <outfit>` | Deposit an outfit to the bank |
-| `/outfitter depositunique <outfit>` | Deposit it, except items other outfits use |
-| `/outfitter depositothers <outfit>` | Deposit every outfit but this one |
-| `/outfitter withdraw <outfit>` | Withdraw an outfit from the bank |
-| `/outfitter withdrawothers <outfit>` | Withdraw every outfit but this one |
-| `/outfitter missing` | List outfit items that can't be found |
-| `/outfitter summary` | Summarize your outfits and the items they use |
-| `/outfitter rating` | Summarize the combat ratings of your outfits |
-| `/outfitter iteminfo <item>` | Report what Outfitter knows about an item |
-| `/outfitter itemstats <item>` | Report the parsed stats of an item |
-| `/outfitter zone` | Report the current instance map ID and its zone outfits |
-| `/outfitter disable` | Stop all automatic switching |
-| `/outfitter enable` | Resume automatic switching |
-| `/outfitter sound [on\|off]` | Silence equipment sounds during a gear change |
-| `/outfitter errors [on\|off]` | Missing-item messages during a gear change |
-| `/outfitter reset` | Restore default settings and outfits |
-| `/outfitter reset bar` | Move the outfit bar back to its default position |
-| `/unequip <item or slot>` | Take off a named item |
+| `/of help` | List the commands |
+| `/of config` | Open the settings panel (`/of` alone does the same) |
+| `/of skin` | Choose a skin |
+| `/of enable` | Turn the addon on |
+| `/of disable` | Turn the addon off without unloading it |
+| `/of list` | List every setting |
+| `/of get <setting>` | Read one setting |
+| `/of set <setting> <value>` | Write one setting |
+| `/of reset <setting>` | Reset one setting to its default |
+| `/of resetall` | Reset every setting (asks first) |
+| `/of debug` | Open the debug console; `on` and `off` turn logging on and off |
+| `/of diagnostics` | Write the diagnostics report to the debug console |
+| `/of perf` | Run a performance capture |
+| `/of version` | Print the addon version |
+| `/of show` | Show the outfit window on the character sheet |
+| `/of hide` | Hide the outfit window |
+| `/of wear [outfit]` | Wear an outfit |
+| `/of unwear [outfit]` | Take an outfit off |
+| `/of toggle [outfit]` | Wear it, or take it off if it's on |
+| `/of update [outfit]` | Update an outfit to the items you have equipped |
+| `/of deposit [outfit]` | Put an outfit's items in the bank (bank open) |
+| `/of depositunique [outfit]` | Put in the bank only the items no other outfit uses |
+| `/of depositothers [outfit]` | Put every other outfit's items in the bank |
+| `/of withdraw [outfit]` | Take an outfit's items out of the bank |
+| `/of withdrawothers [outfit]` | Take every other outfit's items out of the bank |
+| `/of missing` | List the outfit items you no longer have (bank open) |
+| `/of unequip <item or slot number>` | Move one equipped item to your bags |
+| `/of updatetitle` | Re-apply the title of the outfit you're wearing |
+| `/of auto [on\|off]` | Turn automatic outfit changes on or off; no word shows the state |
+| `/of zone` | Show the instance, its zone outfits and the equipment updates' state |
+| `/of iteminfo <item link>` | Print what the addon reads from an item link |
+| `/of test` | Show sample outfits on the outfit bar |
+| `/of lock` | Lock the outfit bar in place |
+| `/of unlock` | Unlock the outfit bar to move it |
+| `/of deleteall` | Delete every outfit on this character (asks first) |
+
+Some old commands changed:
+
+| Old | Now |
+| --- | --- |
+| `/outfitter sound on\|off` | `/of set equip.muteSounds false\|true` |
+| `/outfitter errors on\|off` | `/of set equip.showErrors true\|false` |
+| `/outfitter reset bar` | `/of reset bar.position` |
+| `/outfitter reset` | `/of deleteall` |
+| `/outfitter enable` and `disable` (automation) | `/of auto on` and `/of auto off` |
+| `/outfitter summary`, `rating`, `itemstats` | removed |
+| `/unequip` | `/of unequip` |
 
 ## Writing your own scripts
 
