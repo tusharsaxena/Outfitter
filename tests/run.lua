@@ -158,8 +158,8 @@ local SUITES = {
 
     { name = "test_stack" },
 
-    { name = "test_em_sync",          pending = "P4.10" },
-    { name = "test_bank",             pending = "P4.10" },
+    { name = "test_em_sync" },
+    { name = "test_bank" },
 
     { name = "test_optimize",         pending = "P4.12" },
 

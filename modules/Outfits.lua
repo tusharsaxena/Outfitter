@@ -194,14 +194,23 @@ local function triggerOf(t)
     return nil
 end
 
--- A new record under the next id, not yet stored, placed or announced.
+-- The keys `opts.fields` may not write: the identity, the kind and the items are Create's own.
+local FIELDS_SKIP = { id = true, name = true, kind = true, setID = true, items = true, category = true }
+
+-- A new record under the next id, not yet stored, placed or announced. `opts.fields` (the EM store
+-- and restore paths, modules/EquipmentManager.lua) copies further record keys in, so the record is
+-- whole before OUTFIT_ADDED.
 local function newRecord(name, items, opts)
     local c = store()
     local id = "o" .. c.nextID
     c.nextID = c.nextID + 1
-    return { id = id, name = name, kind = opts.kind or "native", items = copy(items) or {},
-             setID = opts.setID, icon = opts.icon, trigger = triggerOf(opts.trigger),
-             builtin = opts.builtin, bar = {} }
+    local rec = { id = id, name = name, kind = opts.kind or "native", items = copy(items) or {},
+                  setID = opts.setID, icon = opts.icon, trigger = triggerOf(opts.trigger),
+                  builtin = opts.builtin, bar = {} }
+    for k, v in pairs(opts.fields or {}) do
+        if not FIELDS_SKIP[k] then rec[k] = copy(v) end
+    end
+    return rec
 end
 
 -- Store, place and announce a whole record: OUTFIT_ADDED is the binder's Bind(id), so every field
@@ -213,7 +222,8 @@ local function add(rec)
     return rec.id
 end
 
---- A new outfit. `opts = { icon?, trigger? (an id or a trigger table), builtin?, kind?, setID? }`.
+--- A new outfit. `opts = { icon?, trigger? (an id or a trigger table), builtin?, kind?, setID?,
+--- fields? (further record keys, deep-copied in) }`.
 --- Allocates "o"..nextID, categorizes, appends to the order and sends OUTFIT_ADDED (the binder binds
 --- a triggered outfit off that message).
 --- @param name string
