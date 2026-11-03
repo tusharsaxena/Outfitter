@@ -51,6 +51,21 @@ re-cut` re-copied that file from `git archive v1.85.0` and re-ran the tag's `too
 (20 declared, 22 kept, 0 removed); `diff -r --strip-trailing-cr` of both payloads against the tag is
 again empty bar the pruned icons.
 
+A fourth re-cut followed during the group G merge of P4: tag v1.85.0 now names `17d18aa` (tagger
+date 2026-11-03 20:08:38 +0530, the sixteenth re-cut, carrying R5-L1 to R5-L5 and R5-REL). The kit's
+vendor gate went red at HEAD on DebugLogWindow.lua. `git diff --stat 2a78817 v1.85.0 -- LibKa0s
+testkit` moves DebugLogWindow, OptionsIdList, OptionsIdSuggest, OptionsSkinPicker, PerfPanel,
+SimPanelRender, Skin, SkinDefs, SkinPaint, SkinPaintExtras, Toast, Widgets, WidgetsAutocomplete and
+WidgetsCopyWindow, and no kit file. Three majors' minors move: Skin 15 -> 16 (`S.Band`, `S.Header`),
+Toast 2 -> 3 and Widgets 21 -> 22 (`W.IconText`); the table below reads the new values. Of the
+releasing.md hosts-owe list this addon owes the degraded Skin facade's `Band` and `Header`
+(core/SkinSetup.lua; test_skinsetup's parity case went red without them). It has no Widgets stub, so
+`IconText` is not owed, and it draws no window icon art yet, so the R5-ICON rule falls to the window
+and skin tasks (P4.19, P4.30; recorded on the P4.30 row of design §12). `P4: Re-sync LibKa0s to the v1.85.0 re-cut` re-copied the whole payload from
+`git archive v1.85.0` and re-ran the tag's `tools/prune-icons.lua` (20 declared, 22 kept, 5818
+removed); `diff -r --strip-trailing-cr` of both payloads against the tag is again empty bar the pruned
+icons.
+
 ## Per-major minors (3c)
 
 `grep 'local MAJOR, MINOR = "LibKa0s-'` over the copy. Every major is new to this addon.
@@ -66,11 +81,11 @@ again empty bar the pruned icons.
 | Pool | none | 3 | yes |
 | Item | none | 3 | yes |
 | Glow | none | 2 | no |
-| Toast | none | 2 | no |
+| Toast | none | 3 | no |
 | Charts | none | 1 | no |
 | Media | none | 12 | yes |
-| Skin | none | 15 | yes |
-| Widgets | none | 21 | yes |
+| Skin | none | 16 | yes |
+| Widgets | none | 22 | yes |
 | DebugLog | none | 22 | yes |
 | Slash | none | 21 | yes |
 | Launcher | none | 7 | yes |

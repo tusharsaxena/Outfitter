@@ -424,7 +424,7 @@ if not Skin then
         "TitleBar", "Divider", "Footer", "Card", "Slider", "NavItem", "Drawer", "ListRow", "MenuFrame",
         "Tooltip", "Strip", "Cover", "Text", "ChartStyle", "BarStyle", "IconBorder", "GlowColor",
         "BarTexture", "FontFlags", "HudFontSize", "Mark", "MarkText", "HudTextColor", "HudLabelColor",
-        "BarFillColor", "HudShadow", "BarGloss", "HudFont", "HoverArt",
+        "BarFillColor", "HudShadow", "BarGloss", "HudFont", "HoverArt", "Band", "Header",
     }) do S[name] = noop end
 
     S.Token = function(name)
