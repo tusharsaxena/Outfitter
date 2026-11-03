@@ -2,10 +2,12 @@
 -- Each case loads the addon twice -- whole, and with the LibKa0s file list EMPTY -- and compares the
 -- stub against the live surface, then drives both arms through the same calls.
 --
--- THE P3 C9 ROWS: the Pool, Item and Widgets seams, and SecureQueue, which is host code with no stub
--- and is asserted to behave the same on both arms. C14 adds the degraded load's init / enable /
--- version case and the rows of the seams that land before it; each later seam brings its own row,
--- and P4.27 closes the set (design §9.3).
+-- THE P3 ROWS. C9 landed the Pool, Item and Widgets seams and SecureQueue, which is host code with
+-- no stub and is asserted to behave the same on both arms. C14 adds the degraded load's init /
+-- enable / version case and a row for every seam that landed before it: Options, Bus, Schema, Slash,
+-- Lifecycle, Launcher, DebugLog, Perf, Core, Media, Env, Compat and Secrets (the Skin facade's row is
+-- tests/test_skinsetup.lua's). Each later seam brings its own row, and P4.27 closes the set (design
+-- §9.3). A trimmed name in an `ignore` list is one this addon never calls.
 
 local T = _G.OUTFITTERREBORN_TEST
 local test, assertEqual, assertTrue, assertFalse, assertNil =
@@ -35,6 +37,144 @@ local function widget(n)
     function o.Hide(self) self.shown = false end
     return o
 end
+
+-- ── the degraded load, and the seams that landed before C14 ──────────────────────────────────
+
+test("parity: the degraded load still initializes, enables and answers /of version", function()
+    -- red under: any stub above that raises at load or in OnInitialize (the instance never gets a db)
+    local _, d = pair()
+    assertNil(d.mocks.LibStub("LibKa0s-Core-1.0", true), "the library is not absent")
+    assertTrue(d.NS.db ~= nil, "InitDB ran")
+    assertTrue(d.NS.addon ~= nil and d.NS.addon:IsEnabled() ~= false, "the addon did not enable")
+    assertFalse(d.NS.IsStoodDown(), "the degraded load came up stood down")
+    d.mocks.__resetPrinted()
+    d.NS.Slash:OnSlash("version")
+    local said = table.concat(d.mocks.__printed(), "\n")
+    assertTrue(said:find("1.1.0", 1, true) ~= nil, "/of version answered: " .. said)
+end)
+
+--- Form two against an INSTANCE: the stub mirrors what `lib:New(descriptor)` returned, so the
+--- source is swapped to that instance for the one call and put back (testing-§8).
+local function againstInstance(stub, major, liveInstance, ignore)
+    local previous = T.setSurfaceSource({ [major] = liveInstance })
+    local ok, err = pcall(T.assertSurfaceParity, stub, major, ignore)
+    T.setSurfaceSource(previous)
+    if not ok then error(err, 0) end
+end
+
+test("parity: the Options stub carries every public member of the live Helpers surface", function()
+    local l, d = pair()
+    againstInstance(d.NS.Helpers, "LibKa0s-Options-1.0", l.NS.Helpers, {
+        -- constants and composers no page of this addon reads (grep -rhoE "(Helpers|\bH)\.[A-Za-z_]+"
+        -- core/ modules/ settings/), so a full load alone carries them
+        "CLASS_COLOR_NOTE", "FONT_FLAGS", "FONT_FLAGS_SORT", "VISIBILITY_SORT", "VISIBILITY_VALUES",
+        "ROW_VSPACER", "SECTION_HEADING_H", "BUTTON_PAIR_REL", "PADDING_X", "CHROME_GAP", "TAB_H",
+        "BANNER_H", "PageHeader", "SubTabStrip", "AceGUI",
+    })
+end)
+
+test("parity: the Bus stub carries the library surface, and its record the instance's", function()
+    local l, d = pair()
+    assertTrue(d.NS.BusLib ~= l.mocks.LibStub("LibKa0s-Bus-1.0"), "the degraded load did not take the stub")
+    T.assertSurfaceParity(d.NS.BusLib, "LibKa0s-Bus-1.0")
+    T.assertSurfaceParity(l.NS.busRecord, d.NS.busRecord, "NS.busRecord")
+end)
+
+test("parity: the Schema stub carries the runtime surface this addon binds", function()
+    -- members from: grep -rhoE "\bS[.:][A-Z][A-Za-z]+" settings/ (AddRows, AllRows, ApplyDefault,
+    -- BulkBegin, BulkEnd, BulkRun, FindRow, Get, Set, SetMany, Validate); the rest are never called
+    local l, d = pair()
+    T.assertSurfaceParity(l.NS.SchemaRuntime, d.NS.SchemaRuntime, "NS.SchemaRuntime", {
+        "Reindex", "Default", "BulkAdd", "InBulk", "CountOffDefault", "ResetCounted", "ConsumeResetCount",
+    })
+    T.assertSurfaceParity(l.NS.__schemaLib, d.NS.__schemaLib, "NS.__schemaLib",
+        { "STRINGS", "SameValue", "MAJOR", "MINOR", "MODULES" })
+end)
+
+test("parity: the Slash stub carries the live dispatcher's surface", function()
+    local l, d = pair()
+    T.assertSurfaceParity(l.NS.Slash.__dispatcher, d.NS.Slash.__dispatcher, "NS.Slash.__dispatcher", {
+        "BuildListLines", -- the schema CLI's listing; the stub's CliList names the missing library
+        "HelpHeader",     -- the stub's PrintHelp prints its own plain header
+        "Text",           -- lib.STRINGS; the stub carries no library string but the refusal format
+    })
+end)
+
+test("parity: the Lifecycle stub carries the live latch's surface", function()
+    local l, d = pair()
+    assertTrue(d.NS.lifecycle == d.NS.Lifecycle, "the two names are not one object")
+    T.assertSurfaceParity(l.NS.lifecycle, d.NS.lifecycle, "NS.lifecycle")
+end)
+
+test("parity: the Launcher stub carries the live launcher's surface", function()
+    local l, d = pair()
+    T.assertSurfaceParity(l.NS.Launcher, d.NS.Launcher, "NS.Launcher")
+end)
+
+test("parity: the DebugLog stub carries every member this addon calls", function()
+    -- members from: grep -rhoE "DebugLog[.:][A-Za-z]+" core/ modules/ settings/, plus Hide,
+    -- IsEnabled and SetEnabled, which the console row and the diagnostics contract reach
+    bothArms("NS.DebugLog", function(NS) return NS.DebugLog end, {
+        Add = "function", Debug = "function", Show = "function", Hide = "function",
+        Toggle = "function", IsShown = "function", IsEnabled = "function", SetEnabled = "function",
+        ConsoleCheckbox = "function", RunDiagnostics = "function", DebugVerb = "function",
+        DebugOnce = "function", DebugChanged = "function", DebugAtEnable = "function",
+    })
+    bothArms("NS", function(NS) return NS end, {
+        Debug = "function", DebugOnce = "function", DebugChanged = "function", DebugAtEnable = "function",
+    })
+end)
+
+test("parity: the Perf stub carries every member this addon reads, on both arms", function()
+    -- members from: grep -rhoE "Perf[.:][A-Za-z]+" core/ modules/ settings/
+    bothArms("NS.Perf", function(NS) return NS.Perf end,
+        { on = "boolean", Note = "function", OnCommand = "function" })
+    local _, d = pair()
+    local lines = d.NS.Perf.OnCommand("")
+    assertEqual(type(lines), "table", "the stub's perf verb answers no lines")
+    assertTrue(tostring(lines[1]):find(d.NS.LIBKA0S_MISSING, 1, true) ~= nil, "the stub does not say why")
+end)
+
+test("parity: the Core seam carries every member this addon reads, on both arms", function()
+    -- members from: grep -rhoE "NS\.(Print|SafeToString|IsConcatSafe|SafeRegister[A-Za-z]*|ApplySkin|
+    -- SKIN|MakeCloseButton|MakeResizable|RaiseStaticPopups)\b" core/ modules/ settings/
+    bothArms("NS", function(NS) return NS end, {
+        Print = "function", SafeToString = "function", IsConcatSafe = "function",
+        SafeRegisterEvent = "function", SafeRegisterUnitEvent = "function",
+        SafeRegisterEvents = "function", ApplySkin = "function", SKIN = "table",
+        MakeCloseButton = "function", MakeResizable = "function", RaiseStaticPopups = "function",
+    })
+    bothArms("NS.Util", function(NS) return NS.Util end, { print = "function" })
+    local l, d = pair()
+    assertTrue(l.NS.Print == l.NS.Util.print, "live: NS.Print is not NS.Util.print (architecture-§2)")
+    assertTrue(d.NS.Print == d.NS.Util.print, "stub: NS.Print is not NS.Util.print (architecture-§2)")
+end)
+
+test("parity: the Media seam answers on both arms, nil being a real answer", function()
+    -- members from: grep -rhoE "NS\.(Icon|MediaFont)\b" core/ modules/ settings/
+    bothArms("NS", function(NS) return NS end, { Icon = "function", MediaFont = "function" })
+    local _, d = pair()
+    assertNil(d.NS.Icon("close"), "the stub invented an icon path")
+    assertNil(d.NS.MediaFont("any"), "the stub invented a font path")
+end)
+
+test("parity: the Env seam answers the TOC's version on both arms", function()
+    -- members from: grep -rhoE "NS\.(Meta|Version)\b" core/ modules/ settings/
+    bothArms("NS", function(NS) return NS end, { Meta = "function", Version = "function" })
+    local l, d = pair()
+    assertEqual(d.NS.Version(), l.NS.Version(), "the stub reads a different version")
+    assertEqual(d.NS.Meta("Version"), l.NS.Meta("Version"))
+end)
+
+test("parity: the Compat and Secrets seams carry the same surface on both arms", function()
+    -- Host tables over LibKa0s-Compat-1.0 (core/Compat.lua, core/Secrets.lua): every member the
+    -- full load publishes is published, as the same kind, when the library is absent.
+    local l, d = pair()
+    T.assertSurfaceParity(l.NS.Compat, d.NS.Compat, "NS.Compat")
+    T.assertSurfaceParity(l.NS.Secrets, d.NS.Secrets, "NS.Secrets")
+    bothArms("NS", function(NS) return NS end,
+        { IsSecret = "function", Unsecret = "function", SafeNumber = "function" })
+end)
 
 -- ── Pool ───────────────────────────────────────────────────────────────────────────────────────
 
