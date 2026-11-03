@@ -168,11 +168,12 @@ end
 
 local MAX_AURAS = 40
 
+-- Every index to the bound: CapturePlayerAura answers nil for a secret aura too, which is not the end
+-- of the list (the aura scan's rule, modules/States.lua readAuras).
 local function eachAura(addRow)
     for i = 1, MAX_AURAS do
         local id = P().CapturePlayerAura(i)
-        if not id then return end
-        addRow(id)
+        if id then addRow(id) end
     end
 end
 

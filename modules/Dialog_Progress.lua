@@ -11,7 +11,8 @@ local _, NS = ...
 --
 -- The receivers are installed once, by Install (NS.Dialogs.Resume, and every dialog that starts a
 -- search); the bus record replays them across a stand-down. The frame is a `keep` dialog: CloseAll
--- passes it by, the stand-down closes it.
+-- passes it by, the stand-down closes it. Any hide but DONE's (Escape, the close mark, the stand-down)
+-- cancels the shown job: a search nobody can see could not be canceled and would still write.
 --
 -- CALLS (at call time, no nil guard; design §12): NS.Optimize.Cancel.
 
@@ -28,7 +29,11 @@ local frame, job, installed
 local function build()
     if frame then return frame end
     local f = D.New({ name = "OutfitterRebornOptimizeProgress", key = "progress", width = WIDTH, height = HEIGHT,
-                      title = "", keep = true, onHide = function() job = nil end })
+                      title = "", keep = true, onHide = function()
+                          local j = job
+                          job = nil
+                          if j then NS.Optimize.Cancel(j) end
+                      end })
     f.bar = CreateFrame("StatusBar", nil, f)
     f.bar:SetSize(WIDTH - 28, 14)
     f.bar:SetPoint("TOPLEFT", f, "TOPLEFT", 14, -38)
@@ -67,7 +72,10 @@ local function onProgress(_, j, noChange, maxNoChange, text)
 end
 
 local function onDone(_, j)
-    if frame and j == job then frame:Hide() end
+    if frame and j == job then
+        job = nil                  -- finished: the hide below has nothing to cancel
+        frame:Hide()
+    end
 end
 
 --- Install the three receivers, once.

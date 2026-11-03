@@ -215,3 +215,44 @@ test("trigger dialog: no Source tab, no script text", function()
         end
     end
 end)
+
+-- ── group J review fixes ──────────────────────────────────────────────────────────────────────
+
+test("trigger dialog: Add a buff... lists the helpful auras after a secret one", function()
+    local restore = T.installSecretValue()
+    local ok, err = pcall(function()
+        local NS, M, ctl = fresh()
+        local TD = NS.TriggerDialog
+        TD.Open(withTrigger(NS, "HAS_BUFF"))
+        local aura = function(id) return { name = "Buff " .. id, spellId = id, icon = 136000 } end
+        M.__world:setAuras("player", "HELPFUL", { aura(2645), T.secret(aura(5384)), aura(1459) })
+        TD.Field("spellIDs").capture[2]:__fire("OnClick")
+        local rows = ctl.menus[#ctl.menus].rows
+        -- red under: eachAura stopping at the first aura CapturePlayerAura answers nil for (the secret one).
+        assertEqual(#rows, 2, "rows: " .. ctl.labels())
+    end)
+    restore()
+    if not ok then error(err, 0) end
+end)
+
+test("trigger dialog: a failed Done's error lines go once the value they named is fixed", function()
+    local NS = fresh()
+    local TD = NS.TriggerDialog
+    local id = withTrigger(NS, "RIDING")
+    TD.Open(id)
+    setValue(TD, "unequipDelay", 99)
+    assertFalse(TD.Done())
+    assertTrue((TD.Field("unequipDelay").error:GetText() or "") ~= "", "no error on the failing field")
+    local setMany = NS.Schema.SetMany
+    NS.Schema.SetMany = function() return false, "refused" end
+    TD.Field("unequipDelay").input:SetText("2")     -- the player types (no editor rebuild)
+    assertFalse(TD.Done())
+    -- red under: paramEntries writing a field's error on failure only (the fixed field keeps it).
+    assertEqual(TD.Field("unequipDelay").error:GetText() or "", "", "a fixed field kept its error")
+    assertEqual(TD.Frame().error:GetText(), "refused")
+    TD.Field("unequipDelay").input:SetText("99")
+    assertFalse(TD.Done())
+    -- red under: Done not clearing frame.error before it tries again.
+    assertEqual(TD.Frame().error:GetText() or "", "", "the last SetMany refusal stayed up")
+    NS.Schema.SetMany = setMany
+end)

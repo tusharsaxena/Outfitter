@@ -32,6 +32,13 @@ end
 
 local function down() return NS.IsStoodDown() end
 
+-- Why Delete all is refused now (stood down, or in combat), or nil (design §3.6).
+local function deleteAllRefusal()
+    local why = NS.StoodDownRefusal()
+    if not why and NS.PlayerState.InCombat() then why = L["Outfits can't be deleted in combat."] end
+    return why
+end
+
 StaticPopupDialogs["OUTFITTERREBORN_CONFIRM_DELETE"] = popup({
     text = L["Delete the outfit \"%s\"?"],
     button1 = L["Delete"],
@@ -60,6 +67,12 @@ StaticPopupDialogs["OUTFITTERREBORN_DELETE_ALL"] = popup({
     text = L["Delete every outfit on this character and re-create the built-in ones? Blizzard equipment sets come back as outfits. Your settings are not affected."],
     button1 = L["Delete all outfits"],
     OnAccept = function()
+        -- Shown out of combat, accepted in it (timeout 0): the refusal comes before anything closes.
+        local refused = deleteAllRefusal()
+        if refused then
+            NS.Print(refused)
+            return
+        end
         -- An open dialog's draft names outfits that are about to go: it goes first.
         NS.Dialogs.CloseAll("deleteall")
         local ok, why = NS.Outfits.DeleteAll()
@@ -108,8 +121,7 @@ end
 --- printed, in combat and while stood down (design §3.6).
 --- @return table|false popup, string|nil why
 function P.ShowDeleteAll()
-    local why = NS.StoodDownRefusal()
-    if not why and NS.PlayerState.InCombat() then why = L["Outfits can't be deleted in combat."] end
+    local why = deleteAllRefusal()
     if why then
         NS.Print(why)
         return false, why

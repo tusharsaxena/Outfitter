@@ -372,3 +372,95 @@ test("icons: it closes on an outside press but not its own, on Escape, on stand-
     assertFalse(IC.IsOpen(), "a stand-down left it open")
     assertFalse(f:IsEventRegistered("GLOBAL_MOUSE_DOWN"), "the press watch outlived the chooser")
 end)
+
+-- ── group J review fixes ──────────────────────────────────────────────────────────────────────
+
+test("icons: a redraw that hides and re-shows the pooled opener keeps it open; its surface closing closes it", function()
+    local NS, M = scene()
+    local IC = NS.IconChooser
+    local id = NS.Outfits.Create("Pretty", {})
+    local surface = M.CreateFrame("Frame", nil, M.UIParent)
+    local row = M.CreateFrame("Button", nil, surface)
+    local mark = M.CreateFrame("Button", nil, row)
+    IC.Open(id, mark)
+    mark:Hide(); mark:Show()                          -- what Rows.Bind and Pool.ReleaseAll do
+    -- red under: watching the pooled control itself (the redraw closed the chooser, the pick lost).
+    assertTrue(IC.IsOpen(), "a redraw of the opener closed the chooser")
+    surface:Hide()
+    assertFalse(IC.IsOpen(), "the opener's surface closing left it open")
+end)
+
+test("icons: a second click on the set dropdown closes its menu, and the next outside press closes the chooser", function()
+    local NS = scene()
+    local IC = NS.IconChooser
+    IC.Open(NS.Outfits.Create("Pretty", {}), {})
+    local f = IC.Frame()
+    local function press(over)
+        f.set.__over = over
+        f:__fire("OnEvent", "GLOBAL_MOUSE_DOWN", "LeftButton")
+    end
+    press(true); f.set:__fire("OnClick")              -- opens the menu
+    press(true); f.set:__fire("OnClick")              -- closes it
+    press(false)
+    -- red under: the OnClick hook setting the flag on every click (the closing click armed it again).
+    assertFalse(IC.IsOpen(), "an outside press after the menu closed was swallowed")
+    IC.Open(NS.Outfits.Create("Pretty2", {}), {})
+    press(true); f.set:__fire("OnClick")              -- opens the menu
+    f.__over = true; press(false); f.__over = false   -- a press on the chooser dismisses it
+    press(false)
+    -- red under: a press on the chooser itself leaving the menu flag set.
+    assertFalse(IC.IsOpen(), "the press after a dismissing press on the chooser was swallowed")
+end)
+
+test("popups: Delete all accepted in combat refuses before it closes any dialog", function()
+    local NS, M = scene()
+    local P = M.StaticPopupDialogs
+    NS.Popups.ShowDeleteAll()
+    local p = M.__popups[#M.__popups]
+    assertEqual(p.which, "OUTFITTERREBORN_DELETE_ALL")
+    local keep = NS.Outfits.Create("Keep", { HeadSlot = { id = 0 } })
+    NS.OutfitDialog.OpenNew()
+    M.__world:setCombat(true)
+    M.__resetPrinted()
+    P[p.which].OnAccept(nil, p.data)
+    -- red under: an accept that runs NS.Dialogs.CloseAll before the combat refusal.
+    assertTrue(NS.OutfitDialog.IsOpen(), "the refused accept threw the open dialog's draft away")
+    assertTrue(NS.Outfits.Get(keep) ~= nil, "an accept in combat deleted")
+    assertTrue(printed(M, "Outfits can't be deleted in combat."))
+    M.__world:setCombat(false)
+    P[p.which].OnAccept(nil, p.data)
+    assertFalse(NS.OutfitDialog.IsOpen(), "the accept left a dialog over deleted outfits")
+    assertNil(NS.Outfits.Get(keep))
+end)
+
+test("new outfit and rename: the name box takes the keys when the dialog opens", function()
+    local NS = scene()
+    local f = NS.OutfitDialog.Frame()
+    local focused = 0
+    rawset(f.name, "SetFocus", function() focused = focused + 1 end)
+    NS.OutfitDialog.OpenNew()
+    -- red under: OpenNew without frame.name:SetFocus() (legacy _NameOutfitDialog:Open focused it).
+    assertEqual(focused, 1, "OpenNew")
+    NS.OutfitDialog.Close()
+    NS.OutfitDialog.OpenRename(NS.Outfits.Create("Named", {}))
+    -- red under: OpenRename without frame.name:SetFocus().
+    assertEqual(focused, 2, "OpenRename")
+end)
+
+test("progress: closing the window by Escape or its X cancels the search it shows", function()
+    local NS = scene()
+    local Pg = NS.ProgressDialog
+    local reason
+    local job = { name = "Gear", statName = "Stamina", onDone = function(_, why) reason = why end }
+    NS.SendBus(NS.MSG.OPTIMIZE_STARTED, job)
+    assertTrue(Pg.IsOpen())
+    Pg.Frame():Hide()                                 -- what Escape and the close mark do
+    -- red under: a progress window whose hide only forgets the job (the search runs on, unseen).
+    assertEqual(reason, "canceled")
+    assertTrue(job.done == true)
+    local other = { name = "Gear", statName = "Stamina" }
+    NS.SendBus(NS.MSG.OPTIMIZE_STARTED, other)
+    other.done = true
+    NS.SendBus(NS.MSG.OPTIMIZE_DONE, other, true)
+    assertFalse(Pg.IsOpen(), "DONE of the shown job left it open")
+end)

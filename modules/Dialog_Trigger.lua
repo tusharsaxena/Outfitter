@@ -147,6 +147,7 @@ local function paramEntries(entries)
     local values, initial = draft.values[draft.tid], draft.initial[draft.tid]
     for key, ed in pairs(draft.fields) do
         local v = values[key]
+        ed.error:SetText("")       -- the last Done's reason goes; a failure below writes this one's
         if not same(v, initial[key]) then
             local pass, why = NS.Triggers.ValidateParam(desc, key, v)
             if pass then
@@ -165,6 +166,7 @@ end
 function TD.Done()
     if not draft or NS.IsStoodDown() then return false end
     collect()
+    frame.error:SetText("")
     local entries = {}
     if draft.tid ~= draft.start.tid then entries[1] = { path = "outfit.trigger.id", value = draft.tid } end
     local ok = paramEntries(entries)

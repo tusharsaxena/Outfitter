@@ -275,6 +275,7 @@ function OD.OpenNew()
     frame.name:SetText("")
     setError(nil)
     D.Show(frame)
+    frame.name:SetFocus()          -- type a name and press Enter (legacy _NameOutfitDialog:Open)
     return true
 end
 
@@ -291,6 +292,7 @@ function OD.OpenRename(id)
     frame.name:SetText(rec.name or "")
     setError(nil)
     D.Show(frame)
+    frame.name:SetFocus()
     return true
 end
 

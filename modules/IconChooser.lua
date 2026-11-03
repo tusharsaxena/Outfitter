@@ -5,7 +5,8 @@ local _, NS = ...
 -- Escape (UISpecialFrames) and by Close(reason): a press outside it (GLOBAL_MOUSE_DOWN, watched only
 -- while it is shown; a press on the chooser, its search box or its set dropdown, and the one press that
 -- answers the dropdown's open menu, are its own), the window or the sheet closing
--- (modules/Dock.lua calls Close("opener")), its opener hiding, and the stand-down.
+-- (modules/Dock.lua calls Close("opener")), its opener's surface hiding (the window or the bar, not
+-- the pooled control a redraw hides and re-shows), and the stand-down.
 --
 -- THE SETS. Recommended (the wildcard, the outfit's item icons, every trigger's icon), Equipped and
 -- bags (the inventory cache's items), Item icons and Ability icons (Compat.MacroIcons), and All. The
@@ -175,10 +176,11 @@ end
 
 function IC.IsOpen() return frame ~= nil and frame:IsShown() == true end
 
--- A press outside the chooser. The first press after the set dropdown opened its menu belongs to that
--- menu (a pick, or the press that dismisses it).
+-- A press outside the chooser. While the set dropdown's menu is open, a press anywhere but on the
+-- dropdown belongs to that menu (a pick, or the press that dismisses it) and the menu is then closed;
+-- a press on the dropdown is its own toggle, which the OnClick hook below follows.
 local function onMouseDown()
-    if st.menuOpen then
+    if st.menuOpen and not (frame.set and frame.set:IsMouseOver()) then
         st.menuOpen = false
         return
     end
@@ -238,7 +240,8 @@ local function setPicker(f)
     for i, key in ipairs(SETS) do opts[i] = { value = key, label = labels[key] } end
     f.set:SetOptions(opts)
     f.set.onSelect = function(v) st.menuOpen = false; IC.SetSet(v) end
-    f.set:HookScript("OnClick", function() st.menuOpen = true end)
+    -- The library's OnClick toggles the menu: a click on a closed one opens it, on an open one closes it.
+    f.set:HookScript("OnClick", function() st.menuOpen = not st.menuOpen end)
 end
 
 local function searchBox(f)
@@ -292,11 +295,30 @@ local function build()
     return f
 end
 
--- The opener's hide closes the chooser it opened; hooked once per opener.
+-- The surface `opener` sits on: its outermost ancestor below UIParent. The opener itself is a pooled
+-- control (a list row's menu mark, a bar button) that every redraw hides and shows again; the surface
+-- (the window, the bar) hides only when it really closes (design §7.8 "the opener hiding").
+local function hostOf(opener)
+    local f = opener
+    for _ = 1, 32 do
+        local p = type(f.GetParent) == "function" and f:GetParent() or nil
+        if type(p) ~= "table" or p == f or p == UIParent then return f end
+        f = p
+    end
+    return f
+end
+
+-- The opener's surface hiding closes the chooser it opened; hooked once per surface. Answers the
+-- surface watched, or nil.
 local function watchOpener(opener)
-    if type(opener) ~= "table" or type(opener.HookScript) ~= "function" or opener.__ofIconWatch then return end
-    opener.__ofIconWatch = true
-    opener:HookScript("OnHide", function(self) if st.opener == self then IC.Close("opener") end end)
+    if type(opener) ~= "table" then return nil end
+    local host = hostOf(opener)
+    if type(host.HookScript) ~= "function" then return nil end
+    if not host.__ofIconWatch then
+        host.__ofIconWatch = true
+        host:HookScript("OnHide", function(self) if st.opener == self then IC.Close("opener") end end)
+    end
+    return host
 end
 
 --- Open the chooser on outfit `id`, anchored to `opener`.
@@ -306,11 +328,11 @@ function IC.Open(id, opener)
     if NS.IsStoodDown() or not rec then return false end
     build()
     if frame:IsShown() then frame:Hide() end
-    st.id, st.opener, st.filter = id, opener, ""
+    st.id, st.filter = id, ""
     st.pick = rec.icon or WILDCARD
     frame.title:SetText(L["Choose an icon for %s"]:format(tostring(rec.name or "")))
     if frame.search then frame.search:SetText("") end
-    watchOpener(opener)
+    st.opener = watchOpener(opener)
     IC.SetSet("recommended")
     frame:ClearAllPoints()
     frame:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
