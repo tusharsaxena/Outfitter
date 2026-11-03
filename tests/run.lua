@@ -128,7 +128,7 @@ local SUITES = {
     -- That task drops the field in the same commit (design §12): the kit errors on a `pending` entry
     -- whose file exists, and the line is the only one in this file the task may touch. The blank line
     -- between two tasks' lines is the unchanged line that lets parallel flips merge cleanly.
-    { name = "test_mock_gear",        pending = "P4.1" },
+    { name = "test_mock_gear" },
 
     { name = "test_slots",            pending = "P4.3" },
     { name = "test_zones",            pending = "P4.3" },

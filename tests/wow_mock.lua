@@ -3,11 +3,27 @@
 --
 -- Loaded as `assert(loadfile(root .. "/tests/wow_mock.lua"))(root)`, so the kit path resolves from
 -- any working directory. `build()` answers a fresh mock per call, which is what lets a suite stand a
--- whole isolated instance up per case. The equipment and world fakes arrive with P4 in their own
--- files (tests/mock_gear.lua, tests/mock_world.lua); this one stays the client's chrome.
+-- whole isolated instance up per case. The equipment and world fakes live in their own files
+-- (tests/mock_gear.lua, tests/mock_world.lua, both installed on every build, after the chrome
+-- below); this one stays the client's chrome, plus `fake`, the recorded stand-in a suite installs
+-- for a module that has not landed yet (design §12, the fake rule).
+--
+-- Answers { build, fake, fixtures, gear, world }: `fixtures` is { items, inventories } from
+-- tests/fixtures/, `gear` and `world` the two installer modules (their slot and class tables).
 
 local root = ... or "."
 local base = dofile(root .. "/tests/_kit/mock_base.lua")
+-- The kit's secret simulator, for the gear half's secret links. Its registry is process-wide
+-- (package.loaded), so a wrapper minted here is the one T.isSecret recognizes.
+local Secrets = {}
+dofile(root .. "/tests/_kit/secrets.lua")(Secrets)
+local Fixtures = {
+    items       = dofile(root .. "/tests/fixtures/items.lua"),
+    inventories = dofile(root .. "/tests/fixtures/inventories.lua"),
+}
+local Gear = dofile(root .. "/tests/mock_gear.lua")
+local GearSets = dofile(root .. "/tests/mock_gear_sets.lua")
+local World = dofile(root .. "/tests/mock_world.lua")
 -- The kit's binding model: the installer keeps no state of its own, so it is read once and run on
 -- every fresh mock.
 local installBindings = dofile(root .. "/tests/_kit/mock_bindings.lua")
@@ -21,10 +37,23 @@ local function build()
 
     -- A NAMED frame is a global in the client, which is how a key binding's `CLICK <name>` finds its
     -- button (launcher-§6). The base records the name only; publish it the way the client does.
+    -- GetChildren answers from the recorded parents, in creation order, so a frame re-parented
+    -- since is found under its new parent (the base's metatable would hand back the frame itself).
     local baseCreateFrame = M.CreateFrame
+    local made = setmetatable({}, { __mode = "k" })
+    local function children(self)
+        local out = {}
+        for f in pairs(made) do
+            if rawget(f, "__parent") == self then out[#out + 1] = f end
+        end
+        table.sort(out, function(a, b) return (a.__seq or 0) < (b.__seq or 0) end)
+        return unpack(out)
+    end
     M.__frameByName = {}
     M.CreateFrame = function(frameType, name, parent, template)
         local f = baseCreateFrame(frameType, name, parent, template)
+        made[f] = true
+        rawset(f, "GetChildren", children)
         if type(name) == "string" and name ~= "" then
             M.__frameByName[name] = f
             M[name] = f
@@ -192,7 +221,50 @@ local function build()
         return nil
     end
 
+    -- The domain halves: gear first (items, bags, the cursor, C_EquipmentSet), then the world,
+    -- which builds the character sheet's slot buttons from gear's slot table and wraps CreateFrame
+    -- last, so a Secure* template is protected whoever made it.
+    Gear.install(M, { items = Fixtures.items, inventories = Fixtures.inventories, secret = Secrets.secret,
+                    sets = GearSets })
+    World.install(M, { isSecret = Secrets.isSecret, gear = Gear })
+
     return M
 end
 
-return { build = build }
+--- Install a recorded stand-in for `NS[key]` (design §12, the fake rule) and answer it with its
+--- restore. `members` maps a member name to a function (recorded, then called; its returns are
+--- the fake's) or to `true` (recorded, answers nothing). A member the suite did not list RAISES
+--- when read, so a call the suite did not expect fails the case instead of passing silently.
+---   local fake, restore = fake(NS, "Stack", { Remove = true, Top = function() return "o1" end })
+---   fake.__calls        { { "Remove", args... }, ... } in call order
+---   fake.__count(name)  how many times `name` was called
+--- With a fourth argument `body`, it installs, runs body(fake), restores however body leaves, and
+--- re-raises a body error.
+local function fake(NS, key, members, body)
+    local calls = {}
+    local f = { __calls = calls }
+    function f.__count(name)
+        local n = 0
+        for _, c in ipairs(calls) do if c[1] == name then n = n + 1 end end
+        return n
+    end
+    for name, impl in pairs(members or {}) do
+        f[name] = function(...)
+            calls[#calls + 1] = { name, ... }
+            if type(impl) == "function" then return impl(...) end
+        end
+    end
+    setmetatable(f, { __index = function(_, k)
+        error(("fake NS.%s: unexpected member %s"):format(key, tostring(k)), 2)
+    end })
+    local prev = rawget(NS, key)
+    rawset(NS, key, f)
+    local function restore() rawset(NS, key, prev) end
+    if body == nil then return f, restore end
+    local ok, err = pcall(body, f)
+    restore()
+    if not ok then error(err, 0) end
+    return f
+end
+
+return { build = build, fake = fake, fixtures = Fixtures, gear = Gear, world = World }
