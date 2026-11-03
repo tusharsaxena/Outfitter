@@ -32,8 +32,9 @@ The TOC (`OutfitterReborn.toc`) is the load order and the authority on it.
 | `core/State.lua` | `NS.State`: session-only flags (`debug`, `testMode`, `legacyLoaded`) |
 | `core/EnvSetup.lua` | `NS.Meta`, `NS.Version` (LibKa0s-Env) |
 | `core/CoreSetup.lua` | `NS.Print`, `NS.SafeToString`, the `SafeRegister*` family, the window chrome (LibKa0s-Core) |
+| `core/SkinSetup.lua` | `NS.Skin`, the owner registration and its `of.*` tokens, the skin choice and picker seams (LibKa0s-Skin) |
 | `core/Bus.lua` | `NS.MSG`, `NS.NewBusTarget`, `NS.SendBus`, `NS.BusStandDown`/`BusStandUp` (LibKa0s-Bus) |
-| `core/OutfitterReborn.lua` | `NewAddon`, the `NS.Print` reclaim, `OnInitialize` |
+| `core/OutfitterReborn.lua` | `NewAddon`, the `NS.Print` reclaim, `OnInitialize` (DB, migrations, the profile's skin) |
 | `core/Database.lua` | AceDB, the profile callbacks, the migration runner, both `resolveRoot` functions |
 | `defaults/Profile.lua` | `NS.defaults`, the only place a default is hardcoded |
 

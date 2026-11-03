@@ -44,6 +44,8 @@ core\State.lua
 core\EnvSetup.lua
 # LOAD-BEARING: NS.Util.print (reclaimed by core\OutfitterReborn.lua at FILE SCOPE) and NS.LIBKA0S_MISSING (read by every stub below).
 core\CoreSetup.lua
+# LOAD-BEARING: RegisterOwner at FILE SCOPE, before EllesmereUI dispatches; NS.SKIN_OPTIONS is read by settings\General.lua at FILE SCOPE.
+core\SkinSetup.lua
 # LOAD-BEARING: NS.Compat, whose secret detectors core\Secrets.lua binds at FILE SCOPE. Compat itself reaches NS.Secrets
 # at CALL time only (no file-scope capture), so it may precede Secrets; test_loadorder pins that.
 core\Compat.lua

@@ -49,6 +49,17 @@ local function rooted(list)
     return out
 end
 
+-- THE SKIN LIBRARY'S LOGIN RETRY, SETTLED AS THE CLIENT SETTLES IT. The first RegisterOwner
+-- (core/SkinSetup.lua) makes LibKa0s-Skin-1.0's EllesmereUI retry frame, registered for ADDON_LOADED
+-- and PLAYER_LOGIN; the client fires PLAYER_LOGIN once, beside OnEnable, and the frame unregisters
+-- both. Delivering it there puts the frame where every real session has it, so the stand-down suites
+-- do not count the library's two events as this addon's (DPS Race's runner does the same).
+local function settleSkinLogin(mocks)
+    local skinLib = mocks.LibStub("LibKa0s-Skin-1.0", true)
+    local retry = skinLib and skinLib.__euiEventFrame
+    if retry and retry.__fire then retry:__fire("OnEvent", "PLAYER_LOGIN") end
+end
+
 --- One isolated instance: a fresh mock, a fresh NS, the client's lifecycle.
 ---   opts.libFiles  the LibKa0s files to load ({} = the library-absent load)
 ---   opts.mutate    function(mocks) run before anything loads
@@ -68,6 +79,7 @@ local function loadInstance(opts)
         local AceAddon = mocks.LibStub("AceAddon-3.0")
         AceAddon:InitializeAddon(NS)                 -- OnInitialize: DB, migrations
         if opts.enable ~= false then
+            settleSkinLogin(mocks)                   -- PLAYER_LOGIN, to the skin's retry frame
             AceAddon:EnableAddon(NS)                 -- OnEnable
             if mocks.__fireTimers then mocks.__fireTimers() end
         end
@@ -100,6 +112,7 @@ local SUITES = {
     "test_vendor_sync",
     "test_secrets",
     "test_bus",
+    "test_skinsetup",
     { name = "test_skin_values", dir = "tests/_kit/" },
     { name = "test_skin_switch", dir = "tests/_kit/" },
     { name = "test_eol", dir = "tests/_kit/" },
@@ -122,6 +135,13 @@ _G.OUTFITTERREBORN_TEST = Kit.expose{
     reveal           = Kit.reveal,
     installSecretValue = Kit.installSecretValue,
 }
+
+-- The typed-value gate (skinning-§1): what no kit category takes, each with its cause. None yet: the
+-- only colors typed so far are core/SkinSetup.lua's, which the kit reads as the seam.
+Kit.skinValues = { root = root, rows = {} }
+
+-- The skin-switch test's painted surfaces (skinning-§1): the skeleton until P4.30 (design §9.5).
+Kit.skinSwitch = dofile(root .. "/tests/skin_surfaces.lua")(_G.OUTFITTERREBORN_TEST)
 
 -- The 1500-line cap gate's census lives in the hub (layout-§1); nothing here is generated data.
 Kit.layoutCap = { hub = "docs/ARCHITECTURE.md", exempt = {} }

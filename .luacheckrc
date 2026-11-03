@@ -56,6 +56,9 @@ files["core/Compat.lua"] = {
     },
 }
 
+-- The skin seam falls back to the client's item-quality colors where the skin sets no q.* token.
+files["core/SkinSetup.lua"] = { read_globals = { "ITEM_QUALITY_COLORS" } }
+
 -- The published slash surface is colon-called by the host and the suites and forwards to the
 -- dispatcher upvalue.
 files["settings/Slash.lua"] = { ignore = { "212/self" } }

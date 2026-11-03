@@ -12,4 +12,6 @@ function NS:OnInitialize()
     self:InitDB()
     -- Before anything reads NS.db.profile (savedvariables-§1).
     self:RunMigrations()
+    -- The profile's skin, before any page or window is built (core/SkinSetup.lua).
+    NS.ApplySkinChoice()
 end
