@@ -130,8 +130,8 @@ local SUITES = {
     -- between two tasks' lines is the unchanged line that lets parallel flips merge cleanly.
     { name = "test_mock_gear" },
 
-    { name = "test_slots",            pending = "P4.3" },
-    { name = "test_zones",            pending = "P4.3" },
+    { name = "test_slots" },
+    { name = "test_zones" },
 
     { name = "test_itemlink",         pending = "P4.4" },
 
