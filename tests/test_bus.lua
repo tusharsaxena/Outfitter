@@ -1,8 +1,9 @@
 -- tests/test_bus.lua — the bus seam (design §2.3, BP §6.11; P3 C7 part): NS.MSG is the full catalog
 -- with Ka0s_OutfitterReborn_<Pascal of the key> wire names, each unique and strict; the wire literals
 -- live in core/Bus.lua only; at most one file sends each key, and it is the file §2.3 names; and the
--- receiver record drops and replays on both arms. The pseudo-event parity case joins in P4.15; at
--- P4.27, with every sender landed, "at most one sender" tightens to "exactly one".
+-- receiver record drops and replays on both arms; and every pseudo event a trigger consumes has a
+-- producer, and the reverse (P4.15). At P4.27, with every sender landed, "at most one sender" tightens
+-- to "exactly one".
 
 local T = _G.OUTFITTERREBORN_TEST
 local NS = T.NS
@@ -179,6 +180,36 @@ test("bus: the sender scan catches a second sender, a wrong sender, a typo and a
         "modules/OutfitStack.lua sends undeclared NOPE",
         "modules/Outfits.lua sends OUTFIT_WORN, which belongs to modules/OutfitStack.lua",
     }, "; "))
+end)
+
+-- ── the pseudo events (P4.15, design §6.7, H14) ───────────────────────────────────────────────
+
+test("bus: every pseudo event a descriptor consumes has a producer, and every produced one a consumer", function()
+    -- red under: a descriptor naming a STATE:<id> no producer sets, a PSEUDO key mapped to a message no
+    -- file sends, or a state the producers set that no trigger reads.
+    local Tr, sources = NS.Triggers, authoredSources()
+    local produced = {}
+    for _, id in ipairs(NS.States.STATES) do produced["STATE:" .. id] = true end
+    for _, z in ipairs(NS.Zones.rows) do produced["STATE:" .. z.id] = true end
+    for key, msg in pairs(Tr.PSEUDO) do
+        if msg then
+            assertTrue(SENDERS[msg] ~= nil, key .. " maps to " .. tostring(msg) .. ", which §2.3 does not declare")
+            local text = sources[SENDERS[msg]] or ""
+            assertTrue(text:find("SendBus%(%s*NS%.MSG%." .. msg .. "[,%)]") ~= nil,
+                SENDERS[msg] .. " never sends " .. msg .. " (" .. key .. ")")
+            if key ~= "STATE" then produced[key] = true end
+        end
+    end
+    local consumed = {}
+    for _, desc in ipairs(Tr.All()) do
+        for _, e in ipairs(desc.events) do
+            if Tr.IsPseudo(e) and Tr.PSEUDO[e] ~= false then
+                consumed[e] = true
+                assertTrue(produced[e] == true, desc.id .. " consumes " .. e .. ", which nothing produces")
+            end
+        end
+    end
+    for e in pairs(produced) do assertTrue(consumed[e] == true, e .. " is produced, and no trigger reads it") end
 end)
 
 -- ── the receiver record, both arms ────────────────────────────────────────────────────────────

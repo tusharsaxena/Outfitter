@@ -226,7 +226,8 @@ test("schema: the outfit instance holds the five outfit rows, each on page outfi
         assertEqual(row.group, "outfit", path)
         assertTrue(T.NS.Schema.FindRow(path) == nil, path .. " is not on the settings instance")
     end
-    assertEqual(#O.AllRows(), #OUTFIT_ROWS, "no trigger rows until NS.Triggers.Finalize (P4.15)")
+    -- The rest are NS.Triggers.Finalize's trigger.<TID>.<key> rows (P4.15; tests/test_triggers.lua).
+    assertEqual(#O.AllRows(), #OUTFIT_ROWS + #T.NS.Triggers.SchemaRows(), "the five, then the trigger rows")
 end)
 
 test("schema: the outfit instance's shape check is clean against { outfit = true } and the instance types", function()
