@@ -81,6 +81,18 @@ payload from `git archive v1.85.0` and re-ran the tag's `tools/prune-icons.lua` 
 kept, 5818 removed); `diff -r --strip-trailing-cr` of both payloads against the tag is again empty
 bar the pruned icons.
 
+A sixth re-cut followed during the group L review fixes of P4: tag v1.85.0 now names `550ef68`
+(tagger date 2026-11-04 02:46:27 +0530, the eighteenth re-cut, carrying R6-SIM-L and R6-REL2). The
+kit's vendor gate went red at HEAD on OptionsCompose.lua. `git diff --stat 79d043d v1.85.0 --
+LibKa0s testkit` is `LibKa0s/OptionsCompose.lua` alone (151 insertions, 45 deletions:
+`COMPOSE_MINOR` 18 -> 19, a Sim mode checkbox in `MasterControls` from the host's `isSimMode` and
+`toggleSim`), and no kit file. The Options major stays 37, so the table below does not move. The
+releasing.md hosts-owe list names hosts with a simulation only; this addon has none and passes no
+sim hooks, so its Master controls rows are unchanged and it owes nothing beyond the re-copy. `P4:
+Re-sync LibKa0s to the v1.85.0 re-cut` re-copied the whole payload from `git archive v1.85.0` and
+re-ran the tag's `tools/prune-icons.lua` (20 declared, 22 kept, 5818 removed); `diff -r
+--strip-trailing-cr` of both payloads against the tag is again empty bar the pruned icons.
+
 ## Per-major minors (3c)
 
 `grep 'local MAJOR, MINOR = "LibKa0s-'` over the copy. Every major is new to this addon.
