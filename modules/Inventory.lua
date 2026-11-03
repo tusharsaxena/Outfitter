@@ -31,7 +31,7 @@ local _, NS = ...
 local Inv = {}
 NS.Inventory = Inv
 
-local Compat, Secrets = NS.Compat, NS.Secrets
+local Compat = NS.Compat
 
 local SYNC_DELAY = 0.01   -- the legacy RescheduleTask(0.01, Synchronize)
 
@@ -48,12 +48,11 @@ local live          -- the module's cache, nil until first asked for
 
 -- ── the bag range ─────────────────────────────────────────────────────────────────────────────
 
--- The last equipped bag: the reagent bag. Read off Enum.BagIndex (the legacy addon read
--- NUM_TOTAL_EQUIPPED_BAG_SLOTS, the same 5): see the P4.5 deviation in the commit and design §12.
+-- The last equipped bag: the reagent bag, NUM_TOTAL_EQUIPPED_BAG_SLOTS read through the Compat seam
+-- (as the legacy addon read it), 5 when the client has no such constant.
 local REAGENT_FALLBACK = 5
 local function lastEquippedBag()
-    local index = type(Enum) == "table" and Enum.BagIndex
-    return (type(index) == "table" and Secrets.PlainNumber(index.ReagentBag)) or REAGENT_FALLBACK
+    return Compat.LastEquippedBagID() or REAGENT_FALLBACK
 end
 
 --- The bags the scan reads: 0 through the reagent bag, plus the character bank while it is open.

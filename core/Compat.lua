@@ -23,9 +23,9 @@ local _, NS = ...
 --   Compat.IsAddOnLoaded(name)   true / false
 -- The P4.2 accessors (design §5.13), below the C6 reads: item links, info, stats and cooldowns;
 -- binding, uniqueness, usability, upgrade and azerite reads by location; tooltip data; pets and the
--- two hooks; the Equipment Manager; titles; the bank; containers and the cursor; macro icons; Pawn;
--- dual wield and BitAnd. One file, because the family stays under the 1000-line split line
--- (compat.md :11, design C39).
+-- two hooks; the Equipment Manager; titles; the bank; containers (and the last equipped bag, P4.5)
+-- and the cursor; macro icons; Pawn; dual wield and BitAnd. One file, because the family stays under
+-- the 1000-line split line (compat.md :11, design C39).
 --
 -- Every client global is read BARE and at CALL time, so a client (or the harness's mock) that adds an
 -- API later is seen, and a suite can take a rung away after load and watch the ladder move.
@@ -875,6 +875,11 @@ function Compat.ContainerIDToInventoryID(bag)
     local ok, id = pcall(fn, bag)
     if not ok then return nil end
     return NS.Secrets.PlainNumber(id)
+end
+
+--- The last equipped bag's ID (the reagent bag, 5): NUM_TOTAL_EQUIPPED_BAG_SLOTS, or nil (P4.5).
+function Compat.LastEquippedBagID()
+    return NS.Secrets.PlainNumber(NUM_TOTAL_EQUIPPED_BAG_SLOTS)
 end
 
 --- Pick up (or drop onto) a container slot. Each cursor write answers true when the call was made.

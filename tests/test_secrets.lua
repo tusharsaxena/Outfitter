@@ -293,7 +293,7 @@ local ACCESSORS = {
     "EMLocations", "EMIgnoredSlots", "EMLocation", "FlyoutLocationData", "EMCreateSet", "EMSaveSet",
     "EMModifySet", "EMDeleteSet", "EMSetID", "EMNumSets", "EMMaxSets", "EMClearIgnored", "EMIgnoreSlot",
     "KnownTitles", "SetCurrentTitle", "BankBagIDs", "IsBankerInteraction", "ContainerNumSlots",
-    "ContainerNumFreeSlots", "ContainerIDToInventoryID", "PickupContainerItem", "PickupInventoryItem",
+    "ContainerNumFreeSlots", "ContainerIDToInventoryID", "LastEquippedBagID", "PickupContainerItem", "PickupInventoryItem",
     "PickupItemLocation", "UseContainerItem", "ShowContainerSellCursor", "EquipCursorItem", "ClearCursor",
     "MacroIcons", "PawnVisibleScales", "PawnItemValue", "CanDualWield", "BitAnd",
 }
@@ -417,7 +417,8 @@ test("compat: with the client API absent every accessor answers its no-answer va
                          "GetInventorySlotInfo", "GetInventoryItemCooldown", "PickupInventoryItem", "EquipCursorItem",
                          "ClearCursor", "SetCurrentTitle", "GetMacroIcons", "GetMacroItemIcons",
                          "EquipmentManager_GetLocationData", "PawnGetItemData", "PawnGetAllScales", "GetNumTitles",
-                         "hooksecurefunc", "ItemLocation", "CanDualWield", "Enum", "MAX_EQUIPMENT_SETS_PER_PLAYER" }) do
+                         "hooksecurefunc", "ItemLocation", "CanDualWield", "Enum", "MAX_EQUIPMENT_SETS_PER_PLAYER",
+                         "NUM_TOTAL_EQUIPPED_BAG_SLOTS" }) do
         absent[k] = false   -- `false` stands for absent: the mock's __index would fall through to nil
     end
     local BAG, INV, fn = { bag = 0, slot = 1 }, { slotID = 16 }, function() end
@@ -428,7 +429,7 @@ test("compat: with the client API absent every accessor answers its no-answer va
         { "IsWarboundUntilEquip", INV }, { "CanUseItem", 1 }, { "CanUpgradeItem", INV }, { "AzeritePowers", INV },
         { "SummonedPetGUID" }, { "PetGUIDByName", "pierre" }, { "PetGUIDBySpecies", 1 }, { "EMSetInfo", 1 },
         { "EMLocation", 1 }, { "FlyoutLocationData", 1 }, { "EMSetID", "Tank" }, { "ContainerIDToInventoryID", 1 },
-        { "PawnItemValue", "link", "Alpha" } }
+        { "PawnItemValue", "link", "Alpha" }, { "LastEquippedBagID" } }
     local FALSE = { { "SummonPet", "g" }, { "HookPetSummon", fn }, { "HookCompare", fn }, { "EMCreateSet", "n", 1 },
         { "EMSaveSet", 1, 1 }, { "EMModifySet", 1, "n", 1 }, { "EMDeleteSet", 1 }, { "EMClearIgnored" },
         { "EMIgnoreSlot", 1, true }, { "SetCurrentTitle", 1 }, { "IsBankerInteraction", 8 },
@@ -450,6 +451,12 @@ test("compat: with the client API absent every accessor answers its no-answer va
         assertEqual(C.ContainerNumSlots(0), 0)
         assertEqual(C.ContainerNumFreeSlots(0), 0)
     end)
+end)
+
+test("compat: LastEquippedBagID passes the plain constant through and refuses a secret", function()
+    with({ NUM_TOTAL_EQUIPPED_BAG_SLOTS = 5 }, function() assertEqual(C.LastEquippedBagID(), 5) end)
+    -- red under: `return NUM_TOTAL_EQUIPPED_BAG_SLOTS` (the secret leaves the seam)
+    with({ NUM_TOTAL_EQUIPPED_BAG_SLOTS = T.secret(5) }, function() assertNil(C.LastEquippedBagID()) end)
 end)
 
 test("compat: location reads build the client's ItemLocation; a raise or a secret reads as unknown", function()

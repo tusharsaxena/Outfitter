@@ -63,6 +63,7 @@ files["core/Compat.lua"] = {
         "EquipmentManager_GetLocationData", "PawnGetItemData", "GetNumTitles", "GetTitleName", "IsTitleKnown",
         "ItemLocation", "hooksecurefunc", "MAX_EQUIPMENT_SETS_PER_PLAYER", "PawnGetAllScales", "PawnIsScaleVisible",
         "CanDualWield",
+        "NUM_TOTAL_EQUIPPED_BAG_SLOTS",   -- Compat.LastEquippedBagID (P4.5 handback)
     },
 }
 
