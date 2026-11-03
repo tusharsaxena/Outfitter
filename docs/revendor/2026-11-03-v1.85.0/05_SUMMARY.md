@@ -1,6 +1,6 @@
 # Summary
 
-- **Tag:** none -> v1.85.0 (`fd57b83`), the first vendoring. Kit none -> 50. Per-major minors in
+- **Tag:** none -> v1.85.0 (`fd57b83` at C4; `e134d5b` after the tag's re-cut, see `01_DELTA.md` *Re-cut*), the first vendoring. Kit none -> 50. Per-major minors in
   `01_DELTA.md`. No span bundle, no base correction.
 - **For free:** nothing yet. At this commit nothing loads the library: the legacy TOC is untouched
   and no seam file exists.

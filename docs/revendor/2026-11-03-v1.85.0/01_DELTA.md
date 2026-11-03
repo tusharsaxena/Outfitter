@@ -19,6 +19,19 @@ reconcile.
   (`v1.85.0-1-g8d1b6cc`, a change to `LibKa0s/OptionsCombat.lua`), so both payloads and
   `tools/prune-icons.lua` were taken from `git archive v1.85.0`, never from the working tree.
 
+## Re-cut
+
+After C7 (`df60775`) the library re-cut tag v1.85.0 (tagger date 2026-11-03 12:42:08 +0530): it now
+names `e134d5b`, four commits past `fd57b83` (`8d1b6cc` R4-L1, the commit the working tree carried
+above, then `ef6de20`, `f01e213`, `e134d5b`). `git diff --stat fd57b83 v1.85.0 -- LibKa0s testkit`
+is `LibKa0s/OptionsCombat.lua` alone, 176 insertions and 1 deletion: `COMBAT_MINOR` 3 -> 4, an AceGUI
+pullout on a Ka0s surface closes on a press outside it (`GLOBAL_MOUSE_DOWN` on `lib.__pulloutWatch`,
+registered through `lib.SafeRegisterEvent`). No major's minor moves, the kit is unchanged at rev 50,
+and no surface this addon consumes changes contract. `P3: Fix C7 review findings` re-vendored that
+one file with `git show v1.85.0:LibKa0s/OptionsCombat.lua`; `diff -r --strip-trailing-cr` of both
+payloads against `git archive v1.85.0` is again empty bar the pruned icons. The CLAUDE.md provenance
+line names the tag, not a commit, so it does not move.
+
 ## Per-major minors (3c)
 
 `grep 'local MAJOR, MINOR = "LibKa0s-'` over the copy. Every major is new to this addon.
