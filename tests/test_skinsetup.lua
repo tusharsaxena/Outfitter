@@ -7,8 +7,8 @@
 -- carries, from a host copy of Ka0s Default that must equal the library's.
 --
 -- The rows and the Skin tab (the eight skin.* schema rows, one pick is one SetChoice) join at P4.23,
--- once settings/Schema.lua and settings/General.lua carry them; the factories handed the owner (the
--- dropdown, the test strip) join with core/WidgetsSetup.lua in C9.
+-- once settings/Schema.lua and settings/General.lua carry them. The factories handed the owner (the
+-- dropdown, the context menu, the test strip) joined with core/WidgetsSetup.lua in C9.
 --
 -- Every case builds its own instance, so nothing leaks between cases.
 
@@ -93,6 +93,56 @@ test("skin seam: Core's window edge is handed the owner", function()
     core.ApplySkin = real
     if not ok then error(err, 0) end
     assertEqual(seen, OWNER)
+end)
+
+test("skin seam: the dropdown, the context menu and the test strip are handed the owner", function()
+    -- skinning-§1: every library factory that takes an owner is given one. red under: dropping
+    -- `owner = addonName` from MakeDropdown, showLevel or MakeTestStrip in core/WidgetsSetup.lua (the
+    -- control then draws Ka0s Default whatever the skin).
+    local NS, M = setup()
+    local W = M.LibStub("LibKa0s-Widgets-1.0")
+    local seen = {}
+    local realDd, realMenu, realStrip = W.Dropdown, W.ContextMenu, W.TestStrip
+    W.Dropdown = function(_, _, opts) seen.dropdown = opts and opts.owner end
+    W.ContextMenu = function(_, _, opts) seen.menu = opts and opts.owner end
+    W.TestStrip = function(_, opts) seen.strip = opts and opts.owner end
+    local ok, err = pcall(function()
+        NS.MakeDropdown(M.CreateFrame("Frame"), 100)
+        NS.OpenMenu(M.CreateFrame("Frame"), function(root) root:CreateButton("probe", function() end) end)
+        NS.MakeTestStrip(M.CreateFrame("Frame"), "probe")
+    end)
+    W.Dropdown, W.ContextMenu, W.TestStrip = realDd, realMenu, realStrip
+    if not ok then error(err, 0) end
+    assertEqual(seen.dropdown, OWNER, "MakeDropdown")
+    assertEqual(seen.menu, OWNER, "OpenMenu")
+    assertEqual(seen.strip, OWNER, "MakeTestStrip")
+end)
+
+test("skin seam: the test strip's End test stops test mode, and a caller's option wins", function()
+    -- red under: dropping `onEnd` from core/WidgetsSetup.lua's MakeTestStrip (the strip takes no mouse),
+    -- or copying the caller's opts before the defaults.
+    local NS, M = setup()
+    local W = M.LibStub("LibKa0s-Widgets-1.0")
+    local seen, real = {}, W.TestStrip
+    W.TestStrip = function(_, opts) seen[#seen + 1] = opts end
+    local mine = function() end
+    local ok, err = pcall(function()
+        NS.MakeTestStrip(M.CreateFrame("Frame"), "probe")
+        NS.MakeTestStrip(M.CreateFrame("Frame"), "probe", { onEnd = mine, kind = "sim" })
+    end)
+    W.TestStrip = real
+    if not ok then error(err, 0) end
+    assertEqual(seen[1].text, "probe")
+    assertEqual(type(seen[1].onEnd), "function", "onEnd is passed")
+    local active, stops = true, 0
+    NS.Preview = { IsActive = function() return active end, Stop = function() stops = stops + 1; active = false end }
+    seen[1].onEnd()
+    seen[1].onEnd()
+    NS.Preview = nil
+    assertEqual(stops, 1, "End test stops an active test mode, and only an active one")
+    assertTrue(seen[2].onEnd == mine, "the caller's onEnd did not win")
+    assertEqual(seen[2].kind, "sim")
+    assertEqual(seen[2].owner, OWNER)
 end)
 
 -- ── the profile: login and the profile events ────────────────────────────────────────────────────

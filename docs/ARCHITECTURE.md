@@ -34,6 +34,10 @@ The TOC (`OutfitterReborn.toc`) is the load order and the authority on it.
 | `core/CoreSetup.lua` | `NS.Print`, `NS.SafeToString`, the `SafeRegister*` family, the window chrome (LibKa0s-Core) |
 | `core/SkinSetup.lua` | `NS.Skin`, the owner registration and its `of.*` tokens, the skin choice and picker seams (LibKa0s-Skin) |
 | `core/Bus.lua` | `NS.MSG`, `NS.NewBusTarget`, `NS.SendBus`, `NS.BusStandDown`/`BusStandUp` (LibKa0s-Bus) |
+| `core/PoolSetup.lua` | `NS.Pool`, the array and keyed widget pools (LibKa0s-Pool) |
+| `core/ItemSetup.lua` | `NS.Item`: `ItemIDFromLink`, `BonusIDsFromLink` on plain links only (LibKa0s-Item) |
+| `core/WidgetsSetup.lua` | `NS.MakeDropdown`, `NS.OpenMenu`, `NS.CloseMenu`, `NS.MakeTestStrip`, `NS.TEST_STRIP_HEIGHT`, `NS.ShowCopy` (LibKa0s-Widgets) |
+| `core/SecureQueue.lua` | `NS.SecureQueue`: a protected write runs now or waits out combat lockdown, latest per key |
 | `core/OutfitterReborn.lua` | `NewAddon`, the `NS.Print` reclaim, `OnInitialize` (DB, migrations, the profile's skin) |
 | `core/Database.lua` | AceDB, the profile callbacks, the migration runner, both `resolveRoot` functions |
 | `defaults/Profile.lua` | `NS.defaults`, the only place a default is hardcoded |
@@ -67,11 +71,17 @@ No commands yet. `/of` (primary) and `/outfitter` (alias) arrive with `settings/
 
 ## Event Subscriptions
 
-None yet. The scaffold registers no game event.
+`PLAYER_REGEN_ENABLED`, on `core/SecureQueue.lua`'s own AceEvent target, held only while a
+protected write waits out lockdown and dropped when the queue empties or `NS.SecureQueue.Clear()`
+runs. `core/SkinSetup.lua` takes the same event on a target of its own while the first-run skin
+picker's start is held over combat, and drops it when the start runs.
 
 ## Taint Notes
 
-Nothing in the scaffold touches a secure frame or a protected call.
+Nothing in the scaffold touches a secure frame or a protected call yet. Every secure-environment
+write the port makes (secure attributes on the list rows and bar buttons, strata, level and toplevel
+on the outfit window) goes through `NS.SecureQueue.Run(key, fn)`, gated on `InCombatLockdown()`
+through `NS.Compat` and replayed on `PLAYER_REGEN_ENABLED` (events-frames-taint-§2).
 
 ## Known Limitations
 

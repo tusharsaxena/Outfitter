@@ -1,0 +1,315 @@
+-- tests/test_surface_parity.lua — every degradation stub carries the surface of what it stands in for (testing-§8).
+-- Each case loads the addon twice -- whole, and with the LibKa0s file list EMPTY -- and compares the
+-- stub against the live surface, then drives both arms through the same calls.
+--
+-- THE P3 C9 ROWS: the Pool, Item and Widgets seams, and SecureQueue, which is host code with no stub
+-- and is asserted to behave the same on both arms. C14 adds the degraded load's init / enable /
+-- version case and the rows of the seams that land before it; each later seam brings its own row,
+-- and P4.27 closes the set (design §9.3).
+
+local T = _G.OUTFITTERREBORN_TEST
+local test, assertEqual, assertTrue, assertFalse, assertNil =
+    T.test, T.assertEqual, T.assertTrue, T.assertFalse, T.assertNil
+
+local live, degraded
+local function pair()
+    live = live or T.load()
+    degraded = degraded or T.load{ libFiles = {} }
+    return live, degraded
+end
+
+--- Each named member has the same type on the live and the library-absent load: the "asserted
+--- present on both arms" half of testing-§8 for a seam whose stub is not a mirror of one table.
+local function bothArms(label, get, members)
+    local l, d = pair()
+    for name, want in pairs(members) do
+        assertEqual(type(get(l.NS)[name]), want, "live " .. label .. "." .. name)
+        assertEqual(type(get(d.NS)[name]), want, "stub " .. label .. "." .. name)
+    end
+end
+
+--- A frame-shaped object a pool can hand out: it remembers whether it is shown.
+local function widget(n)
+    local o = { n = n, shown = false }
+    function o.Show(self) self.shown = true end
+    function o.Hide(self) self.shown = false end
+    return o
+end
+
+-- ── Pool ───────────────────────────────────────────────────────────────────────────────────────
+
+test("parity: the Pool stub carries every public member of the library", function()
+    -- Both shapes: the array pool (list rows, bar buttons, the icon grid) and the keyed pool (the
+    -- trigger dialog's editors, design §7.6), whose only release is ReleaseAllKeyed.
+    local l, d = pair()
+    assertTrue(l.NS.Pool == l.mocks.LibStub("LibKa0s-Pool-1.0"), "the live NS.Pool is not the library")
+    assertTrue(d.NS.Pool ~= l.NS.Pool, "the degraded load did not take the stub")
+    T.assertSurfaceParity(d.NS.Pool, "LibKa0s-Pool-1.0")
+end)
+
+test("parity: both Pool arms recycle, park backward and key alike", function()
+    -- red under: a stub ReleaseAll that only hides (Counts answers 0, 0 and the next Acquire builds),
+    -- or one that parks forward (the second render hands position 1 the object position 3 had).
+    for arm, inst in pairs({ live = (pair()), degraded = select(2, pair()) }) do
+        local P, built = inst.NS.Pool, 0
+        local function factory() built = built + 1; return widget(built) end
+        local pool = P.New()
+        local first = { P.Acquire(pool, factory), P.Acquire(pool, factory), P.Acquire(pool, factory) }
+        assertTrue(first[1].shown, arm .. ": an acquired object is shown")
+        local seen = {}
+        P.ReleaseAll(pool, function(o) seen[#seen + 1] = o.shown end)
+        assertEqual(#seen, 3, arm .. ": before ran per object")
+        assertTrue(seen[1], arm .. ": before runs while the object is still shown")
+        assertFalse(first[1].shown, arm .. ": a released object is hidden")
+        local free, active = P.Counts(pool)
+        assertEqual(free, 3, arm .. ": free after release"); assertEqual(active, 0, arm)
+        for i = 1, 3 do
+            assertTrue(P.Acquire(pool, factory) == first[i], arm .. ": position " .. i .. " got another object")
+        end
+        assertEqual(built, 3, arm .. ": the second render built")
+
+        local keyed = P.NewKeyed()
+        local a = P.AcquireKeyed(keyed, "text", factory)
+        assertTrue(P.AcquireKeyed(keyed, "text", factory) == a, arm .. ": a live key built a second object")
+        P.AcquireKeyed(keyed, "spell", factory)
+        free, active = P.CountsKeyed(keyed)
+        assertEqual(free, 0, arm); assertEqual(active, 2, arm .. ": keyed active")
+        local keys = {}
+        P.ReleaseAllKeyed(keyed, function(_, key) keys[key] = true end)
+        assertTrue(keys.text and keys.spell, arm .. ": before is handed each key")
+        free, active = P.CountsKeyed(keyed)
+        assertEqual(free, 2, arm .. ": keyed free"); assertEqual(active, 0, arm)
+        assertFalse(a.shown, arm .. ": a released keyed object is hidden")
+    end
+end)
+
+-- ── Item ───────────────────────────────────────────────────────────────────────────────────────
+
+-- Links the two walks must read alike: a full link with bonuses and modifiers, a bare itemString, a
+-- signed field, an empty bonus count, a declared count longer than the link, a non-numeric field
+-- inside the span, the 11.1.5 quality prefix, and strings that are no item at all.
+local LINKS = {
+    "|cffa335ee|Hitem:212400::::::::80:577::6:4:10356:10299:1540:10255:1:28:2734:::::|h[Item]|h|r",
+    "item:19019:0:0:0:0:0:0:0:60",
+    "item:6948::::::-12::::::",
+    "|cnIQ4:|Hitem:224072::::::::80:577::3:2:10390:6652::::::|h[Item]|h|r",
+    "item:1:::::::::::::5:7:8",
+    "item:2:::::::::::::3:4:x:6",
+    "item:abc",
+    "|Hspell:1234|h[Spell]|h",
+    "",
+}
+
+test("parity: the Item lease carries the same two members on both arms", function()
+    bothArms("NS.Item", function(NS) return NS.Item end,
+        { ItemIDFromLink = "function", BonusIDsFromLink = "function" })
+end)
+
+test("parity: the Item fallback reads every link as the library does", function()
+    -- red under: any drift of the fallback walks in core/ItemSetup.lua from libs/LibKa0s/Item.lua
+    -- (reading field 13 as an id, dropping empty fields when splitting, a non-numeric id read as 0).
+    local l, d = pair()
+    local lib = l.mocks.LibStub("LibKa0s-Item-1.0")
+    for _, link in ipairs(LINKS) do
+        assertEqual(l.NS.Item.ItemIDFromLink(link), lib.ItemIDFromLink(link), "live id of " .. link)
+        assertEqual(d.NS.Item.ItemIDFromLink(link), lib.ItemIDFromLink(link), "stub id of " .. link)
+        local want = lib.BonusIDsFromLink(link)
+        local liveGot, stubGot = l.NS.Item.BonusIDsFromLink(link), d.NS.Item.BonusIDsFromLink(link)
+        if want == nil then
+            assertNil(liveGot, "live bonuses of " .. link); assertNil(stubGot, "stub bonuses of " .. link)
+        else
+            assertEqual(table.concat(liveGot, ","), table.concat(want, ","), "live bonuses of " .. link)
+            assertEqual(table.concat(stubGot, ","), table.concat(want, ","), "stub bonuses of " .. link)
+        end
+    end
+    assertEqual(table.concat(d.NS.Item.BonusIDsFromLink(LINKS[1]), ","), "10356,10299,1540,10255")
+    assertEqual(d.NS.Item.ItemIDFromLink(LINKS[1]), 212400)
+end)
+
+test("parity: on both arms the Item lease answers nil for a non-string and a secret link", function()
+    -- red under: dropping the NS.Secrets.PlainString read from core/ItemSetup.lua (a secret link
+    -- reaches :match).
+    local l, d = pair()
+    local restore = T.installSecretValue()
+    local ok, err = pcall(function()
+        for arm, NS in pairs({ live = l.NS, degraded = d.NS }) do
+            local secret = T.secret("item:19019:0:0:0:0:0:0:0:60")
+            assertNil(NS.Item.ItemIDFromLink(secret), arm .. ": a secret link was read")
+            assertNil(NS.Item.BonusIDsFromLink(secret), arm .. ": a secret link was walked")
+            assertNil(NS.Item.ItemIDFromLink(nil), arm)
+            assertNil(NS.Item.BonusIDsFromLink(19019), arm)
+        end
+    end)
+    restore()
+    if not ok then error(err, 0) end
+end)
+
+-- ── Widgets ────────────────────────────────────────────────────────────────────────────────────
+
+test("parity: the Widgets seam answers on both arms, nil being a real answer", function()
+    bothArms("NS", function(NS) return NS end, {
+        MakeDropdown = "function", OpenMenu = "function", CloseMenu = "function",
+        MakeTestStrip = "function", ShowCopy = "function", TEST_STRIP_HEIGHT = "number",
+    })
+    local l, d = pair()
+    T.assertLibraryConstant(d.NS.TEST_STRIP_HEIGHT, "LibKa0s-Widgets-1.0", "TEST_STRIP.HEIGHT",
+        "the stub's strip height")
+    assertTrue(l.NS.MakeDropdown(l.mocks.UIParent, 100) ~= nil, "the live load drew no dropdown")
+    assertTrue(l.NS.MakeTestStrip(l.mocks.UIParent, "Test mode") ~= nil, "the live load drew no strip")
+    assertNil(d.NS.MakeDropdown(d.mocks.UIParent, 100), "the stub drew a dead dropdown")
+    assertNil(d.NS.MakeTestStrip(d.mocks.UIParent, "Test mode"), "the stub drew a strip")
+    assertFalse(d.NS.ShowCopy("text", "title"), "the stub claimed a copy window")
+    d.NS.CloseMenu()
+    l.NS.CloseMenu()
+end)
+
+test("parity: OpenMenu draws the same fill on both arms", function()
+    -- The fill is written once, against MenuUtil's description. red under: a recorder that drops a
+    -- disabled state, or a submenu row that runs its own (absent) click instead of opening its level.
+    local l, d = pair()
+    local clicks = {}
+    local function fill(root)
+        root:CreateTitle("Outfit")
+        root:CreateButton("Wear", function() clicks[#clicks + 1] = "wear" end)
+        root:CreateButton("Bank", function() clicks[#clicks + 1] = "bank" end):SetEnabled(false)
+        local sub = root:CreateButton("Key binding")
+        sub:CreateButton("Outfit 1", function() clicks[#clicks + 1] = "bind1" end)
+    end
+
+    local W = l.mocks.LibStub("LibKa0s-Widgets-1.0")
+    local real, menus = W.ContextMenu, {}
+    W.ContextMenu = function(_, rows, opts) menus[#menus + 1] = { rows = rows, opts = opts } end
+    local ok, err = pcall(function()
+        assertTrue(l.NS.OpenMenu(l.mocks.UIParent, fill), "the live arm did not open")
+        local rows = menus[1].rows
+        assertEqual(#rows, 4)
+        assertTrue(rows[1].title, "the title row")
+        assertNil(rows[2].disabled); assertTrue(rows[3].disabled, "the disabled row")
+        assertTrue(menus[1].opts.cursor, "the menu opens at the cursor")
+        rows[2].onClick()
+        rows[4].onClick()   -- the submenu row opens its own level in the menu's place
+        assertEqual(#menus, 2, "the submenu level did not open")
+        assertEqual(menus[2].rows[1].label, "Outfit 1")
+        menus[2].rows[1].onClick()
+    end)
+    W.ContextMenu = real
+    if not ok then error(err, 0) end
+    assertEqual(table.concat(clicks, ","), "wear,bind1")
+
+    -- The degraded arm hands the same fill to the client's menu, and opens nothing without one.
+    assertFalse(d.NS.OpenMenu(d.mocks.UIParent, fill), "no MenuUtil, yet it claimed a menu")
+    local described
+    d.mocks.MenuUtil = { CreateContextMenu = function(owner, gen)
+        local root = { n = 0 }
+        function root.CreateTitle(self) self.n = self.n + 1 end
+        function root.CreateButton(self)
+            self.n = self.n + 1
+            return { SetEnabled = function() end, CreateButton = function() end }
+        end
+        gen(owner, root)
+        described = root.n
+    end }
+    local ok2, err2 = pcall(function()
+        assertTrue(d.NS.OpenMenu(d.mocks.UIParent, fill), "the degraded arm did not open")
+    end)
+    d.mocks.MenuUtil = nil
+    if not ok2 then error(err2, 0) end
+    assertEqual(described, 4, "the client's menu was not handed the fill")
+end)
+
+-- ── SecureQueue (host code: no stub, and the same on both arms) ────────────────────────────────
+
+--- The PLAYER_REGEN_ENABLED registrations an instance holds.
+local function regenRegistrations(mocks)
+    local n = 0
+    for _, reg in ipairs(mocks.__registrations()) do
+        if reg.event == "PLAYER_REGEN_ENABLED" then n = n + 1 end
+    end
+    return n
+end
+
+--- Run `fn(NS, mocks, setLocked, arm, before)` on a FRESH instance of each arm, with lockdown under
+--- the case's control: the queue is file state, so a shared instance would carry one case's
+--- registration into the next case's `before`.
+local function eachArm(fn)
+    for _, arm in ipairs({ "live", "degraded" }) do
+        local inst = arm == "live" and T.load() or T.load{ libFiles = {} }
+        local locked = false
+        local before = regenRegistrations(inst.mocks)
+        inst.mocks.InCombatLockdown = function() return locked end
+        local ok, err = pcall(fn, inst.NS, inst.mocks, function(v) locked = v end, arm, before)
+        if not ok then error(arm .. ": " .. tostring(err), 0) end
+    end
+end
+
+test("secure queue: out of lockdown a write runs now, and nothing is registered", function()
+    eachArm(function(NS, M, _, arm, before)
+        local ran = 0
+        assertTrue(NS.SecureQueue.Run("dock.layers", function() ran = ran + 1 end), arm)
+        assertEqual(ran, 1, arm)
+        assertEqual(regenRegistrations(M), before, arm .. ": an idle queue holds a registration")
+    end)
+end)
+
+test("secure queue: in lockdown a write waits, the latest per key wins, and REGEN_ENABLED replays in order", function()
+    -- red under: running the write in lockdown, keeping the first fn of a key, a pairs-ordered flush,
+    -- or a registration kept after the queue empties.
+    eachArm(function(NS, M, setLocked, arm, before)
+        local Q, got = NS.SecureQueue, {}
+        setLocked(true)
+        assertFalse(Q.Run("dock.layers", function() got[#got + 1] = "layers-old" end), arm)
+        assertFalse(Q.Run("list.rows", function() got[#got + 1] = "rows" end), arm)
+        assertFalse(Q.Run("dock.layers", function() got[#got + 1] = "layers" end), arm)
+        assertEqual(#got, 0, arm .. ": a write ran in lockdown")
+        assertEqual(regenRegistrations(M), before + 1, arm .. ": not registered while waiting")
+        assertEqual(Q.Flush(), 0, arm .. ": a flush still in lockdown ran something")
+        setLocked(false)
+        M.__fire("PLAYER_REGEN_ENABLED")
+        assertEqual(table.concat(got, ","), "layers,rows", arm)
+        assertEqual(regenRegistrations(M), before, arm .. ": the registration outlived the queue")
+        assertEqual(Q.Flush(), 0, arm .. ": a second flush replayed")
+    end)
+end)
+
+test("secure queue: a write out of lockdown drops the stale one under its key", function()
+    eachArm(function(NS, M, setLocked, arm, before)
+        local Q, got = NS.SecureQueue, {}
+        setLocked(true)
+        Q.Run("bar.attrs", function() got[#got + 1] = "stale" end)
+        setLocked(false)
+        Q.Run("bar.attrs", function() got[#got + 1] = "now" end)
+        assertEqual(regenRegistrations(M), before, arm .. ": the dropped key kept the registration")
+        M.__fire("PLAYER_REGEN_ENABLED")
+        assertEqual(table.concat(got, ","), "now", arm)
+    end)
+end)
+
+test("secure queue: one raising write reaches the error handler and the rest still run", function()
+    eachArm(function(NS, M, setLocked, arm)
+        local Q, got, errors = NS.SecureQueue, {}, {}
+        M.geterrorhandler = function() return function(e) errors[#errors + 1] = e end end
+        setLocked(true)
+        Q.Run("a", function() error("boom", 0) end)
+        Q.Run("b", function() got[#got + 1] = "b" end)
+        setLocked(false)
+        local ok, err = pcall(Q.Flush)
+        M.geterrorhandler = nil
+        if not ok then error(err, 0) end
+        assertEqual(table.concat(got, ","), "b", arm .. ": the raise stranded the next write")
+        assertEqual(errors[1], "boom", arm .. ": the raise was swallowed")
+    end)
+end)
+
+test("secure queue: Clear drops every waiting write and the registration", function()
+    eachArm(function(NS, M, setLocked, arm, before)
+        local Q, ran = NS.SecureQueue, 0
+        setLocked(true)
+        Q.Run("a", function() ran = ran + 1 end)
+        Q.Clear()
+        assertEqual(regenRegistrations(M), before, arm .. ": Clear kept the registration")
+        setLocked(false)
+        M.__fire("PLAYER_REGEN_ENABLED")
+        assertEqual(Q.Flush(), 0, arm)
+        assertEqual(ran, 0, arm .. ": a cleared write ran")
+    end)
+end)

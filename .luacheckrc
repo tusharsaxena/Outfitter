@@ -59,6 +59,12 @@ files["core/Compat.lua"] = {
 -- The skin seam falls back to the client's item-quality colors where the skin sets no q.* token.
 files["core/SkinSetup.lua"] = { read_globals = { "ITEM_QUALITY_COLORS" } }
 
+-- The degraded context menu hands its `fill` to the client's own menu (core/WidgetsSetup.lua).
+files["core/WidgetsSetup.lua"] = { read_globals = { "MenuUtil" } }
+
+-- A queued protected write that raises goes to the client's error handler, and the next one runs.
+files["core/SecureQueue.lua"] = { read_globals = { "geterrorhandler" } }
+
 -- The published slash surface is colon-called by the host and the suites and forwards to the
 -- dispatcher upvalue.
 files["settings/Slash.lua"] = { ignore = { "212/self" } }

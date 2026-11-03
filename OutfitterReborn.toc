@@ -52,6 +52,10 @@ core\Compat.lua
 # LOAD-BEARING: NS.Secrets, captured at FILE SCOPE by modules\ItemInfo.lua, modules\States.lua and modules\Inventory.lua.
 core\Secrets.lua
 core\Bus.lua
+core\PoolSetup.lua
+core\ItemSetup.lua
+core\WidgetsSetup.lua
+core\SecureQueue.lua
 # LOAD-BEARING: NewAddon(NS, addonName, ...) and the NS.Print reclaim at FILE SCOPE, so it follows core\CoreSetup.lua.
 core\OutfitterReborn.lua
 core\Database.lua
