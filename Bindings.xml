@@ -1,0 +1,12 @@
+<Bindings>
+	<!-- The key bindings (launcher-§6, design §4.4): each clicks a plain, hidden, non-secure button
+	     core/LauncherSetup.lua creates at load, whose OnClick asks the one refusal helper and then runs
+	     the SAME handler its verb and launcher entry run. Every label, the category's title (the brand)
+	     and NS.BINDINGS (this file's order) are set there. Every Binding names the addon's own category
+	     and none carries a header, so Options -> Keybindings shows a "Ka0s Outfitter Reborn" section
+	     with no blank row. No default key: the player picks one there or on the General page's
+	     Keybindings tab. The button names are permanent; renaming one unbinds every player's key. Not
+	     listed in the TOC: the client reads this file by name. The Show window key is first; the
+	     wear, automation and update keys follow it in P4.24. -->
+	<Binding name="CLICK OutfitterRebornToggleWindow:LeftButton" category="BINDING_HEADER_OUTFITTERREBORN"/>
+</Bindings>

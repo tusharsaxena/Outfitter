@@ -62,27 +62,14 @@ local masterRows, masterTail = H.MasterControls({
     onResetAll           = function() NS.ShowResetAll() end,
 })
 
---- LibDBIcon's own table (launcher-§3): the row says SHOWN while the stored key says hidden.
-local function minimapTable()
-    local g = NS.db and NS.db.global
-    return g and g.minimap or nil
-end
-
 -- Rows whose storage is not a profile path: the console (session), test mode (session) and the
--- minimap button (LibDBIcon's own `hide`, inverted). NS.Launcher lands in C13 and owns the button;
--- until then the row reads and writes the table LibDBIcon will be handed.
+-- minimap button, which NS.Launcher (core/LauncherSetup.lua) owns: the row says SHOWN while the
+-- stored key, LibDBIcon's own `hide`, says hidden (launcher-§3). Both launcher arms, live and
+-- library-absent, read and write that one key.
 local ownStorage = {
     [NS.MINIMAP_PATH] = {
-        get = function()
-            if NS.Launcher then return NS.Launcher:IsShown() end
-            local m = minimapTable()
-            return not (m and m.hide)
-        end,
-        set = function(shown)
-            if NS.Launcher then return NS.Launcher:SetShown(shown and true or false) end
-            local m = minimapTable()
-            if m then m.hide = not shown end
-        end,
+        get = function() return NS.Launcher:IsShown() end,
+        set = function(shown) NS.Launcher:SetShown(shown and true or false) end,
     },
     [TEST_MODE_PATH] = {
         get = function() return call("Preview", "IsActive") == true end,

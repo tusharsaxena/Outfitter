@@ -62,6 +62,8 @@ core\LifecycleSetup.lua
 core\PerfSetup.lua
 # LOAD-BEARING: needs FONT_MONO, NS.State and the printer, and precedes any NS.Debug call.
 core\DebugLogSetup.lua
+# LOAD-BEARING: reads NS.Constants.LOGO_128 and NS.L at FILE SCOPE; creates the binding buttons and the BINDING_* globals.
+core\LauncherSetup.lua
 # LOAD-BEARING: NewAddon(NS, addonName, ...) and the NS.Print reclaim at FILE SCOPE, so it follows core\CoreSetup.lua.
 core\OutfitterReborn.lua
 core\Database.lua

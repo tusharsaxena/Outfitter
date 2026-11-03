@@ -16,6 +16,8 @@ function NS:OnInitialize()
     NS.ApplySkinChoice()
     -- The stored switch takes its hold before OnEnable runs, so a disabled login registers nothing.
     NS.SyncEnabledHold()
+    -- The launcher answers in either state: left-click is where a disabled addon is re-enabled.
+    NS.Launcher:Register()
     -- EAGER category registration; the page bodies stay lazy (options-ui-§1/§5).
     NS.CreateOptionsPanel()
     NS.Slash:Register()

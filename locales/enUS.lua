@@ -21,6 +21,11 @@ L["Debug logging is on."] = "Debug logging is on."
 L["Debug logging is off."] = "Debug logging is off."
 L["%s is unavailable: the LibKa0s library did not load."] = "%s is unavailable: the LibKa0s library did not load."
 
+-- Launcher and key bindings (core/LauncherSetup.lua)
+L["Toggle outfit window"] = "Toggle outfit window"
+L["Shows or hides the outfit window, as the launcher's Show window entry does."] = "Shows or hides the outfit window, as the launcher's Show window entry does."
+L["Current outfit: %s"] = "Current outfit: %s"
+
 -- Slash (settings/Slash.lua)
 L["Show this help"] = "Show this help"
 L["Open the settings panel"] = "Open the settings panel"

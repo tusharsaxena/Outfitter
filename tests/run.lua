@@ -118,6 +118,8 @@ local SUITES = {
     "test_schema",
     "test_settings",
     "test_slash",
+    "test_launcher",
+    "test_keybinds",
     { name = "test_skin_values", dir = "tests/_kit/" },
     { name = "test_skin_switch", dir = "tests/_kit/" },
     { name = "test_eol", dir = "tests/_kit/" },
