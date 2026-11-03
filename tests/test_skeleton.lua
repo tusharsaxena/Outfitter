@@ -219,6 +219,8 @@ test("skeleton: the login resumes every module bottom to top, and nothing while 
     assertTrue(#inst.mocks.__timers() > 0, "the login armed nothing")
 
     -- Stood down at login (a stored `enabled = false`): OnEnable returns before the walk.
+    -- red under: an NS:OnEnable in core/OutfitterReborn.lua without its
+    -- `if NS.IsStoodDown() then return end` (a stood-down login resumes every module).
     local down = T.load({ enable = false })
     local resumed = 0
     for _, name in ipairs(down.NS.LIFECYCLE_MODULES) do

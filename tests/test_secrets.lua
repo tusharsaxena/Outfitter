@@ -834,25 +834,51 @@ test("secrets engine: a secret player level lets an item through the live stats"
 end)
 
 test("secrets engine: tooltip, compare, quick slots and /of iteminfo refuse a secret link quietly", function()
+    -- red under: a Secrets.PlainString in core/Secrets.lua without its IsSealed test (the secret link
+    -- reaches the used-by, compare, quick-slot and iteminfo string work and raises). Each tooltip half
+    -- has a plain-link control first, so its silence on the secret link is the guard, not an empty
+    -- scene. The type() the client answers for a secret (its underlying type) is modeled from here
+    -- on: the kit answers "table", which every type check would refuse with no guard at all.
     engine(function(ns, M)
         local tip = M.GameTooltip
+        M.type = function(v)
+            if T.isSecret(v) then return type(T.reveal(v)) end
+            return type(v)
+        end
+        local function snap(key) return ns.ItemInfo.Snapshot(ns.ItemInfo.FromLink(DB[key].link)) end
+        -- The helm the compare half offers, and the carried ring (bag 0, 2) the used-by half finds.
+        ns.Outfits.Create("Veil", { HeadSlot = snap("secret_helm"), Finger0Slot = snap("ring_plain_a") })
+        local function usedBy()
+            assertTrue(pcall(M.__world.tooltipPostCall, M.__world, M.Enum.TooltipDataType.Item, tip, nil),
+                "the used-by post-call raised")
+            for i = 1, tip:NumLines() do
+                local text = tip["TextLeft" .. i]:GetText()
+                if type(text) == "string" and text:find("Equipment Sets: ", 1, true) == 1 then return true end
+            end
+            return false
+        end
+        local function compares(link)
+            tip:SetHyperlink(link)
+            tip:Show()
+            assertTrue(pcall(M.GameTooltip_ShowCompareItem, tip), "the compare hook raised")
+            local shown = 0
+            for i = 1, 10 do
+                local c = M["OutfitterRebornCompareTooltip" .. i]
+                if c and c:IsShown() then shown = shown + 1 end
+            end
+            tip:Hide()
+            return shown
+        end
+        tip:SetHyperlink(DB.ring_plain_a.link)                -- the carried ring, read plain
+        assertTrue(usedBy(), "no used-by line for the plain link; the secret half below proves nothing")
+        tip:SetHyperlink(T.secret(DB.ring_plain_a.link))      -- the same ring, read secret
+        assertFalse(usedBy(), "a used-by line for a secret link")
         tip:SetBagItem(0, 1)                                  -- the secret helm
-        assertTrue(pcall(M.__world.tooltipPostCall, M.__world, M.Enum.TooltipDataType.Item, tip, nil))
-        for i = 1, tip:NumLines() do
-            local text = tip["TextLeft" .. i]:GetText()
-            assertFalse(type(text) == "string" and text:find("Equipment Sets: ", 1, true) == 1,
-                "a used-by line for a secret link")
-        end
+        assertFalse(usedBy(), "a used-by line for a secret bag link")
         M.__world:setCompare(true, true)
-        tip:SetHyperlink(T.secret(DB.head_plate.link))
-        tip:Show()
-        assertTrue(pcall(M.GameTooltip_ShowCompareItem, tip), "the compare hook raised on a secret link")
-        local shown = 0
-        for i = 1, 10 do
-            local c = M["OutfitterRebornCompareTooltip" .. i]
-            if c and c:IsShown() then shown = shown + 1 end
-        end
-        assertEqual(shown, 0, "a compare tooltip for a secret link")
+        assertTrue(compares(DB.head_plate.link) > 0,
+            "no compare tooltip for the plain link; the secret half below proves nothing")
+        assertEqual(compares(T.secret(DB.head_plate.link)), 0, "a compare tooltip for a secret link")
         local PLAYER, BAGS = 0x00100000, 0x00200000
         assertNil((ns.QuickSlots.Sort.LocationItemLink(PLAYER + BAGS + 1)), "a secret bag link")
         assertNil((ns.QuickSlots.Sort.LocationItemLink(PLAYER + 1)), "a secret worn link")
