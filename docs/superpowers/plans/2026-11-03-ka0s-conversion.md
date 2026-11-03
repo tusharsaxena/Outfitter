@@ -31,7 +31,7 @@ Research outputs live in `docs/superpowers/specs/2026-11-03-*.md`.
 | P0 | Branch + this plan | done | branch created |
 | P1 | Understand: Outfitter feature inventory, DpsRace blueprint, standard digest | done | specs/2026-11-03-{outfitter-feature-inventory,dpsrace-blueprint,standard-checklist}.md |
 | P2 | Design: target module map, schema, launcher, test mode, skin surfaces | done | specs/2026-11-03-design.md (P3 = its §11 C1–C16; P4 = its §12 sub-ledger) |
-| P3 | Scaffold: libs (Ace3, LibKa0s, LSM, LDB, LibDBIcon), TOC, core seams, tests/_kit, locales | pending | |
+| P3 | Scaffold: libs (Ace3, LibKa0s, LSM, LDB, LibDBIcon), TOC, core seams, tests/_kit, locales | done | 3ef2999..38a7c78 (design §11 C1–C16, plus 19e2496 LibKa0s re-cut re-sync) |
 | P4 | Port: engine, scripting, optimize/stats, UI, bar, quick slots, settings, launcher, test mode | pending | |
 | P5 | Green gate: luacheck 0, headless suite 0 failures, 1500-line cap | pending | |
 | P6 | Push milestone 1 | pending | |
