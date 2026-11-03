@@ -74,8 +74,10 @@ places in Lua, and the kit's sighted shadow is what the complexity suite measure
 
 Every suite is declared in `SUITES` in `tests/run.lua`; a file that is not listed loads nothing, and
 the kit's inventory fails a `tests/test_*.lua` with no entry. Every suite is live but
-`test_refactor_pins`, held `pending` for the P5 complexity splits. The rows run in declared order;
-`test_packaging` fails when a declared suite has no row here.
+`test_refactor_pins`, held `pending` for the P5 complexity splits. The tables group and order
+the suites as design §9.3 catalogs them (the kit's own suites close the structural group, as
+there); the run order is `SUITES`' own, not this one. `test_packaging` fails when a declared suite
+has no row here, or a row leaves its §9.3 group or order.
 
 **Standard-required and structural**
 
@@ -84,36 +86,39 @@ the kit's inventory fails a `tests/test_*.lua` with no entry. Every suite is liv
 | `test_skeleton` | Registration under the folder name, the tagged printer, the DB defaults, the declared icons, the file headers, the bus wire names, the login resume walk, the legacy guard |
 | `test_toc` | The TOC header: field order, Title, version, IconTexture, SavedVariables, the CurseForge project, no retired fields |
 | `test_loadorder` | The runner's load list is the TOC's; every path exists; the folder order; the `LOAD-BEARING` lines; no legacy file back |
-| `test_database` | The store: the migration stamp, a raising step, the profile and char walks, no `gOutfitter_*` reader, both `resolveRoot` functions |
-| `test_packaging` | What reaches players: the package folder, every maintainer file ignored, nothing ignored loaded, every media path resolves, the icon declaration is exactly what is drawn. Also the doc set's account of the rest: one `pending` suite, a row here per declared suite, the retired-harness map, a `module-map.md` `## Not shipped` row per helper, and the README badge equal to `docs/test-cases.md` |
 | `test_vendor_sync` | `libs/LibKa0s/` and `tests/_kit/` are exactly the tag root `CLAUDE.md` names, icons pruned to its declaration |
-| `test_secrets` | The secret-value seam: the conversions, the bounded walk, the guards on both arms, the Compat accessors, the seam scan, and the engine on the whole login (secret links as empty slots, a secret level, the tooltip/compare/quick-slot/iteminfo guards, the balanced Equip count) |
-| `test_bus` | The full catalog, its wire names, exactly one sender per key over every call site |
-| `test_skinsetup` | The skin seam: the owner registration, the `of.*` tokens, the choice and the picker |
 | `test_surface_parity` | Every degrade stub carries the surface of what it stands in for; every leased major has its row; the degraded login resumes the whole graph and stands it down and up |
-| `test_perf_harness` | The ten buckets in order with the one nest, each reached on the whole addon (`equipExecute` only inside `E.Update`), the five offline scenarios doing what they are named for, the `perf` verb, the latch's `perf` hold |
-| `test_file_budget` | Every authored Lua file, `tests/` and `tools/` included, stays under 1000 lines |
-| `test_removed_apis` | No live file names an API, event or library the game or this rewrite removed (INV §18) |
+| `test_disabled` | The disabled state is total: the kit's ten conformance steps on the real addon, and the Outfitter cases (an active trigger, the Equip bracket, the hook bodies, the Dock driver, the LoadPass timer, the rebuild) |
+| `test_secrets` | The secret-value seam: the conversions, the bounded walk, the guards on both arms, the Compat accessors, the seam scan, and the engine on the whole login (secret links as empty slots, a secret level, the tooltip/compare/quick-slot/iteminfo guards, the balanced Equip count) |
+| `test_secrets_states` | The states half of the secret-value seam: `PlayerIsFull`, the aura scan, the mana history |
 | `test_no_loadstring` | No code runs from text anywhere: no `loadstring`, `load(`, `setfenv`, `RunScript`, no script field on a trigger, no `CUSTOM` id |
+| `test_removed_apis` | No live file names an API, event or library the game or this rewrite removed (INV §18) |
+| `test_file_budget` | Every authored Lua file, `tests/` and `tools/` included, stays under 1000 lines |
+| `test_packaging` | What reaches players: the package folder, every maintainer file ignored, nothing ignored loaded, every media path resolves, the icon declaration is exactly what is drawn. Also the doc set's account of the rest: one `pending` suite, a row here per declared suite in its design §9.3 group and order, the retired-harness map, a `module-map.md` `## Not shipped` row per helper, and the README badge equal to `docs/test-cases.md` |
+| `test_credits` | The landing credits, the README Credits block, the LICENSE copyright lines |
+| `test_bus` | The full catalog, its wire names, exactly one sender per key over every call site |
 | `test_mock_gear` | The domain mock's fidelity: plans move items for real, bag-full, the secret wrap, the Equipment Manager flake |
 | `test_refactor_pins` | Pending (P5 CCN splits): the green-before pins for any complexity decomposition |
+| kit `test_eol` | Every tracked file's line endings match `.gitattributes` |
+| kit `test_prose` | No tracked authored file carries a British spelling (localization-§5); waivers are per file and per word in `tests/prose_waivers.lua` |
+| kit `test_layout_cap` | Every file over the 1500-line cap is in the census in `ARCHITECTURE.md` |
+| kit `test_diagnostics_contract` | `/of diagnostics` meets debug-logging-§14 |
+| kit `test_lizard_sighted` | The complexity suite's sighted shadow |
+| kit `test_skin_values`, `test_skin_switch` | The typed-color gate and the skin switch over `tests/skin_surfaces.lua` |
 
 **Data, settings and slash**
 
 | Suite | What it covers |
 |---|---|
+| `test_database` | The store: the migration stamp, a raising step, the profile and char walks, no `gOutfitter_*` reader, both `resolveRoot` functions |
 | `test_schema` | The settings rows, the write seam, its forward to the outfit instance, the reset's reach |
 | `test_settings` | Page registration and order, the General tabs, Master controls, the reset wording, the landing page |
 | `test_reset` | Reset all keeps the character's outfits and the profile list; Delete all outfits re-seeds after the accept; switch and copy keep outfits |
 | `test_slash` | The reserved verbs, bare `/of`, help, the schema CLI, both chat commands, the macro-conditional wrapper |
-| `test_launcher` | The one LDB object, its static icon and label, the right-click menu, the tooltip line, the Minimap row |
 | `test_keybinds` | `Bindings.xml`, `NS.BINDINGS`, the hidden non-secure buttons and their press |
-| `test_disabled` | The disabled state is total: the kit's ten conformance steps on the real addon, and the Outfitter cases (an active trigger, the Equip bracket, the hook bodies, the Dock driver, the LoadPass timer, the rebuild) |
+| `test_launcher` | The one LDB object, its static icon and label, the right-click menu, the tooltip line, the Minimap row |
 | `test_locale` | The locale gates: the TOC-derived enUS set, cross-file duplicates, the overlays' gates, legacy coverage read from the overlays' end notes, format-directive safety (a translation's directives, in order, are a prefix of its English's). The overlays are generated by `lua tools/rekey-locales.lua` (`--check` writes nothing and exits 1 if an overlay differs from its output) |
-| `test_glyphs` | The display-glyph guard over the addon's own Lua. The zhCN, zhTW, koKR and ruRU overlays are skipped (no western safe set holds them); their faces are left to the H8 client check |
-| `test_api` | The `API.v1` members, the case-insensitive find, an isolated raising subscriber, and the global allow-list (no `Outfitter_*` or `gOutfitter_*`) |
 | `test_diagnostics` | The `/of zone` and `/of diagnostics` sections: the instance line, the zone outfits, the STUCK line, rejected events, faulted bindings, a loaded legacy addon |
-| `test_credits` | The landing credits, the README Credits block, the LICENSE copyright lines |
 
 **Engine**
 
@@ -132,6 +137,7 @@ the kit's inventory fails a `tests/test_*.lua` with no entry. Every suite is liv
 | `test_item_stats` | Stats from the item's stat tokens and level, scored under a German client; the level rule; the Pawn and WeightsWatcher sources |
 | `test_optimize` | The simple picks against the legacy capture, the seeded genetic search, cancel and stand-down, the progress lines, delivered once |
 | `test_companion` | The battle-pet summon and dismiss by name, GUID and species; the blockers; the auto-summon watch and its cap |
+| `test_api` | The `API.v1` members, the case-insensitive find, an isolated raising subscriber, and the global allow-list (no `Outfitter_*` or `gOutfitter_*`) |
 
 **Triggers**
 
@@ -139,7 +145,6 @@ the kit's inventory fails a `tests/test_*.lua` with no entry. Every suite is liv
 |---|---|
 | `test_zones` | The single zone source: unique map ids, generic and specific battlegrounds and arenas, the wear order, the first-sighting seed, the shape of the legacy tables |
 | `test_states` | The state producers: the restriction, the aura scan and form poll, the dropped `UNIT_AURA` window, the forms, mounted, Dining and Spirit, `Set` |
-| `test_secrets_states` | The states half of the secret-value seam: `PlayerIsFull`, the aura scan, the mana history |
 | `test_triggers` | The catalog: well-formed descriptors, ids, categories, classes, events (no pseudo-event registered), typed parameters, icons, live resolution, `Finalize` |
 | `test_trigger_binder` | The binder: fan-out, a faulting condition, the timers, the delays, Complete re-worn, smart unequip, `auto.enabled`, the coalesced rebind |
 | `test_triggers_general` | The general triggers: dungeon and difficulty, buffs, target, the trinket and feet queues, zones, talents, Spirit, PvP flag |
@@ -153,29 +158,21 @@ the kit's inventory fails a `tests/test_*.lua` with no entry. Every suite is liv
 
 | Suite | What it covers |
 |---|---|
-| `test_quickslots` | The flyout quick slots: the sort against the legacy capture, the upgrade fallback, the specials, the guards and the latch |
-| `test_tooltips` | The "Used by outfits" line on bag, inventory and hyperlink tooltips (never another unit's), its colors and cache; the compare tooltips; the outfit tooltip |
 | `test_dock` | The window dock: strata and level from the host, the secure queue under lockdown, combat hide and restore, the follow driver, Escape |
 | `test_list_model` | The list model: section order, both sorts, nil names last, collapse |
 | `test_rows_secure` | The secure row children: built once, never moved after the build, disarmed in lockdown |
 | `test_slot_enables` | The slot checkboxes: one per slot on the character sheet, the tri-state, All and None, the restack |
-| `test_bar` | The outfit bar: defaults, buttons, stacking, the icon ladder, drag, alpha and fades, pet battles, the menu, disabled-trigger outfits |
-| `test_preview` | Test mode: the placeholder outfits, nothing worn and nothing saved, refused and ended in combat, the ends |
 | `test_outfit_menu` | The outfit context menu: the rows per kind, the bank rows, the binding labels, the title submenu, the trigger switch |
 | `test_dialogs` | The new-outfit and rename dialogs, the popups' data, the icon chooser, the row's Equipment Manager checkbox |
 | `test_trigger_dialog` | The trigger dialog: the draft, validation, Done writes through `SetMany` only, X and Escape discard, the nine field types |
+| `test_bar` | The outfit bar: defaults, buttons, stacking, the icon ladder, drag, alpha and fades, pet battles, the menu, disabled-trigger outfits |
+| `test_preview` | Test mode: the placeholder outfits, nothing worn and nothing saved, refused and ended in combat, the ends |
+| `test_quickslots` | The flyout quick slots: the sort against the legacy capture, the upgrade fallback, the specials, the guards and the latch |
+| `test_tooltips` | The "Used by outfits" line on bag, inventory and hyperlink tooltips (never another unit's), its colors and cache; the compare tooltips; the outfit tooltip |
+| `test_skinsetup` | The skin seam: the owner registration, the `of.*` tokens, the choice and the picker |
 | `test_skin` | Only our frames are skinned; the window, bar, dialogs and menus follow a skin switch |
-
-**Kit suites**
-
-| Suite | What it covers |
-|---|---|
-| kit `test_skin_values`, `test_skin_switch` | The typed-color gate and the skin switch over `tests/skin_surfaces.lua` |
-| kit `test_eol` | Every tracked file's line endings match `.gitattributes` |
-| kit `test_layout_cap` | Every file over the 1500-line cap is in the census in `ARCHITECTURE.md` |
-| kit `test_diagnostics_contract` | `/of diagnostics` meets debug-logging-§14 |
-| kit `test_lizard_sighted` | The complexity suite's sighted shadow |
-| kit `test_prose` | No tracked authored file carries a British spelling (localization-§5); waivers are per file and per word in `tests/prose_waivers.lua` |
+| `test_perf_harness` | The ten buckets in order with the one nest, each reached on the whole addon (`equipExecute` only inside `E.Update`), the five offline scenarios doing what they are named for, the `perf` verb, the latch's `perf` hold |
+| `test_glyphs` | The display-glyph guard over the addon's own Lua. The zhCN, zhTW, koKR and ruRU overlays are skipped (no western safe set holds them); their faces are left to the H8 client check |
 
 ## Inventory and badge
 

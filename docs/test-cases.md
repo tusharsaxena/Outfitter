@@ -64,7 +64,7 @@ Total.
 - database: the outfit root refuses a nil id, an unknown id and any other first segment
 - database: db.char starts in the §3.1 shape, and the outfit store's writes land in it
 
-### test_packaging.lua (14)
+### test_packaging.lua (15)
 
 - packaging: the package folder is the TOC basename and the addon's folder name
 - packaging: every maintainer file and folder is ignored
@@ -77,6 +77,7 @@ Total.
 - packaging: the debug console's face resolves to a shipped font
 - packaging: SUITES holds one pending entry, test_refactor_pins for the P5 splits (P4.32)
 - packaging: docs/testing.md's suite table names every declared suite and nothing else (P4.32)
+- packaging: docs/testing.md groups and orders the suites as design §9.3 does (M2 review)
 - packaging: docs/testing.md maps the retired harness's 144 cases, suite by suite (design §9.4)
 - packaging: docs/module-map.md's Not shipped table names every helper in tests/ and tools/ (P4.32)
 - packaging: the README badge and docs/test-cases.md agree, a Totals row per live suite (testing-§5)
@@ -1507,7 +1508,7 @@ Total.
 | test_toc.lua | 5 |
 | test_loadorder.lua | 13 |
 | test_database.lua | 11 |
-| test_packaging.lua | 14 |
+| test_packaging.lua | 15 |
 | test_vendor_sync.lua | 3 |
 | test_secrets.lua | 42 |
 | test_bus.lua | 12 |
@@ -1574,4 +1575,4 @@ Total.
 | test_lizard_sighted.lua | 8 |
 | test_prose.lua | 15 |
 | Skipped | 2 |
-| **Total** | **1276** |
+| **Total** | **1277** |

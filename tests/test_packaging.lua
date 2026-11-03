@@ -298,6 +298,36 @@ test("packaging: docs/testing.md's suite table names every declared suite and no
     end
 end)
 
+-- Each suite named in a table's first cell under a `**Group**` heading of `body`, in order, as
+-- "Group: test_name" lines (a heading's trailing colon dropped).
+local function groupedSuites(body)
+    local out, group = {}, nil
+    for line in (body .. "\n"):gmatch("([^\n]*)\n") do
+        local heading = line:match("^%*%*(.-)%*%*%s*$")
+        if heading then group = heading:gsub(":$", "") end
+        local cell = line:match("^|%s*([^|]-)%s*|")
+        if cell and group then
+            for tok in cell:gmatch("`(test_[%w_]+)`") do out[#out + 1] = group .. ": " .. tok end
+        end
+    end
+    return table.concat(out, "\n")
+end
+
+local DESIGN = "docs/superpowers/specs/2026-11-03-design.md"
+
+test("packaging: docs/testing.md groups and orders the suites as design §9.3 does (M2 review)", function()
+    -- red under: `test_database` moved back under Standard-required and structural, or the
+    -- `test_zones` and `test_itemlink` rows swapped
+    local f = io.open(T.root .. "/" .. DESIGN, "rb")
+    if not f then return T.skip(DESIGN .. " is not in this tree, so there is no §9.3 to mirror") end
+    local design = f:read("*a"):gsub("\r", "")
+    f:close()
+    local from = assert(design:find("\n### 9.3 ", 1, true), "the design has §9.3")
+    local to = assert(design:find("\n### 9.4 ", from, true), "the design has §9.4")
+    local body = assert(section("docs/testing.md", "The suites"), "docs/testing.md has `## The suites`")
+    assertEqual(groupedSuites(body), groupedSuites(design:sub(from, to)))
+end)
+
 test("packaging: docs/testing.md maps the retired harness's 144 cases, suite by suite (design §9.4)", function()
     -- red under: an old suite's row deleted from `## Retired harness`, or a case count changed
     local body = assert(section("docs/testing.md", "Retired harness"), "docs/testing.md has `## Retired harness`")
