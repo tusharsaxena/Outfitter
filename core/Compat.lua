@@ -179,6 +179,19 @@ function Compat.IsDeadOrGhost(unit)
     return NS.Secrets.PlainTruth(UnitIsDeadOrGhost(unit or "player"))
 end
 
+--- Whether the player is casting and whether channeling, each nil when it cannot be read (no API,
+--- or a sealed answer). PlayerState.Refresh re-reads both after a stand-down (design §5.2).
+--- @return boolean|nil casting, boolean|nil channeling
+function Compat.PlayerCasting()
+    local function read(fn)
+        if not fn then return nil end
+        local name = fn("player")
+        if NS.Secrets.IsSealed(name) then return nil end
+        return name ~= nil
+    end
+    return read(UnitCastingInfo), read(UnitChannelInfo)
+end
+
 --- Whether the client is in combat lockdown (secure frames frozen). False without the API.
 --- @return boolean
 function Compat.InCombatLockdown()

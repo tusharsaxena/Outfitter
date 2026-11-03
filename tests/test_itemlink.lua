@@ -1,11 +1,11 @@
 -- tests/test_itemlink.lua — P4.4's two modules (design §5.2, §5.3): modules/ItemInfo.lua's link parse,
 -- item records, the lazy bind / unique / usable reads, identity and comparison, and the iteminfo
 -- lines (B11, B12, B14); and modules/PlayerState.lua, the one owner of the combat, dead, cast and
--- spec flags. The catalogue (design §9.3) names this one suite for the task, so PlayerState's cases
+-- spec flags. The catalog (design §9.3) names this one suite for the task, so PlayerState's cases
 -- live here too, after the ItemInfo ones.
 --
 -- Equip lands in P4.8: PlayerState's calls into it run against a recorded fake (design §12, the fake
--- rule), and test_equip_bracket pins the real behaviour.
+-- rule), and test_equip_bracket pins the real behavior.
 
 local T = _G.OUTFITTERREBORN_TEST
 local test, assertEqual, assertTrue, assertFalse, assertNil =
@@ -163,7 +163,7 @@ test("itemlink: a secret worn or carried item reads as no item (Q12)", function(
     local inst = gearInstance("secret_slots")
     assertNil(inst.NS.ItemInfo.FromSlot("HeadSlot"), "secret worn")
     assertNil(inst.NS.ItemInfo.FromBag(0, 1), "secret carried")
-    assertEqual(inst.NS.ItemInfo.FromBag(0, 2).id, 212030, "the plain neighbour still reads")
+    assertEqual(inst.NS.ItemInfo.FromBag(0, 2).id, 212030, "the plain neighbor still reads")
 end)
 
 test("itemlink: the azerite powers are sorted and joined; none reads empty", function()
@@ -533,6 +533,44 @@ test("player state: Refresh re-reads combat, death and spec, and sends only what
     -- red under: Refresh sending every key every time.
     assertEqual(#heard, 2, "nothing moved, nothing sent")
     assertEqual(#equip.__calls, 0, "Refresh never equips")
+end)
+
+test("player state: Refresh re-reads the cast and the channel through Compat (design §5.2)", function()
+    local _, NS, M, equip, heard = psScene()
+    local PS = NS.PlayerState
+    -- A cast began while the module was not listening: no SENT/START edge arrived.
+    M.__world:setUnit("player", { casting = { name = "Hearthstone", spellID = 8690 } })
+    PS.Refresh()
+    -- red under: Refresh not reading Compat.PlayerCasting.
+    assertTrue(PS.IsCasting(), "a cast already under way")
+    assertEqual(table.concat(heard, ","), "casting=true")
+    M.__world:setUnit("player", { casting = false, channeling = { name = "Drain Soul" } })
+    PS.Refresh()
+    assertFalse(PS.IsCasting(), "the cast ended unseen")
+    assertTrue(PS.IsChanneling(), "a channel already under way")
+    -- red under: Refresh announcing each cast flag on its own (casting -> channeling is no edge).
+    assertEqual(#heard, 1, "the union did not move")
+    M.__world:setUnit("player", { channeling = false })
+    PS.Refresh()
+    assertFalse(PS.IsChanneling(), "the channel ended unseen")
+    assertEqual(table.concat(heard, ","), "casting=true,casting=false")
+    assertEqual(#equip.__calls, 0, "Refresh never equips")
+end)
+
+test("player state: a sealed cast reading leaves the cast flags alone", function()
+    local _, NS, M = psScene()
+    local PS = NS.PlayerState
+    M.__fire("UNIT_SPELLCAST_START", "player", "cast-1", 133)
+    M.UnitCastingInfo = function() return T.secret("Hearthstone") end
+    local restore = T.installSecretValue()
+    local ok, err = pcall(function()
+        -- red under: PlayerCasting reading a sealed name as "not casting".
+        PS.Refresh()
+        assertTrue(PS.IsCasting(), "unknown is not an edge")
+        assertNil((NS.Compat.PlayerCasting()), "sealed answers nil")
+    end)
+    restore()
+    if not ok then error(err, 0) end
 end)
 
 test("player state: PLAYER_ENTERING_WORLD refreshes; in lockdown it keeps combat", function()

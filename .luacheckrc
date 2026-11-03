@@ -53,6 +53,7 @@ files["core/Compat.lua"] = {
         "C_SpecializationInfo", "GetSpecialization", "GetSpecializationInfo", "GetNumSpecializations",
         "UnitFactionGroup", "UnitLevel", "UnitIsDeadOrGhost", "GetCVar", "SetCVar", "C_PlayerInfo",
         "IsAddOnLoaded",
+        "UnitCastingInfo", "UnitChannelInfo",   -- Compat.PlayerCasting (P4.4 handback, design §5.2)
         -- P4.2's accessors (design §5.13): items, containers, the Equipment Manager, pets, tooltip data,
         -- titles and macro icons. Every equipment call lives here and nowhere else.
         "C_Container", "C_Item", "C_ItemUpgrade", "C_EquipmentSet", "C_PetJournal", "C_TooltipInfo",

@@ -14,8 +14,8 @@ local _, NS = ...
 -- re-reads every flag from the client (Refresh), never from what was held when it went down. Every
 -- handler also reads the latch first, so a handler reached anyway writes nothing.
 --
--- CASTING is event-driven only: Refresh re-reads combat, death and spec through NS.Compat, which has
--- no cast-state accessor (design §5.2 deviation, recorded in the P4.4 commit).
+-- CASTING rides the cast events, and Refresh also re-reads it through Compat.PlayerCasting (design
+-- §5.2), so a cast begun or ended while the module was down is seen on Resume.
 --
 -- CALLS (at call time, no nil guard; design §12): NS.Equip.Batch on leaving combat (the empty
 -- bracket's close flushes the queued swaps), NS.Equip.DelayUntil half a second after a cast or a
@@ -91,17 +91,31 @@ end
 --- @return boolean
 function PS.CanDualWield() return Compat.CanDualWield() end
 
+--- Both cast flags at once from Compat, announcing the union once if it moved (a cast that became a
+--- channel while the module was down is no edge). An unreadable (nil) reading keeps its flag.
+local function refreshCast()
+    local casting, channeling = Compat.PlayerCasting()
+    local before = flags.casting or flags.channeling
+    if casting ~= nil then flags.casting = casting end
+    if channeling ~= nil then flags.channeling = channeling end
+    local after = flags.casting or flags.channeling
+    if after ~= before then NS.SendBus(NS.MSG.PLAYER_STATE_CHANGED, "casting", after) end
+end
+
 local function readSpec()
     set("spec", Secrets.PlainNumber(Compat.GetSpecialization()), "spec")
 end
 
---- Re-read combat, death and spec from the client, announcing each key that moved. Out of combat
---- lockdown it clears both combat flags (the old RegenEnabled); in it, it sets combat.
+--- Re-read combat, death, the cast, the channel and spec from the client, announcing each key that
+--- moved. Out of combat lockdown it clears both combat flags (the old RegenEnabled); in it, it sets
+--- combat. A cast or channel reading that cannot be had (nil) leaves its flag as it was, and a cast
+--- found ended here does not delay the equip path: Refresh never equips.
 function PS.Refresh()
     local locked = Compat.InCombatLockdown()
     set("combat", locked, "combat")
     if not locked then flags.maybeCombat = false end
     set("dead", Compat.IsDeadOrGhost("player") == true, "dead")
+    refreshCast()
     readSpec()
 end
 
