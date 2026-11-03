@@ -33,7 +33,7 @@ Research outputs live in `docs/superpowers/specs/2026-11-03-*.md`.
 | P2 | Design: target module map, schema, launcher, test mode, skin surfaces | done | specs/2026-11-03-design.md (P3 = its §11 C1–C16; P4 = its §12 sub-ledger) |
 | P3 | Scaffold: libs (Ace3, LibKa0s, LSM, LDB, LibDBIcon), TOC, core seams, tests/_kit, locales | done | 3ef2999..38a7c78 (design §11 C1–C16, plus 19e2496 LibKa0s re-cut re-sync) |
 | P4 | Port: engine, scripting, optimize/stats, UI, bar, quick slots, settings, launcher, test mode | done | 8f4cc54..4b5614a (design §12 P4.0–P4.32, 15 groups; gate 1277 passed / 0 failed, lint 0/0 in 188 files, max CCN 15) |
-| P5 | Green gate: luacheck 0, headless suite 0 failures, 1500-line cap | done | a772fc7..HEAD (design §13 steps 1–12); bundle docs/automated-tests/20261104-042841/ (green at bd45fa5: lint 0/0 in 188 files, 1277 passed / 0 failed / 1 skipped, perf 10 scenarios, max CCN 15, 0 warned / blind / crashed); no pending suite; `-j auto` parity identical (serial 30.8 s wall / 21.7 s CPU, parallel 16.7 s / 36.9 s) |
+| P5 | Green gate: luacheck 0, headless suite 0 failures, 1500-line cap | done | a772fc7..HEAD (design §13 steps 1–12); bundle docs/automated-tests/20261104-044201/ (green at 9a27eb7, after the step 8 verification fixes: lint 0/0 in 188 files, 1277 passed / 0 failed / 1 skipped, perf 10 scenarios, max CCN 15, 0 warned / blind / crashed; supersedes 20261104-042841 at bd45fa5); no pending suite; `-j auto` parity identical (serial 30.8 s wall / 21.7 s CPU, parallel 16.7 s / 36.9 s) |
 | P6 | Push milestone 1 | pending | |
 | P7 | `/dev-copilot:wow-standards-audit` → fix all deviations | pending | docs/audits/2026-11-03/ |
 | P8 | `/dev-copilot:review` → fix all findings | pending | docs/reviews/2026-11-03/ |
