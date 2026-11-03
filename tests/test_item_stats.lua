@@ -1,5 +1,5 @@
 -- tests/test_item_stats.lua — P4.11 (design §5.14, B13, H15, H16): NS.Stats on C_Item.GetItemStats
--- and C_Item.GetDetailedItemLevelInfo, labelled from the client's own GlobalStrings so a deDE client
+-- and C_Item.GetDetailedItemLevelInfo, labeled from the client's own GlobalStrings so a deDE client
 -- scores Versatility, Crit and item level (B13); the combined-primary alias lists (O20); the level
 -- filter (a too-high item is dropped, a secret player level lets it through); the per-job score
 -- cache; the Pawn and WeightsWatcher sources, guarded, installed at Resume and on ADDON_LOADED, never

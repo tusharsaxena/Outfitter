@@ -4,8 +4,9 @@
 -- plain-or-nil, the P4.2 accessors (design §5.13: item, container, cooldown, location, tooltip, pet,
 -- hook, Equipment Manager, title, bank, cursor, macro-icon and Pawn reads, each plain-or-nil, each with
 -- its no-answer value when the API is absent), and the seam scan: no securable client API is named
--- outside the compat family, core/Secrets.lua and modules/States.lua. The states part joins in P4.14
--- and the engine cases (PlayerIsFull, the aura scan, the balanced count) in P4.27.
+-- outside the compat family, core/Secrets.lua and modules/States.lua. The states part lives in
+-- tests/test_secrets_states.lua (P4.14); the engine cases (PlayerIsFull, the aura scan, the balanced
+-- count) join in P4.27.
 
 local T = _G.OUTFITTERREBORN_TEST
 local NS = T.NS
@@ -418,7 +419,7 @@ test("compat: with the client API absent every accessor answers its no-answer va
                          "ClearCursor", "SetCurrentTitle", "GetMacroIcons", "GetMacroItemIcons",
                          "EquipmentManager_GetLocationData", "PawnGetItemData", "PawnGetAllScales", "GetNumTitles",
                          "hooksecurefunc", "ItemLocation", "CanDualWield", "Enum", "MAX_EQUIPMENT_SETS_PER_PLAYER",
-                         "NUM_TOTAL_EQUIPPED_BAG_SLOTS" }) do
+                         "NUM_TOTAL_EQUIPPED_BAG_SLOTS", "IsFlying" }) do
         absent[k] = false   -- `false` stands for absent: the mock's __index would fall through to nil
     end
     local BAG, INV, fn = { bag = 0, slot = 1 }, { slotID = 16 }, function() end
@@ -435,7 +436,7 @@ test("compat: with the client API absent every accessor answers its no-answer va
         { "EMIgnoreSlot", 1, true }, { "SetCurrentTitle", 1 }, { "IsBankerInteraction", 8 },
         { "PickupContainerItem", 0, 1 }, { "PickupInventoryItem", 16 }, { "PickupItemLocation", BAG },
         { "UseContainerItem", 0, 1 }, { "ShowContainerSellCursor", 0, 1 }, { "EquipCursorItem", 16 },
-        { "ClearCursor" }, { "CanDualWield" } }
+        { "ClearCursor" }, { "CanDualWield" }, { "IsFlying" } }
     local EMPTY = { { "TooltipLines", BAG }, { "EMSetIDs" }, { "EMLocations", 1 }, { "EMIgnoredSlots", 1 },
         { "KnownTitles" }, { "BankBagIDs" }, { "MacroIcons", "item" }, { "PawnVisibleScales" } }
     with(absent, function()

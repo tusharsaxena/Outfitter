@@ -64,6 +64,7 @@ files["core/Compat.lua"] = {
         "ItemLocation", "hooksecurefunc", "MAX_EQUIPMENT_SETS_PER_PLAYER", "PawnGetAllScales", "PawnIsScaleVisible",
         "CanDualWield",
         "NUM_TOTAL_EQUIPPED_BAG_SLOTS",   -- Compat.LastEquippedBagID (P4.5 handback)
+        "IsFlying",                       -- Compat.IsFlying (P4.13 handback)
     },
 }
 
@@ -87,6 +88,7 @@ files["modules/States.lua"] = {
     read_globals = {
         "C_UnitAuras", "C_RestrictedActions", "GetShapeshiftFormInfo", "GetNumShapeshiftForms", "IsMounted",
         "IsSwimming", "UnitOnTaxi", "UnitPower", "UnitPowerMax", "UnitHealth", "UnitHealthMax", "GameTooltip",
+        "UnitPowerType",   -- PlayerIsFull (P4.14 handback)
     },
 }
 
@@ -137,6 +139,10 @@ for _, f in ipairs({ "modules/QuickSlots.lua", "modules/QuickSlots_Sort.lua" }) 
     files[f] = {
         read_globals = {
             "PaperDollItemsFrame", "EquipmentFlyout_Hide", "EquipmentFlyoutPopoutButton_OnClick", "hooksecurefunc",
+            -- P4.18 handback: the cursor, the flyout frame and its location bits.
+            "CursorHasItem", "EquipmentFlyoutFrame", "EQUIPMENTFLYOUT_FIRST_SPECIAL_LOCATION",
+            "EQUIPMENTFLYOUT_PLACEINBAGS_LOCATION", "ITEM_INVENTORY_LOCATION_PLAYER", "ITEM_INVENTORY_LOCATION_BAGS",
+            "ITEM_INVENTORY_LOCATION_BANK",
         },
     }
 end

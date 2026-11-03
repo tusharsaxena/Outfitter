@@ -8,9 +8,8 @@
 -- the fake rule). NS.Equip lands in P4.8: PlayerState's calls into it are faked the same way.
 -- PlayerState itself is real (P4.4) and driven through the client's events.
 --
--- Compat.IsFlying is not in core/Compat.lua yet (its client global is a .luacheckrc spine edit,
--- handed back). Until it lands, `scene` installs a stand-in that reads the mock's IsFlying flag;
--- the stand-in steps aside on its own once the real accessor exists.
+-- The flying blocker reads the real Compat.IsFlying (landed at the group D merge), which reads the
+-- mock's IsFlying flag.
 
 local T = _G.OUTFITTERREBORN_TEST
 local test, assertEqual, assertTrue, assertFalse, assertNil =
@@ -30,9 +29,6 @@ local function scene()
                           Suspend = true, Resume = true })
     local feign = { on = false }
     T.fake(NS, "States", { IsFeigning = function() return feign.on end, Suspend = true, Resume = true })
-    if rawget(NS.Compat, "IsFlying") == nil then
-        NS.Compat.IsFlying = function() return M.IsFlying() == true end
-    end
     local debug = {}
     NS.Debug = function(tag, fmt, ...) debug[#debug + 1] = tag .. ": " .. fmt:format(...) end
     M.__now = 100

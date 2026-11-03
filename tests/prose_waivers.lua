@@ -13,5 +13,9 @@ return {
         -- Correcting it would make the fixture stop recording what the fork shipped, which is the
         -- one thing a characterization fixture is for (testing-§13).
         ["tests/fixtures/legacy/credits.lua"] = { localis = true },
+        -- A LIBRARY'S FIELD NAME. tests/test_companion.lua's pending() reads `handle.cancelled`, the
+        -- field the kit's AceTimer mock (tests/_kit/mock_ace.lua) and AceTimer-3.0 itself set on a
+        -- handle CancelTimer has taken back. The code reads their field; it cannot rename it.
+        ["tests/test_companion.lua"] = { cancelled = true },
     },
 }

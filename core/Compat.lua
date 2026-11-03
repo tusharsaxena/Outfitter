@@ -660,6 +660,13 @@ function Compat.HookCompare(fn)
     return (pcall(hooksecurefunc, "GameTooltip_ShowCompareItem", fn))
 end
 
+--- Whether the player is flying. False without the API or when the answer cannot be read.
+--- @return boolean
+function Compat.IsFlying()
+    if not IsFlying then return false end
+    return NS.Secrets.PlainTruth(IsFlying()) == true
+end
+
 -- ---------------------------------------------------------------------------
 -- The Equipment Manager (C_EquipmentSet)
 -- ---------------------------------------------------------------------------

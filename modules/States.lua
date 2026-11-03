@@ -27,8 +27,6 @@ local _, NS = ...
 -- equipment update they ask for runs once; NS.Equip.SuspendedForLoad (UNIT_AURA is dropped and the
 -- forms re-poll during a load); NS.Triggers.ForState and NS.Stack.IsWorn for the first-sighting seed;
 -- NS.PlayerState.InCombat and SetMaybeInCombat; NS.Outfits for the worn outfits' triggers.
--- UnitPowerType is missing from this file's .luacheckrc stanza (a spine file, design §12): handed back.
--- luacheck: read globals UnitPowerType
 
 local S = {}
 NS.States = S
