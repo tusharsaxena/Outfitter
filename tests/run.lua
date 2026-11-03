@@ -150,7 +150,7 @@ local SUITES = {
     { name = "test_states",           pending = "P4.14" },
     { name = "test_secrets_states",   pending = "P4.14" },
 
-    { name = "test_quickslots",       pending = "P4.18" },
+    { name = "test_quickslots" },
 
     { name = "test_equip_bracket",    pending = "P4.8" },
 
