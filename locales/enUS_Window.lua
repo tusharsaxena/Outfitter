@@ -25,6 +25,10 @@ L["Banked:"] = "Banked:"
 -- P4.19 keys (modules/Dock.lua, modules/Window.lua, modules/Window_ListModel.lua, modules/Window_Rows.lua, modules/SlotEnables.lua)
 
 -- P4.20 keys (modules/Bar.lua, modules/Bar_Buttons.lua)
+L["Outfit bar"] = "Outfit bar"
+L["Drag to move. Right-click for bar settings."] = "Drag to move. Right-click for bar settings."
+L["Sample outfit (test mode). Nothing is equipped."] = "Sample outfit (test mode). Nothing is equipped."
+L["Test mode: sample outfits. Nothing is equipped or saved"] = "Test mode: sample outfits. Nothing is equipped or saved"
 
 -- P4.21 keys (modules/OutfitMenu.lua, modules/UIDialogs.lua, modules/Dialog_*.lua, modules/Popups.lua, modules/IconChooser.lua)
 
