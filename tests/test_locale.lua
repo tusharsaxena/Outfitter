@@ -133,6 +133,30 @@ local function literals(line)
     end
 end
 
+-- The body of a double-quoted literal, unescaped the way Lua 5.1 reads it: the named escapes, \ddd
+-- (one to three digits), an escaped newline, and any other escaped character standing for itself.
+-- Decoded by hand rather than by compiling `return "..."`: test_no_loadstring (design §9) bans run-
+-- time compilation in every file outside libs/, tests/_kit/ and tools/.
+local NAMED_ESCAPES = { a = "\a", b = "\b", f = "\f", n = "\n", r = "\r", t = "\t", v = "\v" }
+local function unescape(raw)
+    local out, i = {}, 1
+    while i <= #raw do
+        local c = raw:sub(i, i)
+        if c ~= "\\" then
+            out[#out + 1], i = c, i + 1
+        else
+            local digits = raw:match("^%d%d?%d?", i + 1)
+            if digits then
+                out[#out + 1], i = string.char(tonumber(digits)), i + 1 + #digits
+            else
+                local e = raw:sub(i + 1, i + 1)
+                out[#out + 1], i = NAMED_ESCAPES[e] or e, i + 2
+            end
+        end
+    end
+    return table.concat(out)
+end
+
 -- Every routed literal as { file, line, key }, the key unescaped as Lua would read it.
 local function routedKeys()
     local out = {}
@@ -141,7 +165,7 @@ local function routedKeys()
         for line in (readFile(rel) .. "\n"):gmatch("([^\n]*)\n") do
             n = n + 1
             for _, raw in ipairs(literals(line)) do
-                local key = assert(loadstring('return "' .. raw .. '"'))()
+                local key = unescape(raw)
                 out[#out + 1] = { file = rel, line = n, key = key }
             end
         end
@@ -162,16 +186,15 @@ local function gateLine(locale)
 end
 
 -- An overlay run on a client of `clientLocale`, writing into a fresh recording NS.L: the keys it
--- wrote, in order. The chunk sees only GetLocale beyond the base globals.
+-- wrote, in order. The chunk sees GetLocale as a mock over the base globals, compiled by the kit's
+-- loader (tests/_kit/ is outside test_no_loadstring's scope; this suite is not).
 local function overlayWrites(text, path, clientLocale)
     local written = {}
     local L = setmetatable({}, { __newindex = function(t, k, v)
         written[#written + 1] = k
         rawset(t, k, v)
     end })
-    local chunk = assert(loadstring(text, "@" .. path))
-    setfenv(chunk, setmetatable({ GetLocale = function() return clientLocale end }, { __index = _G }))
-    chunk("OutfitterReborn", { L = L })
+    T.Loader.loadSource(text, "@" .. path, { L = L }, { GetLocale = function() return clientLocale end })
     return written
 end
 
@@ -283,6 +306,8 @@ end)
 test("locale: the scan finds the routed literals in the addon's files", function()
     assertTrue(#routedKeys() > 30, "expected the scan to find the addon's L[...] call sites")
     assertEqual(#literals('x = L["a \\"b\\""] .. NS.L["c"] .. LL["d"]'), 2, "the literal scan")
+    -- The hand decoder reads a literal's body the way the compiler does.
+    assertEqual(unescape([[a \"b\" \\ \n \65\0669 \q]]), "a \"b\" \\ \n AB9 q", "the unescape")
 end)
 
 test("locale: the enUS union carries every string routed through NS.L", function()

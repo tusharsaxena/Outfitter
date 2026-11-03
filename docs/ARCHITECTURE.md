@@ -26,6 +26,9 @@ The TOC (`OutfitterReborn.toc`) is the load order and the authority on it.
 | File | Job |
 |---|---|
 | `locales/enUS.lua` | `NS.L`, the canonical locale with the key-is-the-string fallback |
+| `locales/enUS_Triggers.lua` | enUS topic file: the native triggers' strings (names, descriptions, parameter labels, categories, zones), filling `NS.L` |
+| `locales/enUS_Window.lua` | enUS topic file: the outfit window, dock, list, menus, dialogs, bar, icon chooser, quick slots, tooltips and test mode, filling `NS.L` |
+| `locales/deDE.lua`, `frFR.lua`, `zhCN.lua`, `zhTW.lua`, `koKR.lua`, `ruRU.lua` | The six overlays, each gated on its own `GetLocale()` first; the gate line only until the re-key (P4.28) |
 | `core/Namespace.lua` | `NS.PREFIX`, `NS.name`, `NS.BRAND`, `NS.SLASH`/`NS.SLASH_LONG`, the version fallback |
 | `core/MediaSetup.lua` | `NS.Icon`, `NS.MediaFont` and the LibSharedMedia registration (LibKa0s-Media) |
 | `core/Constants.lua` | `FONT_MONO`, `LOGO`/`LOGO_128`, `LAYERS`, `OUTFIT_MESSAGE_COLOR` |
@@ -33,6 +36,8 @@ The TOC (`OutfitterReborn.toc`) is the load order and the authority on it.
 | `core/EnvSetup.lua` | `NS.Meta`, `NS.Version` (LibKa0s-Env) |
 | `core/CoreSetup.lua` | `NS.Print`, `NS.SafeToString`, the `SafeRegister*` family, the window chrome (LibKa0s-Core) |
 | `core/SkinSetup.lua` | `NS.Skin`, the owner registration and its `of.*` tokens, the skin choice and picker seams (LibKa0s-Skin) |
+| `core/Compat.lua` | `NS.Compat`: every version-variant client call and every LibKa0s-Compat member the addon consumes |
+| `core/Secrets.lua` | `NS.Secrets`, the only file that inspects a possibly secret value, and the `NS.IsSecret`/`NS.Unsecret`/`NS.SafeNumber` aliases |
 | `core/Bus.lua` | `NS.MSG`, `NS.NewBusTarget`, `NS.SendBus`, `NS.BusStandDown`/`BusStandUp` (LibKa0s-Bus) |
 | `core/PoolSetup.lua` | `NS.Pool`, the array and keyed widget pools (LibKa0s-Pool) |
 | `core/ItemSetup.lua` | `NS.Item`: `ItemIDFromLink`, `BonusIDsFromLink` on plain links only (LibKa0s-Item) |
@@ -45,6 +50,12 @@ The TOC (`OutfitterReborn.toc`) is the load order and the authority on it.
 | `core/OutfitterReborn.lua` | `NewAddon`, the `NS.Print` reclaim, `OnInitialize` (DB, migrations, the profile's skin) |
 | `core/Database.lua` | AceDB, the profile callbacks, the migration runner, both `resolveRoot` functions |
 | `defaults/Profile.lua` | `NS.defaults`, the only place a default is hardcoded |
+| `modules/Diagnostics.lua` | This addon's sections of `/of diagnostics` (debug-logging-§14) |
+| `settings/Schema.lua` | The settings rows, the one write seam, the page filter and the forward to `NS.OutfitSchema` (LibKa0s-Schema) |
+| `settings/Slash.lua` | `NS.COMMANDS`, the LibKa0s-Slash descriptor and the macro-conditional wrapper; `/of` and `/outfitter` |
+| `settings/OptionsSetup.lua` | The LibKa0s-Options descriptor (`NS.Helpers`), the tabbed-page helper and the global reset popup |
+| `settings/General.lua` | The General page (Master controls through Keybindings) and the landing page spec, `NS.LANDING` |
+| `settings/Profiles.lua` | The Profiles sub-page, registered last: AceDBOptions' table under a line saying outfits are per character |
 
 ## Settings Schema
 
