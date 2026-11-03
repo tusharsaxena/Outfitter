@@ -21,13 +21,16 @@
 -- the finding.
 --
 -- CEILINGS. Measured 2026-11-04 on Lua 5.1, identical over repeat runs and in both halves of every
--- pair: equipPlan 224032, zoneFlips 149134, triggerFanout 119534, tooltips 138494, gaGeneration
--- 468148 bytes/iter. Each ceiling is about 2% over its figure. The figures are large because a step
+-- pair bar an occasional one-off in an off window (Scenes.PAIR_WINDOW_BYTES): equipPlan 224032, zoneFlips 149134, triggerFanout 119534, tooltips 138494, gaGeneration
+-- 468127 bytes/iter. Each ceiling is about 2% over its figure. The figures are large because a step
 -- is a whole path on the real addon (an equipment update builds its change list and moves items
--- through mock_gear; a generation breeds 300 children) and include the mocks' own recording.
+-- through mock_gear; a generation breeds 275 children) and include the mocks' own recording.
 --
 -- ITERATIONS. ITERS[scene] steps per measured loop (N when absent): a step of the zone, fan-out,
 -- tooltip and genetic scenes is 40 to 275 calls of its path, so they take fewer steps.
+-- gaGeneration's step makes only 3 bracket calls, so it runs 200 steps: the off-side window
+-- allowance spread over a window's calls must stay under Scenes.SMALLEST_ALLOC bytes a call, or a
+-- per-call allocation could hide in it (Scenes.pairFailures refuses the pair).
 --
 -- WHAT THE BYTES INCLUDE. The mocks record as they go (M.__timers takes a queue entry per armed
 -- timer, mock_gear its event queue per move, the printed list each chat line), so a figure is the
@@ -43,7 +46,7 @@ Loader.addonName = "OutfitterReborn"
 local N = 2000
 local USAGE = "usage: lua tests/perf.lua [--out <path>] [--label <text>]\n"
 
-local ITERS = { equipPlan = 500, zoneFlips = 50, triggerFanout = 100, tooltips = 50, gaGeneration = 40 }
+local ITERS = { equipPlan = 500, zoneFlips = 50, triggerFanout = 100, tooltips = 50, gaGeneration = 200 }
 
 -- Per scenario: the bytes/iter ceiling and the bracket notes/iter it is pinned at.
 local BYTE_CEILING = {
@@ -60,21 +63,13 @@ local NOTES_PER_ITER = {
     tooltipsCaptureOff = 0, tooltipsCaptureOn = 100,            -- one tooltipUsedBy per item
     gaGenerationCaptureOff = 0, gaGenerationCaptureOn = 3,      -- three 100-child resumes
 }
--- The capture-off/capture-on pairs: off may allocate nothing over on, and on no more than PAIR_SLACK
--- over off (the zero-overhead evidence performance-§2 asks for).
+-- The capture-off/capture-on pairs, judged by Scenes.pairFailures (tests/perf_scenes.lua, where the
+-- slack, the noise and the off-side window allowance live and the harness suite pins them).
 local PAIRS = {
     equipPlanCaptureOff = "equipPlanCaptureOn", zoneFlipsCaptureOff = "zoneFlipsCaptureOn",
     triggerFanoutCaptureOff = "triggerFanoutCaptureOn", tooltipsCaptureOff = "tooltipsCaptureOn",
     gaGenerationCaptureOff = "gaGenerationCaptureOn",
 }
-local PAIR_SLACK = 64
-local PAIR_NOISE = 1
--- A one-off growth per measured window, not per iteration: zoneFlips' off window carried 4128 bytes
--- its on window did not (82.6 bytes/iter over 50, 68.8 over 60: the same total), and where it lands
--- moved with the load path's length and with an extra window run first. An allocation on the off
--- path itself would grow with the iterations, so a window's figure may exceed its pair's by this
--- much in total, spread over its iterations, and no more (either way: it is no note's cost).
-local PAIR_WINDOW_BYTES = 8192
 
 local opts = { out = nil, label = "offline" }
 do
@@ -229,12 +224,7 @@ for offName, onName in pairs(PAIRS) do
     local off, on = byName[offName], byName[onName]
     check(off ~= nil and on ~= nil, ("the pair %s / %s was not measured"):format(offName, onName))
     if off and on then
-        check(off.bytesPerIter <= on.bytesPerIter + PAIR_NOISE + PAIR_WINDOW_BYTES / off.iterations,
-            ("%s allocated %.1f bytes/iter, more than %s's %.1f: the off bracket is not free"):format(
-                offName, off.bytesPerIter, onName, on.bytesPerIter))
-        check(on.bytesPerIter <= off.bytesPerIter + PAIR_SLACK + PAIR_WINDOW_BYTES / on.iterations,
-            ("%s allocated %.1f bytes/iter, over %s's %.1f by more than %d"):format(
-                onName, on.bytesPerIter, offName, off.bytesPerIter, PAIR_SLACK))
+        for _, msg in ipairs(Scenes.pairFailures((offName:gsub("CaptureOff$", "")), off, on)) do check(false, msg) end
     end
 end
 

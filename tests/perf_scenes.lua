@@ -243,5 +243,41 @@ return function(env)
 
     Scenes.OTHERS = { "auraScan", "dockFollow", "barRender" }
 
+    -- ── the capture-off/capture-on pair verdict ─────────────────────────────────────────────────
+    -- The zero-overhead evidence performance-§2 asks for: off allocates nothing over on (PAIR_NOISE
+    -- for the float), and on no more than PAIR_SLACK bytes/iter over off. PAIR_WINDOW_BYTES is a
+    -- one-off growth an OFF window may carry in total, not per iteration: zoneFlips' off window
+    -- carried 4128 bytes its on window did not (82.6 bytes/iter over 50, 68.8 over 60: the same
+    -- total), gaGeneration's once 480, and where it lands moved with the load path's length and with
+    -- an extra window run first. It is granted off over on only (the on side never needed it), and
+    -- only while, spread over the window's bracket calls, it stays under SMALLEST_ALLOC bytes a call:
+    -- a scenario with too few calls is refused rather than let a per-call allocation hide in it.
+    Scenes.PAIR_SLACK = 64
+    Scenes.PAIR_NOISE = 1
+    Scenes.PAIR_WINDOW_BYTES = 8192
+    Scenes.SMALLEST_ALLOC = 16
+
+    --- The failures of one pair: `off`/`on` are { iterations, bytesPerIter, notesPerIter } records of
+    --- scenario `base`. Answers a list of messages, empty when the pair agrees.
+    function Scenes.pairFailures(base, off, on)
+        local out = {}
+        local offName, onName = base .. "CaptureOff", base .. "CaptureOn"
+        local window = Scenes.PAIR_WINDOW_BYTES
+        local calls = off.iterations * on.notesPerIter
+        if calls <= 0 or window / calls >= Scenes.SMALLEST_ALLOC then
+            out[#out + 1] = ("%s: the %d-byte window allowance over %d bracket calls would hide a per-call allocation; raise its iterations")
+                :format(base, window, calls)
+        end
+        if off.bytesPerIter > on.bytesPerIter + Scenes.PAIR_NOISE + window / off.iterations then
+            out[#out + 1] = ("%s allocated %.1f bytes/iter, more than %s's %.1f: the off bracket is not free")
+                :format(offName, off.bytesPerIter, onName, on.bytesPerIter)
+        end
+        if on.bytesPerIter > off.bytesPerIter + Scenes.PAIR_SLACK then
+            out[#out + 1] = ("%s allocated %.1f bytes/iter, over %s's %.1f by more than %d")
+                :format(onName, on.bytesPerIter, offName, off.bytesPerIter, Scenes.PAIR_SLACK)
+        end
+        return out
+    end
+
     return Scenes
 end

@@ -177,6 +177,50 @@ test("perf scenes: one genetic generation breeds 275 children over whole resumes
     assertTrue(seen.counts.optimizeStep >= 4 * 2, "a generation in fewer than two resumes")
 end)
 
+-- ── the pair verdict ───────────────────────────────────────────────────────────────────────────
+
+local function rec(iterations, bytesPerIter, notesPerIter)
+    return { iterations = iterations, bytesPerIter = bytesPerIter, notesPerIter = notesPerIter }
+end
+
+test("perf pairs: the measured figures agree, each off window's one-off inside its allowance", function()
+    -- The 2026-11-04 figures: zoneFlips' off side once ran 82.6 bytes/iter over on, gaGeneration's 12
+    -- over 40 iterations (2.4 over the 200 it now runs).
+    assertEqual(#Scenes.pairFailures("zoneFlips", rec(50, 149217.0, 0), rec(50, 149134.4, 100)), 0)
+    assertEqual(#Scenes.pairFailures("gaGeneration", rec(200, 468138.2, 0), rec(200, 468135.8, 3)), 0)
+    assertEqual(#Scenes.pairFailures("equipPlan", rec(500, 224032.1, 0), rec(500, 224032.1, 3)), 0)
+end)
+
+test("perf pairs: capture on allocating one small table per note fails, whatever the window", function()
+    -- red under: the window allowance added to the on-over-off check (8192/40 = 204.8 bytes/iter of
+    -- cover, so gaGeneration's 3 notes x 56 bytes passed unseen).
+    local f = Scenes.pairFailures("gaGeneration", rec(200, 468135.8, 0), rec(200, 468135.8 + 3 * 56, 3))
+    assertEqual(#f, 1)
+    assertTrue(f[1]:find("gaGenerationCaptureOn", 1, true) ~= nil, f[1])
+    f = Scenes.pairFailures("zoneFlips", rec(50, 149134.4, 0), rec(50, 149134.4 + 100, 100))
+    assertEqual(#f, 1, "the window covered the on side")
+end)
+
+test("perf pairs: a 56-byte allocation per off-path bracket call fails in every scenario", function()
+    -- red under: the off check's allowance taken per iteration instead of per window (`window` for
+    -- `window / off.iterations`); at 40 iterations the per-window form itself gave gaGeneration 204.8
+    -- bytes/iter of cover, which the next test refuses.
+    local f = Scenes.pairFailures("gaGeneration", rec(200, 468135.8 + 3 * 56, 0), rec(200, 468135.8, 3))
+    assertEqual(#f, 1)
+    assertTrue(f[1]:find("the off bracket is not free", 1, true) ~= nil, f[1])
+    f = Scenes.pairFailures("zoneFlips", rec(50, 149134.4 + 100 * 56, 0), rec(50, 149134.4, 100))
+    assertEqual(#f, 1)
+end)
+
+test("perf pairs: a scenario too short to spread the window under one allocation a call is refused", function()
+    -- red under: no SMALLEST_ALLOC guard (gaGeneration at 40 iterations passed with 68 bytes of cover
+    -- per bracket call).
+    local f = Scenes.pairFailures("gaGeneration", rec(40, 468135.8, 0), rec(40, 468135.8, 3))
+    assertEqual(#f, 1)
+    assertTrue(f[1]:find("raise its iterations", 1, true) ~= nil, f[1])
+    assertEqual(#Scenes.pairFailures("gaGeneration", rec(200, 468135.8, 0), rec(200, 468135.8, 3)), 0)
+end)
+
 -- ── no dynamic bucket key ──────────────────────────────────────────────────────────────────────
 
 --- Every `Perf.Note(` call in `src` whose first argument is not a string literal, and every literal

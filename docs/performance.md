@@ -75,8 +75,9 @@ with capture off and on:
 
 Each carries a byte ceiling a little above its measured figure and a pinned note count, and each
 pair must agree: capture off allocates nothing over capture on, and on no more than 64 bytes per
-step over off, beyond a one-off of up to 8 KB per measured window (`tests/perf.lua`'s header has the
-figures and why). A ceiling is raised only by re-measuring and saying why. The runs are kept in
+step over off. Capture off alone may carry a one-off of up to 8 KB per measured window, granted only
+while it spreads to under 16 bytes per bracket call, so it can never hide a per-call allocation
+(`Scenes.pairFailures` in `tests/perf_scenes.lua`; `tests/perf.lua`'s header has the figures). A ceiling is raised only by re-measuring and saying why. The runs are kept in
 [`automated-tests/`](automated-tests/README.md), not in `perf-analysis/`.
 
 ## Complexity
