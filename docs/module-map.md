@@ -110,12 +110,16 @@ file. In outline:
 | Path | Job |
 |---|---|
 | `tests/run.lua` | The runner: the load list, the lifecycle kick and the suite list, on the vendored kit |
-| `tests/wow_mock.lua` | The WoW API mock, extending the kit's base mock , and `T.fake` (design §12, the fake rule: a stand-in restored when the case ends) |
+| `tests/wow_mock.lua` | The WoW API mock, extending the kit's base mock, and `T.fake` (design §12, the fake rule: a stand-in restored when the case ends) |
 | `tests/mock_gear.lua` | The domain mock's gear half: worn items, bags, the bank, the cursor and item info, moving items for real |
 | `tests/mock_gear_sets.lua` | `C_EquipmentSet` over the gear half: sets that follow their items and wear for real |
 | `tests/mock_world.lua` | The domain mock's world half: instance, restriction, auras, class and spec, protected frames, hooks, the character sheet and tooltips |
 | `tests/fixtures/items.lua` | The item fixtures the gear half answers from, in the 12.x link shape |
 | `tests/fixtures/inventories.lua` | The named gear scenarios `M.__gear:load` places |
+| `tests/unit_load.lua` | A unit instance: the whole load and login with the resume walk emptied, for a suite that drives one module's `Resume` itself |
+| `tests/spy.lua` | A recorder over a REAL module's members: the call is recorded, then made (it replaced the fakes once their modules landed, P4.27) |
+| `tests/dock_scene.lua` | The shared scene of the four window suites (`test_dock`, `test_list_model`, `test_rows_secure`, `test_slot_enables`) |
+| `tests/dialog_scene.lua` | The shared scene of the three dialog suites (`test_outfit_menu`, `test_dialogs`, `test_trigger_dialog`) |
 | `tests/test_*.lua` | The local suites ([testing.md](testing.md)) |
 | `tests/skin_surfaces.lua` | The skin-switch suite's painted surfaces (skinning-§1) |
 | `tests/prose_waivers.lua` | What the US-English gate must not correct here, per file and per word |
@@ -124,5 +128,7 @@ file. In outline:
 | `tests/fixtures/legacy/` | Legacy behavior captured from the fork at `7ea3dc3` by `tools/legacy_capture.lua`; generated, never hand-edited |
 | `tests/_kit/` | The LibKa0s test kit, vendored byte-identical; never edited |
 | `tools/legacy_capture.lua` | Writes `tests/fixtures/legacy/` from a worktree of the fork |
-| `media/logos/*.png`, `*.jpg`, `media/screenshots/` | Source art and screenshots |
+| `tools/gen-zones.lua` | Diffs a wago.tools Map.db2 export against `defaults/Zones.lua` (added, removed, wrong kind); edits nothing |
+| `tools/rekey-locales.lua` | Writes the six locale overlays from the legacy translations (`--check` compares without writing) |
+| `media/logos/*.png`, `media/logos/*.jpg`, `media/screenshots/` | Source art and screenshots |
 | `docs/` | This doc set |

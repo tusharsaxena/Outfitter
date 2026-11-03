@@ -1,6 +1,8 @@
 -- tests/test_packaging.lua — what reaches players (packaging, §1.6): the package folder is the TOC's
 -- basename, every maintainer file is ignored, nothing ignored is loaded, and every media path the
--- addon names resolves under Interface\AddOns\OutfitterReborn\ to a shipped file.
+-- addon names resolves under Interface\AddOns\OutfitterReborn\ to a shipped file. The tail holds the
+-- doc set to the rest (P4.32): the one pending suite, docs/testing.md's suite and retired-harness
+-- tables, docs/module-map.md's Not shipped rows, and the README badge against docs/test-cases.md.
 
 local T = _G.OUTFITTERREBORN_TEST
 local NS = T.NS
@@ -206,5 +208,157 @@ test("packaging: the debug console's face resolves to a shipped font", function(
         assertTrue(onDisk(rel), rel .. " is on disk")
         -- red under: `- libs/LibKa0s/media/fonts` added to the .pkgmeta ignores
         assertFalse(ignored(rel, list) ~= nil, rel .. " is named at run time but not shipped")
+    end
+end)
+
+-- ── The doc set's account of what does not ship and how it is tested (P4.32) ────────────────────
+-- These read the tree and the runner, never a hand list: a helper added to tests/ or tools/, a suite
+-- added to SUITES, or a case that moves the pass count goes red here until the docs follow it
+-- (testing-§5, testing-§6).
+
+-- The runner's SUITES table, read out of tests/run.lua's text: each suite name in declared order and
+-- the `pending` reason of each pending entry.
+local function declaredSuites()
+    local src = readFile("tests/run.lua"):gsub("\r", "")
+    local body = assert(src:match("\nlocal SUITES = (%b{})"), "tests/run.lua declares SUITES")
+    local names, pending = {}, {}
+    for line in body:gmatch("[^\n]+") do
+        local code = line:gsub("%-%-.*$", "")
+        local name = code:match('"(test_[%w_]+)"')
+        if name then
+            names[#names + 1] = name
+            pending[name] = code:match('pending%s*=%s*"([^"]*)"')
+        end
+    end
+    return names, pending
+end
+
+-- The body of `## <title>` in a markdown file: everything up to the next `## ` heading.
+local function section(rel, title)
+    local doc = readFile(rel):gsub("\r", "") .. "\n## "
+    local start = doc:find("\n## " .. title .. "\n", 1, true)
+    if not start then return nil end
+    local from = start + #title + 5
+    return doc:sub(from, doc:find("\n## ", from, true) - 1)
+end
+
+-- Every backticked token in the first cell of each table row of `body`.
+local function firstCellTokens(body)
+    local tokens = {}
+    for line in (body .. "\n"):gmatch("([^\n]*)\n") do
+        local cell = line:match("^|%s*([^|]-)%s*|")
+        if cell and not cell:match("^%-+$") then
+            for tok in cell:gmatch("`([^`]+)`") do tokens[#tokens + 1] = tok end
+        end
+    end
+    return tokens
+end
+
+local function trackedUnder(prefixes)
+    local p = io.popen('git -C "' .. T.root .. '" ls-files --cached --others --exclude-standard -- '
+        .. table.concat(prefixes, " ") .. ' 2>/dev/null')
+    local files = {}
+    for line in p:lines() do files[#files + 1] = line end
+    p:close()
+    return files
+end
+
+-- True when a module-map row token (a path, a `dir/` folder, or a `*` glob) names `path`.
+local function rowCovers(tok, path)
+    if tok:sub(-1) == "/" then return path:sub(1, #tok) == tok end
+    return covers(tok, path)
+end
+
+test("packaging: SUITES holds one pending entry, test_refactor_pins for the P5 splits (P4.32)", function()
+    -- red under: `pending = "P4.x"` put back on any other SUITES line
+    local names, pending = declaredSuites()
+    assertTrue(#names > 50, "the SUITES reader found " .. #names .. " suites")
+    local held = {}
+    for _, name in ipairs(names) do
+        if pending[name] then held[#held + 1] = name .. " (" .. pending[name] .. ")" end
+    end
+    assertEqual(table.concat(held, ", "), "test_refactor_pins (P5 CCN splits)")
+end)
+
+test("packaging: docs/testing.md's suite table names every declared suite and nothing else (P4.32)", function()
+    -- red under: a SUITES line with no row in `## The suites`, or a row naming no declared suite
+    local body = assert(section("docs/testing.md", "The suites"), "docs/testing.md has `## The suites`")
+    local listed = {}
+    for _, tok in ipairs(firstCellTokens(body)) do
+        if tok:match("^test_[%w_]+$") then listed[tok] = true end
+    end
+    local names = declaredSuites()
+    local declared = {}
+    for _, name in ipairs(names) do
+        declared[name] = true
+        assertTrue(listed[name] == true, name .. " is declared but has no row in docs/testing.md")
+    end
+    for name in pairs(listed) do
+        assertTrue(declared[name] == true, name .. " has a row in docs/testing.md but is not declared")
+    end
+end)
+
+test("packaging: docs/testing.md maps the retired harness's 144 cases, suite by suite (design §9.4)", function()
+    -- red under: an old suite's row deleted from `## Retired harness`, or a case count changed
+    local body = assert(section("docs/testing.md", "Retired harness"), "docs/testing.md has `## Retired harness`")
+    -- The fourteen suites P3 C5 deleted, as `git show 7ea3dc3:tests/` holds them: history, not tree.
+    local OLD = { "harness", "syntax", "eol", "toc", "xml", "load", "compat", "locale", "deprecated",
+                  "zones", "scripts", "secrets", "outfits", "commands" }
+    local counts, total = {}, 0
+    for line in (body .. "\n"):gmatch("([^\n]*)\n") do
+        local suite, n = line:match("^|%s*(%a+)%s*%((%d+)%)%s*|")
+        if suite then counts[suite], total = tonumber(n), total + tonumber(n) end
+    end
+    for _, suite in ipairs(OLD) do
+        assertTrue(counts[suite] ~= nil, "the retired `" .. suite .. "` suite has no row")
+    end
+    assertEqual(total, 144, "the retired rows' case counts")
+end)
+
+test("packaging: docs/module-map.md's Not shipped table names every helper in tests/ and tools/ (P4.32)", function()
+    -- red under: the `tests/spy.lua` row deleted, or a row naming a file that is not in the tree
+    local body = assert(section("docs/module-map.md", "Not shipped"), "docs/module-map.md has `## Not shipped`")
+    local tokens = firstCellTokens(body)
+    local files = trackedUnder({ "tests", "tools", "media/logos", "media/screenshots" })
+    assertTrue(#files > 20, "git ls-files listed " .. #files .. " files")
+    local _, list = pkgmeta()
+    for _, path in ipairs(files) do
+        if path:match("^tests/") or path:match("^tools/") or ignored(path, list) then
+            local hit = false
+            for _, tok in ipairs(tokens) do hit = hit or rowCovers(tok, path) end
+            assertTrue(hit, path .. " does not ship but has no row in docs/module-map.md `## Not shipped`")
+        end
+    end
+    for _, tok in ipairs(tokens) do
+        if not tok:find("*", 1, true) and tok ~= "docs/" then
+            local hit = false
+            for _, path in ipairs(files) do hit = hit or rowCovers(tok, path) end
+            assertTrue(hit, "`" .. tok .. "` has a Not shipped row but is not in the tree")
+        end
+    end
+end)
+
+test("packaging: the README badge and docs/test-cases.md agree, a Totals row per live suite (testing-§5)", function()
+    -- red under: the badge left at a stale count, or a suite added to SUITES without regenerating
+    local readme = readFile("README.md")
+    local passed, all = readme:match("!%[Tests%]%(https://img%.shields%.io/badge/Tests%-(%d+)%%2F(%d+)_passing%-green%)")
+    assertTrue(passed ~= nil, "README carries the static Tests badge")
+    local inv = readFile("docs/test-cases.md")
+    local total = tonumber(inv:match("| %*%*Total%*%* | %*%*(%d+)%*%* |"))
+    assertTrue(total ~= nil, "docs/test-cases.md has its Total row")
+    assertEqual(tonumber(passed), total, "the badge's passing count")
+    assertEqual(tonumber(all), total, "the badge's total")
+    local rows, sum = {}, 0
+    for cell, n in inv:gmatch("\n| ([^|\r\n]-) | (%d+) |") do
+        local name = cell:gsub("%.lua$", "")
+        rows[name] = tonumber(n)
+        if name ~= "Skipped" then sum = sum + tonumber(n) end
+    end
+    assertEqual(sum, total, "the Totals rows sum to Total")
+    local names, pending = declaredSuites()
+    for _, name in ipairs(names) do
+        if not pending[name] then
+            assertTrue(rows[name] ~= nil, name .. " is live but docs/test-cases.md has no Totals row for it")
+        end
     end
 end)

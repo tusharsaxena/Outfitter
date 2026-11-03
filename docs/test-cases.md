@@ -64,7 +64,7 @@ Total.
 - database: the outfit root refuses a nil id, an unknown id and any other first segment
 - database: db.char starts in the §3.1 shape, and the outfit store's writes land in it
 
-### test_packaging.lua (8)
+### test_packaging.lua (14)
 
 - packaging: the package folder is the TOC basename and the addon's folder name
 - packaging: every maintainer file and folder is ignored
@@ -72,8 +72,14 @@ Total.
 - packaging: nothing the TOC loads is ignored
 - packaging: every media path the addon names resolves to a shipped file
 - packaging: every declared icon resolves to a shipped file under the package folder
+- packaging: the icon declaration is exactly what is drawn (design §1.4, P4.31)
 - packaging: each shipped icon set ships its license file beside it
 - packaging: the debug console's face resolves to a shipped font
+- packaging: SUITES holds one pending entry, test_refactor_pins for the P5 splits (P4.32)
+- packaging: docs/testing.md's suite table names every declared suite and nothing else (P4.32)
+- packaging: docs/testing.md maps the retired harness's 144 cases, suite by suite (design §9.4)
+- packaging: docs/module-map.md's Not shipped table names every helper in tests/ and tools/ (P4.32)
+- packaging: the README badge and docs/test-cases.md agree, a Totals row per live suite (testing-§5)
 
 ### test_vendor_sync.lua (3)
 
@@ -195,11 +201,20 @@ Total.
 - parity: every LibKa0s major the host leases has its parity row
 - parity: the degraded load resumes every module at login, and stands them down and up
 
-### test_perf_harness.lua (9)
+### test_perf_harness.lua (18)
 
 - perf: the descriptor declares the ten buckets in order, the SavedVariable and the one latch
 - perf: equipExecute is the one bucket declared within another, and within equipUpdate
-- perf: every declared bucket is reached, and equipExecute only within equipUpdate (skipped: P4.31: the ten bracketed paths (design §2.1) land in P4; the drivers are written with them)
+- perf: every declared bucket is reached, and equipExecute only within equipUpdate
+- perf scenes: the full-bag plan is one update with one change and one bag sync per step
+- perf scenes: 50 zone flips are 50 zone reads, and the battleground outfit follows them
+- perf scenes: the fan-out dispatches each of the 40 bindings once per edge
+- perf scenes: the tooltip pass draws 100 bag items and decorates the used ones
+- perf scenes: one genetic generation breeds 275 children over whole resumes
+- perf pairs: the measured figures agree, each off window's one-off inside its allowance
+- perf pairs: capture on allocating one small table per note fails, whatever the window
+- perf pairs: a 56-byte allocation per off-path bracket call fails in every scenario
+- perf pairs: a scenario too short to spread the window under one allocation a call is refused
 - perf: no shipped file notes a dynamic or undeclared bucket key
 - perf: Suspend takes the perf hold and stands the addon down; Resume stands it back up
 - perf: the disabled hold outlasts the perf hold, and its refusal wins
@@ -1492,13 +1507,13 @@ Total.
 | test_toc.lua | 5 |
 | test_loadorder.lua | 13 |
 | test_database.lua | 11 |
-| test_packaging.lua | 8 |
+| test_packaging.lua | 14 |
 | test_vendor_sync.lua | 3 |
 | test_secrets.lua | 42 |
 | test_bus.lua | 12 |
 | test_skinsetup.lua | 21 |
 | test_surface_parity.lua | 27 |
-| test_perf_harness.lua | 8 |
+| test_perf_harness.lua | 18 |
 | test_schema.lua | 25 |
 | test_settings.lua | 15 |
 | test_slash.lua | 44 |
@@ -1558,5 +1573,5 @@ Total.
 | test_diagnostics_contract.lua | 8 |
 | test_lizard_sighted.lua | 8 |
 | test_prose.lua | 15 |
-| Skipped | 3 |
-| **Total** | **1260** |
+| Skipped | 2 |
+| **Total** | **1276** |
