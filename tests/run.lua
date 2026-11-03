@@ -197,7 +197,7 @@ local SUITES = {
 
     { name = "test_credits" },
 
-    { name = "test_skin",             pending = "P4.30" },
+    { name = "test_skin" },
 
     { name = "test_refactor_pins",    pending = "P5 CCN splits" },
     { name = "test_skin_values", dir = "tests/_kit/" },

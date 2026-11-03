@@ -104,3 +104,17 @@ the surface it checks.
 |---|---|---|
 | X1 | A zhCN, zhTW, koKR and ruRU client | Text renders in the skin's face, or the D7 row is written (H8) |
 | X2 | The old Outfitter enabled too | One warning at login; `/of diagnostics` reports it |
+
+## 9. The skin switch (P4)
+
+The same surfaces `tests/skin_surfaces.lua` declares for the headless skin-switch suite (design §9.5),
+checked by eye in the client.
+
+| # | Check | Pass when |
+|---|---|---|
+| SK1 | Open the window with an outfit selected, the outfit bar, the icon chooser, and each dialog in turn (outfit, trigger with a field of each type, rebuild, the optimize progress); switch the skin from the Skin tab | Every one repaints at once with no `/reload`: the sheet button, the window and its scroll bar, a category, outfit and item row, the slot checkboxes in all three states, the footer buttons, the dialogs and their error line, the icon chooser, the bar, a bar button and its worn mark, the drag handle and the test strip |
+| SK2 | Hover an item that an outfit holds, with comparisons on | The compare tooltips wear the skin; the stock comparison tooltips beside them keep Blizzard's look |
+| SK3 | The character sheet under each skin | The sheet itself keeps Blizzard's look; only this addon's frames change |
+| SK4 | Item icons in the list, the icon chooser and the bar | Cropped with no art border showing; a 1 px edge in the window and in the icon chooser, the HUD edge on the bar |
+| SK5 | A dialog open over the window, then Escape twice | The dialog closes first, then the window |
+| SK6 | Another addon moves the character sheet with the window open | The sheet still moves, and the window follows it |

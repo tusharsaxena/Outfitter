@@ -201,9 +201,14 @@ function Win.Build()
 end
 
 --- The bus receivers, once per session; the bus record drops and replays them across a stand-down.
+--- And the skin's looks-changed listener: an item row's name wears its quality color, NS.QualityColor
+--- (the skin's q.* tokens), written at render rather than by a recorded primitive, so a skin switch
+--- marks the list for the follow tick's redraw (core/SkinSetup.lua: a surface that draws at render
+--- subscribes to NS.Skin.OnLooksChanged).
 function Win.Install()
     if installed then return end
     installed = true
+    NS.Skin.OnLooksChanged(function() Win.MarkDirty(false) end)
     local bus = NS.NewBusTarget()
     if not bus then return end
     for _, key in ipairs(DIRTY_ON) do
