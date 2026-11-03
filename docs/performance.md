@@ -11,8 +11,9 @@ descriptor, each bracketed at exactly one call site with the gated idiom (perfor
 test when capture is off. A trigger id, an outfit name or a slot never becomes a bucket name; it goes
 to `NS.Debug`.
 
-The buckets are declared ahead of their paths. Each call site lands with its module in P4, and
-`tests/test_perf_harness.lua` then drives every path once and asserts a non-zero count per bucket.
+Each call site sits in its module, and `tests/test_perf_harness.lua` drives every path on the whole
+addon and asserts a non-zero count per bucket, and that `equipExecute` is only ever noted while
+`E.Update` runs. The drivers are `tests/perf_scenes.lua`'s, the same ones the offline runner measures.
 
 | Bucket | `within` | Path | Why it is hot |
 |---|---|---|---|
@@ -60,20 +61,22 @@ by `/dev-copilot:wow-perf-analysis` from the report and the JSON line.
 ## Offline scenarios
 
 `tests/perf.lua` is the offline scenario runner (performance-§9). It measures bytes allocated and
-bracket notes per iteration, never wall-clock time, and sits outside the commit gate. Today it is the
-skeleton (the environment, the measuring loop, the report and the record); P4.31 adds the scenarios,
-each measured with capture off and on:
+bracket notes per iteration, never wall-clock time, and sits outside the commit gate. Each scenario
+runs on a whole addon of its own (every module real, items moving in the gear mock) and is measured
+with capture off and on:
 
-| Scenario | Path |
-|---|---|
-| Full-bag plan | `E.Update` over a full bag set (`equipUpdate`, `equipExecute`, `bagSync`) |
-| 50 battleground zone flips | The zone producer (`zoneUpdate`) |
-| Trigger fan-out, 40 outfits | One state change through `Binder.Dispatch` (`triggerDispatch`) |
-| Tooltip on 100 bag items | `Tooltips.OnItem` past its gates (`tooltipUsedBy`) |
-| One genetic generation | The optimizer's coroutine resumes (`optimizeStep`) |
+| Scenario | One step | Notes per step, capture on |
+|---|---|---|
+| `equipPlan` | A full-bag Warrior's weapon outfit worn or taken off at once: one `E.Update` with one change, the moved items' events, `Inv.Sync` | 3: `equipUpdate`, `equipExecute`, `bagSync` |
+| `zoneFlips` | 50 battleground zone flips (Warsong Gulch and the open world in turn) through the zone producer, a battleground outfit bound | 100: 50 `zoneUpdate`, 50 `triggerDispatch` |
+| `triggerFanout` | One `PLAYER_UPDATE_RESTING` edge through 40 outfits on the Resting trigger | 40 `triggerDispatch` |
+| `tooltips` | The "Used by outfits" line on 100 bag items | 100 `tooltipUsedBy` |
+| `gaGeneration` | One genetic generation: 275 children over whole resumes of the ticker, the search restarted every 20 steps | 3 `optimizeStep` |
 
-Each will carry a byte ceiling a little above its measured figure and a pinned note count; a ceiling
-is raised only by re-measuring and saying why. Its runs are kept in
+Each carries a byte ceiling a little above its measured figure and a pinned note count, and each
+pair must agree: capture off allocates nothing over capture on, and on no more than 64 bytes per
+step over off, beyond a one-off of up to 8 KB per measured window (`tests/perf.lua`'s header has the
+figures and why). A ceiling is raised only by re-measuring and saying why. The runs are kept in
 [`automated-tests/`](automated-tests/README.md), not in `perf-analysis/`.
 
 ## Complexity

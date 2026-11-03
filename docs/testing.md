@@ -82,13 +82,13 @@ the UI) join as their files land.
 | `test_toc` | The TOC header: field order, Title, version, IconTexture, SavedVariables, the CurseForge project, no retired fields |
 | `test_loadorder` | The runner's load list is the TOC's; every path exists; the folder order; the `LOAD-BEARING` lines; no legacy file back |
 | `test_database` | The store: the migration stamp, a raising step, the profile and char walks, no `gOutfitter_*` reader, both `resolveRoot` functions |
-| `test_packaging` | What reaches players: the package folder, every maintainer file ignored, nothing ignored loaded, every media path resolves |
+| `test_packaging` | What reaches players: the package folder, every maintainer file ignored, nothing ignored loaded, every media path resolves, the icon declaration is exactly what is drawn |
 | `test_vendor_sync` | `libs/LibKa0s/` and `tests/_kit/` are exactly the tag root `CLAUDE.md` names, icons pruned to its declaration |
 | `test_secrets` | The secret-value seam: the conversions, the bounded walk, the guards on both arms, the Compat accessors, the seam scan, and the engine on the whole login (secret links as empty slots, a secret level, the tooltip/compare/quick-slot/iteminfo guards, the balanced Equip count) |
 | `test_bus` | The full catalog, its wire names, exactly one sender per key over every call site |
 | `test_skinsetup` | The skin seam: the owner registration, the `of.*` tokens, the choice and the picker |
 | `test_surface_parity` | Every degrade stub carries the surface of what it stands in for; every leased major has its row; the degraded login resumes the whole graph and stands it down and up |
-| `test_perf_harness` | The ten buckets in order with the one nest, the `perf` verb, the latch's `perf` hold |
+| `test_perf_harness` | The ten buckets in order with the one nest, each reached on the whole addon (`equipExecute` only inside `E.Update`), the five offline scenarios doing what they are named for, the `perf` verb, the latch's `perf` hold |
 | `test_schema` | The settings rows, the write seam, its forward to the outfit instance, the reset's reach |
 | `test_settings` | Page registration and order, the General tabs, Master controls, the reset wording, the landing page |
 | `test_slash` | The reserved verbs, bare `/of`, help, the schema CLI, both chat commands, the macro-conditional wrapper |

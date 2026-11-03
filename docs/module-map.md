@@ -120,6 +120,7 @@ file. In outline:
 | `tests/skin_surfaces.lua` | The skin-switch suite's painted surfaces (skinning-§1) |
 | `tests/prose_waivers.lua` | What the US-English gate must not correct here, per file and per word |
 | `tests/perf.lua` | The offline perf scenarios, outside the gate |
+| `tests/perf_scenes.lua` | The drivers of the ten bracketed paths, shared by `tests/perf.lua` and `test_perf_harness` |
 | `tests/fixtures/legacy/` | Legacy behavior captured from the fork at `7ea3dc3` by `tools/legacy_capture.lua`; generated, never hand-edited |
 | `tests/_kit/` | The LibKa0s test kit, vendored byte-identical; never edited |
 | `tools/legacy_capture.lua` | Writes `tests/fixtures/legacy/` from a worktree of the fork |

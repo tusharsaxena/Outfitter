@@ -1,8 +1,10 @@
 -- tests/test_perf_harness.lua — the performance harness's wiring and the latch it stands the addon
--- down through (design §2.1, §5.12; performance-§1/§3/§6, testing-§8). The P3 C10 part: the ten
--- buckets declared in order with the one declared nesting, the descriptor's single teardown path, no
--- dynamic bucket key anywhere in the shipped source, and the perf hold making the addon inert. The
--- "every bucket is reached" case is a declared skip until P4.31, when the ten bracketed paths exist.
+-- down through (design §2.1, §5.12; performance-§1/§3/§6, testing-§8): the ten buckets declared in
+-- order with the one declared nesting, the descriptor's single teardown path, no dynamic bucket key
+-- anywhere in the shipped source, and the perf hold making the addon inert (P3 C10). P4.31 adds the
+-- reach: every bucket is noted when its path is driven on the whole addon, equipExecute only inside
+-- equipUpdate, and each of tests/perf.lua's five scenarios does the work it is named for. The
+-- drivers are tests/perf_scenes.lua's, the ones the offline runner measures.
 
 local T = _G.OUTFITTERREBORN_TEST
 local test, assertEqual, assertTrue, assertFalse, assertNil =
@@ -13,6 +15,9 @@ local BUCKETS = {
     "auraScan", "zoneUpdate", "bagSync", "equipUpdate", "equipExecute", "triggerDispatch",
     "optimizeStep", "dockFollow", "barRender", "tooltipUsedBy",
 }
+local DECLARED = {}
+for _, key in ipairs(BUCKETS) do DECLARED[key] = true end
+local ITEM_NAMES = { sword_1h = T.fixtures.items.db.sword_1h.name }
 
 -- ── the descriptor ─────────────────────────────────────────────────────────────────────────────
 
@@ -41,8 +46,136 @@ test("perf: equipExecute is the one bucket declared within another, and within e
     assertEqual(NS.Perf.BUCKET_WITHIN.equipExecute, "equipUpdate", "the library did not read the nesting")
 end)
 
+-- ── every bucket is reached ────────────────────────────────────────────────────────────────────
+
+local Scenes = dofile(T.root .. "/tests/perf_scenes.lua")({ root = T.root, load = T.load })
+
+--- Watch an instance's notes with capture on: `seen.counts[key]` per bucket, and `seen.outside` the
+--- equipExecute notes made while no E.Update was running. `seen.stop()` puts both seams back.
+local function watch(NS)
+    local seen = { counts = {}, outside = 0 }
+    local E, Perf = NS.Equip, NS.Perf
+    local update, note, depth = E.Update, Perf.Note, 0
+    E.Update = function(...)
+        depth = depth + 1
+        local stopped = update(...)
+        depth = depth - 1
+        return stopped
+    end
+    Perf.Note = function(key, ...)
+        seen.counts[key] = (seen.counts[key] or 0) + 1
+        if key == "equipExecute" and depth == 0 then seen.outside = seen.outside + 1 end
+        return note(key, ...)
+    end
+    Perf.on = true
+    function seen.stop()
+        Perf.on = false
+        E.Update, Perf.Note = update, note
+    end
+    return seen
+end
+
+--- Build `name`'s scene and run its step `n` times under watch.
+local function drive(name, n)
+    local step, NS, M, extra = Scenes[name]()
+    local seen = watch(NS)
+    local ok, err = pcall(function() for _ = 1, n do step() end end)
+    seen.stop()
+    if not ok then error(err, 0) end
+    return seen, NS, M, extra
+end
+
 test("perf: every declared bucket is reached, and equipExecute only within equipUpdate", function()
-end, "P4.31: the ten bracketed paths (design §2.1) land in P4; the drivers are written with them")
+    -- red under: dropping any one bracket's Perf.Note (e.g. Tooltips.OnItem's tooltipUsedBy), or
+    -- bracketing equipExecute in E.Execute instead of around its call in E.Update (the direct
+    -- Execute below then notes outside the update).
+    local total, outside = {}, 0
+    local names = {}
+    for _, name in ipairs(Scenes.PERF) do names[#names + 1] = name end
+    for _, name in ipairs(Scenes.OTHERS) do names[#names + 1] = name end
+    for _, name in ipairs(names) do
+        local seen = drive(name, 2)
+        for key, n in pairs(seen.counts) do total[key] = (total[key] or 0) + n end
+        outside = outside + seen.outside
+    end
+    for _, key in ipairs(BUCKETS) do
+        assertTrue((total[key] or 0) > 0, key .. " was never noted: its path is unbracketed or undriven")
+    end
+    for key in pairs(total) do
+        assertTrue(DECLARED[key] == true, "a note for an undeclared bucket: " .. key)
+    end
+    -- An Execute outside an update (the bank's deposit and withdraw) is no equipExecute.
+    local _, NS, M = Scenes.equipPlan()
+    local seen = watch(NS)
+    local _, at = M.__gear:find("sword_1h_b")
+    local change = { slot = "MainHandSlot", slotID = 16, to = { bag = at.bag, slot = at.slot }, unique = {} }
+    NS.Equip.Execute({ change }, NS.Moves.EmptyBagSlots())
+    seen.stop()
+    assertEqual(M.__gear:equipped("MainHandSlot").def.name, "Shortsword of Spies", "the direct Execute moved nothing")
+    outside = outside + seen.outside
+    assertEqual(outside, 0, "equipExecute noted outside equipUpdate")
+end)
+
+-- ── the five offline scenarios do what they are named for ─────────────────────────────────────
+
+test("perf scenes: the full-bag plan is one update with one change and one bag sync per step", function()
+    -- red under: an equipPlan step that leaves the throttle in force (no `M.__now` advance: the
+    -- second update stops at the throttle gate and executes nothing).
+    local seen, NS, M = drive("equipPlan", 4)
+    assertEqual(seen.counts.equipUpdate, 4)
+    assertEqual(seen.counts.equipExecute, 4)
+    assertEqual(seen.counts.bagSync, 4)
+    assertEqual(#NS.Moves.EmptyBagSlots(), 0, "the bags are not full: the plan is no full-bag plan")
+    assertEqual(M.__gear:equipped("MainHandSlot").def.name, ITEM_NAMES.sword_1h, "four swaps end where they began")
+    local printed = M.__printed()
+    assertEqual(#printed, 0, "the plan printed: " .. tostring(printed[1]))
+end)
+
+test("perf scenes: 50 zone flips are 50 zone reads, and the battleground outfit follows them", function()
+    local seen, NS = drive("zoneFlips", 1)
+    assertEqual(seen.counts.zoneUpdate, Scenes.FLIPS)
+    -- red under: a flip that never changes the instance (every read after the first takes the
+    -- early-out, and no zone state moves).
+    assertTrue((seen.counts.triggerDispatch or 0) >= Scenes.FLIPS, "the zone state never reached the binding")
+    assertFalse(NS.States.InZone("PVP_BATTLEGROUND"), "an even flip count ends in the open world")
+end)
+
+test("perf scenes: the fan-out dispatches each of the 40 bindings once per edge", function()
+    local seen, NS, _, ids = drive("triggerFanout", 3)
+    assertEqual(seen.counts.triggerDispatch, 3 * Scenes.FANOUT)
+    local worn = 0
+    for _, id in ipairs(ids) do
+        if NS.Stack.IsWorn(id) then worn = worn + 1 end
+    end
+    -- red under: a step that does not toggle IsResting (each dispatch unequips what is not worn).
+    assertEqual(worn, Scenes.FANOUT, "three edges end resting, with every outfit worn")
+end)
+
+test("perf scenes: the tooltip pass draws 100 bag items and decorates the used ones", function()
+    local seen, NS, M = drive("tooltips", 1)
+    assertEqual(seen.counts.tooltipUsedBy, Scenes.TOOLTIPS)
+    local tip = M.GameTooltip
+    local _, at = M.__gear:find("staff")
+    tip:SetBagItem(at.bag, at.slot)
+    M.__world:tooltipPostCall(M.Enum.TooltipDataType.Item, tip, nil)
+    local found = false
+    for i = 1, tip:NumLines() do
+        local s = tip["TextLeft" .. i]:GetText()
+        if type(s) == "string" and s:find("Caster", 1, true) then found = true end
+    end
+    assertTrue(found, "the staff's tooltip names no outfit: the pass decorates nothing")
+    assertTrue(NS.Outfits.FindByName("Caster") ~= nil)
+end)
+
+test("perf scenes: one genetic generation breeds 275 children over whole resumes", function()
+    local seen, NS = drive("gaGeneration", 4)
+    local P = NS.OptimizeGA.PARAMS
+    local job = NS.Optimize.Running()
+    assertTrue(job ~= nil, "no search is running")
+    -- red under: a step that resumes once (100 children) instead of breeding one generation's worth.
+    assertTrue(job.generated >= P.population + 4 * (P.population - P.parents), "fewer than four generations bred")
+    assertTrue(seen.counts.optimizeStep >= 4 * 2, "a generation in fewer than two resumes")
+end)
 
 -- ── no dynamic bucket key ──────────────────────────────────────────────────────────────────────
 

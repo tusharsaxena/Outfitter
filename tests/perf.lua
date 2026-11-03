@@ -7,16 +7,31 @@
 -- measured loop isolated by a full collect on either side with the collector stopped inside it.
 -- Timings are printed for orientation only: compare scenarios within a run, never across machines.
 --
--- THE SKELETON (P3 C10). The environment, the measuring loop, the report and the record are here;
--- the SCENARIOS are not, because none of the bracketed paths exists yet (core/PerfSetup.lua declares
--- the ten buckets ahead of them). P4.31 adds them, each measured with capture OFF and ON:
---   full-bag plan                 E.Update over a full bag set (equipUpdate, equipExecute, bagSync)
---   50 BG zone flips              the debounced zone producer (zoneUpdate)
---   trigger fan-out, 40 outfits   one state change through Binder.Dispatch (triggerDispatch)
---   tooltip on 100 bag items      Tooltips.OnItem past its gates (tooltipUsedBy)
---   one genetic generation        the optimizer's coroutine resumes (optimizeStep)
+-- THE SCENARIOS (P4.31), each measured with capture OFF and ON on a whole addon of its own. Their
+-- drivers are tests/perf_scenes.lua's, which tests/test_perf_harness.lua proves reach their buckets:
+--   equipPlan      full-bag plan: one E.Update with one change, its events and Inv.Sync
+--                  (equipUpdate, equipExecute, bagSync)
+--   zoneFlips      50 BG zone flips through the zone producer (zoneUpdate; the battleground
+--                  outfit's binding dispatches on each state edge, triggerDispatch)
+--   triggerFanout  one PLAYER_UPDATE_RESTING edge through 40 bindings (triggerDispatch)
+--   tooltips       the "Used by outfits" line on 100 bag items (tooltipUsedBy)
+--   gaGeneration   one genetic generation, 275 children over whole resumes (optimizeStep)
 -- with a ceiling per scenario in BYTE_CEILING and a pinned note count in NOTES_PER_ITER. A ceiling
--- sits a little above the measured figure; raise one only by re-measuring and saying why.
+-- sits a little above the measured figure; raise one only by re-measuring and saying why: a rise is
+-- the finding.
+--
+-- CEILINGS. Measured 2026-11-04 on Lua 5.1, identical over repeat runs and in both halves of every
+-- pair: equipPlan 224032, zoneFlips 149134, triggerFanout 119534, tooltips 138494, gaGeneration
+-- 468148 bytes/iter. Each ceiling is about 2% over its figure. The figures are large because a step
+-- is a whole path on the real addon (an equipment update builds its change list and moves items
+-- through mock_gear; a generation breeds 300 children) and include the mocks' own recording.
+--
+-- ITERATIONS. ITERS[scene] steps per measured loop (N when absent): a step of the zone, fan-out,
+-- tooltip and genetic scenes is 40 to 275 calls of its path, so they take fewer steps.
+--
+-- WHAT THE BYTES INCLUDE. The mocks record as they go (M.__timers takes a queue entry per armed
+-- timer, mock_gear its event queue per move, the printed list each chat line), so a figure is the
+-- addon's allocation plus the recorder's, the same in both halves of a pair.
 
 local root = (arg and arg[0] and arg[0]:match("^(.*)/tests/perf%.lua$")) or "."
 package.path = root .. "/tests/?.lua;" .. package.path
@@ -28,14 +43,38 @@ Loader.addonName = "OutfitterReborn"
 local N = 2000
 local USAGE = "usage: lua tests/perf.lua [--out <path>] [--label <text>]\n"
 
--- Per scenario: the bytes/iter ceiling and the bracket notes/iter it is pinned at. Empty until P4.31.
-local BYTE_CEILING = {}
-local NOTES_PER_ITER = {}
+local ITERS = { equipPlan = 500, zoneFlips = 50, triggerFanout = 100, tooltips = 50, gaGeneration = 40 }
+
+-- Per scenario: the bytes/iter ceiling and the bracket notes/iter it is pinned at.
+local BYTE_CEILING = {
+    equipPlanCaptureOff = 229000, equipPlanCaptureOn = 229000,
+    zoneFlipsCaptureOff = 152000, zoneFlipsCaptureOn = 152000,
+    triggerFanoutCaptureOff = 122000, triggerFanoutCaptureOn = 122000,
+    tooltipsCaptureOff = 141000, tooltipsCaptureOn = 141000,
+    gaGenerationCaptureOff = 478000, gaGenerationCaptureOn = 478000,
+}
+local NOTES_PER_ITER = {
+    equipPlanCaptureOff = 0, equipPlanCaptureOn = 3,            -- equipUpdate, equipExecute, bagSync
+    zoneFlipsCaptureOff = 0, zoneFlipsCaptureOn = 100,          -- 50 zoneUpdate, 50 triggerDispatch
+    triggerFanoutCaptureOff = 0, triggerFanoutCaptureOn = 40,   -- one triggerDispatch per binding
+    tooltipsCaptureOff = 0, tooltipsCaptureOn = 100,            -- one tooltipUsedBy per item
+    gaGenerationCaptureOff = 0, gaGenerationCaptureOn = 3,      -- three 100-child resumes
+}
 -- The capture-off/capture-on pairs: off may allocate nothing over on, and on no more than PAIR_SLACK
 -- over off (the zero-overhead evidence performance-§2 asks for).
-local PAIRS = {}
+local PAIRS = {
+    equipPlanCaptureOff = "equipPlanCaptureOn", zoneFlipsCaptureOff = "zoneFlipsCaptureOn",
+    triggerFanoutCaptureOff = "triggerFanoutCaptureOn", tooltipsCaptureOff = "tooltipsCaptureOn",
+    gaGenerationCaptureOff = "gaGenerationCaptureOn",
+}
 local PAIR_SLACK = 64
 local PAIR_NOISE = 1
+-- A one-off growth per measured window, not per iteration: zoneFlips' off window carried 4128 bytes
+-- its on window did not (82.6 bytes/iter over 50, 68.8 over 60: the same total), and where it lands
+-- moved with the load path's length and with an extra window run first. An allocation on the off
+-- path itself would grow with the iterations, so a window's figure may exceed its pair's by this
+-- much in total, spread over its iterations, and no more (either way: it is no note's cost).
+local PAIR_WINDOW_BYTES = 8192
 
 local opts = { out = nil, label = "offline" }
 do
@@ -60,8 +99,12 @@ local LIB_FILES = Loader.xmlFiles(root .. "/libs/LibKa0s/LibKa0s.xml")
 local ADDON_FILES = {}
 for i, rel in ipairs(Loader.tocFiles(root .. "/OutfitterReborn.toc")) do ADDON_FILES[i] = root .. "/" .. rel end
 
-local function loadInstance()
+-- The client's load and login, as tests/run.lua's T.load gives it: `o.mutate(mocks)` runs before
+-- anything loads, and PLAYER_LOGIN reaches the skin library's retry frame beside OnEnable.
+local function loadInstance(o)
+    o = o or {}
     local mocks = mockmod.build()
+    if o.mutate then o.mutate(mocks) end
     mocks._G = Loader.makeEnv(mocks)
     _G.OutfitterRebornDB, _G.OutfitterRebornPerfDB = nil, nil
     local NS = {}
@@ -69,11 +112,15 @@ local function loadInstance()
     Loader.loadAll(ADDON_FILES, NS, mocks)
     local AceAddon = mocks.LibStub("AceAddon-3.0")
     AceAddon:InitializeAddon(NS)
+    local skin = mocks.LibStub("LibKa0s-Skin-1.0", true)
+    local retry = skin and skin.__euiEventFrame
+    if retry and retry.__fire then retry:__fire("OnEvent", "PLAYER_LOGIN") end
     AceAddon:EnableAddon(NS)
     if mocks.__fireTimers then mocks.__fireTimers() end
     return { NS = NS, mocks = mocks }
 end
 
+local Scenes = dofile(root .. "/tests/perf_scenes.lua")({ root = root, load = loadInstance })
 local NS = loadInstance().NS
 
 local failures = {}
@@ -81,12 +128,15 @@ local function check(ok, msg) if not ok then failures[#failures + 1] = msg end e
 
 check(NS.Perf.BuildRecord ~= nil, "NS.Perf is the degradation stub: every scenario would measure a stub")
 
--- Count the bracket's notes without allocating: a counter, not a list.
+-- Count the bracket's notes without allocating: a counter, not a list. Each scene's instance gets the
+-- counter on its own NS.Perf.
 local notes = 0
-local realNote = NS.Perf.Note
-NS.Perf.Note = function(key, ms, parent)
-    notes = notes + 1
-    return realNote(key, ms, parent)
+local function countNotes(perf)
+    local real = perf.Note
+    perf.Note = function(key, ms, parent)
+        notes = notes + 1
+        return real(key, ms, parent)
+    end
 end
 
 local results = {}
@@ -97,12 +147,18 @@ local function loop(n, fn)
 end
 
 -- A step this large either way is a table rehashing with the collector stopped, far past anything
--- one call of a bracketed path allocates: skipped, so it bills neither half of a pair.
-local REHASH_KB = 64
+-- one step of a scenario allocates (the heaviest, gaGeneration, is about 480 KB): skipped, so it
+-- bills neither half of a pair.
+local REHASH_KB = 1024
 
---- Run `fn` n times after a warm-up of the same length, the collector stopped inside the loop.
+--- Run `fn` n times after a warm-up of the same length, the collector stopped inside the loop. A
+--- second warm-up with the collector stopped keeps nothing and lets a table that only grows while it
+--- is stopped reach its size there, so neither half of a pair is billed for that rehash.
 local function measure(name, n, fn)
     loop(n, fn)
+    collectgarbage("collect"); collectgarbage("stop")
+    loop(n, fn)
+    collectgarbage("restart")
     notes = 0
     collectgarbage("collect"); collectgarbage("collect")
     collectgarbage("stop")
@@ -123,20 +179,40 @@ local function measure(name, n, fn)
     }
 end
 
---- One scenario measured with capture off, then on. P4.31's scenarios call this.
-local function pair(base, fn)
-    NS.Perf.on = false
-    measure(base .. "CaptureOff", N, fn)
-    NS.Perf.on = true
-    measure(base .. "CaptureOn", N, fn)
-    NS.Perf.on = false
+--- One stopped-collector pass in each capture mode, recording nothing: the first window measured on
+--- a fresh scene came in heavier than the later ones (triggerFanout by 3 bytes/iter), so the scene is
+--- settled before either half is measured.
+local function settle(perf, n, fn)
+    for _, on in ipairs({ false, true }) do
+        perf.on = on
+        collectgarbage("collect"); collectgarbage("stop")
+        loop(n, fn)
+        collectgarbage("restart")
+    end
 end
-local _ = pair
+
+--- One scenario measured with capture off, then on, on the instance `perf` belongs to.
+local function pair(perf, base, n, fn)
+    settle(perf, n, fn)
+    perf.on = false
+    measure(base .. "CaptureOff", n, fn)
+    perf.on = true
+    measure(base .. "CaptureOn", n, fn)
+    perf.on = false
+end
 
 -- ── scenarios ───────────────────────────────────────────────────────────────────────────────────
--- None yet (P4.31; see the header).
 
-NS.Perf.Note = realNote
+for _, name in ipairs(Scenes.PERF) do
+    local ok, step, sceneNS = pcall(Scenes[name])
+    check(ok, ("the %s scene did not build: %s"):format(name, tostring(step)))
+    if ok then
+        check(sceneNS.Perf.BuildRecord ~= nil, name .. ": NS.Perf is the degradation stub")
+        countNotes(sceneNS.Perf)
+        local ran, err = pcall(pair, sceneNS.Perf, name, ITERS[name] or N, step)
+        check(ran, ("the %s scene raised: %s"):format(name, tostring(err)))
+    end
+end
 
 for _, r in ipairs(results) do
     local ceiling = BYTE_CEILING[r.name]
@@ -153,10 +229,10 @@ for offName, onName in pairs(PAIRS) do
     local off, on = byName[offName], byName[onName]
     check(off ~= nil and on ~= nil, ("the pair %s / %s was not measured"):format(offName, onName))
     if off and on then
-        check(off.bytesPerIter <= on.bytesPerIter + PAIR_NOISE,
+        check(off.bytesPerIter <= on.bytesPerIter + PAIR_NOISE + PAIR_WINDOW_BYTES / off.iterations,
             ("%s allocated %.1f bytes/iter, more than %s's %.1f: the off bracket is not free"):format(
                 offName, off.bytesPerIter, onName, on.bytesPerIter))
-        check(on.bytesPerIter <= off.bytesPerIter + PAIR_SLACK,
+        check(on.bytesPerIter <= off.bytesPerIter + PAIR_SLACK + PAIR_WINDOW_BYTES / on.iterations,
             ("%s allocated %.1f bytes/iter, over %s's %.1f by more than %d"):format(
                 onName, on.bytesPerIter, offName, off.bytesPerIter, PAIR_SLACK))
     end
@@ -173,7 +249,6 @@ for _, r in ipairs(results) do
     print(("%-24s %8d %11.5f %10.2f %11.1f"):format(r.name, r.iterations, r.msPerIter, r.notesPerIter, r.bytesPerIter))
 end
 print()
-if #results == 0 then print("no scenarios yet \226\128\148 they land with the bracketed paths (P4.31)") end
 print("timings are for orientation only \226\128\148 compare scenarios within a run, never across machines")
 if #failures > 0 then
     print()

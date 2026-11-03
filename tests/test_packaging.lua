@@ -137,6 +137,50 @@ test("packaging: every declared icon resolves to a shipped file under the packag
     end
 end)
 
+-- Every icon name a literal in `src` hands NS.Icon: each string in the call's parentheses, so the
+-- window's `NS.Icon(e.collapsed and "chevron-right" or "chevron-down")` yields both. Comments are
+-- stripped first, so a documented call is not one.
+local function iconCalls(src, into)
+    for line in (src .. "\n"):gmatch("([^\n]*)\n") do
+        local code = line:gsub("%-%-.*$", "")
+        for args in code:gmatch("NS%.Icon(%b())") do
+            for name in args:gmatch('"([%w:%-]+)"') do into[name] = true end
+        end
+    end
+    return into
+end
+
+local function readFile(rel)
+    local f = assert(io.open(T.root .. "/" .. rel, "rb"))
+    local src = f:read("*a")
+    f:close()
+    return src
+end
+
+test("packaging: the icon declaration is exactly what is drawn (design §1.4, P4.31)", function()
+    -- red under: a declared name nothing draws (`edit` back on the CLAUDE.md line), or a new
+    -- `NS.Icon("search")` with the line left alone (the pruned payload lacks the file).
+    local drawn = {}
+    -- The scanner itself first, or an empty scan proves nothing.
+    local probe = iconCalls('x(NS.Icon(a and "b" or "c")) -- NS.Icon("d")', {})
+    assertTrue(probe.b and probe.c and not probe.d, "the call scanner misreads a ternary or a comment")
+    for _, rel in ipairs(T.loadedAddonFiles) do iconCalls(readFile(rel), drawn) end
+    -- What the library draws for this addon: the marks every host owes (the kit's list) and the debug
+    -- console's title-bar buttons (NS.DebugLog), read out of the vendored window.
+    local VendorSync = dofile(T.root .. "/tests/_kit/vendor_sync.lua")
+    for _, name in ipairs(VendorSync.LIBRARY_MARKS) do drawn[name] = true end
+    local console = readFile("libs/LibKa0s/DebugLogWindow.lua")
+    local buttons = 0
+    for name in console:gmatch('makeIconButton%(titleBar, spec%.addonName, "([%w:%-]+)"') do
+        drawn[name], buttons = true, buttons + 1
+    end
+    assertEqual(buttons, 2, "the debug console's clear and copy buttons were not found")
+    local declared = {}
+    for _, name in ipairs(declaredIcons()) do declared[name] = true end
+    for name in pairs(drawn) do assertTrue(declared[name] == true, name .. " is drawn but not declared") end
+    for name in pairs(declared) do assertTrue(drawn[name] == true, name .. " is declared but nothing draws it") end
+end)
+
 test("packaging: each shipped icon set ships its license file beside it", function()
     local _, list = pkgmeta()
     local LICENSES = {
