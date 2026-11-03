@@ -178,10 +178,10 @@ local SUITES = {
     { name = "test_triggers_class",   pending = "P4.16d" },
     { name = "test_triggers_pvp",     pending = "P4.16d" },
 
-    { name = "test_dock",             pending = "P4.19" },
-    { name = "test_list_model",       pending = "P4.19" },
-    { name = "test_rows_secure",      pending = "P4.19" },
-    { name = "test_slot_enables",     pending = "P4.19" },
+    { name = "test_dock" },
+    { name = "test_list_model" },
+    { name = "test_rows_secure" },
+    { name = "test_slot_enables" },
 
     { name = "test_bar",              pending = "P4.20" },
 
