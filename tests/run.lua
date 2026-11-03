@@ -183,7 +183,7 @@ local SUITES = {
     { name = "test_rows_secure" },
     { name = "test_slot_enables" },
 
-    { name = "test_bar",              pending = "P4.20" },
+    { name = "test_bar" },
 
     { name = "test_triggers_parity",  pending = "P4.16e" },
 

@@ -44,6 +44,10 @@ L["Stored in the Equipment Manager"] = "Stored in the Equipment Manager"
 L["Outfits can't be changed in combat."] = "Outfits can't be changed in combat."
 
 -- P4.20 keys (modules/Bar.lua, modules/Bar_Buttons.lua)
+L["Outfit bar"] = "Outfit bar"
+L["Drag to move. Right-click for bar settings."] = "Drag to move. Right-click for bar settings."
+L["Sample outfit (test mode). Nothing is equipped."] = "Sample outfit (test mode). Nothing is equipped."
+L["Test mode: sample outfits. Nothing is equipped or saved"] = "Test mode: sample outfits. Nothing is equipped or saved"
 
 -- P4.21 keys (modules/OutfitMenu.lua, modules/UIDialogs.lua, modules/Dialog_*.lua, modules/Popups.lua, modules/IconChooser.lua)
 
