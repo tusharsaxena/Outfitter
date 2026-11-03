@@ -114,6 +114,7 @@ local SUITES = {
     "test_bus",
     "test_skinsetup",
     "test_surface_parity",
+    "test_perf_harness",
     { name = "test_skin_values", dir = "tests/_kit/" },
     { name = "test_skin_switch", dir = "tests/_kit/" },
     { name = "test_eol", dir = "tests/_kit/" },
