@@ -416,6 +416,36 @@ test("em: StoreOnServer makes the set from the outfit's slots and carries every 
     assertEqual(NS.Stack.Selected(), newId)
 end)
 
+test("em: StoreOnServer refuses a name a set or another mirror already holds", function()
+    local NS, M, EM = scene()
+    EM.Sync()
+    local O = NS.Outfits
+    local by, n0 = mirrors(NS)
+    local native = O.Create("Tank", { HeadSlot = { id = 0 } })
+    O.SetBinding(native, 2)
+    local creates, saves = calls(M, "CreateEquipmentSet"), calls(M, "SaveEquipmentSet")
+    local ok, popup, newId = EM.StoreOnServer(native)
+    -- red under: no name check (a second mirror on Tank's set, the native outfit deleted).
+    assertFalse(ok)
+    assertNil(popup)
+    assertNil(newId)
+    assertTrue(printed(M, "That name is already used"))
+    assertEqual(O.Get(native).kind, "native", "the native outfit stays")
+    assertEqual(O.BindingOf(native), 2)
+    assertEqual(calls(M, "CreateEquipmentSet"), creates)
+    assertEqual(calls(M, "SaveEquipmentSet"), saves)
+    local after, n = mirrors(NS)
+    assertEqual(after.Tank, by.Tank)
+    assertEqual(n, n0)
+    -- Two names that meet once cut to 31 bytes: the second is refused too.
+    local long = ("Raid Gear "):rep(4)
+    assertTrue((EM.StoreOnServer(O.Create(long, { HeadSlot = { id = 0 } }))))
+    local twin = O.Create(long .. "!", { HeadSlot = { id = 0 } })
+    -- red under: no name check (the cut name is the first one's set).
+    assertFalse((EM.StoreOnServer(twin)))
+    assertEqual(O.Get(twin).kind, "native")
+end)
+
 test("em: StoreOnServer at the cap answers the EM-full popup and changes nothing", function()
     local NS, M, EM = scene()
     M.MAX_EQUIPMENT_SETS_PER_PLAYER = 2
@@ -482,6 +512,22 @@ test("em: SetItems wears the items and saves them on SWAP_COMPLETE", function()
     assertNil(items.MainHandSlot, "the slots come from the items")
     NS.SendBus(NS.MSG.SWAP_COMPLETE)
     assertEqual(calls(M, "SaveEquipmentSet"), saves + 1, "one save per rebuild")
+end)
+
+test("em: a rebuild that moves nothing saves once its update has run", function()
+    local NS, M, EM = scene()
+    EM.Sync()
+    local by = mirrors(NS)
+    local rec = NS.Outfits.Get(by["Big Sword"])
+    local want = { HeadSlot = NS.ItemInfo.Snapshot(NS.ItemInfo.FromSlot("HeadSlot")) }
+    local saves = calls(M, "SaveEquipmentSet")
+    EM.SetItems(rec, want)
+    EM.__state.timer.cancelled = true   -- the mock fires every timer at once: the 10 s cancel is held off
+    for _ = 1, 10 do M.__fireTimers(); M.__gear:deliver() end
+    -- red under: SWAP_COMPLETE sent only from INVENTORY_CHANGED (nothing moves, nothing fires,
+    -- and the 10 s cancel then drops the save).
+    assertEqual(calls(M, "SaveEquipmentSet"), saves + 1)
+    assertNil(EM.__state.pending)
 end)
 
 test("em: a pending save is dropped after 10 s, by a stand-down, and by a slot edit", function()

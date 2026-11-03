@@ -27,7 +27,8 @@ end
 
 -- The outfit stack, as P4.9 will answer it: Compile hands back `compiled`.
 local function fakeStack(NS, compiled)
-    return T.fake(NS, "Stack", { Compile = function() return compiled or {} end, SetExpected = true })
+    return T.fake(NS, "Stack", { Compile = function() return compiled or {} end, SetExpected = true,
+                                CheckComplete = true })
 end
 
 local function printedMatching(M, needle)

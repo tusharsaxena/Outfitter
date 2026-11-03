@@ -20,5 +20,8 @@ return {
         -- The same field: tests/test_equip_bracket.lua asserts the pending update's AceTimer handle
         -- carries `cancelled` once Suspend has taken it back.
         ["tests/test_equip_bracket.lua"] = { cancelled = true },
+        -- The same field: tests/test_em_sync.lua sets it on the rebuild's 10 s AceTimer handle so the
+        -- mock, which fires every queued timer at once, holds that cancel off.
+        ["tests/test_em_sync.lua"] = { cancelled = true },
     },
 }

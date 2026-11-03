@@ -399,9 +399,21 @@ local function replace(oldId, newId)
     NS.Outfits.Delete(oldId)
 end
 
+-- A set of that name, or another mirror of it (case-insensitively): CreateEquipmentSet would make
+-- nothing and the store would mirror the existing set a second time.
+local function nameTaken(id, name)
+    if Compat.EMSetID(name) then return true end
+    local lower = name:lower()
+    for otherId, other in pairs(mirrors()) do
+        if otherId ~= id and type(other.name) == "string" and other.name:lower() == lower then return true end
+    end
+    return false
+end
+
 --- Store a native outfit on the server: a set from its slots (the name cut to 31 bytes, the icon its
 --- own or 134400), mirrored by an em outfit that carries its settings (B17) and binding, worn and
---- selected; then the native outfit is deleted. Refused at the client's cap with the EM-full popup.
+--- selected; then the native outfit is deleted. Refused at the client's cap with the EM-full popup,
+--- and with a line when a set or another mirror already holds the cut name (O.Rename's rule).
 --- @param id string
 --- @return boolean ok, string|nil popupKey, string|nil newId
 function EM.StoreOnServer(id)
@@ -410,6 +422,10 @@ function EM.StoreOnServer(id)
     if not rec or rec.kind == "em" then return false end
     if Compat.EMNumSets() >= Compat.EMMaxSets() then return false, "OUTFITTERREBORN_EM_FULL" end
     local name = EM.TruncateName(rec.name or "")
+    if nameTaken(id, name) then
+        NS.Print(L["That name is already used"])
+        return false
+    end
     EM.SetSlotsFromItems(O.Items(rec))
     withSaving(Compat.EMCreateSet, name, rec.icon or NO_ICON)
     local setID = Compat.EMSetID(name)

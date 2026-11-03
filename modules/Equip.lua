@@ -21,7 +21,7 @@ local _, NS = ...
 -- SFX CVar for the swap and ALWAYS restores it, a raise included (B8, INV §16 #13), after clearing
 -- the cursor.
 --
--- CALLS (at call time, no nil guard; design §12): NS.Stack.Compile/SetExpected and NS.EM.Sync (the
+-- CALLS (at call time, no nil guard; design §12): NS.Stack.Compile/SetExpected/CheckComplete and NS.EM.Sync (the
 -- PLAYER_ENTERING_WORLD batch); NS.PlayerState, NS.Inventory, NS.Changes, NS.Moves.
 
 local E = {}
@@ -233,6 +233,7 @@ function E.Update()
         end
         St.SetExpected(compiled)
         PS.SetInterruptCasting(false)
+        if #changes == 0 then St.CheckComplete() end
     end
     if t0 then Perf.Note("equipUpdate", debugprofilestop() - t0) end
     return stopped

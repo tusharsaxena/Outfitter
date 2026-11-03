@@ -11,7 +11,8 @@ local _, NS = ...
 --   3. anything left is a hand swap: with a selection and the window open it is recorded into the
 --      selected outfit ("Adding %s to %s outfit"), else it goes into the temporary outfit on top;
 --      either way the expected outfit takes it;
---   4. with no update pending and the worn gear the expected outfit, SWAP_COMPLETE.
+--   4. with no update pending and the worn gear the expected outfit, SWAP_COMPLETE (also sent by
+--      St.CheckComplete after an Equip.Update that had nothing to move).
 --
 -- THE TEMPORARY OUTFIT (UpdateTemporaryOutfit) merges into the top temp entry or becomes a new one,
 -- then loses what the stack below it already expects; an emptied one leaves the stack.
@@ -147,6 +148,14 @@ function St.OnInventoryChanged()
         if next(newItems) ~= nil then absorb(newItems, prev, cache) end
     end
     if not NS.Equip.Pending() and sameOutfit(now, St.Expected(), cache) then
+        NS.SendBus(NS.MSG.SWAP_COMPLETE)
+    end
+end
+
+--- An update that ran with nothing to move: no INVENTORY_CHANGED follows it, so the Watch's step 4
+--- runs here (an EM rebuild of gear already worn saves at once rather than at its 10 s cancel).
+function St.CheckComplete()
+    if not NS.Equip.Pending() and sameOutfit(snapshotWorn(), St.Expected(), NS.Inventory.Cache()) then
         NS.SendBus(NS.MSG.SWAP_COMPLETE)
     end
 end

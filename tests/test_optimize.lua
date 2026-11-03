@@ -120,8 +120,9 @@ end
 -- ── the simple search (legacy pins) ───────────────────────────────────────────────────────────
 
 test("optimize: the simple picks equal the legacy smart fixtures (STA, ITEM_LEVEL)", function()
-    -- red under: drop the BoE skip, the alternate-slot bump, the 2H-versus-pair compare, or the
-    -- ITEM_LEVEL non-empty main hand rule (each breaks one fixture case)
+    -- red under: drop the BoE skip, the alternate-slot bump or the 2H-versus-pair compare (each breaks
+    -- one fixture case). No fixture case depends on the ITEM_LEVEL list or the needsMainHand gate: each
+    -- has its own case below.
     for _, case in ipairs(T.legacy.plans.smart) do
         local NS = T.load().NS
         local infos = {}
@@ -157,6 +158,15 @@ test("optimize: ITEM_LEVEL never leaves the main hand empty where STA would", fu
         { MainHandSlot = 31, SecondaryHandSlot = 32 }, "ITEM_LEVEL")
 end)
 
+test("optimize: a dual wielder's only one-hander goes in the main hand, not the off hand", function()
+    -- red under: drop pairAllowed's needsMainHand gate (the empty main hand and the weapon in the off
+    -- hand comes first of the equal pairs)
+    local NS = T.load().NS
+    fakeStats(NS, { STA = { [61] = 5 } })
+    sameMap(ids(run(NS, "one", { { stat = "STA" } }, { item(61, "INVTYPE_WEAPON") })[1].items),
+        { MainHandSlot = 61 })
+end)
+
 test("optimize: a one-hander goes in the off hand only when the player can dual wield (B15)", function()
     -- red under: drop the PS.CanDualWield gate on the weapon-in-off-hand pairs
     local inst = T.load()
@@ -170,6 +180,7 @@ test("optimize: a one-hander goes in the off hand only when the player can dual 
 end)
 
 test("optimize: an empty simple result is delivered as nil, \"empty\" unless empties are allowed", function()
+    -- red under: drop deliverItems' empty check (the empty table is delivered when empties are not allowed)
     local NS = T.load().NS
     fakeStats(NS, { STA = {} })
     local calls = run(NS, "e", { { stat = "STA" } }, { item(51, "INVTYPE_HEAD") })
@@ -208,6 +219,7 @@ test("optimize: an unknown stat returns nil and the message, and delivers nothin
 end)
 
 test("optimize: complex is #cfg > 1, a min or a max, or a stat marked complex", function()
+    -- red under: an isComplex that answers true (a single plain row goes to the genetic search)
     local NS = T.load().NS
     local stats = fakeStats(NS, { A = { [71] = 1 }, B = { [71] = 1 } })
     local function complex(cfg) local _, job = run(NS, "c", cfg, { item(71, "INVTYPE_HEAD") }) return job.complex end
@@ -337,6 +349,7 @@ test("optimize: without dual wield the genetic search leaves the off hand empty 
 end)
 
 test("optimize: a two-hander empties the off hand in the genetic search unless gripped", function()
+    -- red under: drop the genetic search's ungripped two-hander rule (fixHands keeps the shield)
     local inst = T.load()
     local NS, M = inst.NS, inst.mocks
     local scores = { A = { [131] = 10, [132] = 3 }, B = { [131] = 0, [132] = 0 } }
@@ -416,6 +429,7 @@ test("optimize: a zero elapsed time prints a finite rate (B16)", function()
 end)
 
 test("optimize: STARTED and DONE bracket the genetic search", function()
+    -- red under: a deliver that leaves Running() on the finished genetic job
     local inst = T.load()
     local NS, M = inst.NS, inst.mocks
     fakeStats(NS, GA_SCORES)
@@ -558,6 +572,7 @@ test("optimize: Rebuild of a Complete outfit keeps its old items where the resul
 end)
 
 test("optimize: Rebuild of an Accessory outfit takes the result as it is", function()
+    -- red under: merge the old items for every outfit, not only a Complete one
     local NS = rebuildScene()
     local id = NS.Outfits.Create("Bits", { NeckSlot = { id = 5 } })
     NS.Optimize.Rebuild(id, { { stat = "STA" } })
@@ -575,6 +590,7 @@ test("optimize: Rebuild reads the outfit's own stat cfg when none is passed", fu
 end)
 
 test("optimize: Rebuild of an EM outfit goes through EM.SetItems, which wears it", function()
+    -- red under: fall through from EM.SetItems to O.SetItems and NS.Stack.Wear
     local NS, stack = rebuildScene()
     local em = T.fake(NS, "EM", { Items = function() return { NeckSlot = { id = 5 } } end, SetItems = true })
     local id = NS.Outfits.Create("Set", {}, { kind = "em", setID = 3 })
@@ -588,6 +604,8 @@ test("optimize: Rebuild of an EM outfit goes through EM.SetItems, which wears it
 end)
 
 test("optimize: Rebuild with nothing to pick says so and leaves the outfit alone", function()
+    -- red under: apply an empty result (the outfit emptied and worn), or drop Rebuild's unknown-outfit
+    -- guard (it raises on a nil record)
     local inst = T.load()
     local NS, M = inst.NS, inst.mocks
     fakeStats(NS, { STA = {} })
