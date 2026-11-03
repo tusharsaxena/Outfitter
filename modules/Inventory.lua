@@ -463,9 +463,12 @@ local function ensureRegistrants()
     end
 end
 
---- The lifecycle's stand-down (design §5.12): every registration and the pending sync go.
+--- The lifecycle's stand-down (design §5.12): every registration and the pending sync go, and the
+--- bank reads as closed. No BANKFRAME_CLOSED is heard while down, so a bank open at the stand-down
+--- would otherwise stay in the scan after it closed; failing closed, the next open reopens it.
 function Inv.Suspend()
     active = false
+    bankOpen = false
     if events then
         events:UnregisterAllEvents()
         if syncTimer then events:CancelTimer(syncTimer) end

@@ -146,6 +146,7 @@ test("reset: Delete all refuses in combat and while stood down, and changes noth
     T.fake(NS, "PlayerState", { InCombat = function() return false end, Suspend = true, Resume = true })
     NS.SetByPath("enabled", false)
     ok, why = NS.Outfits.DeleteAll()
+    -- red under: DeleteAll without its NS.StoodDownRefusal() check (the wipe runs while stood down).
     assertFalse(ok); assertEqual(why, NS.StoodDownRefusal())
     assertTrue(NS.Outfits.Get(a) ~= nil)
     assertEqual(#seq, 0, "a refused delete called the engine")

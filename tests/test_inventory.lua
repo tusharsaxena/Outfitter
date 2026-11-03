@@ -89,6 +89,22 @@ test("inventory: with the bank open the character tabs join, and they make the b
     assertEqual(#I.BagIDs(), 6, "closed again: the bank tabs leave the range")
 end)
 
+test("inventory: a stand-down with the bank open fails closed, so a bank closed while down leaves the scan", function()
+    local inst = gearInstance("bank_closed")
+    running(inst)
+    local I = inst.NS.Inventory
+    inst.mocks.__gear:openBank()
+    assertTrue(I.BankOpen())
+    I.Suspend()
+    inst.mocks.__gear:closeBank()   -- BANKFRAME_CLOSED goes unheard: nothing is registered
+    I.Resume()
+    -- red under: Suspend leaving bankOpen alone (the closed bank's tabs stay in the scan).
+    assertFalse(I.BankOpen(), "the stand-down closed the bank flag")
+    assertEqual(#I.BagIDs(), 6, "the bank tabs left the range")
+    inst.mocks.__gear:openBank()
+    assertTrue(I.BankOpen(), "the next open reopens it")
+end)
+
 test("inventory: a banked item reads missing while the bank is closed, banked once it opens", function()
     local inst = gearInstance("bank_closed")
     running(inst)

@@ -276,6 +276,21 @@ test("schema: the wildcard icon 134400 and an empty trigger id store as absent (
     assertNil(NSi.Outfits.Get(id).trigger, "no trigger is no trigger table")
 end)
 
+test("schema: a trigger flag written on an outfit with no trigger leaves no trigger table (design §3.3)", function()
+    local _, NSi, id = outfitScene()
+    assertTrue(NSi.SetByPath("outfit.trigger.disabled", true, id))
+    -- red under: the flag rows without their onChange (the record keeps `trigger = { disabled = true }`).
+    assertNil(NSi.Outfits.Get(id).trigger, "no trigger is no trigger table")
+    assertEqual(NSi.Outfits.Status(id) == "disabled", false, "an outfit with no trigger cannot be disabled")
+    assertTrue(NSi.SetByPath("outfit.trigger.combatDisabled", false, id))
+    assertNil(NSi.Outfits.Get(id).trigger)
+    -- With a trigger, the flag stays: a flag-then-id batch is whole when the reactions run.
+    assertTrue(NSi.Schema.SetMany({ { path = "outfit.trigger.disabled", value = true },
+                                    { path = "outfit.trigger.id", value = "FISHING" } }, { instanceId = id }))
+    assertTrue(NSi.Outfits.Get(id).trigger.disabled)
+    assertEqual(NSi.Outfits.Get(id).trigger.id, "FISHING")
+end)
+
 test("schema: an outfit batch is all or nothing and forwards through NS.Schema.SetMany", function()
     local _, NSi, id = outfitScene()
     local ok = NSi.Schema.SetMany({ { path = "outfit.trigger.id", value = "FISHING" },

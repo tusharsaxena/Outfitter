@@ -40,6 +40,15 @@ end
 
 local function record(id) return NS.Outfits.Get(id) end
 
+-- A trigger flag's reaction: an outfit with no trigger cannot be disabled (design §3.3), so a flag
+-- written onto one (the write created `trigger = { disabled = ... }` with no id) goes with its table.
+-- An onChange, not a validate: a batch that sets the trigger id and a flag together validates both
+-- before either is stored, and its reactions run after every store (Schema v2 SetMany phase 3).
+local function dropIdlessTrigger(_, id)
+    local rec = record(id)
+    if rec and type(rec.trigger) == "table" and not rec.trigger.id then rec.trigger = nil end
+end
+
 -- The five outfit rows (design §3.5). Every row carries page "outfit" and group "outfit"
 -- (anti-patterns #69); a trigger's params arrive with group = <TID> from NS.Triggers.Finalize.
 local ROWS = {
@@ -51,9 +60,9 @@ local ROWS = {
           if v == "" and rec then rec.trigger = nil end
       end },
     { path = "outfit.trigger.disabled", type = "bool", default = false, page = "outfit", group = "outfit",
-      validate = isBool },
+      validate = isBool, onChange = dropIdlessTrigger },
     { path = "outfit.trigger.combatDisabled", type = "bool", default = false, page = "outfit", group = "outfit",
-      validate = isBool },
+      validate = isBool, onChange = dropIdlessTrigger },
     { path = "outfit.icon", type = "number", page = "outfit", group = "outfit",
       validate = validIcon,
       onChange = function(v, id)

@@ -183,6 +183,7 @@ test("database: db.char starts in the §3.1 shape, and the outfit store's writes
     local root, first = NS.ResolveOutfitRoot({ "outfit", "icon" }, id)
     assertTrue(rawequal(root, NS.Outfits.Get(id))); assertEqual(first, 2)
     -- A profile callback never reaches it (H7): every one of the three, with a real outfit stored.
+    -- red under: NS.OnProfileChanged resetting db.char (the outfit and nextID go with the profile).
     NS.db:SetProfile("Alt"); NS.db:CopyProfile("Default"); NS.db:ResetProfile()
     assertEqual(NS.Outfits.Get(id).name, "Kept")
     assertEqual(NS.db.char.nextID, 2)

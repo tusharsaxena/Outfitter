@@ -14,8 +14,8 @@ local _, NS = ...
 -- CreateEmptySpecialOccasionOutfit, Outfitter.lua:5738). Profession smart outfits stay dead (INV §18).
 --
 -- THE TIMER is O.loadTimer, a 1 s AceTimer armed by the FIRST PLAYER_ENTERING_WORLD. Suspend
--- cancels it; Resume re-arms it only when that PEW was seen and the first LoadPass has not run
--- (design §5.12).
+-- cancels it; Resume re-arms it only when the first LoadPass has not run (design §5.12) and the
+-- world is entered: that PEW was seen, or a stand-down came first (a login stood down hears no PEW).
 --
 -- CALLS (at call time, no nil guard; design §12): NS.EM.Sync, NS.Stack.Init, NS.TriggerBinder.BindAll
 -- and NS.OnLoadPassDone (core/OutfitterReborn.lua, after the session's first pass).
@@ -123,7 +123,9 @@ local function existing(builtin, name)
     return O.FindByName(name)
 end
 
---- Seed one outfit unless it exists. An adopted outfit takes the trigger when it has none.
+--- Seed one outfit unless it exists. An adopted outfit takes the seed key and the trigger when it has
+--- none, and the seed's icon (the spec icon), as the legacy SetIcon did on the outfit
+--- CreateEmptySpecialOccasionOutfit returned, created or found (Outfitter.lua:5736-5745, 5788-5790).
 local function seedOne(builtin, name, items, opts)
     local id = existing(builtin, name)
     if not id then
@@ -131,7 +133,9 @@ local function seedOne(builtin, name, items, opts)
         return O.Create(name, items, opts)
     end
     local rec = O.Get(id)
+    if rec.builtin == nil then rec.builtin = builtin end
     if opts.trigger and not rec.trigger then rec.trigger = { id = opts.trigger } end
+    if opts.icon then rec.icon = opts.icon end
     return id
 end
 
@@ -182,6 +186,7 @@ end
 
 local firstDone = false   -- the session's first LoadPass has run
 local pewSeen = false     -- the first PLAYER_ENTERING_WORLD has been seen
+local stoodDown = false   -- a stand-down has run: the next stand-up is the player's, in the world
 
 --- Repair, seed when unseeded, restore the stack and bind the triggers. Runs from the 1 s timer
 --- after the first PLAYER_ENTERING_WORLD, and from DeleteAll.
@@ -227,16 +232,25 @@ local function ensure()
     timers = timers or LibStub("AceTimer-3.0"):Embed({})
 end
 
---- The stand-down (design §5.12): the registration goes and the pending LoadPass is canceled.
-function O.Suspend()
+local function suspend()
     if events then events:UnregisterAllEvents() end
     if timers then cancel() end
 end
 
---- The stand-up: register from scratch, and re-arm the LoadPass a stand-down canceled.
+--- The stand-down (design §5.12): the registration goes and the pending LoadPass is canceled.
+function O.Suspend()
+    stoodDown = true
+    suspend()
+end
+
+--- The stand-up: register from scratch, and arm the LoadPass a stand-down canceled or kept from
+--- running. A stand-up that follows a stand-down is the player's (only a player act releases the last
+--- hold), so the world is entered even when its PEW went unheard: a session that logged in stood down
+--- and is re-enabled seeds now, not at the next loading screen. The login resume (no stand-down
+--- before it) still waits for the first PEW (C32).
 function O.Resume()
     ensure()
-    O.Suspend()
+    suspend()
     NS.SafeRegisterEvent(events, "PLAYER_ENTERING_WORLD", onEnteringWorld, NS.rejectedEvents)
-    if pewSeen and not firstDone then arm() end
+    if (pewSeen or stoodDown) and not firstDone then arm() end
 end

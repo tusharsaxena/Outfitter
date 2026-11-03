@@ -194,6 +194,25 @@ local function triggerOf(t)
     return nil
 end
 
+-- A new record under the next id, not yet stored, placed or announced.
+local function newRecord(name, items, opts)
+    local c = store()
+    local id = "o" .. c.nextID
+    c.nextID = c.nextID + 1
+    return { id = id, name = name, kind = opts.kind or "native", items = copy(items) or {},
+             setID = opts.setID, icon = opts.icon, trigger = triggerOf(opts.trigger),
+             builtin = opts.builtin, bar = {} }
+end
+
+-- Store, place and announce a whole record: OUTFIT_ADDED is the binder's Bind(id), so every field
+-- it reads (the trigger, its params) must already be on the record.
+local function add(rec)
+    store().outfits[rec.id] = rec
+    place(rec)
+    NS.SendBus(NS.MSG.OUTFIT_ADDED, rec.id)
+    return rec.id
+end
+
 --- A new outfit. `opts = { icon?, trigger? (an id or a trigger table), builtin?, kind?, setID? }`.
 --- Allocates "o"..nextID, categorizes, appends to the order and sends OUTFIT_ADDED (the binder binds
 --- a triggered outfit off that message).
@@ -202,17 +221,7 @@ end
 --- @param opts table|nil
 --- @return string id
 function O.Create(name, items, opts)
-    opts = opts or {}
-    local c = store()
-    local id = "o" .. c.nextID
-    c.nextID = c.nextID + 1
-    local rec = { id = id, name = name, kind = opts.kind or "native", items = copy(items) or {},
-                  setID = opts.setID, icon = opts.icon, trigger = triggerOf(opts.trigger),
-                  builtin = opts.builtin, bar = {} }
-    c.outfits[id] = rec
-    place(rec)
-    NS.SendBus(NS.MSG.OUTFIT_ADDED, id)
-    return id
+    return add(newRecord(name, items, opts or {}))
 end
 
 --- The bar's item drop: an outfit named after the item, holding it in its slot. Nil for no item.
@@ -232,23 +241,23 @@ local function freeName(name)
     return name .. " " .. n
 end
 
--- What a duplicate keeps of the record: every field but the identity and the seed key.
+-- What a duplicate keeps of the record: every field but the identity, the seed key and the
+-- trigger's persisted side-effect state (triggerState: CVar restores for a trigger the copy never ran).
 local DUPLICATE_SKIP = { id = true, name = true, builtin = true, category = true, kind = true, setID = true,
-                         items = true }
+                         items = true, triggerState = true }
 
---- A native copy of an outfit (an EM outfit's copy holds its resolved items), under a free name.
+--- A native copy of an outfit (an EM outfit's copy holds its resolved items), under a free name. The
+--- copy is whole before OUTFIT_ADDED, so a copied trigger is bound at once (design §6.9).
 --- @param id string
 --- @return string|nil newId
 function O.Duplicate(id)
     local rec = O.Get(id)
     if not rec then return nil end
-    local newId = O.Create(freeName(rec.name or ""), O.Items(rec))
-    local dup = O.Get(newId)
+    local dup = newRecord(freeName(rec.name or ""), O.Items(rec), {})
     for k, v in pairs(rec) do
         if not DUPLICATE_SKIP[k] then dup[k] = copy(v) end
     end
-    O.Changed(newId, "duplicate")
-    return newId
+    return add(dup)
 end
 
 --- Replace a category's display order. Refused unless `ids` is exactly the same set of ids.
@@ -466,9 +475,13 @@ function O.Status(id, cache)
     return "normal"
 end
 
---- The outfits that use an item (the tooltips' "Used by").
+--- The outfits that use an item (the tooltips' "Used by", API v1 GetOutfitsUsingItem). The link is
+--- read into an item info first: OutfitsUsing matches an info, and a secret or unparsable link reads
+--- as no item, so as no outfit.
+--- @param link any
+--- @return string[]
 function O.UsingItem(link)
-    return NS.Inventory.OutfitsUsing(link)
+    return NS.Inventory.OutfitsUsing(NS.ItemInfo.FromLink(link))
 end
 
 -- ── flags and bindings ────────────────────────────────────────────────────────────────────────

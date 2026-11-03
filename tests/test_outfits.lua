@@ -274,6 +274,20 @@ test("outfits: seeding adopts an outfit that already has the built-in's name ins
     end
     assertEqual(n, 1)
     assertEqual(NS.Outfits.Get(mine).trigger.id, "ROGUE_STEALTH", "the trigger is assigned when it had none")
+    -- red under: seedOne's adoption leaving the seed key unset (design §3.3).
+    assertEqual(NS.Outfits.Get(mine).builtin, "CLASS_ROGUE_STEALTH", "the adopted outfit carries its seed key")
+end)
+
+test("outfits: an adopted spec outfit takes the spec icon, as the legacy SetIcon did (Outfitter.lua:5788-5790)", function()
+    local inst, NS = scene({ class = "ROGUE" })
+    engineFakes(NS)
+    local spec = inst.mocks.__world.specs[1][2]
+    local mine = NS.Outfits.Create("Rogue: " .. spec, {}, { icon = 5 })
+    NS.Outfits.LoadPass()
+    local rec = NS.Outfits.Get(mine)
+    -- red under: seedOne's adoption ignoring opts.icon (the icon stays 5).
+    assertEqual(rec.icon, 1001, "the spec's icon")
+    assertEqual(rec.builtin, "SPEC_1"); assertEqual(rec.trigger.id, "SPEC_1")
 end)
 
 -- ── LoadPass: repair ──────────────────────────────────────────────────────────────────────────
@@ -338,6 +352,22 @@ test("outfits: the first PLAYER_ENTERING_WORLD arms a 1 s LoadPass; Suspend canc
     O.Suspend()
 end)
 
+test("outfits: a session that logged in stood down arms the LoadPass when it stands up (design §5.12)", function()
+    local _, NS, M = scene()
+    local fakes = engineFakes(NS)
+    local O = NS.Outfits
+    O.Suspend()                          -- the disabled login's stand-down, before any Resume
+    M.__fire("PLAYER_ENTERING_WORLD")    -- unheard: nothing is registered
+    assertNil(O.loadTimer)
+    O.Resume()                           -- the player re-enables, in the world
+    -- red under: Resume arming only `if pewSeen` (the store stays unbuilt until the next loading screen).
+    assertTrue(O.loadTimer ~= nil, "the stand-up arms the first LoadPass")
+    M.__fireTimers()
+    assertEqual(fakes.stack.__count("Init"), 1)
+    assertTrue(NS.db.char.seeded, "a fresh character is seeded")
+    O.Suspend()
+end)
+
 -- ── Rename and Delete ─────────────────────────────────────────────────────────────────────────
 
 test("outfits: Rename refuses a duplicate and sends OUTFIT_RENAMED with no wear or remove (O16)", function()
@@ -351,6 +381,7 @@ test("outfits: Rename refuses a duplicate and sends OUTFIT_RENAMED with no wear 
     -- red under: Rename without the FindByName duplicate check.
     assertFalse(ok); assertEqual(err, "That name is already used")
     assertEqual(O.Get(a).name, "Fishing")
+    -- red under: Rename without its `name == ""` refusal.
     assertFalse((O.Rename(a, "")), "an empty name is refused")
     assertEqual(#renamed, 0)
     assertTrue(O.Rename(a, "Angling"))
@@ -402,6 +433,7 @@ test("outfits: a native outfit's Delete never touches the Equipment Manager", fu
     local id = NS.Outfits.Create("Mine", {})
     local fakes = engineFakes(NS)
     NS.Outfits.Delete(id)
+    -- red under: Delete calling NS.EM.DeleteSet without its `rec.kind == "em"` check.
     assertEqual(fakes.em.__count("DeleteSet"), 0)
 end)
 
@@ -518,6 +550,7 @@ test("outfits: SetBinding keeps one outfit per key, and a rebind moves the outfi
     -- red under: SetBinding without its unbindKeys(id) (the outfit keeps key 3 beside key 5).
     assertNil(O.BoundTo(3), "the outfit's old key was released"); assertEqual(O.BindingOf(b), 5)
     assertTrue(O.SetBinding(b, nil)); assertNil(O.BindingOf(b))
+    -- red under: validKey without its range and integer checks (keys 0, 11 and 2.5 are stored).
     assertFalse(O.SetBinding(a, 0)); assertFalse(O.SetBinding(a, 11)); assertFalse(O.SetBinding(a, 2.5))
     NS.db.char.bindings[7] = "o99"
     assertNil(O.BoundTo(7), "a stale binding is none")
@@ -532,6 +565,7 @@ test("outfits: CreateFromItem names the outfit after the item and holds it in it
     local rec = O.Get(id)
     assertEqual(rec.name, def.name)
     assertEqual(rec.items.MainHandSlot.id, def.id)
+    -- red under: CreateFromItem without its `if not slot then return nil` (indexing the nil slot raises).
     assertNil(O.CreateFromItem("not a link"))
 end)
 
@@ -547,9 +581,46 @@ test("outfits: Duplicate copies a native outfit under a new id; Reorder takes on
     assertTrue(O.Get(b).name ~= O.Get(a).name, "the copy's name is free")
     assertTrue(O.Reorder("Accessory", { b, a }))
     assertEqual(table.concat(O.Ids("Accessory"), ","), b .. "," .. a)
+    -- red under: Reorder without its `#ids ~= #current` check.
     assertFalse(O.Reorder("Accessory", { a }), "an order that drops an id is refused")
+    -- red under: Reorder without its `not want[id]` check (o99 lands in the order).
     assertFalse(O.Reorder("Accessory", { a, "o99" }))
     assertEqual(table.concat(O.Ids("Accessory"), ","), b .. "," .. a)
+end)
+
+test("outfits: a Duplicate is whole at OUTFIT_ADDED, so its trigger binds at once; triggerState stays behind", function()
+    local _, NS = scene()
+    local O = NS.Outfits
+    local a = O.Create("A", { HeadSlot = { id = 1 } }, { trigger = "FISHING" })
+    local src = O.Get(a)
+    src.triggerParams = { FISHING = { x = 1 } }
+    src.triggerState = { FISHING = { restore = 1 } }
+    local atAdd = {}
+    NS.NewBusTarget():RegisterMessage(NS.MSG.OUTFIT_ADDED, function(_, id)
+        local rec = O.Get(id)
+        atAdd[#atAdd + 1] = { trigger = rec.trigger and rec.trigger.id,
+                              params = rec.triggerParams and rec.triggerParams.FISHING ~= nil }
+    end)
+    local b = O.Duplicate(a)
+    assertEqual(#atAdd, 1)
+    -- red under: Duplicate creating the copy bare and copying the trigger in after OUTFIT_ADDED (design §6.9).
+    assertEqual(atAdd[1].trigger, "FISHING", "the binder's Bind(id) sees the trigger")
+    assertTrue(atAdd[1].params, "and its params")
+    assertTrue(O.Get(b).trigger ~= src.trigger, "a copy, not an alias")
+    -- red under: DUPLICATE_SKIP without triggerState (the copy inherits the source's CVar restores).
+    assertNil(O.Get(b).triggerState)
+end)
+
+test("outfits: UsingItem reads the link into an item info, and answers the outfits that use it", function()
+    local _, NS = scene({ scenario = "geared" })
+    local O = NS.Outfits
+    local head = NS.ItemInfo.FromSlot("HeadSlot")
+    local id = O.Create("Helm", { HeadSlot = NS.ItemInfo.Snapshot(head) })
+    O.Create("Other", {})
+    -- red under: UsingItem passing the raw link to Inventory.OutfitsUsing (always {}).
+    assertEqual(table.concat(O.UsingItem(head.link), ","), id)
+    -- red under: Inventory.OutfitsUsing without its `info and info.slot` guard (a nil info raises).
+    assertEqual(#O.UsingItem("not a link"), 0)
 end)
 
 test("outfits: the kind dispatch sends an EM outfit's items and slot edits to the EM", function()
