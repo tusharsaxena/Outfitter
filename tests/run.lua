@@ -154,7 +154,7 @@ local SUITES = {
 
     { name = "test_equip_bracket" },
 
-    { name = "test_tooltips",         pending = "P4.17" },
+    { name = "test_tooltips" },
 
     { name = "test_stack",            pending = "P4.9" },
 

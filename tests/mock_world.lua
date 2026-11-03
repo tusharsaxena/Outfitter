@@ -17,6 +17,7 @@
 --   M.__world:setFlag("IsMounted", true)        any movement / state flag below
 --   M.__world:openCharacter() / :closeCharacter()   the paper doll, its OnShow / OnHide
 --   M.__world:tooltipPostCall(type, tooltip, data)  run what TooltipDataProcessor collected
+--   M.__world:setCompare(on, modifier)          ShouldDoItemComparison and the COMPAREITEMS modifier
 --
 -- THE FIDELITY RULES this file keeps (testing-§1):
 --   * GetInstanceInfo answers every field the client does (name through LfgDungeonID), and
@@ -516,8 +517,9 @@ local function newLine()
 end
 
 function World.installTooltips(M, W, hookable, isSecret)
-    local function makeTooltip(name)
-        local tip = M.CreateFrame("GameTooltip", name, M.UIParent)
+    local create = M.CreateFrame
+    local function makeTooltip(name, parent)
+        local tip = create("GameTooltip", name, parent or M.UIParent)
         tip:Hide()
         local count, left, right = 0, {}, {}
         local function line(i)
@@ -598,6 +600,46 @@ function World.installTooltips(M, W, hookable, isSecret)
         local n = 0
         for _, fn in ipairs(M.__tooltipPostCalls[kind] or {}) do fn(tooltip, data); n = n + 1 end
         return n
+    end
+
+    -- A tooltip an addon builds from ShoppingTooltipTemplate is a full tooltip, as the client's is
+    -- (the compare tooltips, P4.17); every other GameTooltip frame keeps the base stub.
+    M.CreateFrame = function(frameType, name, parent, template)
+        if frameType == "GameTooltip" and template == "ShoppingTooltipTemplate" then
+            return makeTooltip(name, parent)
+        end
+        return create(frameType, name, parent, template)
+    end
+
+    -- The comparison reads (P4.17): the displayed item, whether a comparison is wanted, the
+    -- COMPAREITEMS modifier, the client's EQUIPMENT_SETS line and the screen width.
+    W.compare, W.modifiers = false, {}
+    M.TooltipUtil = {
+        GetDisplayedItem = function(tip) return tip:GetItem() end,
+        ShouldDoItemComparison = function() return W.compare == true end,
+    }
+    M.IsModifiedClick = function(action) return W.modifiers[action] == true end
+    M.EQUIPMENT_SETS = "Equipment Sets: |cFFFFFFFF%s|r"
+    M.GetScreenWidth = function() return 1920 end
+    -- The client's compare entry point, which hooksecurefunc("GameTooltip_ShowCompareItem", fn)
+    -- really post-hooks here (the base mock's hooksecurefunc ignores a global name).
+    M.GameTooltip_ShowCompareItem = function() end
+    local hook = M.hooksecurefunc
+    M.hooksecurefunc = function(a, b, c)
+        if a == "GameTooltip_ShowCompareItem" and type(b) == "function" then
+            local orig = M.GameTooltip_ShowCompareItem
+            M.GameTooltip_ShowCompareItem = function(...)
+                local r = packed(orig(...))
+                b(...)
+                return unpack(r, 1, r.n)
+            end
+            M.__hooks[#M.__hooks + 1] = { target = M, name = a }
+            return
+        end
+        return hook(a, b, c)
+    end
+    function W:setCompare(on, modifier)
+        W.compare, W.modifiers.COMPAREITEMS = on == true, modifier == true
     end
 end
 

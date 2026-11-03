@@ -17,6 +17,10 @@ local L = NS.L
 -- parallel tasks' additions merge cleanly.
 
 -- P4.17 keys (modules/Tooltips.lua, modules/Tooltips_Compare.lua, modules/OutfitTooltip.lua)
+L["Equipment Sets: %s"] = "Equipment Sets: %s"
+L["Outfitter"] = "Outfitter"
+L["Missing:"] = "Missing:"
+L["Banked:"] = "Banked:"
 
 -- P4.18 keys (modules/QuickSlots.lua, modules/QuickSlots_Sort.lua)
 
