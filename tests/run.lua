@@ -185,7 +185,7 @@ local SUITES = {
 
     { name = "test_bar" },
 
-    { name = "test_triggers_parity",  pending = "P4.16e" },
+    { name = "test_triggers_parity" },
 
     { name = "test_preview",          pending = "P4.22" },
 
