@@ -272,8 +272,16 @@ function capture.zones()
 	}
 end
 
+-- Captured as a four-spec DRUID, so the fixture holds every SPECIALIZATION_n the
+-- legacy loop can make (InstallTalentTreeScripts stops at four).  The static
+-- presets do not depend on the player's class.
+local PRESET_CLASS, PRESET_SPECS = { "Druid", "DRUID" }, 4
+
 function capture.presets()
-	local O = loadLegacy()
+	local O = loadLegacy(function()
+		G.UnitClass = fn(PRESET_CLASS[1], PRESET_CLASS[2], 11)
+		installSpecs(PRESET_SPECS)
+	end)
 	local presets = {}
 	for i, p in ipairs(O.PresetScripts) do
 		local fields = assert(O:ParseScriptFields(p.Script), "preset does not parse: " .. p.ID)
@@ -296,7 +304,7 @@ function capture.presets()
 			order = at("OutfitterScripting.lua", "function Outfitter:SortScripts"),
 			specialization = at("OutfitterScripting.lua", "function Outfitter:InstallTalentTreeScripts"),
 		},
-		note = ("menu order after SortScripts; SPECIALIZATION_n come from the %d stand-in specs"):format(SPECS),
+		note = ("menu order after SortScripts; SPECIALIZATION_n come from the %d stand-in specs of a %s"):format(PRESET_SPECS, PRESET_CLASS[2]),
 		categoryOrder = copy(O.cScriptCategoryOrder),
 		presets = presets,
 	}

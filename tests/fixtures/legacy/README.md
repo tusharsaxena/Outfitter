@@ -40,6 +40,7 @@ inputs, not legacy behavior:
 | Fixture | Stand-in |
 |---|---|
 | all | three specs, named `Spec1`–`Spec3` with icons 1001–1003, so per-spec presets and outfits can be told apart |
+| `presets` | loaded as a DRUID with four specs, so `SPECIALIZATION_1`–`SPECIALIZATION_4` and every `Tree4` input are captured |
 | `states` | the enUS class names; DRUID gets four specs |
 | `slots` | `aliasesHorde` comes from a second load with `UnitFactionGroup` returning `Horde` |
 | `matching`, `plans` | the item records and unique-equip totals written in each case |
