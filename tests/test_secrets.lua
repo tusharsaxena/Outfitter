@@ -565,12 +565,20 @@ test("compat: TooltipInventoryUnit reads the primary info's getter and fails saf
     assertEqual(C.TooltipInventoryUnit(tip({ getterName = "GetInventoryItem", getterArgs = { "player", 1 } })), "player")
     assertEqual(C.TooltipInventoryUnit(tip({ getterName = "GetInventoryItem", getterArgs = { "target", 1 } })), "target")
     assertNil(C.TooltipInventoryUnit(tip({ getterName = "GetBagItem", getterArgs = { 0, 1 } })))
+    assertNil(C.TooltipInventoryUnit(tip(nil)), "no primary info: not an inventory tooltip")
+    -- An inventory tooltip whose unit cannot be read answers "?", which is not the player (O41).
     with(nil, function()
         -- red under: return info.getterArgs[1] from Compat.TooltipInventoryUnit without NS.Secrets.PlainString
-        assertNil(C.TooltipInventoryUnit(tip({ getterName = "GetInventoryItem", getterArgs = { T.secret("player") } })))
-        assertNil(C.TooltipInventoryUnit(tip(T.secret({}))))
+        assertEqual(C.TooltipInventoryUnit(tip({ getterName = "GetInventoryItem", getterArgs = { T.secret("player") } })), "?")
+        -- red under: answering nil for unreadable getterArgs (the gate fails open).
+        assertEqual(C.TooltipInventoryUnit(tip({ getterName = "GetInventoryItem", getterArgs = T.secret({}) })), "?")
+        -- red under: answering nil for an unreadable info table.
+        assertEqual(C.TooltipInventoryUnit(tip(T.secret({}))), "?")
+        -- red under: dropping the IsSealed(getterName) check (a secret getter reads as not-inventory).
+        assertEqual(C.TooltipInventoryUnit(tip({ getterName = T.secret("GetInventoryItem"), getterArgs = { "target" } })), "?")
     end)
-    assertNil(C.TooltipInventoryUnit({ GetPrimaryTooltipInfo = function() error("no info") end }))
+    -- red under: answering nil when the info call raises.
+    assertEqual(C.TooltipInventoryUnit({ GetPrimaryTooltipInfo = function() error("no info") end }), "?")
     assertNil(C.TooltipInventoryUnit({}))
     assertNil(C.TooltipInventoryUnit(nil))
 end)

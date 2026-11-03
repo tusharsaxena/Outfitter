@@ -3,8 +3,10 @@ local _, NS = ...
 --
 -- ONE TooltipDataProcessor post-call on item tooltips, registered once on the first stand-up (Resume,
 -- which the login's OnEnable runs; H15). A post-call cannot be removed, so a stand-down leaves it
--- installed and OnItem reads the gates first: the latch, `tooltip.usedBy`, GameTooltip only, the
--- player's own inventory only (another unit's gear never gets the line), and a plain link.
+-- installed and OnItem reads the gates first: the latch, `tooltip.usedBy`, GameTooltip or a stock
+-- shopping tooltip (ShoppingTooltip1/2, the worn items beside a compare: the legacy compare path
+-- decorated them, Outfitter.lua:7885-7893), the player's own inventory only (another unit's gear, or
+-- an inventory tooltip whose unit cannot be read, never gets the line; O41), and a plain link.
 --
 -- THE LINE is EQUIPMENT_SETS formatted with the outfits that use the item, each name colored by its
 -- status (disabled, missing, banked, normal); banked is `of.outfit.banked`, blue, where the legacy
@@ -157,10 +159,13 @@ local function displayedLink(tooltip)
     return Secrets.PlainString(link)
 end
 
--- Whether the tooltip is the one this line belongs on.
+-- Whether the tooltip is the one this line belongs on. Our own compare tooltips are not: they
+-- decorate themselves after their title line goes in.
 local function wanted(tooltip)
     if NS.IsStoodDown() or NS.GetSetting("tooltip.usedBy") == false then return false end
-    if tooltip ~= GameTooltip then return false end
+    if tooltip == nil or (tooltip ~= GameTooltip and tooltip ~= ShoppingTooltip1 and tooltip ~= ShoppingTooltip2) then
+        return false
+    end
     local unit = Compat.TooltipInventoryUnit(tooltip)
     return unit == nil or unit == "player"
 end

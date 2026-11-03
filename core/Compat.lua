@@ -577,17 +577,17 @@ function Compat.TooltipLines(loc)
     return out
 end
 
---- The unit whose inventory item `tooltip` shows ("player", "target"), or nil when it shows anything
---- else or its info cannot be read (O41: the getter field names are unconfirmed; nil fails safe).
+--- The unit whose inventory item `tooltip` shows ("player", "target"); nil when it shows anything
+--- else; "?" (not the player: it fails safe, O41) when its info, getter or unit cannot be read.
 function Compat.TooltipInventoryUnit(tooltip)
-    local get = type(tooltip) == "table" and tooltip.GetPrimaryTooltipInfo
+    local get, S = type(tooltip) == "table" and tooltip.GetPrimaryTooltipInfo, NS.Secrets
     if type(get) ~= "function" then return nil end
     local ok, info = pcall(get, tooltip)
-    if not ok or not readable(info) then return nil end
-    if not NS.Secrets.PlainEquals(info.getterName, "GetInventoryItem") then return nil end
+    if ok and info == nil then return nil end
+    if not ok or not readable(info) or S.IsSealed(info.getterName) then return "?" end
+    if not S.PlainEquals(info.getterName, "GetInventoryItem") then return nil end
     local args = info.getterArgs
-    if not readable(args) then return nil end
-    return NS.Secrets.PlainString(args[1])
+    return readable(args) and S.PlainString(args[1]) or "?"
 end
 
 -- ---------------------------------------------------------------------------

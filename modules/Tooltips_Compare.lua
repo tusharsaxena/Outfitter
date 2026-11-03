@@ -4,8 +4,8 @@ local _, NS = ...
 --
 -- A POST-HOOK on the client's GameTooltip_ShowCompareItem (Compat.HookCompare), installed once on the
 -- first stand-up, whose body reads the gates first: the latch, `tooltip.compare`, the client's own
--- TooltipUtil.ShouldDoItemComparison() (nothing happens when it wants no comparison), then the
--- COMPAREITEMS modifier (released, ours hide), a plain link and armor only.
+-- TooltipUtil.ShouldDoItemComparison() and the COMPAREITEMS modifier (either one off, ours hide), a
+-- plain link and armor only.
 --
 -- WHAT SHOWS. The items outfits without `ignoreComparisons` put in the hovered item's slot (both
 -- fingers, both trinkets), quality 2 and up, highest item level first; an item already on GameTooltip,
@@ -19,8 +19,11 @@ local _, NS = ...
 -- A tooltip that shows hidden information has secret geometry: then it is left to right.
 --
 -- HIDING. GameTooltip's OnHide (a HookScript that touches only our frames), the modifier released,
--- Refresh (the `tooltip.compare` row) and the stand-down hide all five. The LibTipHooker re-dispatch
--- the legacy addon made is gone with the library (H15).
+-- Refresh (the `tooltip.compare` row) and the stand-down hide all five. The release is caught by an
+-- OnUpdate HookScript on the first compare tooltip (Compare.OnTick; it is shown whenever any is, and
+-- runs only while shown), as the legacy per-tooltip OnUpdate did (Outfitter.lua:8057-8064): the
+-- client does not call GameTooltip_ShowCompareItem when the modifier goes up. The LibTipHooker
+-- re-dispatch the legacy addon made is gone with the library (H15).
 --
 -- CLIENT READS beyond this file's luacheck stanza go through `_G` by name, at call time:
 -- IsModifiedClick and GetScreenWidth.
@@ -152,6 +155,7 @@ local function frameAt(n)
     if tip then return tip end
     tip = CreateFrame("GameTooltip", "OutfitterRebornCompareTooltip" .. n, UIParent, "ShoppingTooltipTemplate")
     tip:SetFrameStrata(NS.Constants.LAYERS.STRATA.CURSOR)
+    if n == 1 then tip:HookScript("OnUpdate", function() Compare.OnTick() end) end
     local S = NS.Skin
     if S and S.Tooltip then S.Tooltip(tip) end
     tip:Hide()
@@ -234,13 +238,23 @@ function Compare.Show()
     return n
 end
 
+-- Whether a comparison is wanted now: the client's wish and the COMPAREITEMS modifier both.
+local function compareWanted()
+    return clientWantsCompare() and modifierHeld()
+end
+
 --- The GameTooltip_ShowCompareItem post-hook body: the gates, then Show (or HideAll).
 function Compare.OnShowCompare(tooltip)
     if NS.IsStoodDown() or NS.GetSetting("tooltip.compare") == false then return end
     if tooltip ~= nil and tooltip ~= GameTooltip then return end
-    if not clientWantsCompare() then return end
-    if not modifierHeld() then return Compare.HideAll() end
+    if not compareWanted() then return Compare.HideAll() end
     Compare.Show()
+end
+
+--- The first compare tooltip's OnUpdate: a released modifier (or a client that stops wanting the
+--- comparison) hides ours while the item stays hovered.
+function Compare.OnTick()
+    if not compareWanted() then Compare.HideAll() end
 end
 
 --- Hide them all (the `tooltip.compare` row's reaction, design §4.2).

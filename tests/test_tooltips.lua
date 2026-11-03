@@ -82,6 +82,7 @@ test("tooltips: the line lands on bag, player inventory and hyperlink tooltips",
     assertTrue(usedLine(tip) ~= nil, "a hyperlink")
     tip:SetBagItem(0, 4)                 -- the hearthstone: no outfit uses it
     postCall(M)
+    -- red under: buildLine without its `#names == 0` return (an empty "Equipment Sets: " line).
     assertNil(usedLine(tip), "no outfit, no line")
 end)
 
@@ -94,6 +95,34 @@ test("tooltips: another unit's inventory item gets no line", function()
     postCall(M)
     -- red under: dropping the Compat.TooltipInventoryUnit gate from Tooltips.OnItem.
     assertNil(usedLine(tip), "the target's helm is not the player's")
+end)
+
+test("tooltips: an inventory tooltip whose unit cannot be read gets no line (O41 fails safe)", function()
+    local NS, M = scene()
+    outfit(NS, "Tank", { HeadSlot = "head_plate" })
+    local tip = M.GameTooltip
+    tip:SetHyperlink(DB.head_plate.link)
+    rawset(tip, "__info", { getterName = "GetInventoryItem", getterArgs = { T.secret("target"), 1 } })
+    postCall(M)
+    -- red under: Compat.TooltipInventoryUnit answering nil for an unreadable unit (the gate fails open).
+    assertNil(usedLine(tip), "an unreadable unit is not the player")
+end)
+
+test("tooltips: the stock shopping tooltips get the line, our own compare tooltips are left to themselves", function()
+    local NS, M = scene()
+    outfit(NS, "Tank", { HeadSlot = "head_plate" })
+    for _, name in ipairs({ "ShoppingTooltip1", "ShoppingTooltip2" }) do
+        local shop = M[name]
+        shop:SetHyperlink(DB.head_plate.link)
+        postCall(M, shop)
+        -- red under: the GameTooltip-only gate (the legacy compare path decorated both, Outfitter.lua:7885-7893).
+        assertTrue(usedLine(shop) ~= nil, name)
+    end
+    local ours = M.CreateFrame("GameTooltip", "OutfitterRebornCompareTooltip9", M.UIParent, "ShoppingTooltipTemplate")
+    ours:SetHyperlink(DB.head_plate.link)
+    postCall(M, ours)
+    -- red under: accepting every tooltip (ours would be decorated twice, by the post-call and by Show).
+    assertNil(usedLine(ours), "ours decorate themselves")
 end)
 
 test("tooltips: names are colored by status; banked is blue |cff4033ff", function()
@@ -185,11 +214,18 @@ test("tooltips: off with tooltip.usedBy, silent while stood down, none for a sec
     assertNil(usedLine(tip), "stood down")
     NS.ApplyEnabled(true)
     tip:SetBagItem(0, 1)                 -- the secret helm
+    local Tt, decorated = NS.Tooltips, 0
+    local decorate = Tt.Decorate
+    Tt.Decorate = function(...) decorated = decorated + 1; return decorate(...) end
     postCall(M)
+    Tt.Decorate = decorate
+    -- red under: displayedLink without its Secrets.PlainString (the secret link reaches Decorate).
+    assertEqual(decorated, 0, "a secret link is no item")
     assertNil(usedLine(tip), "a secret link is no item")
     M.ItemRefTooltip:SetInventoryItem("player", 5)
     postCall(M, M.ItemRefTooltip)
-    assertNil(usedLine(M.ItemRefTooltip), "only GameTooltip")
+    -- red under: dropping the tooltip-identity gate from wanted().
+    assertNil(usedLine(M.ItemRefTooltip), "not ItemRefTooltip")
     tip:SetInventoryItem("player", 5)
     postCall(M)
     assertTrue(usedLine(tip) ~= nil, "standing up, row on: the chest gets its line")
@@ -279,6 +315,7 @@ test("compare: the gates: stood down, the row, the client's wish, the modifier, 
     assertEqual(#shownCompares(M), 0, "the modifier released hides them")
     M.__world:setCompare(false, true)
     showCompare(M, DB.head_plate.link)
+    -- red under: dropping clientWantsCompare() from the gates.
     assertEqual(#shownCompares(M), 0, "the client wants no comparison")
     M.__world:setCompare(true, true)
     NS.db.profile.tooltip.compare = false
@@ -288,13 +325,37 @@ test("compare: the gates: stood down, the row, the client's wish, the modifier, 
     NS.db.profile.tooltip.compare = true
     NS.ApplyEnabled(false)
     showCompare(M, DB.head_plate.link)
+    -- red under: dropping the NS.IsStoodDown() gate from Compare.OnShowCompare.
     assertEqual(#shownCompares(M), 0, "stood down")
     NS.ApplyEnabled(true)
     showCompare(M, DB.sword_1h.link)
     -- red under: dropping the armor-only check.
     assertEqual(#shownCompares(M), 0, "a weapon is not compared")
-    showCompare(M, T.secret(DB.head_plate.link))
+    local Info, parsed = NS.ItemInfo, 0
+    local fromLink = Info.FromLink
+    Info.FromLink = function(...) parsed = parsed + 1; return fromLink(...) end
+    showCompare(M, DB.head_plate.link)   -- drawn plain, then the client hands the link out secret
+    assertEqual(#shownCompares(M), 1, "the plain link compares")
+    parsed = 0
+    rawset(M.GameTooltip, "__item", T.secret(DB.head_plate.link))
+    M.GameTooltip_ShowCompareItem(M.GameTooltip)
+    Info.FromLink = fromLink
+    -- red under: Compare.Show without its Secrets.PlainString (the secret link reaches FromLink).
+    assertEqual(parsed, 0, "a secret link is never parsed")
     assertEqual(#shownCompares(M), 0, "a secret link is not compared")
+end)
+
+test("compare: releasing the modifier over the same item hides ours on the next frame", function()
+    local NS, M = compareScene()
+    NS.Outfits.Create("Set", { HeadSlot = helm(1, 3, 600) })
+    showCompare(M, DB.head_plate.link)
+    assertEqual(#shownCompares(M), 1, "the baseline shows one")
+    M.OutfitterRebornCompareTooltip1:__fire("OnUpdate", 0.01)
+    assertEqual(#shownCompares(M), 1, "held: still shown")
+    M.__world:setCompare(false, false)   -- the client's ShouldDoItemComparison follows the modifier
+    M.OutfitterRebornCompareTooltip1:__fire("OnUpdate", 0.01)
+    -- red under: no OnUpdate hook on the first compare tooltip (they stay up until GameTooltip hides).
+    assertEqual(#shownCompares(M), 0, "released: hidden")
 end)
 
 test("compare: placed beside the shopping tooltips, left to right on secret geometry", function()
@@ -380,8 +441,28 @@ test("outfit tooltip: nothing missing falls back to the newbie tip, which follow
     M.__cvars.UberTooltips = "0"
     -- red under: ignoring the CVar (the tip shows with UberTooltips off).
     assertFalse(NS.OutfitTooltip.Show(id, owner), "no newbie tips: nothing shows")
+    -- red under: dropping the unknown-record return (Show raises on a nil record).
     assertFalse(NS.OutfitTooltip.Show("o999", owner), "an unknown outfit")
     local plain = outfit(NS, "Plain", { HeadSlot = "head_plate" })
     M.__cvars.UberTooltips = "1"
+    -- red under: drawing the full tooltip whatever is missing (the `#missing > 0 or #banked > 0` test gone).
     assertFalse(NS.OutfitTooltip.Show(plain, owner), "nothing to say")
+end)
+
+test("outfit tooltip: `always` (the bar) draws the full tooltip with nothing missing, UberTooltips off", function()
+    local NS, M = scene()
+    triggers(NS, "Worn while you are swimming")
+    local owner = M.CreateFrame("Button", nil, M.UIParent)
+    M.__cvars.UberTooltips = "0"
+    local plain = outfit(NS, "Plain", { HeadSlot = "head_plate" })
+    -- red under: OT.Show ignoring `always` (the legacy pShowEmptyTooltips, OutfitterBar.lua:844).
+    assertTrue(NS.OutfitTooltip.Show(plain, owner, "ANCHOR_RIGHT", true))
+    local lines = texts(M.GameTooltip)
+    assertEqual(#lines, 1)
+    assertEqual(lines[1], "Plain")
+    local id = outfit(NS, "Dive", { HeadSlot = "head_plate" })
+    NS.Outfits.Get(id).trigger = { id = "SWIMMING" }
+    assertTrue(NS.OutfitTooltip.Show(id, owner, "ANCHOR_RIGHT", true))
+    lines = texts(M.GameTooltip)
+    assertEqual(lines[1] .. "|" .. lines[2], "Dive|Worn while you are swimming")
 end)

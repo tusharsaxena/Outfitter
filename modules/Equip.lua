@@ -413,9 +413,10 @@ end
 -- ── lifecycle ─────────────────────────────────────────────────────────────────────────────────
 
 --- The lifecycle's stand-down (design §5.12): the count and the wish go, the timers are canceled,
---- the SFX CVar comes back (H26), and nothing stays registered.
+--- the SFX CVar comes back (H26), and nothing stays registered. The load flag goes too: with the
+--- events unregistered, a PLAYER_ENTERING_WORLD missed while stood down could never clear it.
 function E.Suspend()
-    st.depth, st.needsUpdate, st.pendingNow = 0, false, false
+    st.depth, st.needsUpdate, st.pendingNow, st.suspendedForLoad = 0, false, false, false
     if target then
         target:UnregisterAllEvents()
         target:CancelAllTimers()

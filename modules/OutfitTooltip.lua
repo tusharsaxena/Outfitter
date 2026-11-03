@@ -4,9 +4,11 @@ local _, NS = ...
 --
 -- An outfit with missing or banked items gets the full tooltip: its name, its trigger's description,
 -- then L["Missing:"] and the missing items in `of.outfit.missing`, and L["Banked:"] and the banked
--- items in `of.outfit.banked` (blue; the legacy banked line was drawn red). Otherwise an outfit with a
--- description gets the newbie tip (name and description), shown only while the UberTooltips CVar is
--- on, as the legacy AddNewbieTip did; with neither, nothing shows.
+-- items in `of.outfit.banked` (blue; the legacy banked line was drawn red). So does every outfit when
+-- the caller asks for it with `always` (the bar's buttons: the legacy pShowEmptyTooltips,
+-- OutfitterBar.lua:844). Otherwise an outfit with a description gets the newbie tip (name and
+-- description), shown only while the UberTooltips CVar is on, as the legacy AddNewbieTip did; with
+-- neither, nothing shows.
 --
 -- CALLS (at call time, no nil guard; design §12): NS.Outfits.Get, NS.Inventory.Missing,
 -- NS.Triggers.Get.
@@ -71,15 +73,16 @@ end
 --- @param id string
 --- @param owner table
 --- @param anchor string|nil
+--- @param always boolean|nil  draw the full tooltip even with nothing missing or banked (the bar)
 --- @return boolean
-function OT.Show(id, owner, anchor)
+function OT.Show(id, owner, anchor, always)
     local rec = NS.Outfits.Get(id)
     if not rec then return false end
     local desc = description(rec)
     local missing, banked = NS.Inventory.Missing(rec)
     missing, banked = missing or {}, banked or {}
     local tip = GameTooltip
-    if #missing > 0 or #banked > 0 then
+    if always or #missing > 0 or #banked > 0 then
         full(tip, rec, desc, missing, banked, owner, anchor)
         return true
     end

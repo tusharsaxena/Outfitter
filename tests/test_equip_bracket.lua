@@ -386,6 +386,30 @@ test("equip bracket: the worn item goes to a specialty bag with room before the 
     if not ok then error(err, 0) end
 end)
 
+test("equip bracket: an item in a specialty bag the worn one cannot enter empties the slot first", function()
+    local hero = DB.chest_hero
+    local prev = hero.family
+    hero.family = 0x0020   -- a hauberk herb bags take, so it can sit in one; the worn breastplate cannot
+    local ok, err = pcall(function()
+        local NS, M, E = scene("specialty_bags", {
+            equipped = { ChestSlot = "chest_plate" },
+            bags = { [0] = { items = {} }, [1] = { bag = "bag_herb", items = { [1] = "chest_hero" } } },
+        })
+        local change = { slot = "ChestSlot", slotID = 5, to = { bag = 1, slot = 1 }, unique = {} }
+        E.Execute({ change }, NS.Moves.EmptyBagSlots())
+        local names = table.concat(callNames(M), ",")
+        -- red under: needsEmptyThenEquip's first rule off (`if false then`): a straight swap would
+        -- put the breastplate in the herb bag.
+        assertTrue(names:find("^ClearCursor,PickupInventoryItem,PickupContainerItem,ClearCursor,PickupContainerItem,EquipCursorItem") ~= nil,
+            "emptied first, then equipped: " .. names)
+        local _, at = M.__gear:find("chest_plate")
+        assertEqual(at and at.bag, 0, "the breastplate goes to the general bag")
+        assertEqual(M.__gear:equipped("ChestSlot").def.id, DB.chest_hero.id)
+    end)
+    hero.family = prev
+    if not ok then error(err, 0) end
+end)
+
 test("equip bracket: a plain swap does not empty first", function()
     local NS, M, E = scene("geared")
     local _, at = M.__gear:find("chest_hero")
@@ -437,6 +461,17 @@ test("equip bracket: Suspend zeroes the count and the wish, cancels the timer an
     assertEqual(M.__cvars.Sound_EnableSFX, "1")
     M.__fire("PLAYER_LEAVING_WORLD")
     assertFalse(E.SuspendedForLoad(), "nothing registered while suspended")
+end)
+
+test("equip bracket: a stand-down between the load screen's two events clears the load flag", function()
+    local _, M, E = scene("geared")
+    M.__fire("PLAYER_LEAVING_WORLD")
+    assertTrue(E.SuspendedForLoad(), "the load screen is up")
+    E.Suspend()                          -- PLAYER_ENTERING_WORLD never arrives while stood down
+    E.Resume()
+    -- red under: Suspend leaving suspendedForLoad alone (scans, auras and forms stay dead until the
+    -- next zone change).
+    assertFalse(E.SuspendedForLoad(), "the stand-up starts from current state")
 end)
 
 test("equip bracket: Diagnostic reports depth, the next update, the last error and the tripwire", function()
