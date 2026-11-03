@@ -4,7 +4,8 @@
 
 local T = _G.OUTFITTERREBORN_TEST
 local NS = T.NS
-local test, assertEqual, assertTrue, assertFalse = T.test, T.assertEqual, T.assertTrue, T.assertFalse
+local test, assertEqual, assertTrue, assertFalse, assertNil =
+    T.test, T.assertEqual, T.assertTrue, T.assertFalse, T.assertNil
 
 --- `parts` read out of `root` from index `first`.
 local function read(root, path, first)
@@ -136,11 +137,11 @@ end)
 -- ── the forward to the outfit instance (design §3.5) ─────────────────────────────────────────────
 
 test("schema: an instance id with no outfit schema answers false, \"no outfit schema\" and stores nothing", function()
-    -- modules/Outfits_Schema.lua lands in P4.6; until it builds NS.OutfitSchema every addressed call
-    -- refuses rather than falling through to the settings rows.
+    -- modules/Outfits_Schema.lua builds NS.OutfitSchema at OnInitialize (P4.6); without it every
+    -- addressed call refuses rather than falling through to the settings rows.
     local inst = T.load()
     local NSi = inst.NS
-    assertEqual(NSi.OutfitSchema, nil)
+    NSi.OutfitSchema = nil
     local ok, err = NSi.SetByPath("outfit.icon", 134400, "o1")
     assertFalse(ok); assertEqual(err, "no outfit schema")
     ok, err = NSi.Schema.SetMany({ { path = "outfit.icon", value = 1 } }, { instanceId = "o1" })
@@ -190,8 +191,99 @@ test("schema: library absent, the seam still stores, forwards and refuses alike"
     local NSi = inst.NS
     assertTrue(NSi.SetByPath("enabled", false), "the written-through switch landed")
     assertEqual(NSi.db.profile.enabled, false)
-    local ok, err = NSi.SetByPath("outfit.icon", 1, "o1")
-    assertFalse(ok); assertEqual(err, "no outfit schema")
+    -- The outfit instance is built on the same degradation stub: an unknown id is refused, a known
+    -- one lands in the record (P4.6).
+    assertEqual(type(NSi.OutfitSchema), "table", "the degraded load builds the outfit instance")
+    assertFalse((NSi.SetByPath("outfit.icon", 1, "o1")))
+    NSi.db.char.outfits.o1 = { id = "o1", name = "Kept", kind = "native", items = {} }
+    assertTrue(NSi.SetByPath("outfit.icon", 136245, "o1"))
+    assertEqual(NSi.db.char.outfits.o1.icon, 136245)
     assertFalse(NSi.Schema.SetMany({ { path = "enabled", value = true }, { path = "no.such", value = 1 } }))
     assertEqual(NSi.db.profile.enabled, false, "the degraded batch is all or nothing too")
+end)
+
+-- ── the outfit instance (P4.6, design §3.5) ──────────────────────────────────────────────────────
+
+-- The five outfit rows every later NS.SetByPath("outfit.*", v, id) writes through.
+local OUTFIT_ROWS = { "outfit.trigger.id", "outfit.trigger.disabled", "outfit.trigger.combatDisabled",
+                      "outfit.icon", "outfit.bar.hide" }
+
+--- A fresh instance with one native outfit, and a fake trigger catalog that knows FISHING only.
+local function outfitScene()
+    local inst = T.load()
+    local NSi = inst.NS
+    T.fake(NSi, "Triggers", { Get = function(tid) if tid == "FISHING" then return { id = tid } end end })
+    local id = NSi.Outfits.Create("Fishing", {})
+    return inst, NSi, id
+end
+
+test("schema: the outfit instance holds the five outfit rows, each on page outfit in group outfit", function()
+    local O = T.NS.OutfitSchema
+    for _, path in ipairs(OUTFIT_ROWS) do
+        local row = O.FindRow(path)
+        assertTrue(row ~= nil, path .. " has a row")
+        assertEqual(row.page, "outfit", path)
+        assertEqual(row.group, "outfit", path)
+        assertTrue(T.NS.Schema.FindRow(path) == nil, path .. " is not on the settings instance")
+    end
+    assertEqual(#O.AllRows(), #OUTFIT_ROWS, "no trigger rows until NS.Triggers.Finalize (P4.15)")
+end)
+
+test("schema: the outfit instance's shape check is clean against { outfit = true } and the instance types", function()
+    -- red under: an outfit row with no `group` (anti-patterns #69), or with page "general".
+    local errors = T.NS.ValidateOutfitSchema()
+    assertEqual(errors, 0)
+end)
+
+test("schema: an outfit write lands in the record and announces OUTFIT_EDITED, never SETTINGS_CHANGED", function()
+    local _, NSi, id = outfitScene()
+    local edited, settings = {}, 0
+    local bus = NSi.NewBusTarget()
+    bus:RegisterMessage(NSi.MSG.OUTFIT_EDITED, function(_, oid, what) edited[#edited + 1] = oid .. ":" .. what end)
+    bus:RegisterMessage(NSi.MSG.SETTINGS_CHANGED, function() settings = settings + 1 end)
+    assertTrue(NSi.SetByPath("outfit.icon", 136245, id))
+    assertTrue(NSi.SetByPath("outfit.bar.hide", true, id))
+    assertTrue(NSi.SetByPath("outfit.trigger.id", "FISHING", id))
+    assertTrue(NSi.SetByPath("outfit.trigger.combatDisabled", true, id))
+    local rec = NSi.Outfits.Get(id)
+    assertEqual(rec.icon, 136245); assertTrue(rec.bar.hide)
+    assertEqual(rec.trigger.id, "FISHING"); assertTrue(rec.trigger.combatDisabled)
+    assertEqual(NSi.GetSetting("outfit.trigger.id", id), "FISHING")
+    assertEqual(table.concat(edited, ","), id .. ":icon," .. id .. ":bar," .. id .. ":trigger," .. id .. ":trigger")
+    -- red under: the outfit announce calling NS.AnnounceSettingsChanged (design §3.5, C12).
+    assertEqual(settings, 0)
+end)
+
+test("schema: the outfit rows refuse an unknown trigger, a bad icon, a nil id and an unknown id", function()
+    local _, NSi, id = outfitScene()
+    assertFalse((NSi.SetByPath("outfit.trigger.id", "NO_SUCH", id)), "an unknown trigger id")
+    assertFalse((NSi.SetByPath("outfit.icon", -3, id)), "a non-positive icon")
+    assertFalse((NSi.SetByPath("outfit.icon", "x", id)))
+    assertFalse((NSi.SetByPath("outfit.bar.hide", "yes", id)), "a bool row takes a bool")
+    assertFalse((NSi.SetByPath("outfit.icon", 1, "o99")), "an unknown outfit")
+    assertFalse((NSi.OutfitSchema.Set("outfit.icon", 1, nil)), "a nil id never reaches an outfit")
+    assertEqual(NSi.Outfits.Get(id).icon, nil)
+end)
+
+test("schema: the wildcard icon 134400 and an empty trigger id store as absent (INV §7.6)", function()
+    local _, NSi, id = outfitScene()
+    assertTrue(NSi.SetByPath("outfit.icon", 136245, id))
+    assertTrue(NSi.SetByPath("outfit.icon", 134400, id))
+    -- red under: the icon row's onChange not clearing the wildcard (134400 stored).
+    assertNil(NSi.Outfits.Get(id).icon)
+    assertTrue(NSi.SetByPath("outfit.trigger.id", "FISHING", id))
+    assertTrue(NSi.SetByPath("outfit.trigger.id", "", id))
+    assertNil(NSi.Outfits.Get(id).trigger, "no trigger is no trigger table")
+end)
+
+test("schema: an outfit batch is all or nothing and forwards through NS.Schema.SetMany", function()
+    local _, NSi, id = outfitScene()
+    local ok = NSi.Schema.SetMany({ { path = "outfit.trigger.id", value = "FISHING" },
+                                    { path = "outfit.icon", value = -1 } }, { instanceId = id })
+    assertFalse(ok)
+    assertNil(NSi.Outfits.Get(id).trigger, "a refused batch stored its first entry")
+    assertTrue(NSi.Schema.SetMany({ { path = "outfit.trigger.id", value = "FISHING" },
+                                    { path = "outfit.trigger.disabled", value = true } }, { instanceId = id }))
+    assertTrue(NSi.Outfits.Get(id).trigger.disabled)
+    assertEqual(NSi.Outfits.Status(id), "disabled")
 end)

@@ -108,6 +108,22 @@ L["Not a readable item link."] = "Not a readable item link."
 -- P4.5 keys (modules/Inventory.lua, modules/Inventory_Lists.lua)
 
 -- P4.6 keys (modules/Outfits.lua, modules/Outfits_Seed.lua, modules/Outfits_Schema.lua)
+L["Normal"] = "Normal"
+L["Birthday Suit"] = "Birthday Suit"
+L["Druid: Caster Form"] = "Druid: Caster Form"
+L["Druid: Bear Form"] = "Druid: Bear Form"
+L["Druid: Cat Form"] = "Druid: Cat Form"
+L["Druid: Travel Form"] = "Druid: Travel Form"
+L["Druid: Moonkin Form"] = "Druid: Moonkin Form"
+L["Druid: Tree of Life"] = "Druid: Tree of Life"
+L["Druid: Prowl"] = "Druid: Prowl"
+L["Rogue: Stealth"] = "Rogue: Stealth"
+L["Shaman: Ghost Wolf"] = "Shaman: Ghost Wolf"
+L["That name is already used"] = "That name is already used"
+L["Outfits can't be deleted in combat."] = "Outfits can't be deleted in combat."
+L["All outfits deleted. The built-in outfits were re-created."] = "All outfits deleted. The built-in outfits were re-created."
+L["No Complete outfit is equipped."] = "No Complete outfit is equipped."
+L["Updated the outfit '%s' to currently equipped items"] = "Updated the outfit '%s' to currently equipped items"
 
 -- P4.8 keys (modules/Equip.lua)
 

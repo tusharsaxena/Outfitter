@@ -12,6 +12,7 @@ local _, NS = ...
 --   Compat.NumSpecializations()  the class's spec count, 0 when unknown
 --   Compat.PlayerSpecID()        the active spec's ID, or nil
 --   Compat.PlayerClass()         the class token ("WARRIOR"), or nil
+--   Compat.PlayerClassName()     the localized class name ("Warrior"), or nil (P4.6)
 --   Compat.PlayerFaction()       UnitFactionGroup's FIRST return ("Horde"), or nil (H10)
 --   Compat.UnitLevel(unit)       a plain level, or nil (nil means "don't filter")
 --   Compat.IsDeadOrGhost(unit)   true / false, or nil when unreadable
@@ -151,6 +152,14 @@ function Compat.PlayerClass()
     if not UnitClass then return nil end
     local _, token = UnitClass("player")
     return NS.Secrets.PlainString(token)
+end
+
+--- The player's class as the client shows it ("Druid"): UnitClass's FIRST return, already in the
+--- player's gender form, which the seeded spec outfits are named after (P4.6, design §5.7).
+--- @return string|nil
+function Compat.PlayerClassName()
+    if not UnitClass then return nil end
+    return NS.Secrets.PlainString((UnitClass("player")))
 end
 
 --- The player's faction group ("Alliance", "Horde", "Neutral"): UnitFactionGroup's FIRST return,

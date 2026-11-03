@@ -8,10 +8,18 @@ NS.addon = addon
 -- file captured (architecture-§2: the SAME function object as NS.Util.print).
 NS.Print = NS.Util.print
 
+--- The session's first LoadPass has finished (modules/Outfits_Seed.lua calls this once). The legacy
+--- guard's LEGACY_DETECTED send lands here in P4.27 (design §4.7); until then there is nothing to do.
+function NS.OnLoadPassDone() end
+
 function NS:OnInitialize()
     self:InitDB()
     -- Before anything reads NS.db.profile (savedvariables-§1).
     self:RunMigrations()
+    -- The outfit instance rows (modules/Outfits_Schema.lua, design §3.5), on settings/Schema.lua's
+    -- library-or-stub; NS.Triggers.Finalize (P4.15) adds its rows between the build and the check.
+    NS.BuildOutfitSchema()
+    NS.ValidateOutfitSchema()
     -- The profile's skin, before any page or window is built (core/SkinSetup.lua).
     NS.ApplySkinChoice()
     -- The stored switch takes its hold before OnEnable runs, so a disabled login registers nothing.

@@ -165,3 +165,25 @@ test("database: the outfit root refuses a nil id, an unknown id and any other fi
     root = NS.ResolveOutfitRoot({ "auto", "enabled" }, "o1")
     assertEqual(root, nil)
 end)
+
+-- ── final (P4.6): the character store the outfit store writes ───────────────────────────────────
+
+test("database: db.char starts in the §3.1 shape, and the outfit store's writes land in it", function()
+    local inst = T.load()
+    local NS = inst.NS
+    local c = NS.db.char
+    assertEqual(c.seeded, false)
+    assertEqual(c.nextID, 1)
+    assertEqual(next(c.outfits), nil)
+    assertEqual(#c.order.Complete + #c.order.Accessory, 0)
+    assertEqual(next(c.bindings), nil); assertEqual(#c.stack, 0); assertEqual(#c.recent, 0)
+    assertEqual(c.emPreserved, nil)
+    local id = NS.Outfits.Create("Kept", {})
+    assertTrue(rawequal(NS.db.char.outfits[id], NS.Outfits.Get(id)), "the record is the store's own table")
+    local root, first = NS.ResolveOutfitRoot({ "outfit", "icon" }, id)
+    assertTrue(rawequal(root, NS.Outfits.Get(id))); assertEqual(first, 2)
+    -- A profile callback never reaches it (H7): every one of the three, with a real outfit stored.
+    NS.db:SetProfile("Alt"); NS.db:CopyProfile("Default"); NS.db:ResetProfile()
+    assertEqual(NS.Outfits.Get(id).name, "Kept")
+    assertEqual(NS.db.char.nextID, 2)
+end)
