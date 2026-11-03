@@ -253,16 +253,18 @@ test("stack: the fallback walk is bounded, prunes as it goes, and a deleted outf
     assertNil(St.CurrentComplete())
 end)
 
-test("stack: Toggle removes a worn Accessory, wears an unworn one, and always re-wears a Complete one", function()
+test("stack: Toggle removes a worn outfit, Complete too (the fallback puts the previous one back)", function()
     local NS, _, St = scene()
     local o = outfits(NS)
-    St.Wear(o.normal)
+    St.Wear(o.naked); St.Wear(o.normal)
     assertTrue(St.Toggle(o.hat)); assertTrue(St.IsWorn(o.hat))
     assertFalse(St.Toggle(o.hat)); assertFalse(St.IsWorn(o.hat))
     St.Wear(o.hat)
-    -- red under: a Toggle that removes a worn Complete outfit.
-    assertTrue(St.Toggle(o.normal), "a Complete outfit is re-worn")
-    assertEqual(shape(NS), o.normal)
+    -- ToggleOutfit (Outfitter.lua:3549-3567) has no Complete check: `/of toggle` swaps back.
+    -- red under: a Toggle that re-wears a worn Complete outfit.
+    assertFalse(St.Toggle(o.normal), "a worn Complete outfit is taken off")
+    assertEqual(shape(NS), o.naked, "the fallback walk wore the previous Complete outfit")
+    assertTrue(St.Toggle(o.normal)); assertEqual(shape(NS), o.normal)
 end)
 
 test("stack: Clear announces every named entry, and the reads answer from the stack", function()
@@ -348,6 +350,21 @@ test("stack: a hardware wear or remove sets the highest stacked title; a trigger
     assertEqual(#M.__world.titleCalls, 3, "UpdateTitle without hw does nothing")
 end)
 
+test("stack: a hardware remove of a Complete outfit sets the title of the fallback outfit", function()
+    local NS, M, St = scene()
+    local o = outfits(NS)
+    NS.Outfits.SetFlag(o.naked, "titleID", 2)
+    St.Wear(o.naked); St.Wear(o.normal)
+    M.__world.titleCalls = {}
+    St.Remove(o.normal, { hw = true })
+    assertEqual(shape(NS), o.naked)
+    -- red under: a fallback wear that drops the remove's hw (HasHWEvent spans the fallback, legacy).
+    assertEqual(table.concat(M.__world.titleCalls, ","), "2")
+    M.__world.titleCalls = {}
+    St.Wear(o.normal); St.Remove(o.normal)
+    assertEqual(#M.__world.titleCalls, 0, "a remove with no hardware event leaves the fallback's title")
+end)
+
 test("stack: clearDisabled re-enables the trigger through NS.SetByPath, so the binder hears OUTFIT_EDITED", function()
     local NS, _, St = scene()
     local o = outfits(NS)
@@ -386,6 +403,41 @@ test("stack: with the window open a wear selects the topmost outfit, else clears
     assertNil(St.Selected(), "an unknown id selects nothing")
 end)
 
+test("stack: deleting the selected outfit clears the selection, so a later hand swap becomes a temp", function()
+    local NS, M, St, ctl = scene()
+    local o = outfits(NS)
+    local O = NS.Outfits
+    T.fake(NS, "TriggerBinder", { Unbind = true })
+    NS.db.char.stack = { { id = o.normal } }
+    St.Init(); St.Resume()
+    ctl.shown = true
+    local gear = O.Create("Gear", { FeetSlot = { id = 4242 } })   -- selected, not worn
+    St.Select(gear)
+    local sel = hear(NS, "SELECTION_CHANGED")
+    O.Delete(gear)
+    -- red under: an O.Delete that leaves the selection (Outfitter.lua:5101-5105 clears it).
+    assertEqual(#sel, 1); assertNil(sel[1][1])
+    assertNil(St.Selected())
+    -- The worn Complete outfit, alone in the recents: the fallback re-wears and re-selects it.
+    St.Select(o.normal)
+    O.Delete(o.normal)
+    assertNil(St.Selected(), "the fallback's re-selection of the deleted outfit is dropped")
+    M.C_Container.UseContainerItem(0, 5)   -- the hero chest on, by hand
+    NS.Inventory.Sync()
+    -- The deleted outfit's entry stays until the next LoadPass repair and reads as none.
+    assertEqual(shape(NS), o.normal .. ",temp:ChestSlot", "the swap is absorbed, not lost to a nil record")
+    assertEqual(St.Expected().ChestSlot.id, NS.ItemInfo.FromSlot("ChestSlot").id)
+end)
+
+test("stack: St.Selected answers nil once the selected record is gone", function()
+    local NS, _, St = scene()
+    local o = outfits(NS)
+    St.Select(o.hat)
+    NS.db.char.outfits[o.hat] = nil
+    -- red under: a Selected that returns the stored id unchecked.
+    assertNil(St.Selected())
+end)
+
 -- ── the key bindings ─────────────────────────────────────────────────────────────────────────
 
 test("stack: WearBound wears a Complete outfit now, toggles anything else, and ignores a panic repeat", function()
@@ -397,17 +449,24 @@ test("stack: WearBound wears a Complete outfit now, toggles anything else, and i
     local worn, rec = St.WearBound(1)
     assertTrue(worn); assertEqual(rec.id, o.normal)
     assertEqual(NS.Equip.Pending(), false, "a Complete key wear updates now")
+    M.__now = 102   -- past the 1.5 s throttle, which a *Now update honors too (OutfitterEquipment.lua:853)
     worn = St.WearBound(2)
     assertTrue(worn); assertTrue(St.IsWorn(o.hat))
+    -- red under: a non-Complete key toggle without `now` (ToggleOutfitNow, Outfitter.lua:3751).
+    assertEqual(NS.Equip.Pending(), false, "an Accessory key wear updates now, not on the 0.05 s timer")
     assertFalse(NS.Outfits.Get(o.hat).trigger.disabled == true, "the key clears Disabled")
-    M.__now = 100.5
+    M.__now = 102.5
     local again, _, ignored = St.WearBound(2)
     -- red under: no anti-panic window (the second press toggles the hat off).
     assertNil(again); assertTrue(ignored); assertTrue(St.IsWorn(o.hat))
-    M.__now = 101.0   -- 0.5 s after the ignored press: the window refreshed on it
+    M.__now = 103.0   -- 0.5 s after the ignored press: the window refreshed on it
     assertNil((St.WearBound(2)))
-    M.__now = 102
+    M.__now = 104
+    NS.Outfits.Get(o.hat).trigger.disabled = true
     assertFalse((St.WearBound(2)), "a press after the window toggles off")
+    -- red under: a removeBody without the clearDisabled step (Outfitter.lua:3741-3743 clears it first).
+    assertFalse(NS.Outfits.Get(o.hat).trigger.disabled == true, "the key clears Disabled on a remove too")
+    assertEqual(NS.Equip.Pending(), false, "the key remove updates now")
     assertNil((St.WearBound(5)), "an unbound key answers nil")
 end)
 
@@ -485,9 +544,13 @@ end)
 test("stack: the persisted stack round-trips; Init drops unknown ids, keeps temps whole, sets expected", function()
     local NS, _, St = scene()
     local o = outfits(NS)
+    -- The stack matches the worn gear, as it does at a logout after the last update.
+    local function worn(s) return wornItems(NS)[s] end
+    local helm = NS.Outfits.Create("Helm", { HeadSlot = worn("HeadSlot") })
+    o.hat = helm
     St.Wear(o.normal)
     St.Wear(o.hat, { layer = "zone" })
-    NS.db.char.stack[#NS.db.char.stack + 1] = { temp = { WristSlot = { id = 0 }, HandsSlot = { id = 0 } } }
+    NS.db.char.stack[#NS.db.char.stack + 1] = { temp = { WristSlot = worn("WristSlot"), HandsSlot = worn("HandsSlot") } }
     local saved = {}
     for _, k in ipairs({ "outfits", "order", "nextID", "stack", "recent" }) do saved[k] = NS.db.char[k] end
     table.insert(saved.stack, 2, { id = "o99" })
@@ -496,6 +559,27 @@ test("stack: the persisted stack round-trips; Init drops unknown ids, keeps temp
     St2.Init()
     assertEqual(shape(NS2), o.normal .. "," .. o.hat .. "/zone,temp:HandsSlot+WristSlot")
     assertEqual(St2.CurrentInfo(), "Custom")
-    assertEqual(St2.Expected().HeadSlot.id, 0, "expected is the compiled stack")
+    assertEqual(St2.Expected().HeadSlot.id, NS2.ItemInfo.FromSlot("HeadSlot").id, "expected is the compiled stack")
     assertEqual(St2.CurrentComplete(), o.normal)
+end)
+
+test("stack: Init absorbs worn gear the restored stack does not expect into the temporary outfit", function()
+    local NS, M, St = scene()
+    local o = outfits(NS)
+    -- Normal expects the plate chest, but the hero chest went on while the addon was not watching.
+    NS.db.char.stack = { { id = o.normal }, { id = o.hat } }
+    M.C_Container.UseContainerItem(0, 5)
+    NS.Inventory.Sync()
+    local hero = NS.ItemInfo.FromSlot("ChestSlot").id
+    St.Init()
+    -- red under: an Init that only expects the compiled stack (OutfitterEquipment.lua:1010-1012).
+    assertEqual(shape(NS), o.normal .. "," .. o.hat .. ",temp:ChestSlot+HeadSlot")
+    assertEqual(St.Expected().ChestSlot.id, hero, "the expected outfit takes the absorbed gear")
+    assertEqual(St.Compile().ChestSlot.id, hero, "the next update keeps the player's chest")
+    -- A worn state the stack already expects makes no temp.
+    local NS2, _, St2 = scene()
+    local o2 = outfits(NS2)
+    NS2.db.char.stack = { { id = o2.normal } }
+    St2.Init()
+    assertEqual(shape(NS2), o2.normal)
 end)

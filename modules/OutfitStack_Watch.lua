@@ -162,6 +162,17 @@ function St.__watchInstall()
     end)
 end
 
+--- St.Init: the worn gear the expected outfit does not hold becomes the temporary outfit
+--- (UpdateTemporaryOutfit(GetNewItemsOutfit(ExpectedOutfit))), and the expected outfit takes it.
+function St.__watchAbsorbWorn()
+    local cache = NS.Inventory.Cache()
+    local exp = St.Expected()
+    local newItems, any = diffAgainst(exp, snapshotWorn())
+    if not any then return end
+    updateTemp(newItems, cache)
+    for slot, item in pairs(newItems) do exp[slot] = item end
+end
+
 --- What the Watch compares the next change with: the gear worn now (St.Init, St.Resume).
 function St.__watchReset()
     current = snapshotWorn()

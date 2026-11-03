@@ -38,7 +38,7 @@ local function engineFakes(NS, seq, extra)
                                 Rename = function() return true end }),
         stack = T.fake(NS, "Stack", { Init = log("Stack.Init"), Remove = log("Stack.Remove"),
                                       Select = log("Stack.Select"), Clear = log("Stack.Clear"),
-                                      Wear = log("Stack.Wear") }),
+                                      Wear = log("Stack.Wear"), Selected = function() return nil end }),
         binder = T.fake(NS, "TriggerBinder", { BindAll = log("Binder.BindAll"), Unbind = log("Binder.Unbind"),
                                                UnbindAll = log("Binder.UnbindAll") }),
     }, seq

@@ -308,7 +308,7 @@ local function unbindKeys(id)
     end
 end
 
---- Delete one outfit: unwear, unbind its trigger, unlink it from the order and the key bindings,
+--- Delete one outfit: unwear, drop the selection, unbind its trigger, unlink it from the order and the key bindings,
 --- delete its Blizzard set (em), then OUTFIT_DELETED (id, name).
 --- @param id string
 --- @return boolean
@@ -316,6 +316,9 @@ function O.Delete(id)
     local rec = O.Get(id)
     if not rec then return false end
     NS.Stack.Remove(id)
+    -- After the remove: its fallback walk can re-wear (and with the window open re-select) this
+    -- very outfit. The legacy DeleteOutfit cleared the selection too (Outfitter.lua:5101-5105).
+    if NS.Stack.Selected() == id then NS.Stack.Select(nil) end
     NS.TriggerBinder.Unbind(id)
     unlinkOrder(id)
     unbindKeys(id)

@@ -158,14 +158,16 @@ local function unlinkRecent(id)
 end
 
 -- Removing a Complete outfit wears the newest recent Complete outfit that still exists, pruning the
--- stale ones on the way (Outfitter.lua:3519-3545). Bounded by the list's length.
-local function wearFallbackComplete()
+-- stale ones on the way (Outfitter.lua:3519-3545). Bounded by the list's length. The fallback wear
+-- carries the remove's `hw`: the legacy HasHWEvent was still set while RemoveOutfit's fallback
+-- WearOutfit dispatched, so the title followed the outfit put back on.
+local function wearFallbackComplete(hw)
     local r = store().recent
     for _ = 1, #r do
         local id = r[#r]
         if id == nil then return end
         if isComplete(getRec(id)) then
-            St.Wear(id)
+            St.Wear(id, { hw = hw })
             return
         end
         table.remove(r)
@@ -183,8 +185,12 @@ function St.Select(id)
     NS.SendBus(NS.MSG.SELECTION_CHANGED, want)
 end
 
+--- The selection; nil once the selected outfit is gone (a deleted record reads as none).
 --- @return string|nil
-function St.Selected() return selectedId end
+function St.Selected()
+    if selectedId ~= nil and not getRec(selectedId) then selectedId = nil end
+    return selectedId
+end
 
 -- ── the title ─────────────────────────────────────────────────────────────────────────────────
 
@@ -224,11 +230,16 @@ local function pushRecent(id)
     r[#r + 1] = id
 end
 
-local function wearBody(id, opts)
-    local rec = getRec(id)
+-- A key press re-enables the outfit's trigger whether it wears or removes (Outfitter.lua:3741-3743).
+local function clearDisabledStep(id, rec, opts)
     if opts.clearDisabled and rec.trigger and rec.trigger.disabled then
         NS.SetByPath("outfit.trigger.disabled", false, id)
     end
+end
+
+local function wearBody(id, opts)
+    local rec = getRec(id)
+    clearDisabledStep(id, rec, opts)
     local complete = isComplete(rec)
     if complete then
         St.Clear()
@@ -261,6 +272,7 @@ end
 
 local function removeBody(id, opts)
     local rec = getRec(id)
+    clearDisabledStep(id, rec, opts)
     table.remove(stack(), indexOf(id))
     collapseTemps()
     local complete = isComplete(rec)
@@ -274,10 +286,10 @@ local function removeBody(id, opts)
     NS.Equip.Request()
     NS.SendBus(NS.MSG.OUTFIT_REMOVED, id, opts.byTrigger)
     if opts.hw then St.UpdateTitle(true) end
-    if complete then wearFallbackComplete() end
+    if complete then wearFallbackComplete(opts.hw) end
 end
 
---- Take an outfit off the stack. `opts = { byTrigger, now, hw }`. A quiet no-op (false) for an id
+--- Take an outfit off the stack. `opts = { byTrigger, now, hw, clearDisabled }`. A quiet no-op (false) for an id
 --- that is not on it: NS.Outfits.Delete calls this unconditionally.
 --- @param id string
 --- @param opts table|nil
@@ -299,12 +311,14 @@ function St.Remove(id, opts)
     return true
 end
 
---- Wear it, or take it off if worn. A Complete outfit is always re-worn (INV §3.2).
+--- Wear it, or take it off if worn (ToggleOutfit, Outfitter.lua:3549-3567). A worn Complete outfit is
+--- removed too, and the fallback walk puts the previous one back: the re-wear of a Complete outfit
+--- is the bar's and the key binding's own rule, at their call sites (OutfitterBar.lua:783-788).
 --- @param id string
 --- @param opts table|nil
 --- @return boolean worn
 function St.Toggle(id, opts)
-    if St.IsWorn(id) and not isComplete(getRec(id)) then
+    if St.IsWorn(id) then
         St.Remove(id, opts)
         return false
     end
@@ -312,7 +326,8 @@ function St.Toggle(id, opts)
 end
 
 --- The key binding (design §4.4): a repeat of the same key within 0.75 s is ignored, and its clock
---- refreshes on every press (INV §5, §16 #17). A Complete outfit is worn now; anything else toggles.
+--- refreshes on every press (INV §5, §16 #17). A Complete outfit is worn now; anything else toggles
+--- now (ToggleOutfitNow, Outfitter.lua:3751).
 --- @param n number
 --- @return boolean|nil worn  nil when nothing was done
 --- @return table|nil rec
@@ -330,7 +345,7 @@ function St.WearBound(n)
     if isComplete(rec) then
         worn = St.Wear(id, { now = true, hw = true, clearDisabled = true })
     else
-        worn = St.Toggle(id, { hw = true, clearDisabled = true })
+        worn = St.Toggle(id, { now = true, hw = true, clearDisabled = true })
     end
     lastBinding.n, lastBinding.at = n, now
     return worn, rec
@@ -448,10 +463,13 @@ local function restoreStack()
     store().stack = out
 end
 
---- The LoadPass restore: drop unknown ids, keep the temps whole, and expect the compiled stack.
+--- The LoadPass restore: drop unknown ids, keep the temps whole, and expect the compiled stack. Gear
+--- worn that the stack does not expect (changed while the addon was not watching) becomes the
+--- temporary outfit, so the next update keeps it (RestoreSavedStack, OutfitterEquipment.lua:1010-1012).
 function St.Init()
     restoreStack()
     St.SetExpected(St.Compile())
+    St.__watchAbsorbWorn()
     St.__watchReset()
 end
 

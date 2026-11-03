@@ -204,7 +204,7 @@ OutfitterEquipment.lua:986-1315.
 - `OUTFITTER_SWAP_COMPLETE` fires when the current inventory equals the expected outfit.
 - **Title**: the highest stacked outfit with `ShowTitleID` calls `SetCurrentTitle`, **only inside a hardware event** (`HasHWEvent`) (`UpdateOutfitDisplay`, Equipment:1262-1275).
 - `GetCurrentOutfitInfo` returns `""` for an empty stack and `"Custom"` when a temporary outfit is on top.
-- *Toggle* semantics: a Complete outfit is always re-worn. Anything else toggles.
+- *Toggle* semantics: `ToggleOutfit`/`ToggleOutfitNow` (3549-3567) remove a worn outfit, a Complete one too, and the Complete fallback then wears the previous one (the `toggle` verb, 1990). The bar (`OutfitterBar.lua:783-788`) and the key binding (3745-3751) re-wear a Complete outfit at their own call sites. Anything else toggles. (Corrected at the P4 group F review: this line read "a Complete outfit is always re-worn", which only the bar and the binding do.)
 - `*Now` variants force an immediate update via `EndEquipmentUpdate(nil, true)`.
 - **Fix B6**: `CollapseTemporaryOutfits` and `RestoreSavedStack` desync `LastOutfitStack` and `LayerIndex`.
 
