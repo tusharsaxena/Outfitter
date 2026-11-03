@@ -98,6 +98,7 @@ local SUITES = {
     "test_database",
     "test_packaging",
     "test_vendor_sync",
+    "test_secrets",
     { name = "test_skin_values", dir = "tests/_kit/" },
     { name = "test_skin_switch", dir = "tests/_kit/" },
     { name = "test_eol", dir = "tests/_kit/" },

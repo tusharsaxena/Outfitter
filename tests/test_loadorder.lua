@@ -88,3 +88,47 @@ test("load order: the namespace loads first in core and the printer before the a
     assertTrue(at["core/CoreSetup.lua"] < at["core/OutfitterReborn.lua"], "the NS.Print reclaim")
     assertTrue(at["core/OutfitterReborn.lua"] < at["core/Database.lua"])
 end)
+
+-- core/Compat.lua loads BEFORE core/Secrets.lua (Secrets binds Compat's guards at file scope), so a
+-- file-scope read of NS.Secrets in Compat would capture nil. A read is at file scope when it sits on
+-- an unindented code line: every function body in this codebase is indented.
+local function fileScopeSecretsReads(text)
+    local hits = {}
+    local n = 0
+    for line in (text:gsub("\r", "") .. "\n"):gmatch("([^\n]*)\n") do
+        n = n + 1
+        local code = line:gsub("%-%-.*$", "")
+        if code:find("^[^%s]") and code:find("NS%.Secrets") then hits[#hits + 1] = n end
+    end
+    return hits
+end
+
+test("load order: core/Compat.lua precedes core/Secrets.lua and never captures NS.Secrets at file scope", function()
+    -- Mutation self-test: the rule catches a capture and lets a call-time read through.
+    assertEqual(#fileScopeSecretsReads("local S = NS.Secrets\r\n"), 1)
+    assertEqual(#fileScopeSecretsReads("local P = NS.Secrets.PlainNumber\n"), 1)
+    assertEqual(#fileScopeSecretsReads("function X()\n    return NS.Secrets.PlainNumber(1)\nend\n"), 0)
+    assertEqual(#fileScopeSecretsReads("-- NS.Secrets is reached at call time\n"), 0)
+
+    local at = {}
+    for i, path in ipairs(T.loadedAddonFiles) do at[(path:gsub("\\", "/"))] = i end
+    assertTrue(at["core/Compat.lua"] ~= nil and at["core/Secrets.lua"] ~= nil, "both seams are in the TOC")
+    assertTrue(at["core/CoreSetup.lua"] < at["core/Compat.lua"])
+    assertTrue(at["core/Compat.lua"] < at["core/Secrets.lua"], "Secrets binds Compat's guards at file scope")
+    assertTrue(at["core/Secrets.lua"] < at["core/OutfitterReborn.lua"])
+
+    local f = assert(io.open(T.root .. "/core/Compat.lua", "r"))
+    local hits = fileScopeSecretsReads(f:read("*a"))
+    f:close()
+    assertEqual(#hits, 0, "core/Compat.lua reads NS.Secrets at file scope, line " .. tostring(hits[1]))
+end)
+
+test("load order: the compat family is exactly core/Compat.lua", function()
+    local family = {}
+    for _, path in ipairs(T.loadedAddonFiles) do
+        local rel = path:gsub("\\", "/")
+        if rel:find("Compat[%w_]*%.lua$") then family[#family + 1] = rel end
+    end
+    assertEqual(#family, 1, "compat files in the TOC: " .. table.concat(family, ", "))
+    assertEqual(family[1], "core/Compat.lua")
+end)

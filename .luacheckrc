@@ -43,6 +43,19 @@ files["core/Database.lua"] = { ignore = { "212/self" } }
 -- AceEvent invokes a handler registered by method name as `self[name](self, event, ...)`.
 files["core/OutfitterReborn.lua"] = { ignore = { "212/self" } }
 
+-- The compat family (compat.md :7): the version-variant client calls and the client's secret
+-- detectors, readable from this one file only, so "the client is read only through NS.Compat" is a
+-- lint fact (design §1.5). core/Secrets.lua names no client global; it binds this file's guards.
+-- C_SpecializationInfo and the bare IsAddOnLoaded are the upper and lower rungs of two ladders.
+files["core/Compat.lua"] = {
+    read_globals = {
+        "issecretvalue", "canaccessvalue", "issecrettable", "canaccesstable",
+        "C_SpecializationInfo", "GetSpecialization", "GetSpecializationInfo", "GetNumSpecializations",
+        "UnitFactionGroup", "UnitLevel", "UnitIsDeadOrGhost", "GetCVar", "SetCVar", "C_PlayerInfo",
+        "IsAddOnLoaded",
+    },
+}
+
 -- The published slash surface is colon-called by the host and the suites and forwards to the
 -- dispatcher upvalue.
 files["settings/Slash.lua"] = { ignore = { "212/self" } }

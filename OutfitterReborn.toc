@@ -44,6 +44,11 @@ core\State.lua
 core\EnvSetup.lua
 # LOAD-BEARING: NS.Util.print (reclaimed by core\OutfitterReborn.lua at FILE SCOPE) and NS.LIBKA0S_MISSING (read by every stub below).
 core\CoreSetup.lua
+# LOAD-BEARING: NS.Compat, whose secret detectors core\Secrets.lua binds at FILE SCOPE. Compat itself reaches NS.Secrets
+# at CALL time only (no file-scope capture), so it may precede Secrets; test_loadorder pins that.
+core\Compat.lua
+# LOAD-BEARING: NS.Secrets, captured at FILE SCOPE by modules\ItemInfo.lua, modules\States.lua and modules\Inventory.lua.
+core\Secrets.lua
 # LOAD-BEARING: NewAddon(NS, addonName, ...) and the NS.Print reclaim at FILE SCOPE, so it follows core\CoreSetup.lua.
 core\OutfitterReborn.lua
 core\Database.lua
