@@ -17,8 +17,10 @@ function NS:OnInitialize()
     -- Before anything reads NS.db.profile (savedvariables-§1).
     self:RunMigrations()
     -- The outfit instance rows (modules/Outfits_Schema.lua, design §3.5), on settings/Schema.lua's
-    -- library-or-stub; NS.Triggers.Finalize (P4.15) adds its rows between the build and the check.
+    -- library-or-stub; NS.Triggers.Finalize builds the trigger descriptors and adds their
+    -- `trigger.<TID>.<key>` rows between the build and the check (design §3.5, §6.7).
     NS.BuildOutfitSchema()
+    NS.Triggers.Finalize()
     NS.ValidateOutfitSchema()
     -- The profile's skin, before any page or window is built (core/SkinSetup.lua).
     NS.ApplySkinChoice()

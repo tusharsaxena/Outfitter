@@ -163,9 +163,9 @@ local SUITES = {
 
     { name = "test_optimize" },
 
-    { name = "test_triggers",         pending = "P4.15" },
-    { name = "test_trigger_binder",   pending = "P4.15" },
-    { name = "test_no_loadstring",    pending = "P4.15" },
+    { name = "test_triggers" },
+    { name = "test_trigger_binder" },
+    { name = "test_no_loadstring" },
 
     { name = "test_api",              pending = "P4.25" },
 
