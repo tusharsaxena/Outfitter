@@ -43,6 +43,7 @@ A tag is one word; a trigger id, an outfit name or a slot goes in the message, n
 | `Bar` | `modules/Bar*.lua` (P4) |
 | `EM` | `modules/EquipmentManager.lua` (P4): the Blizzard equipment-set mirror |
 | `Opt` | `modules/Optimize*.lua` (P4) |
+| `Pet` | `modules/Companion.lua` (P4): a blocked pass and its reason, a finished or canceled wish, a give-up at the cap or the deadline |
 
 The library writes the latch's stand-down and stand-up edges with their holds, and the launcher's
 registration lines, through the same sink.
