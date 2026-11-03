@@ -1,0 +1,85 @@
+-- tests/dock_scene.lua — the shared scene of the four P4.19 suites (test_dock, test_list_model,
+-- test_rows_secure, test_slot_enables): one fresh instance with the docked surfaces stood up.
+--
+-- Loaded as `dofile(T.root .. "/tests/dock_scene.lua")(T)`; answers `scene(opts)`.
+--
+-- The kit's paint recorder is installed before anything loads, so a texture or a font string is an
+-- object of its own and not the frame that made it (mock_base.lua's "Known divergence"): without it a
+-- row's `trig:Hide()` would hide the row. Three recorders this file adds on every frame made after
+-- install, for what the mock does not model: a CheckButton's checked state; the points a SetPoint
+-- was given (`__pts`); and OnShow / OnHide run when a Show or Hide changes the frame's visibility,
+-- as the client runs them. Each wraps whatever the frame already has, so a protected frame keeps
+-- refusing in lockdown.
+--
+-- The modules that have not landed are recorded fakes (design §12, the fake rule): the dialogs and
+-- the icon chooser (P4.21) the window and the dock call into, the outfit menu and the outfit dialog
+-- (P4.21) the rows and the footer open. Each carries Suspend/Resume, since the lifecycle walk reads
+-- them on a stand-down.
+
+return function(T)
+    local installPaint = dofile(T.root .. "/tests/_kit/mock_paint.lua")
+
+    local function recorders(M)
+        local prev = M.CreateFrame
+        M.CreateFrame = function(kind, name, parent, template)
+            local f = prev(kind, name, parent, template)
+            if type(f) ~= "table" then return f end
+            local setPoint = f.SetPoint
+            rawset(f, "__pts", {})
+            rawset(f, "SetPoint", function(self, ...)
+                local pts = rawget(self, "__pts")
+                pts[#pts + 1] = { ... }
+                return setPoint(self, ...)
+            end)
+            -- The client runs OnShow / OnHide when a frame's own visibility changes; the base mock
+            -- only flips the flag. Wrapped around whatever Show / Hide the frame already has, so a
+            -- protected frame's refused call changes nothing and fires nothing.
+            for _, pair in ipairs({ { "Show", "OnShow" }, { "Hide", "OnHide" } }) do
+                local orig, script = f[pair[1]], pair[2]
+                rawset(f, pair[1], function(self, ...)
+                    local was = self:IsShown()
+                    local r = orig(self, ...)
+                    if self:IsShown() ~= was then self:__fire(script) end
+                    return r
+                end)
+            end
+            if kind == "CheckButton" then
+                rawset(f, "SetChecked", function(self, v) rawset(self, "__checked", v and true or false) end)
+                rawset(f, "GetChecked", function(self) return rawget(self, "__checked") == true end)
+            end
+            return f
+        end
+    end
+
+    --- opts.scenario  the gear scenario (default "geared")
+    --- opts.resume    false = leave the dock, the window and the slot checkboxes un-resumed
+    local function scene(opts)
+        opts = opts or {}
+        local inst = T.load({ mutate = function(M)
+            installPaint(M)
+            recorders(M)
+            M.STANDARD_TEXT_FONT = "Fonts\\FRIZQT__.TTF"
+            M.__gear:load(opts.scenario or "geared")
+        end })
+        local NS, M = inst.NS, inst.mocks
+        M.__now = 100
+        NS.PlayerState.Resume()
+        NS.Inventory.Resume()
+        NS.Equip.Resume()
+        M.__fireTimers()
+        local fakes = {
+            Dialogs     = T.fake(NS, "Dialogs", { CloseAll = true, Suspend = true, Resume = true }),
+            IconChooser = T.fake(NS, "IconChooser", { Close = true, Suspend = true, Resume = true }),
+            OutfitMenu  = T.fake(NS, "OutfitMenu", { Open = true }),
+            OutfitDialog = T.fake(NS, "OutfitDialog", { OpenNew = true }),
+        }
+        NS.Stack.Resume()
+        if opts.resume ~= false then
+            NS.SlotEnables.Resume()
+            NS.Dock.Resume()
+        end
+        return NS, M, fakes
+    end
+
+    return scene
+end

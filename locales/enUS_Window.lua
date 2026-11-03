@@ -23,6 +23,25 @@ L["Banked:"] = "Banked:"
 -- P4.18 keys (modules/QuickSlots.lua, modules/QuickSlots_Sort.lua)
 
 -- P4.19 keys (modules/Dock.lua, modules/Window.lua, modules/Window_ListModel.lua, modules/Window_Rows.lua, modules/SlotEnables.lua)
+L["Toggle the Outfitter window"] = "Toggle the Outfitter window"
+L["The Outfitter window opens when combat ends."] = "The Outfitter window opens when combat ends."
+L["Outfitter Reborn"] = "Outfitter Reborn"
+L["New outfit..."] = "New outfit..."
+L["All"] = "All"
+L["Slots:"] = "Slots:"
+L["Complete outfits"] = "Complete outfits"
+L["Accessories"] = "Accessories"
+L["Odds 'n ends"] = "Odds 'n ends"
+L["Warbound until equipped"] = "Warbound until equipped"
+L["Unopened"] = "Unopened"
+L["Complete outfits have all slots specified. Wearing one takes every other outfit off."] = "Complete outfits have all slots specified. Wearing one takes every other outfit off."
+L["Accessory outfits have some, but not all, slots specified. You can wear as many as you like at once."] = "Accessory outfits have some, but not all, slots specified. You can wear as many as you like at once."
+L["Odds 'n ends lists the soulbound items none of your outfits uses."] = "Odds 'n ends lists the soulbound items none of your outfits uses."
+L["Warbound until equipped lists the warbound items that become soulbound once equipped."] = "Warbound until equipped lists the warbound items that become soulbound once equipped."
+L["Unopened lists the items still in their original Binds on Equip state."] = "Unopened lists the items still in their original Binds on Equip state."
+L["%s (Disabled)"] = "%s (Disabled)"
+L["Stored in the Equipment Manager"] = "Stored in the Equipment Manager"
+L["Outfits can't be changed in combat."] = "Outfits can't be changed in combat."
 
 -- P4.20 keys (modules/Bar.lua, modules/Bar_Buttons.lua)
 
