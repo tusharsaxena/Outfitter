@@ -75,7 +75,8 @@ library-absent stub.
 **No window `toggle` verb.** standalone-windows asks for `show`, `hide` and `toggle` on a window. The
 first two exist; `toggle` does not toggle the window, because `toggle` has been the outfit verb in
 players' macros since before this fork, and taking it would break them (C35). The key binding and the
-sheet button toggle the window. The comment above `NS.COMMANDS` records the same reason.
+sheet button toggle the window. The comment above `NS.COMMANDS` records the same reason, and the
+declined SHOULD is a row in [`ARCHITECTURE.md`](ARCHITECTURE.md) -> *Documented deviations*.
 
 **Outfit arguments.** Matched case-insensitively by name; case and spacing are kept. An empty argument
 means the current Complete outfit; a name that matches nothing prints "Couldn't find an outfit named

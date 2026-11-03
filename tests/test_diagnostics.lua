@@ -73,6 +73,12 @@ end
 
 local function shown(lines) return table.concat(lines or {}, " | ") end
 
+-- Whether any line carries `needle` (plain): a STUCK line at any count.
+local function mentions(lines, needle)
+    for _, l in ipairs(lines or {}) do if tostring(l):find(needle, 1, true) then return true end end
+    return false
+end
+
 -- ── /of zone: the two producers, called directly ─────────────────────────────────────────────
 
 test("diagnostics: ZoneInfo gives the instance line and the active zone outfits", function()
@@ -97,14 +103,23 @@ test("diagnostics: ZoneInfo says when no zone outfit applies", function()
     enter(s, nil)
     local lines = s.NS.States.ZoneInfo()
     assertEqual(lines[#lines], "No zone outfits apply here")
-    assertFalse(has(lines, "This map has no entry in the zone table") and lines[2] == nil)
+    -- The open world's map (2552) has no zone-table entry, and a missing map ID none either: the
+    -- legacy ShowZoneInfo printed the note for both (Outfitter.lua:5017-5021).
+    -- red under: ZoneInfo without the missing-entry note.
+    assertTrue(has(lines, "This map has no entry in the zone table"), shown(lines))
+    s.W.instance = { name = "Nowhere", type = "none" }
+    lines = s.NS.States.ZoneInfo()
+    assertEqual(lines[1], "Instance: Nowhere (type none, map ID nil)")
+    -- red under: the note gated on a map ID being present (`mapID ~= nil and BY_MAP_ID[mapID] == nil`).
+    assertTrue(has(lines, "This map has no entry in the zone table"), shown(lines))
 end)
 
 test("diagnostics: Equip.Diagnostic carries the STUCK line only while depth outruns the batches", function()
     local s = scene()
     local E, st = s.NS.Equip, s.NS.Equip.__state
     local lines = E.Diagnostic()
-    assertFalse(has(lines, STUCK), shown(lines))
+    -- red under: the tripwire testing `depth >= frames` (STUCK at rest).
+    assertFalse(mentions(lines, "STUCK"), shown(lines))
     local inside
     E.Batch(function() inside = E.Diagnostic() end)
     -- red under: the tripwire testing `depth > 0` (pinned in test_equip_bracket too).
@@ -141,7 +156,8 @@ end)
 test("diagnostics: the equip section is Equip.Diagnostic's lines, STUCK included", function()
     local s = scene()
     assertEqual(shown(section(s.NS, "equip")), shown(s.NS.Equip.Diagnostic()))
-    assertFalse(has(section(s.NS, "equip"), STUCK))
+    -- red under: the tripwire testing `depth >= frames` (STUCK at rest).
+    assertFalse(mentions(section(s.NS, "equip"), "STUCK"), shown(section(s.NS, "equip")))
     s.NS.Equip.__state.depth = 2
     -- red under: an equip section that stops at the first three lines (the tripwire never shows).
     assertTrue(has(section(s.NS, "equip"), STUCK), shown(section(s.NS, "equip")))
@@ -212,6 +228,7 @@ test("diagnostics: the report written to the console carries the zone and STUCK 
     local D = s.NS.DebugLog
     assertTrue(D:FindLine("Instance: Ruins of Lordaeron (type arena, map ID 572)") ~= nil, "zone line")
     assertTrue(D:FindLine(STUCK) ~= nil, "STUCK line")
+    -- red under: a section that raises (the library writes "section <name> failed: <error>").
     assertTrue(D:FindLine("section") == nil or not D:CopyText():find("section %a+ failed"),
         "no section raised: " .. D:CopyText())
 end)

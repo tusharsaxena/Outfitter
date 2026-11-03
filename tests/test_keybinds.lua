@@ -315,6 +315,7 @@ test("keybinds: the press clears trigger.disabled and is a hardware event (a tit
     O.SetBinding(hat, 4)
     press(M, wearKey(4))
     assertTrue(NS.Stack.IsWorn(hat))
+    -- red under: WearBound's toggle without `clearDisabled = true`.
     assertFalse(O.Get(hat).trigger.disabled == true, "the key did not clear Disabled")
     assertEqual(M.__world.currentTitle, 3, "the press wore without hw")
 end)
@@ -406,6 +407,7 @@ test("keybinds: NS.WearBoundOutfit refuses for a direct caller too", function()
     NS.SetByPath("enabled", false)
     M.__resetPrinted()
     NS.WearBoundOutfit(1)
+    -- red under: NS.WearBoundOutfit printing the refusal and wearing on (no return).
     assertFalse(NS.Stack.IsWorn(hat), "the handler wore while disabled")
     assertTrue(anyLine(M, "is disabled"))
 end)

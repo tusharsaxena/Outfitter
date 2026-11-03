@@ -432,14 +432,24 @@ test("slash: an outfit argument opening with `[` is decided by the client's pars
     local NS, M = scene()
     local tank = NS.Outfits.Create("Tank", { HeadSlot = { id = 0 } })
     local dps = NS.Outfits.Create("DPS", { HeadSlot = { id = 0 } })
+    M.__spec = 1
+    NS.Slash.Route("wear [spec:1] Tank; DPS")
+    -- red under: ParseArgument taking the last clause whatever the spec.
+    assertFalse(NS.Stack.IsWorn(dps), "spec 1 wore the second clause")
+    assertTrue(NS.Stack.IsWorn(tank), "spec 1 wears the first clause")
+    NS.Stack.Remove(tank)
     M.__spec = 2
     NS.Slash.Route("wear [spec:1] Tank; DPS")
+    -- red under: ParseArgument taking the first clause whatever the spec.
+    assertFalse(NS.Stack.IsWorn(tank), "spec 2 wore the first clause")
     assertTrue(NS.Stack.IsWorn(dps), "spec 2 wears the second clause")
-    assertFalse(NS.Stack.IsWorn(tank))
+    NS.Stack.Remove(dps)
     M.__resetPrinted()
     NS.Slash.Route("wear [spec:1] Tank")
+    -- red under: ParseArgument answering "" for no clause (the empty argument's line prints).
     assertEqual(#M.__printed(), 0, "no clause: a silent no-op")
-    assertFalse(NS.Stack.IsWorn(tank))
+    -- red under: ParseArgument falling back to the clause's text when no condition matches.
+    assertFalse(NS.Stack.IsWorn(tank), "no clause wore the outfit")
 end)
 
 --- The lines legacy printed (fixtures/legacy/commands.lua), in this addon's words. Each rename has
@@ -525,6 +535,7 @@ test("slash: `reset bar.position` is the old `reset bar`; `deleteall` is the old
     assertEqual(popups.__count("ShowDeleteAll"), 1, "deleteall asks through the one popup")
     NS.SetByPath("enabled", false)
     NS.Slash:OnSlash("deleteall")
+    -- red under: deleteall on HOST_LIVE_VERBS with its row's feature() refusal dropped.
     assertEqual(popups.__count("ShowDeleteAll"), 1, "deleteall ran while disabled")
 end)
 
@@ -540,13 +551,20 @@ test("slash: `auto` writes auto.enabled; on/off and enable/disable are synonyms;
     M.__resetPrinted()
     NS.Slash:OnSlash("auto")
     assertTrue(anyLine(M, "auto.enabled"), "bare auto reads the setting")
-    M.__resetPrinted()
-    NS.Slash:OnSlash("auto maybe")
-    assertEqual(NS.GetSetting("auto.enabled"), true, "an unknown word wrote")
-    assertEqual(#M.__printed(), 1, "an unknown word answers one line")
+    for _, prior in ipairs({ false, true }) do
+        NS.SetByPath("auto.enabled", prior)
+        M.__resetPrinted()
+        NS.Slash:OnSlash("auto maybe")
+        -- red under: an unknown word read as on (prior false) or as off (prior true).
+        assertEqual(NS.GetSetting("auto.enabled"), prior, "an unknown word wrote over " .. tostring(prior))
+        assertEqual(#M.__printed(), 1, "an unknown word answers one line")
+    end
     assertTrue(NS.SetByPath("enabled", false))
     NS.Slash:OnSlash("auto off")
     assertEqual(NS.GetSetting("auto.enabled"), false, "auto is live while disabled")
+    NS.Slash:OnSlash("auto on")
+    assertEqual(NS.GetSetting("auto.enabled"), true, "auto is live while disabled")
+    -- red under: doAuto writing the addon switch beside auto.enabled (`auto on` would re-enable it).
     assertEqual(NS.db.profile.enabled, false, "auto touched the addon switch")
 end)
 

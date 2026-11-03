@@ -29,10 +29,11 @@ end
 --
 -- Declined SHOULD (standalone-windows :52): `show` and `hide` exist, but there is no window-toggle verb,
 -- because `toggle` has been the outfit verb in players' macros since before this fork (C35;
--- docs/slash-dispatch.md). The old verbs map as design §4.3.2's table says: `sound` and `errors` are
--- `/of set equip.muteSounds|equip.showErrors`, `reset bar` is `/of reset bar.position`, the old
--- `reset` is `deleteall`, the old automation `enable`/`disable` is `auto on|off`; `summary`, `rating`,
--- `itemstats` and the bare `/unequip` are gone (INV §18, H5).
+-- docs/slash-dispatch.md; a row in docs/ARCHITECTURE.md's deviation register). The old verbs map as
+-- design §4.3.2's table says: `sound` and `errors` are `/of set equip.muteSounds|equip.showErrors`,
+-- `reset bar` is `/of reset bar.position`, the old `reset` is `deleteall`, the old automation
+-- `enable`/`disable` is `auto on|off`; `summary`, `rating`, `itemstats` and the bare `/unequip` are
+-- gone (INV §18, H5).
 NS.COMMANDS = {
     { "help",        L["Show this help"],                          function() cli:PrintHelp() end },
     { "config",      L["Open the settings panel"],                 function() NS.OpenOptionsPanel() end },
