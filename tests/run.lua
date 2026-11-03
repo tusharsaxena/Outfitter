@@ -152,7 +152,7 @@ local SUITES = {
 
     { name = "test_quickslots" },
 
-    { name = "test_equip_bracket",    pending = "P4.8" },
+    { name = "test_equip_bracket" },
 
     { name = "test_tooltips",         pending = "P4.17" },
 

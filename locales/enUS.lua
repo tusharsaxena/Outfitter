@@ -134,6 +134,15 @@ L["Can't deposit %s because all bank bags are full"] = "Can't deposit %s because
 L["Couldn't find an item named %s"] = "Couldn't find an item named %s"
 
 -- P4.8 keys (modules/Equip.lua)
+L["An equipment update failed (%s); the details are in the debug console"] = "An equipment update failed (%s); the details are in the debug console"
+L["Can't put %s in the %s slot because it's already being used in another slot"] = "Can't put %s in the %s slot because it's already being used in another slot"
+L["Can't find item %s for slot %s"] = "Can't find item %s for slot %s"
+L["Equipment updates: depth %d, update wanted: %s"] = "Equipment updates: depth %d, update wanted: %s"
+L["Next equipment update in %.1f s"] = "Next equipment update in %.1f s"
+L["No equipment update scheduled"] = "No equipment update scheduled"
+L["Last equipment error: %s, %d s ago"] = "Last equipment error: %s, %d s ago"
+L["No equipment errors this session"] = "No equipment errors this session"
+L["Equipment updates are STUCK (count %d) -- reload to clear"] = "Equipment updates are STUCK (count %d) -- reload to clear"
 
 -- P4.9 keys (modules/OutfitStack.lua, modules/OutfitStack_Watch.lua)
 
