@@ -169,7 +169,7 @@ local SUITES = {
 
     { name = "test_api" },
 
-    { name = "test_triggers_general", pending = "P4.16a" },
+    { name = "test_triggers_general" },
 
     { name = "test_triggers_trade",   pending = "P4.16b" },
 
