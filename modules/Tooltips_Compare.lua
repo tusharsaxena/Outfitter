@@ -59,7 +59,7 @@ local function clientWantsCompare()
 end
 
 local function modifierHeld()
-    local fn = _G.IsModifiedClick
+    local fn = IsModifiedClick
     if type(fn) ~= "function" then return true end
     return Secrets.PlainTruth(fn("COMPAREITEMS")) == true
 end
@@ -139,7 +139,7 @@ function Compare.Placement()
     elseif ShoppingTooltip1 and ShoppingTooltip1:IsShown() then
         anchor = ShoppingTooltip1
     end
-    local screen = _G.GetScreenWidth
+    local screen = GetScreenWidth
     local left = Secrets.PlainNumber(GameTooltip:GetLeft())
     local right = Secrets.PlainNumber(GameTooltip:GetRight())
     local width = type(screen) == "function" and Secrets.PlainNumber(screen()) or nil

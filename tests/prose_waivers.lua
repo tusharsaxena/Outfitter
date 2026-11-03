@@ -17,5 +17,8 @@ return {
         -- field the kit's AceTimer mock (tests/_kit/mock_ace.lua) and AceTimer-3.0 itself set on a
         -- handle CancelTimer has taken back. The code reads their field; it cannot rename it.
         ["tests/test_companion.lua"] = { cancelled = true },
+        -- The same field: tests/test_equip_bracket.lua asserts the pending update's AceTimer handle
+        -- carries `cancelled` once Suspend has taken it back.
+        ["tests/test_equip_bracket.lua"] = { cancelled = true },
     },
 }

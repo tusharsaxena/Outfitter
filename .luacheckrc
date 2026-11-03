@@ -77,6 +77,9 @@ files["core/WidgetsSetup.lua"] = { read_globals = { "MenuUtil" } }
 -- A queued protected write that raises goes to the client's error handler, and the next one runs.
 files["core/SecureQueue.lua"] = { read_globals = { "geterrorhandler" } }
 
+-- The equipment bracket surfaces a failed update through the client error handler, with its stack.
+files["modules/Equip.lua"] = { read_globals = { "geterrorhandler", "debugstack" } }
+
 -- ── the P4 modules' client reads (design §1.5), declared whole in P4.0 ────────────────────────────
 -- Each stanza names only what its files may touch. Every engine module not listed here names NO
 -- client global: it reads the client through NS.Compat (design §5), and luacheck makes that a fact.
@@ -118,7 +121,7 @@ for _, f in ipairs({ "modules/Tooltips.lua", "modules/Tooltips_Compare.lua", "mo
     files[f] = {
         read_globals = {
             "TooltipDataProcessor", "TooltipUtil", "GameTooltip", "ShoppingTooltip1", "ShoppingTooltip2",
-            "ConvertFormatStringToSearchPattern", "EQUIPMENT_SETS", "hooksecurefunc",
+            "EQUIPMENT_SETS", "hooksecurefunc", "IsModifiedClick", "GetScreenWidth",
         },
     }
 end

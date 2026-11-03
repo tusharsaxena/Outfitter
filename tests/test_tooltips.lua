@@ -244,7 +244,7 @@ test("compare: up to five tooltips, by level, quality 2 and up, ignoreComparison
     local NS, M = compareScene()
     local O = NS.Outfits
     for n = 1, 6 do O.Create("Set " .. n, { HeadSlot = helm(n, 3, 600 + n) }) end
-    O.Create("Grey", { HeadSlot = helm(7, 1, 700) })
+    O.Create("Gray", { HeadSlot = helm(7, 1, 700) })
     local skip = O.Create("Skip", { HeadSlot = helm(8, 4, 710) })
     O.SetFlag(skip, "ignoreComparisons", true)
     O.Create("Same", { HeadSlot = snap(NS, "head_plate") })
@@ -264,7 +264,7 @@ test("compare: up to five tooltips, by level, quality 2 and up, ignoreComparison
     assertEqual(("%.2f %.2f %.2f"):format(r, g, b), ("%.2f %.2f %.2f"):format(mr, mg, mb), "line 1 is muted")
     for _, tip in ipairs(tips) do
         local name = tip.TextLeft1:GetText()
-        assertTrue(name ~= "Grey" and name ~= "Skip" and name ~= "Same" and name ~= "Dupe", name)
+        assertTrue(name ~= "Gray" and name ~= "Skip" and name ~= "Same" and name ~= "Dupe", name)
     end
 end)
 

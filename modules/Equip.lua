@@ -59,7 +59,7 @@ end
 -- The error and its stack: the client's debugstack, else Lua's own traceback.
 local function traceback(err)
     local msg = tostring(err)
-    local ds = _G.debugstack
+    local ds = debugstack
     if type(ds) == "function" then return msg .. "\n" .. tostring(ds(2)) end
     return debug.traceback(msg, 2)
 end
@@ -74,7 +74,7 @@ local function surface(tag, err)
         st.told[tag] = true
         NS.Print(L["An equipment update failed (%s); the details are in the debug console"]:format(tag))
     end
-    local geh = _G.geterrorhandler
+    local geh = geterrorhandler
     local handler = type(geh) == "function" and geh()
     if handler then handler(err) end
 end
