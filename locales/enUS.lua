@@ -127,6 +127,12 @@ L["All outfits deleted. The built-in outfits were re-created."] = "All outfits d
 L["No Complete outfit is equipped."] = "No Complete outfit is equipped."
 L["Updated the outfit '%s' to currently equipped items"] = "Updated the outfit '%s' to currently equipped items"
 
+-- P4.7 keys (modules/Equip_Changes.lua, modules/Equip_Moves.lua)
+L["Can't remove %s because all bags are full"] = "Can't remove %s because all bags are full"
+L["Can't withdraw %s because all bags are full"] = "Can't withdraw %s because all bags are full"
+L["Can't deposit %s because all bank bags are full"] = "Can't deposit %s because all bank bags are full"
+L["Couldn't find an item named %s"] = "Couldn't find an item named %s"
+
 -- P4.8 keys (modules/Equip.lua)
 
 -- P4.9 keys (modules/OutfitStack.lua, modules/OutfitStack_Watch.lua)
