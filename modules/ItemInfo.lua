@@ -157,32 +157,39 @@ local TOOLTIP_BIND = {
     { "ITEM_SOULBOUND", "bound" },
 }
 
+-- The binding the tooltip shows, and whether that answer is settled: a tooltip with no lines at all
+-- (its data not there yet) answers "none" unsettled, so it is asked again next time.
 local function bindFromTooltip(info)
-    for _, line in ipairs(tooltipLines(info)) do
+    local lines = tooltipLines(info)
+    for _, line in ipairs(lines) do
         for _, row in ipairs(TOOLTIP_BIND) do
             local s = globalString(row[1])
-            if s and line.text == s then return row[2] end
+            if s and line.text == s then return row[2], true end
         end
     end
-    return "none"
+    return "none", #lines > 0
 end
 
+-- The binding and whether it is settled. An unknown bindType (nil: the item not cached yet, common
+-- for bag items right after login) is no "not BoE": the tooltip decides, as the legacy GetBoE did.
 local function readBind(info)
     local bound = info.loc and Compat.IsBound(info.loc)
-    if bound == true then return "bound" end
-    if info.loc and Compat.IsWarboundUntilEquip(info.loc) == true then return "warbound" end
-    if bound == nil then return bindFromTooltip(info) end
-    if info.bindType == 2 then return "boe" end
-    return "none"
+    if bound == true then return "bound", true end
+    if info.loc and Compat.IsWarboundUntilEquip(info.loc) == true then return "warbound", true end
+    if bound == nil or info.bindType == nil then return bindFromTooltip(info) end
+    if info.bindType == 2 then return "boe", true end
+    return "none", true
 end
 
 --- How the item binds: "bound", "boe" (binds when equipped), "warbound" (until equipped) or "none".
---- Lazy, and cached on the info.
+--- Lazy, and cached on the info once settled (an answer read off a tooltip with no data is not).
 --- @param info table
 --- @return string
 function II.Bind(info)
-    if info.bind == nil then info.bind = readBind(info) end
-    return info.bind
+    if info.bind ~= nil then return info.bind end
+    local bind, settled = readBind(info)
+    if settled then info.bind = bind end
+    return bind
 end
 
 -- The client format "Unique-Equipped: %s (%d)" as a pattern capturing the category name.

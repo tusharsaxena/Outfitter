@@ -65,6 +65,8 @@ test("itemlink: fields 9 (LinkLevel) and 10 (SpecID) are not captured (Q9)", fun
 end)
 
 test("itemlink: every bonus id is kept, in link order, and the modifier pairs after them (B12)", function()
+    -- legacy: "3:10353:1520" with UpgradeID read from field 16 (two bonus ids, the third lost; INV §19
+    -- B12, OutfitterInventory.lua:356-371); fixed: every bonus id and every modifier pair.
     local wrist = II().ParseLink(DB.wrist_plate.link)
     -- red under: the legacy two-id capture (only "10353:1520") or a sorted list.
     assertEqual(wrist.bonus, "10353:1520:10255", "all three bonus ids")
@@ -81,6 +83,8 @@ test("itemlink: every bonus id is kept, in link order, and the modifier pairs af
 end)
 
 test("itemlink: a short link pads every missing field with 0 and an empty list (B11)", function()
+    -- legacy: raises (tonumber(nil) > 0 on the missing bonus count; INV §19 B11, OutfitterInventory.lua
+    -- :361); fixed: every missing field reads 0 and the lists read "".
     -- red under: indexing a missing field without a default (the legacy raise on a short link).
     local f, name = II().ParseLink("item:19019")
     assertEqual(f.id, 19019)
@@ -99,6 +103,8 @@ test("itemlink: a short link pads every missing field with 0 and an empty list (
 end)
 
 test("itemlink: a negative field keeps its sign (B11)", function()
+    -- legacy: 5, 31 and 7 (the "%d*:" capture drops the minus sign; INV §19 B11, OutfitterInventory.lua
+    -- :186); fixed: -5, -31 and -7.
     -- red under: the pattern "(%d*)" (the legacy capture dropped the minus sign).
     local f = II().ParseLink("item:212030:-5:0:0:0:0:-31:-7:80::::0:0")
     assertEqual(f.enchant, -5, "enchant")
@@ -109,6 +115,7 @@ test("itemlink: a negative field keeps its sign (B11)", function()
 end)
 
 test("itemlink: the 12.x |cnIQ color form reads like a classic |cff link", function()
+    -- red under: splitFields matching "|cff%x+|Hitem:" (the |cnIQ link reads no fields; diff 0).
     local f, name = II().ParseLink(DB.chest_hero.link)
     assertEqual(f.id, 212020)
     assertEqual(name, "Hauberk of Tracks")
@@ -139,6 +146,7 @@ test("itemlink: FromSlot reads the worn item: identity, client info, slot and lo
     assertEqual(info.bonus, "10353:1520")
     assertEqual(info.link, DB.head_plate.link)
     assertEqual(info.loc.slotID, 1, "an equipped location")
+    -- red under: build() answering a record for a nil link (an empty slot reads as an item).
     local none = gearInstance("naked").NS.ItemInfo.FromSlot("HeadSlot")
     assertNil(none, "an empty slot")
 end)
@@ -152,15 +160,18 @@ test("itemlink: FromBag reads a bag item with its location and bag family", func
     assertEqual(info.loc.bag, 0)
     assertEqual(info.loc.slot, 5)
     assertEqual(info.bagType, 0, "the item's own bag-family bits")
+    -- red under: fill() setting meta for every slotted type (the chest gains a meta slot).
     assertEqual(info.meta, nil, "a chest has no meta slot")
     local sword = inst.NS.ItemInfo.FromBag(0, 1)
     assertEqual(sword.slot, "MainHandSlot")
     assertEqual(sword.meta, "TwoHandSlot")
+    -- red under: build() answering a record for a nil link.
     assertNil(inst.NS.ItemInfo.FromBag(0, 16), "an empty bag slot")
 end)
 
 test("itemlink: a secret worn or carried item reads as no item (Q12)", function()
     local inst = gearInstance("secret_slots")
+    -- red under: build() answering a record when the link is refused (the secret slot reads as an item).
     assertNil(inst.NS.ItemInfo.FromSlot("HeadSlot"), "secret worn")
     assertNil(inst.NS.ItemInfo.FromBag(0, 1), "secret carried")
     assertEqual(inst.NS.ItemInfo.FromBag(0, 2).id, 212030, "the plain neighbor still reads")
@@ -211,6 +222,7 @@ end)
 test("itemlink: Bind answers bound / boe / warbound / none from the client's location reads", function()
     local inst = gearInstance("geared")
     local I = inst.NS.ItemInfo
+    -- red under: readBind testing bindType before IsBound (the worn BoP and the hearthstone read "none").
     assertEqual(I.Bind(I.FromSlot("HeadSlot")), "bound", "worn")
     assertEqual(I.Bind(I.FromBag(0, 3)), "boe", "boe_legs in the backpack")
     assertEqual(I.Bind(I.FromBag(1, 1)), "warbound", "warbound_cloak")
@@ -238,7 +250,33 @@ test("itemlink: Bind is lazy, asked once per info", function()
     assertEqual(asked, 0, "FromBag asked about binding up front")
     I.Bind(info)
     I.Bind(info)
+    -- red under: II.Bind calling readBind on every ask (no info.bind cache).
     assertEqual(asked, 1, "the second Bind asked again")
+end)
+
+test("itemlink: an uncached item's unknown bindType is no \"not BoE\": the tooltip decides", function()
+    -- C_Item.GetItemInfo answers nil until the item is cached (bag items right after login), so
+    -- bindType is nil while C_Item.IsBound already answers false for the unbound BoE.
+    local inst = gearInstance("geared", function(M) M.__gear.pending[Items.db.boe_legs.id] = true end)
+    local I = inst.NS.ItemInfo
+    local info = I.FromBag(0, 3)
+    assertNil(info.bindType, "the scene: bindType unknown")
+    -- red under: readBind answering "none" for bound == false and bindType == nil (the BoE then enters
+    -- Inventory.Cache, is picked for an outfit and binds when worn).
+    assertEqual(I.Bind(info), "boe", "the Binds when equipped line")
+end)
+
+test("itemlink: a bind read off a tooltip with no data is not cached", function()
+    local inst = gearInstance("geared", function(M) M.__gear.pending[Items.db.boe_legs.id] = true end)
+    local I, M = inst.NS.ItemInfo, inst.mocks
+    local realTip = M.C_TooltipInfo.GetBagItem
+    M.C_TooltipInfo.GetBagItem = function() return nil end
+    local info = I.FromBag(0, 3)
+    assertEqual(I.Bind(info), "none", "nothing to read yet")
+    M.C_TooltipInfo.GetBagItem = realTip
+    -- red under: II.Bind caching the unsettled "none" (the BoE reads "none" for good).
+    assertEqual(I.Bind(info), "boe", "asked again once the tooltip has data")
+    assertEqual(info.bind, "boe", "and cached then")
 end)
 
 test("itemlink: UniqueKeys reads the limit category, the item itself, or nothing", function()
@@ -255,6 +293,7 @@ test("itemlink: UniqueKeys reads the limit category, the item itself, or nothing
     assertEqual(keysOf(DB.ring_unique_a), "c701", "a limit category")
     assertEqual(keysOf(DB.ring_unique_b), "c701", "the same category joins them")
     assertEqual(keysOf(DB.ring_self_unique), "i212034", "unique-equipped itself")
+    -- red under: readUnique dropping its `not u.unique` return (a plain ring reads unique).
     assertNil(keysOf(DB.ring_plain_a), "not unique")
 end)
 
@@ -271,6 +310,8 @@ test("itemlink: without the uniqueness API, UniqueKeys reads the tooltip lines",
 end)
 
 test("itemlink: Usable asks the client, and without it any red line after the name refuses (B14)", function()
+    -- legacy: always usable (the red cRequiresPrefix no modern line carries; INV §19 B14,
+    -- OutfitterInventory.lua:425); fixed: any red line after the name refuses.
     local inst = gearInstance("geared")
     local I = inst.NS.ItemInfo
     assertFalse(I.Usable(I.FromLink(DB.unusable_helm.link)), "CanUseItem false")
@@ -557,7 +598,7 @@ test("player state: Refresh re-reads the cast and the channel through Compat (de
     assertEqual(#equip.__calls, 0, "Refresh never equips")
 end)
 
-test("player state: a sealed cast reading leaves the cast flags alone", function()
+test("player state: a sealed cast reading leaves the cast flags alone on Refresh (Resume)", function()
     local _, NS, M = psScene()
     local PS = NS.PlayerState
     M.__fire("UNIT_SPELLCAST_START", "player", "cast-1", 133)
@@ -571,6 +612,38 @@ test("player state: a sealed cast reading leaves the cast flags alone", function
     end)
     restore()
     if not ok then error(err, 0) end
+end)
+
+test("player state: PLAYER_ENTERING_WORLD clears a cast flag whose reading is sealed or missing", function()
+    -- legacy: PlayerEnteringWorld set IsCasting and IsChanneling false unconditionally (Outfitter.lua
+    -- :1525-1527, INV §6.1 PEW "Clear casting flags"); kept: a STOP lost across a loading screen
+    -- cannot hold every equip at the casting gate.
+    local _, NS, M, _, heard = psScene()
+    local PS = NS.PlayerState
+    M.__fire("UNIT_SPELLCAST_START", "player", "cast-1", 133)
+    M.__fire("UNIT_SPELLCAST_CHANNEL_START", "player", "cast-2", 5143)
+    for i = #heard, 1, -1 do heard[i] = nil end
+    M.UnitCastingInfo = function() return T.secret("Hearthstone") end
+    M.UnitChannelInfo = nil
+    local restore = T.installSecretValue()
+    local ok, err = pcall(function()
+        M.__fire("PLAYER_ENTERING_WORLD", false, true)
+        -- red under: PEW calling PS.Refresh (the keep-on-nil read) instead of the reset.
+        assertFalse(PS.IsCasting(), "a sealed cast reading clears on PEW")
+        -- red under: the reset applied to the cast flag only.
+        assertFalse(PS.IsChanneling(), "a missing channel API clears on PEW")
+        assertEqual(table.concat(heard, ","), "casting=false", "one union edge")
+    end)
+    restore()
+    if not ok then error(err, 0) end
+end)
+
+test("player state: PLAYER_ENTERING_WORLD keeps a cast the client still reports", function()
+    local _, NS, M = psScene()
+    M.__world:setUnit("player", { casting = { name = "Hearthstone", spellID = 8690 } })
+    M.__fire("PLAYER_ENTERING_WORLD", false, true)
+    -- red under: PEW clearing the flags without reading Compat.PlayerCasting.
+    assertTrue(NS.PlayerState.IsCasting(), "a plain reading wins over the reset")
 end)
 
 test("player state: PLAYER_ENTERING_WORLD refreshes; in lockdown it keeps combat", function()
@@ -591,6 +664,7 @@ test("player state: the interrupt-casting flag is the triggers' to set", functio
     assertFalse(PS.InterruptCasting())
     PS.SetInterruptCasting(true)
     assertTrue(PS.InterruptCasting())
+    -- red under: SetInterruptCasting ignoring a false (`flags.interrupt = flags.interrupt or on`).
     PS.SetInterruptCasting(false)
     assertFalse(PS.InterruptCasting())
 end)

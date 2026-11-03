@@ -91,13 +91,21 @@ end
 --- @return boolean
 function PS.CanDualWield() return Compat.CanDualWield() end
 
+-- A cast flag's new value: the reading when there is one; else false on a reset, else as it was.
+local function castReading(reading, held, reset)
+    if reading ~= nil then return reading end
+    if reset then return false end
+    return held
+end
+
 --- Both cast flags at once from Compat, announcing the union once if it moved (a cast that became a
---- channel while the module was down is no edge). An unreadable (nil) reading keeps its flag.
-local function refreshCast()
+--- channel while the module was down is no edge). An unreadable (nil) reading keeps its flag, except
+--- on a reset (PLAYER_ENTERING_WORLD), which clears it as the legacy PlayerEnteringWorld did.
+local function refreshCast(reset)
     local casting, channeling = Compat.PlayerCasting()
     local before = flags.casting or flags.channeling
-    if casting ~= nil then flags.casting = casting end
-    if channeling ~= nil then flags.channeling = channeling end
+    flags.casting = castReading(casting, flags.casting, reset)
+    flags.channeling = castReading(channeling, flags.channeling, reset)
     local after = flags.casting or flags.channeling
     if after ~= before then NS.SendBus(NS.MSG.PLAYER_STATE_CHANGED, "casting", after) end
 end
@@ -108,16 +116,20 @@ end
 
 --- Re-read combat, death, the cast, the channel and spec from the client, announcing each key that
 --- moved. Out of combat lockdown it clears both combat flags (the old RegenEnabled); in it, it sets
---- combat. A cast or channel reading that cannot be had (nil) leaves its flag as it was, and a cast
---- found ended here does not delay the equip path: Refresh never equips.
-function PS.Refresh()
+--- combat. A cast or channel reading that cannot be had (nil) leaves its flag as it was (clears it
+--- under resetCast), and a cast found ended here does not delay the equip path: Refresh never equips.
+--- @param resetCast boolean|nil  clear a cast flag whose reading is nil (PLAYER_ENTERING_WORLD only)
+local function refresh(resetCast)
     local locked = Compat.InCombatLockdown()
     set("combat", locked, "combat")
     if not locked then flags.maybeCombat = false end
     set("dead", Compat.IsDeadOrGhost("player") == true, "dead")
-    refreshCast()
+    refreshCast(resetCast)
     readSpec()
 end
+
+--- Re-read every flag from the client; an unreadable cast reading keeps its flag (see refresh).
+function PS.Refresh() refresh(false) end
 
 -- ── the handlers ──────────────────────────────────────────────────────────────────────────────
 
@@ -163,7 +175,8 @@ local ON = {
     PLAYER_UNGHOST = onAlive,
     PLAYER_TALENT_UPDATE = readSpec,
     ACTIVE_PLAYER_SPECIALIZATION_CHANGED = readSpec,
-    PLAYER_ENTERING_WORLD = function() PS.Refresh() end,
+    -- A loading screen can swallow a STOP: an unreadable cast reading clears here (INV §6.1).
+    PLAYER_ENTERING_WORLD = function() refresh(true) end,
 }
 
 -- The casts, each event with what it means; every one is the player's only.
