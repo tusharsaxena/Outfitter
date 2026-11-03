@@ -11,14 +11,20 @@
 -- every enUS key appears as a literal somewhere in the addon's files (localization-§3: enUS keeps no
 -- key nothing reads).
 --
--- The six overlays (deDE frFR zhCN zhTW koKR ruRU) carry only their gate line until the re-key
--- (P4.28). Their gates already hold: each one's first statement is its own GetLocale() guard, and
--- what it writes is a subset of the enUS keys. Coverage against the legacy translations is P4.28's.
+-- The six overlays (deDE frFR zhCN zhTW koKR ruRU) are written by tools/rekey-locales.lua from the
+-- legacy translations (design §4.6 Re-key, P4.28). Each one's first statement is its own
+-- GetLocale() guard, and what it writes is a subset of the enUS keys. Coverage: every field a legacy
+-- locale translated (tests/fixtures/legacy/locale_keys.lua) is accounted for by its overlay — a line
+-- whose `-- legacy:` note names it, or an `untranslated` / `format mismatch` note — unless the legacy
+-- English it translated is one the port retired (LEGACY_RETIRED below). Each kept translation
+-- carries the same format directives as its English, so string.format cannot raise on it.
 --
 -- red under: delete an entry another file reads from any enUS file; or leave an entry behind after
 -- its last reader goes; or write one key in two enUS files; or drop a topic line's LOAD-BEARING
 -- note; or give a topic file a table of its own; or ungate an overlay, or gate it on another locale;
--- or put a key in an overlay that no enUS file defines; or pass NS.L as a descriptor's `L`.
+-- or put a key in an overlay that no enUS file defines; or pass NS.L as a descriptor's `L`; or
+-- delete a kept translation's line from an overlay; or keep a field LEGACY_RETIRED lists; or drop a
+-- `%s` from a translation.
 
 local T = _G.OUTFITTERREBORN_TEST
 local test, assertTrue, assertEqual, assertFalse = T.test, T.assertTrue, T.assertEqual, T.assertFalse
@@ -398,7 +404,228 @@ test("locale: NS.L is never handed to a descriptor's L", function()
     assertEqual(#hits, 0, "NS.L passed as a descriptor L at " .. table.concat(hits, ", "))
 end)
 
-test("locale: each overlay covers the legacy translations it re-keys",
-    function() end,
-    "pending P4.28: the overlays carry only their gate line until tools/rekey-locales.lua writes them; "
-        .. "the case then holds each locale at or above fixtures/legacy/locale_keys.lua less the retired keys")
+-- ── the re-key (tools/rekey-locales.lua, design §4.6, P4.28) ────────────────────────────────
+
+local function rekeyTool() return dofile(T.root .. "/tools/rekey-locales.lua") end
+
+-- Every legacy English field whose English no enUS file carries: the Dropped, Re-homed and Rewritten
+-- lists of design §4.6, and the English the port no longer shows at all. A translation of one of
+-- these falls away in the re-key. Written out rather than derived, so a kept translation can never
+-- quietly become a retired one, nor a retired one come back, without this list changing with it.
+local LEGACY_RETIRED = {}
+for _, field in ipairs({
+    "_G.BINDING_NAME_OUTFITTER_DISABLEAUTOMATION", "_G.BINDING_NAME_OUTFITTER_ENABLEAUTOMATION",
+    "_G.BINDING_NAME_OUTFITTER_OUTFIT", "_G.BINDING_NAME_OUTFITTER_OUTFIT1",
+    "_G.BINDING_NAME_OUTFITTER_OUTFIT10", "_G.BINDING_NAME_OUTFITTER_OUTFIT2",
+    "_G.BINDING_NAME_OUTFITTER_OUTFIT3", "_G.BINDING_NAME_OUTFITTER_OUTFIT4",
+    "_G.BINDING_NAME_OUTFITTER_OUTFIT5", "_G.BINDING_NAME_OUTFITTER_OUTFIT6",
+    "_G.BINDING_NAME_OUTFITTER_OUTFIT7", "_G.BINDING_NAME_OUTFITTER_OUTFIT8",
+    "_G.BINDING_NAME_OUTFITTER_OUTFIT9", "_G.BINDING_NAME_OUTFITTER_UPDATEOUTFIT", "cABOutfit",
+    "cABOutfitDescription", "cAVOutfit", "cAVOutfitDescription", "cAbilityIcons", "cAboutAuthor",
+    "cAboutCopyright", "cAboutMaintainer", "cAboutTabTitle", "cAboutThanks", "cAboutTitle",
+    "cAccessoryCategoryDescription", "cArenaOutfit", "cArgentDawnOutfit",
+    "cArgentDawnOutfitDescription", "cArgentTournamentOutfitDescription", "cAshamanesFallArenaOutfit",
+    "cAshamanesFallArenaOutfitDescription", "cAshranOutfit", "cAshranOutfitDescription",
+    "cAutoChangesDisabled", "cAutoChangesEnabled", "cAutoSwitch", "cAutoSwitchOffDescription",
+    "cAutoSwitchOnDescription", "cAutomation", "cBankedItemsLabel", "cBlackRookArenaOutfit",
+    "cBlackRookArenaOutfitDescription", "cBladesEdgeArenaOutfit", "cBladesEdgeArenaOutfitDescription",
+    "cBoEsCategoryDescription", "cBuild", "cCageOfCarnageArenaOutfit",
+    "cCageOfCarnageArenaOutfitDescription", "cCantReloadUI", "cCantSetIcon",
+    "cCantUnequipCompleteError", "cChangeIcon", "cChineseLocalization", "cChooseIconTitle",
+    "cCityOutfit", "cCityOutfitDescription", "cCombatHealthRegenStatName", "cCombatManaRegenStatName",
+    "cCompleteCategoryDescription", "cConfirmDeleteMsg", "cConfirmResetMsg", "cConfirmSetCurrentMsg",
+    "cContributingDeveloper", "cCreateUsingTitle", "cDeephaulRavineOutfit",
+    "cDeephaulRavineOutfitDescription", "cDeepwindGorgeOutfit", "cDeepwindGorgeOutfitDescription",
+    "cDepositToVoidStorage", "cDepositUniqueToVoidStorage", "cDiningOutfitDescription",
+    "cDisableAlways", "cDisableIn", "cDisableOutfit", "cDisableOutfitInAQ40", "cDisableOutfitInBG",
+    "cDisableOutfitInCombat", "cDisableOutfitInNaxx", "cDisableScript", "cDontChange",
+    "cDragonFlightCompatiblity", "cDruidAquaticForm", "cDruidFlightForm", "cDruidSwiftFlightForm",
+    "cEditScriptEllide", "cEditScriptTitle", "cEmpyreanDomainArenaOutfit",
+    "cEmpyreanDomainArenaOutfitDescription", "cEnableAll", "cEnableNone", "cEnigmaCrucibleArenaOutfit",
+    "cEnigmaCrucibleArenaOutfitDescription", "cEotSOutfit", "cEotSOutfitDescription",
+    "cEquipOutfitMessageFormat", "cEventsLabel", "cEveryIcon", "cExtractErrorFormat",
+    "cFinger0SlotName", "cFinger1SlotName", "cFishingOutfitDescription", "cFlyingMountSpeedFormat",
+    "cFrenchLocalization", "cGermanLocalization", "cGilneasOutfit", "cGilneasOutfitDescription",
+    "cGlobalCategory", "cGuildCreditFormat", "cHasBuffDescription", "cHasDebuffDescription",
+    "cHasDebuffOutfit", "cHide", "cHookPointArenaOutfit", "cHookPointArenaOutfitDescription",
+    "cIconFilterLabel", "cIconSetLabel", "cInfo", "cInsertFormat", "cIoCOutfit",
+    "cIoCOutfitDescription", "cItemComparisons", "cItemComparisonsOffDescription",
+    "cItemComparisonsOnDescription", "cItemIcons", "cItemLevelName", "cKeyBinding",
+    "cKoreanLocalization", "cLordaeronArenaOutfit", "cLordaeronArenaOutfitDescription",
+    "cLowHealthDescription", "cLowHealthOutfit", "cMageEvocate", "cMageEvocateDescription",
+    "cMaldraxxusArenaOutfit", "cMaldraxxusArenaOutfitDescription", "cMinimapButtonDescription",
+    "cMinimapButtonTitle", "cMissingItemReportIntro", "cMissingItemsLabel", "cMissingItemsSeparator",
+    "cMountSpeedFormat", "cMugambalaArenaOutfit", "cMugambalaArenaOutfitDescription",
+    "cMultiItemFormat", "cNagrandArenaOutfit", "cNagrandArenaOutfitDescription",
+    "cNameAlreadyUsedError", "cNoScriptSettings", "cNokhudonArenaOutfit",
+    "cNokhudonArenaOutfitDescription", "cOddsNEndsCategoryDescription", "cOpenOutfitter",
+    "cOptionsTabTitle", "cOptionsTitle", "cOutfitBarAlphaLabel", "cOutfitBarCombatAlphaLabel",
+    "cOutfitBarHideBackgroundLabel", "cOutfitBarLargeSizeLabel", "cOutfitBarLockPositionLabel",
+    "cOutfitBarSizeLabel", "cOutfitBarSmallSizeLabel", "cOutfitBarVerticalLabel",
+    "cOutfitCategoryTitle", "cOutfitDisplay", "cOutfitterDecides", "cPositionLockedError",
+    "cPresetScript", "cPriestShadowform", "cPriestShadowformDescription", "cProwl", "cRequiresPrefix",
+    "cReset", "cResistCategory", "cRobodromeArenaOutfit", "cRobodromeArenaOutfitDescription",
+    "cRussianLocalization", "cScriptErrorFormat", "cScriptFormat", "cScriptLabel", "cScriptSettings",
+    "cSeethingShoreOutfit", "cSeethingShoreOutfitDescription", "cSettings", "cSewersOutfit",
+    "cSewersOutfitDescription", "cShow", "cShowHotkeyMessages", "cShowHotkeyMessagesOffDescription",
+    "cShowHotkeyMessagesOnDescription", "cShowInCombat", "cShowMinimapButton",
+    "cShowMinimapButtonOffDescription", "cShowMinimapButtonOnDescription", "cShowOutfitBarDescription",
+    "cSilvershardMinesOutfit", "cSilvershardMinesOutfitDescription", "cSilverwingHold",
+    "cSingleItemFormat", "cSlotEnableDescription", "cSlotEnableTitle", "cSoloOutfit",
+    "cSoloOutfitDescription", "cSotAOutfit", "cSotAOutfitDescription", "cSource",
+    "cSpanishLocalization", "cSpellbookIcons", "cSpiritOutfitDescription", "cStats", "cStoreOnServer",
+    "cStoreOnServerOffDescription", "cStoreOnServerOnDescription", "cSuggestedIcons", "cTankPoints",
+    "cTempleOfKotmoguOutfit", "cTempleOfKotmoguOutfitDescription", "cTester", "cTigersPeakArenaOutfit",
+    "cTigersPeakArenaOutfitDescription", "cTitleVersion", "cTolVironArenaOutfit",
+    "cTolVironArenaOutfitDescription", "cTooManyServerOutfits", "cTooltipInfo",
+    "cTooltipInfoOffDescription", "cTooltipInfoOnDescription", "cTooltipMultibuffSeparator1",
+    "cTooltipMultibuffSeparator2", "cTotalStatsName", "cTradeCategory", "cTrinket0SlotName",
+    "cTrinket1SlotName", "cTwinPeaksOutfit", "cTwinPeaksOutfitDescription", "cTwoItemFormat",
+    "cTyping", "cUnequipOutfitMessageFormat", "cUniqueEquippedSearchPattern", "cUseCurrentOutfit",
+    "cUseEmptyOutfit", "cUseTooltipLineFormat", "cVersion", "cVoidStorageCategoryTitle", "cWSGOutfit",
+    "cWSGOutfitDescription", "cWarboundCategoryDescription", "cWarsongLumberMill",
+    "cWintergraspOutfit", "cWintergraspOutfitDescription", "cWithdrawFromVoidStorage",
+    "cYourItemIcons",
+}) do LEGACY_RETIRED[field] = true end
+
+-- The legacy capture: { [locale] = { [field] = true } }; enUS is the legacy English file.
+local function legacyFields()
+    local fixture = dofile(T.root .. "/tests/fixtures/legacy/locale_keys.lua")
+    local out = {}
+    for _, f in ipairs(fixture.files) do
+        local set = {}
+        for _, k in ipairs(f.keys) do set[k] = true end
+        out[f.locale] = set
+    end
+    return out, fixture.commit
+end
+
+local function splitFields(list, into)
+    for field in list:gmatch("[^,]+") do into[(field:gsub("^%s+", ""):gsub("%s+$", ""))] = true end
+end
+
+-- The legacy fields one overlay accounts for: each `L[...] = ... -- legacy: a, b` line's fields, and
+-- the `-- untranslated:` / `-- format mismatch:` notes' fields.
+local function accounted(text)
+    local out = {}
+    for line in (text .. "\n"):gmatch("([^\n]*)\n") do
+        line = line:gsub("\r$", "")
+        local kept = line:match("^L%[.*%-%- legacy: ([%w_%.,%s]+)$")
+        local noted = line:match("^%-%- untranslated: (.+)$") or line:match("^%-%- format mismatch: (.+)$")
+        if kept then splitFields(kept, out) end
+        if noted then splitFields(noted, out) end
+    end
+    return out
+end
+
+-- One overlay's coverage problems, appended to `out`: a field the legacy locale translated (`want`)
+-- from English it did not retire that the overlay does not account for (`have`), a retired field it
+-- keeps, and a field the legacy locale never translated.
+local function coverageProblems(rel, have, want, english, out)
+    for field in pairs(want) do
+        if english[field] and not LEGACY_RETIRED[field] and not have[field] then
+            out[#out + 1] = rel .. ": " .. field .. " was translated and is not re-keyed"
+        end
+    end
+    for field in pairs(have) do
+        if LEGACY_RETIRED[field] then
+            out[#out + 1] = rel .. ": " .. field .. " is retired but kept"
+        elseif not want[field] and not field:match("^c%u%w*%.%w+$") then
+            -- A table field (cScriptCategoryName.PVP) is unfolded by the tool; the capture records a
+            -- table only when it is assigned whole.
+            out[#out + 1] = rel .. ": " .. field .. " is not a field the legacy locale translated"
+        end
+    end
+end
+
+test("rekey: the tool names the conversion base the legacy capture was taken at", function()
+    local M = rekeyTool()
+    local _, commit = legacyFields()
+    assertEqual(M.BASE, commit, "tools/rekey-locales.lua reads the commit tests/fixtures/legacy/ captured")
+    local locales = {}
+    for _, spec in ipairs(M.LOCALES) do locales[#locales + 1] = spec.locale end
+    assertEqual(table.concat(locales, " "), "deDE frFR zhCN zhTW koKR ruRU", "the six overlays, in TOC order")
+end)
+
+test("rekey: a translation is kept only when its English is an enUS key and its directives match", function()
+    local M = rekeyTool()
+    local english = { cA = "New Outfit", cB = "Gone", cC = "%s equipped", cD = "Name:", cE = "None", cF = "None" }
+    local overlay = { cA = "Neues Outfit", cB = "Weg", cC = "ausgerüstet", cD = "Name:", cE = "Keins",
+        cF = "Nichts", cZ = "Waise" }
+    local keys = { ["New Outfit"] = true, ["%s equipped"] = true, ["Name:"] = true, None = true }
+    local r = M.rekey(english, function(s) return keys[s] == true end, overlay)
+    assertEqual(r.entries["New Outfit"].text, "Neues Outfit", "an English match is kept")
+    assertEqual(r.entries.Gone, nil, "a retired English is not kept")
+    assertEqual(table.concat(r.dropped, ","), "cB", "the retired field is reported dropped")
+    assertEqual(table.concat(r.orphaned, ","), "cZ", "a field with no legacy English is orphaned")
+    assertEqual(table.concat(r.formats, ","), "cC", "a translation that lost its %s is held back")
+    assertEqual(table.concat(r.untranslated, ","), "cD", "a translation equal to its English gets no line")
+    assertEqual(r.entries.None.text, "Keins", "the first field in sorted order wins a shared English")
+    assertEqual(table.concat(r.entries.None.fields, ","), "cE,cF", "both fields are named on the line")
+    assertEqual(table.concat(r.conflicts, ","), "cF (kept cE)", "the loser is reported")
+end)
+
+test("rekey: format directives compare as a multiset, %% left out", function()
+    local M = rekeyTool()
+    assertEqual(M.formats("%s and %d%%"), M.formats("%d und %s"), "reordered directives match")
+    assertTrue(M.formats("%s and %s") ~= M.formats("%s"), "a lost %s is caught")
+    assertEqual(M.formats("Next update in %.1f s"), "f", "a precision directive")
+    assertEqual(M.formats("100%%"), "", "%% is not a directive")
+end)
+
+test("rekey: a rendered overlay is gated first, notes its fields, and writes only on its locale", function()
+    local M = rekeyTool()
+    local r = { entries = { ['Say "hi"\n'] = { text = 'Sag "hallo"\n', fields = { "cHi" } } },
+        untranslated = { "cName" }, formats = { "cFmt" } }
+    local text = M.render("deDE", "OutfitterStrings_de.lua", r)
+    assertEqual(text:match("^[^\r\n]*"), gateLine("deDE"), "the gate is the first line")
+    assertFalse(text:find("[^\r]\n") ~= nil, "every line ends CRLF")
+    local seen = accounted(text)
+    assertTrue(seen.cHi and seen.cName and seen.cFmt, "the line's note and both end notes are read back")
+    assertEqual(#overlayWrites(text, "probe.lua", "enUS"), 0, "the rendered gate holds on enUS")
+    local NS = { L = {} }
+    T.Loader.loadSource(text, "@probe.lua", NS, { GetLocale = function() return "deDE" end })
+    assertEqual(NS.L['Say "hi"\n'], 'Sag "hallo"\n', "the quoting round-trips")
+end)
+
+test("locale: each overlay covers the legacy translations it re-keys", function()
+    local legacy = legacyFields()
+    -- Mutation self-test: the note reader sees a line's fields and the end notes, nothing else.
+    local probe = accounted('L["A"] = "B -- legacy: cX" -- legacy: cA, cB\r\n-- untranslated: cC\r\n-- cD\r\n')
+    assertTrue(probe.cA and probe.cB and probe.cC, "the note reader")
+    assertFalse(probe.cD or probe.cX, "the note reader reads a stray comment or a string's text")
+
+    for field in pairs(LEGACY_RETIRED) do
+        assertTrue(legacy.enUS[field], "LEGACY_RETIRED names " .. field .. ", which the legacy English never had")
+    end
+    local problems = {}
+    for _, o in ipairs(overlayFiles()) do
+        assertTrue(legacy[o.locale] ~= nil, o.rel .. " has no legacy capture")
+        coverageProblems(o.rel, accounted(readFile(o.rel)), legacy[o.locale] or {}, legacy.enUS, problems)
+    end
+    table.sort(problems)
+    assertEqual(#problems, 0, #problems .. " coverage problem(s):\n" .. table.concat(problems, "\n", 1, math.min(#problems, 20)))
+end)
+
+test("locale: every overlay translation carries its English's format directives", function()
+    local M = rekeyTool()
+    local bad = {}
+    for _, o in ipairs(overlayFiles()) do
+        local NS = { L = {} }
+        T.Loader.loadSource(readFile(o.rel), "@" .. o.rel, NS, { GetLocale = function() return o.locale end })
+        for key, text in pairs(NS.L) do
+            if M.formats(key) ~= M.formats(text) then bad[#bad + 1] = o.rel .. ": " .. key end
+        end
+    end
+    table.sort(bad)
+    assertEqual(#bad, 0, #bad .. " translation(s) whose directives differ:\n" .. table.concat(bad, "\n", 1, math.min(#bad, 20)))
+end)
+
+test("locale: the overlays carry the legacy translations", function()
+    -- The re-key is not an empty pass: each overlay keeps a share of what its legacy file translated.
+    for _, o in ipairs(overlayFiles()) do
+        local n = 0
+        for _ in pairs(accounted(readFile(o.rel))) do n = n + 1 end
+        assertTrue(n >= 40, o.rel .. " accounts for only " .. n .. " legacy field(s)")
+    end
+end)

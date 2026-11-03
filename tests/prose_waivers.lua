@@ -26,5 +26,9 @@ return {
         -- The same field: tests/test_triggers_trade.lua counts the live looping tickers, skipping a
         -- handle the mock AceTimer has marked `cancelled`.
         ["tests/test_triggers_trade.lua"] = { cancelled = true },
+        -- A TRANSLATION. locales/frFR.lua is the French overlay tools/rekey-locales.lua writes from the
+        -- legacy OutfitterStrings_fr.lua (design §4.6: test_prose runs over tracked prose,
+        -- translations exempt). "utilisé" and "utiliser" are French, not a British -ise spelling.
+        ["locales/frFR.lua"] = { utilis = true },
     },
 }
