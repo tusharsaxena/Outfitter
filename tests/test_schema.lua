@@ -1,6 +1,7 @@
 -- tests/test_schema.lua — the settings rows, the single write seam, its forward to the outfit instance,
 -- and the reset's reach (architecture-§5, design §3.5). P3 C12 pins the seam and the Master rows;
--- P4.6 adds the outfit rows and P4.23 the rest of the profile rows (design §9.3).
+-- P4.6 adds the outfit rows and P4.23 the rest of the profile rows (design §9.3): Behavior, Tooltips
+-- and the Outfit Bar page, whose `bar.position` row encodes the named state `profile.windows.bar`.
 
 local T = _G.OUTFITTERREBORN_TEST
 local NS = T.NS
@@ -52,7 +53,63 @@ test("schema: every stored row's default is the one in defaults/Profile.lua", fu
             checked = checked + 1
         end
     end
-    assertTrue(checked >= 5, "only " .. checked .. " stored rows were checked")
+    -- red under: any one Behavior, Tooltips or Outfit Bar row left unregistered.
+    assertTrue(checked >= 22, "only " .. checked .. " stored rows were checked")
+end)
+
+test("schema: every P4.23 profile row is registered, on its page, with its stored default", function()
+    local want = {
+        ["auto.enabled"] = "general", ["equip.muteSounds"] = "general", ["equip.showErrors"] = "general",
+        ["equip.announceKeys"] = "general", ["quickSlots.enabled"] = "general",
+        ["tooltip.usedBy"] = "general", ["tooltip.compare"] = "general",
+        ["bar.shown"] = "bar", ["bar.vertical"] = "bar", ["bar.showBackground"] = "bar",
+        ["bar.combatAlpha"] = "bar", ["bar.position"] = "bar",
+    }
+    for path, page in pairs(want) do
+        local row = NS.FindSchemaRow(path)
+        assertTrue(row ~= nil, path .. " is not registered")
+        assertEqual(row.page, page, path)
+        assertEqual(type(row.tooltip), "string", path .. " has no tooltip")
+    end
+    assertEqual(NS.FindSchemaRow("bar.combatAlpha").type, "number")
+    assertEqual(NS.FindSchemaRow("bar.position").type, "string")
+end)
+
+-- ── bar.position: a string row over the named state profile.windows.bar (design §3.4, §4.2) ────
+
+test("schema: bar.position reads and writes profile.windows.bar as `POINT X Y`", function()
+    local inst = T.load()
+    local NSi = inst.NS
+    local d = NSi.defaults.profile.windows.bar
+    assertEqual(NSi.FindSchemaRow("bar.position").default, d.point .. " " .. d.x .. " " .. d.y,
+        "the row's default is the defaults tree's, encoded")
+    assertEqual(NSi.GetSetting("bar.position"), "TOPLEFT 200 -200")
+    local seen = {}
+    NSi.NewBusTarget():RegisterMessage(NSi.MSG.SETTINGS_CHANGED, function(_, path) seen[#seen + 1] = path end)
+    assertTrue(NSi.SetByPath("bar.position", "BOTTOMRIGHT -12 34.5"))
+    local p = NSi.db.profile.windows.bar
+    assertEqual(p.point, "BOTTOMRIGHT"); assertEqual(p.x, -12); assertEqual(p.y, 34.5)
+    assertEqual(NSi.GetSetting("bar.position"), "BOTTOMRIGHT -12 34.5", "the round trip")
+    assertEqual(NSi.db.profile.bar.position, nil, "no `position` twin is ever stored")
+    assertEqual(seen[#seen], "bar.position", "the bar re-anchors off SETTINGS_CHANGED")
+    -- red under: a set that accepts any string (the bar would read an unknown corner).
+    for _, bad in ipairs({ "CENTER 1 2", "TOPLEFT x 2", "TOPLEFT 1", "", "TOPLEFT 1 2 3" }) do
+        assertFalse((NSi.SetByPath("bar.position", bad)), "accepted " .. bad)
+    end
+    assertEqual(NSi.db.profile.windows.bar.point, "BOTTOMRIGHT", "a refused write moved the bar")
+end)
+
+test("schema: resetting bar.position copies the default and never aliases it", function()
+    local inst = T.load()
+    local NSi = inst.NS
+    assertTrue(NSi.SetByPath("bar.position", "BOTTOMLEFT 5 6"))
+    assertTrue(NSi.ApplyDefault(NSi.FindSchemaRow("bar.position")))
+    local p, d = NSi.db.profile.windows.bar, NSi.defaults.profile.windows.bar
+    assertEqual(p.point .. " " .. p.x .. " " .. p.y, "TOPLEFT 200 -200")
+    -- red under: a set that stores NS.defaults.profile.windows.bar itself for the default value.
+    assertFalse(rawequal(p, d), "the stored position IS the default table")
+    p.x = 999
+    assertEqual(d.x, 200, "a drag after the reset wrote through into the defaults")
 end)
 
 test("schema: Master controls carries every canonical row, in order, labeled with the brand", function()

@@ -2,10 +2,11 @@ local addonName, NS = ...
 -- settings/General.lua — the General page (its first tab is `Master controls`, options-ui-§15, its last
 -- `Keybindings`, options-ui-§20) and the landing page's spec, NS.LANDING (options-ui-§5).
 --
--- P3 scaffold: the Behavior and Tooltips tabs arrive with their rows in P4.23 (design §4.2), between
--- Master controls and Skin. The Skin rows land here, with the write seam they need (core/SkinSetup.lua
--- writes every half of a choice through NS.SetByPath). Several Master reactions reach modules that land in P4 (the outfit bar, test
--- mode, the launcher); each is resolved at CALL time and stands aside while its module is absent.
+-- The tabs, in order (design §4.2): Master controls, Behavior, Tooltips, Skin, Keybindings. A schema
+-- tab's place is its group's first appearance in NS.Schema, so the Behavior and Tooltips rows register
+-- after the Master rows and before the skin rows. The Skin rows land here with the write seam they
+-- need (core/SkinSetup.lua writes every half of a choice through NS.SetByPath). The Master reactions
+-- are resolved at CALL time; the Behavior and Tooltips reactions call their modules directly.
 
 local L = NS.L
 local H = NS.Helpers
@@ -98,17 +99,73 @@ for _, row in ipairs(masterRows) do
     if own then row.get, row.set = own.get, own.set end
     -- options-ui-§15: Test mode "is ended by Reset all settings (the row declares default = false)".
     -- The composer emits the row without one, so the reset's session-row walk would skip it; the
-    -- host stamps it here.
-    if row.path == TEST_MODE_PATH and row.default == nil then row.default = false end
+    -- host stamps it here. The debug console likewise: the reset's session sweep turns it off
+    -- (design §3.6).
+    if (row.path == TEST_MODE_PATH or row.path == DEBUG_CONSOLE_PATH) and row.default == nil then
+        row.default = false
+    end
 end
 NS.RegisterSchemaRows(masterRows)
+
+-- ── Behavior ── (design §4.2) how outfits change, and the character sheet's flyout.
+local BEHAVIOR = L["Behavior"]
+local CHANGES = L["Outfit changes"]
+
+NS.RegisterSchemaRows({
+    -- No onChange: the trigger binder's SETTINGS_CHANGED handler is this row's one route, so the panel,
+    -- `/of auto`, the key bindings and a profile change all reach SetActive the same way (design §6.9).
+    { path = "auto.enabled", page = PAGE, group = BEHAVIOR, subgroup = CHANGES, type = "bool",
+      label = L["Switch outfits automatically"], default = D.auto.enabled,
+      tooltip = L["Lets outfits with a trigger equip and unequip themselves. Turning this off stops every trigger; outfits you wear by hand are unaffected."] },
+    { path = "equip.muteSounds", page = PAGE, group = BEHAVIOR, subgroup = CHANGES, type = "bool",
+      label = L["Mute sound effects while changing outfits"], default = D.equip.muteSounds,
+      tooltip = L["Silences the equip sounds during a swap and restores them afterwards."] },
+    { path = "equip.showErrors", page = PAGE, group = BEHAVIOR, subgroup = CHANGES, type = "bool",
+      label = L["Show equip errors"], default = D.equip.showErrors,
+      tooltip = L["Prints a line in chat when an item can't be equipped during an outfit change."] },
+    { path = "equip.announceKeys", page = PAGE, group = BEHAVIOR, subgroup = CHANGES, type = "bool",
+      label = L["Announce outfit changes from key bindings"], default = D.equip.announceKeys,
+      tooltip = L["Shows 'Outfit equipped' on screen when a key binding wears or removes an outfit."] },
+    -- A one-row subsection on purpose: its heading names the surface the row acts on, which the row's
+    -- label (an action) does not say.
+    { path = "quickSlots.enabled", page = PAGE, group = BEHAVIOR, subgroup = L["Character sheet"], type = "bool",
+      label = L["Open the item flyout when you click an empty slot or drop an item on it"],
+      default = D.quickSlots.enabled,
+      tooltip = L["Shows the items that fit a character-sheet slot, so you can pick one to put on."],
+      -- The hook bodies read the row themselves, so a profile switch needs no call.
+      onChange = function(v) NS.QuickSlots.SetEnabled(v) end },
+})
+
+-- ── Tooltips ── (design §4.2, §7.10) the hook bodies read both rows themselves with `~= false`.
+local TOOLTIPS = L["Tooltips"]
+
+NS.RegisterSchemaRows({
+    { path = "tooltip.usedBy", page = PAGE, group = TOOLTIPS, type = "bool",
+      label = L["Show which outfits use an item"], default = D.tooltip.usedBy,
+      tooltip = L["Adds a line to an item's tooltip naming every outfit that uses it."],
+      onChange = function() NS.Tooltips.Refresh() end },
+    { path = "tooltip.compare", page = PAGE, group = TOOLTIPS, type = "bool",
+      label = L["Compare items with your outfits"], default = D.tooltip.compare,
+      tooltip = L["Shows the items your outfits wear in that slot beside an item's tooltip."],
+      onChange = function() NS.Compare.Refresh() end },
+})
+
+--- Behavior's closing act (design §3.6): one button under no heading of its own (options-ui-§7),
+--- drawn after the tab's last row. The popup asks first and refuses in combat or while stood down.
+local function afterBehavior(ctx)
+    H.InlineButtonPair(ctx, {
+        text    = L["Delete all outfits…"],
+        tooltip = L["Deletes every outfit on this character and re-creates the built-in ones. Asks first. Your settings are not affected."],
+        onClick = function() NS.Popups.ShowDeleteAll() end,
+    })
+end
 
 -- ── Skin ── (skinning-§2/§3, core/SkinSetup.lua) the skin this addon wears, per profile. The tab is
 -- the library's O.AppearanceTab, which draws every row below itself (its choice grids, the Scope's
 -- check boxes, the Font and texture dropdowns), so each row carries `skipRender`; they stay schema
 -- rows so the defaults resolve, every reset reaches them, and `/of get|set skin.skin` validates
 -- against `values`. Their group is the tab's key, so the tab takes the group's place in the strip:
--- after Master controls (and, from P4.23, Behavior and Tooltips), before Keybindings.
+-- after Master controls, Behavior and Tooltips, before Keybindings.
 --
 -- Each onChange applies ONLY its own half (core/SkinSetup.lua says why): the tab and another addon's
 -- "Copy to every Ka0s addon" call Skin:SetChoice before they write, so the write is a no-op, and a
@@ -169,6 +226,9 @@ NS.RegisterSchemaRows({
       tooltip = L["Whether the first-run skin picker was closed on this profile."] },
 })
 
+-- The tabs' closing hooks, keyed by group: the Master tail (its two resets) and Behavior's act.
+NS.GENERAL_AFTER_GROUP = { [H.MASTER_GROUP] = masterTail, [BEHAVIOR] = afterBehavior }
+
 -- ── The page ────────────────────────────────────────────────────────────────────────────────────
 local function build(mainCategory)
     if not (Settings and Settings.RegisterCanvasLayoutSubcategory) then return nil end
@@ -188,7 +248,7 @@ local function build(mainCategory)
     local tabs = { SKIN_TAB, H.KeybindingsTab({ bindings = NS.BINDINGS or {} }) }
     H.SetRenderer(ctx, function(c)
         H.ClearScroll(c)
-        H.RenderTabbedSchema(c, PAGE, { [H.MASTER_GROUP] = masterTail }, nil, { tabs = tabs })
+        H.RenderTabbedSchema(c, PAGE, NS.GENERAL_AFTER_GROUP, nil, { tabs = tabs })
     end)
     return Settings.RegisterCanvasLayoutSubcategory(mainCategory, ctx.panel, L["General"])
 end

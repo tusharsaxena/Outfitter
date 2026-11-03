@@ -17,8 +17,6 @@ there is no LoadOnDemand split (H21; the comment is in `settings/OptionsSetup.lu
 | Outfit Bar | Whether the bar shows, its layout, background and opacity in combat |
 | Profiles | AceDB profiles: settings only; outfits belong to each character |
 
-The tables below mark what the scaffold has today and what P4.23 adds.
-
 ## Landing page
 
 The parent category (`OutfitterRebornMainPanel`), built from `NS.LANDING` (`settings/General.lua`):
@@ -42,16 +40,16 @@ Composed by `H.MasterControls` from one declaration, the canonical rows in canon
 | Master scale | `scale` | `NS.Bar.ApplyScale()`; the bar only (the note says the window follows the sheet) |
 | Master opacity | `alpha` | `NS.Bar.ApplyAlpha()` |
 | Lock frame | `locked` | `NS.Bar.SetLocked(v)` |
-| Debug console | `state.debugConsole` | `NS.DebugLog:ConsoleCheckbox()` (session) |
+| Debug console | `state.debugConsole` | `NS.DebugLog:ConsoleCheckbox()` (session; Reset all turns it off) |
 | Minimap button | `global.minimap.shown` | `NS.Launcher:IsShown()`/`SetShown()`; exempt from reset |
 | Test mode | `state.testMode` | `NS.Preview.Start`/`Stop` (session; Reset all ends it) |
 | Reset position | button | Resets `bar.position` |
 | Reset all settings | button | `NS.ShowResetAll` |
 
-Each reaction that reaches a P4 module is resolved at call time and stands aside while the module is
-absent.
+The Master reactions are resolved at call time. The host stamps `default = false` on the two session
+rows, so the reset's session sweep reaches them (design §3.6).
 
-### Behavior (P4.23)
+### Behavior
 
 | Subgroup | Path | Default | Label |
 |---|---|---|---|
@@ -60,17 +58,22 @@ absent.
 | Outfit changes | `equip.showErrors` | `true` | Show equip errors |
 | Outfit changes | `equip.announceKeys` | `true` | Announce outfit changes from key bindings |
 | Character sheet | `quickSlots.enabled` | `true` | Open the item flyout when you click an empty slot or drop an item on it |
-| *(last, no heading)* | act | button | Delete all outfits… |
+| *(last, no heading)* | act | button | Delete all outfits… (`NS.Popups.ShowDeleteAll()`) |
 
 `auto.enabled` has no `onChange`: the trigger binder's `SETTINGS_CHANGED` handler is the one route,
 so the panel, `/of auto`, the key bindings and a profile change all reach it the same way.
+`quickSlots.enabled` reacts with `NS.QuickSlots.SetEnabled(v)`. The act is drawn by
+`NS.GENERAL_AFTER_GROUP["Behavior"]`, after the tab's last row (options-ui-§7).
 
-### Tooltips (P4.23)
+### Tooltips
 
 | Path | Default | Label |
 |---|---|---|
 | `tooltip.usedBy` | `true` | Show which outfits use an item |
 | `tooltip.compare` | `true` | Compare items with your outfits |
+
+The reactions are `NS.Tooltips.Refresh()` and `NS.Compare.Refresh()`; the hook bodies read both rows
+themselves.
 
 ### Skin
 
@@ -94,7 +97,7 @@ the defaults resolve, every reset reaches them and `/of set skin.skin` validates
 `H.KeybindingsTab({ bindings = NS.BINDINGS })`: the addon's key bindings, last (options-ui-§20). The
 General Defaults tooltip ends with `H.KEYBINDS_UNCHANGED`: no reset changes a key.
 
-## Outfit Bar (P4.23)
+## Outfit Bar
 
 `settings/OutfitBar.lua`, page `bar`, one tab, **Display**:
 
@@ -105,6 +108,12 @@ General Defaults tooltip ends with `H.KEYBINDS_UNCHANGED`: no reset changes a ke
 | `bar.showBackground` | `true` | Show background |
 | `bar.combatAlpha` | `1.0` (0 to 1, step 0.05) | Opacity in combat (%) |
 | `bar.position` | `TOPLEFT 200 -200` | Outfit bar position (`skipRender`; encodes `profile.windows.bar`) |
+
+No row has an `onChange`: the bar re-renders on `SETTINGS_CHANGED` for any `bar.*` path.
+`bar.position` reads and writes `POINT X Y` through its own get/set, refuses anything but a screen
+corner and two numbers, and decodes every write into a new table, so a reset copies the default. Its
+default is the defaults tree's `windows.bar`, encoded, and the load-time shape check skips it, since
+its own get/set are its storage.
 
 ## Profiles
 

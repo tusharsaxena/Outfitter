@@ -92,6 +92,64 @@ test("reset: a profile switch and a profile copy keep every outfit", function()
     assertNil(diff(before, NS.db.char), "after the profile reset")
 end)
 
+-- ── the profile half (P4.23): every profile row, the session sweep, the profile list ──────────
+--
+-- Test mode's row reaches NS.Preview, which lands in P4.22 beside this task: a recorded fake (design
+-- §12, the fake rule) stands in for it, and answers the bar's IsActive while the bar is shown.
+
+--- Every profile row a player can change, set away from its default.
+local CHANGED = {
+    { "auto.enabled", false }, { "equip.muteSounds", false }, { "equip.showErrors", false },
+    { "equip.announceKeys", false }, { "quickSlots.enabled", false },
+    { "tooltip.usedBy", false }, { "tooltip.compare", false },
+    { "bar.shown", true }, { "bar.vertical", true }, { "bar.showBackground", false },
+    { "bar.combatAlpha", 0.5 }, { "bar.position", "BOTTOMRIGHT -10 10" },
+    { "visibility", "never" }, { "scale", 1.5 }, { "locked", true },
+}
+
+test("reset: Reset all restores every profile row, sweeps the session rows, keeps the profile list", function()
+    local _, NS = scene()
+    local active = false
+    local preview = T.fake(NS, "Preview", {
+        IsActive = function() return active end,
+        Start = function() active = true end, Stop = function() active = false end,
+        Suspend = true, Resume = true,
+    })
+    populate(NS)
+    local before = deepCopy(NS.db.char)
+    NS.db:SetProfile("Alt")
+    NS.db:SetProfile("Default")
+    for _, e in ipairs(CHANGED) do assertTrue(NS.SetByPath(e[1], e[2]), e[1]) end
+    assertTrue(NS.SetByPath("state.testMode", true))
+    assertTrue(NS.SetByPath("state.debugConsole", true))
+    assertTrue(NS.SetByPath(NS.MINIMAP_PATH, false))
+    assertTrue(active, "test mode started")
+    local changed = 0
+    NS.NewBusTarget():RegisterMessage(NS.MSG.PROFILE_CHANGED, function() changed = changed + 1 end)
+
+    NS.Helpers.RestoreAllDefaults()
+
+    for _, e in ipairs(CHANGED) do
+        local row = NS.FindSchemaRow(e[1])
+        -- red under: a P4.23 row left out of the reset (registered with no default).
+        assertEqual(NS.GetSetting(e[1]), row.default, e[1] .. " was not reset")
+    end
+    assertEqual(NS.db.profile.windows.bar.point, "TOPLEFT", "the bar went back to its corner")
+    -- The session sweep: test mode ends and the debug console goes off.
+    assertEqual(preview.__count("Stop"), 1, "test mode was not ended")
+    assertFalse(active)
+    -- red under: the console row left without the default = false settings/General.lua stamps.
+    assertEqual(NS.GetSetting("state.debugConsole"), false, "the debug console stayed on")
+    assertTrue(changed >= 1, "no PROFILE_CHANGED was published")
+    -- Reset-exempt, and per account: the Minimap button stays hidden.
+    assertEqual(NS.db.global.minimap.hide, true)
+    local names = {}
+    for _, n in ipairs(NS.db:GetProfiles()) do names[n] = true end
+    assertTrue(names.Alt and names.Default, "a profile was deleted")
+    assertEqual(NS.db:GetCurrentProfile(), "Default")
+    assertNil(diff(before, NS.db.char))
+end)
+
 -- ── Delete all outfits (§3.6) ─────────────────────────────────────────────────────────────────
 
 test("reset: Delete all wipes the character's outfits, re-seeds the built-in ones, keeps the profile", function()
