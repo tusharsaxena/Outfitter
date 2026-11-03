@@ -300,18 +300,39 @@ end)
 
 -- ── the picker and the verb ──────────────────────────────────────────────────────────────────────
 
-test("skin seam: the picker, the notice and the verb are quiet without the options seam", function()
-    -- settings/OptionsSetup.lua (NS.Helpers) lands in C12; until then nothing shows and nothing
-    -- raises, on every route the profile callbacks and OnEnable take.
+test("skin seam: with the options seam, an unseen profile shows the picker and the close marks it seen", function()
+    -- settings/OptionsSetup.lua (NS.Helpers) and the skin rows (settings/General.lua) land in C12. The
+    -- picker shows on a profile whose skin.pickerSeen is false; the player's close writes it through
+    -- the seam, after which the picker does not show again. red under: the skin.pickerSeen row
+    -- missing (the close's write is refused and the picker shows on every login).
     local NS = setup()
-    assertEqual(NS.MaybeShowSkinPicker(), nil)
+    NS.HideSkinPicker()
+    local O = NS.Helpers
+    local real, calls = O.SkinPicker, {}
+    O.SkinPicker = function(spec) calls[#calls + 1] = spec; return { spy = true } end
+    local ok, err = pcall(function()
+        assertEqual(NS.GetSetting("skin.pickerSeen"), false, "every profile starts unseen")
+        NS.MaybeShowSkinPicker()
+        assertEqual(#calls, 1, "pickerSeen false: the picker shows")
+        calls[1].onClose()
+        assertEqual(NS.db.profile.skin.pickerSeen, true, "the close marked it seen through the seam")
+        NS.MaybeShowSkinPicker()
+        assertEqual(#calls, 1, "pickerSeen true: it does not show again")
+    end)
+    O.SkinPicker = real
+    if not ok then error(err, 0) end
     assertTrue(pcall(NS.HideSkinPicker), "HideSkinPicker raised")
-    local _, why = NS.MaybeShowSkinNotice()
-    assertEqual(why, "unavailable")
     local spec = NS.SkinPickerSpec()
     assertEqual(spec.owner, OWNER)
     assertTrue(rawequal(spec.get, NS.SkinChoice) and rawequal(spec.set, NS.WriteSkinChoice),
         "the spec reads and writes through the seam")
+end)
+
+test("skin seam: a choice written through the seam is stored and worn", function()
+    local NS, _, Skin = setup()
+    NS.WriteSkinChoice("ka0s", "obsidian")
+    assertEqual(NS.db.profile.skin.skin, "obsidian", "the write seam stored the skin")
+    assertEqual(select(2, Skin:GetChoice(OWNER)), "obsidian", "the row's onChange applied it")
 end)
 
 test("skin seam: /of skin without the library prints the library-absent line", function()

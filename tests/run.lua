@@ -115,6 +115,9 @@ local SUITES = {
     "test_skinsetup",
     "test_surface_parity",
     "test_perf_harness",
+    "test_schema",
+    "test_settings",
+    "test_slash",
     { name = "test_skin_values", dir = "tests/_kit/" },
     { name = "test_skin_switch", dir = "tests/_kit/" },
     { name = "test_eol", dir = "tests/_kit/" },
@@ -144,6 +147,21 @@ Kit.skinValues = { root = root, rows = {} }
 
 -- The skin-switch test's painted surfaces (skinning-§1): the skeleton until P4.30 (design §9.5).
 Kit.skinSwitch = dofile(root .. "/tests/skin_surfaces.lua")(_G.OUTFITTERREBORN_TEST)
+
+-- The diagnostics contract runs against THIS addon's dispatcher (debug-logging-§14), on an instance
+-- of its own so a case that stands the addon down never reaches the shared one.
+local contractInst
+local function contract()
+    contractInst = contractInst or loadInstance()
+    return contractInst
+end
+Kit.diagnostics = {
+    brand       = "Ka0s Outfitter Reborn",
+    dispatch    = function(line) contract().NS.Slash:OnSlash(line) end,
+    console     = function() return contract().NS.DebugLog end,
+    setDebug    = function(on) contract().NS.State.debug = on and true or false end,
+    setDisabled = function(off) contract().NS.SetByPath("enabled", not off) end,
+}
 
 -- The 1500-line cap gate's census lives in the hub (layout-§1); nothing here is generated data.
 Kit.layoutCap = { hub = "docs/ARCHITECTURE.md", exempt = {} }

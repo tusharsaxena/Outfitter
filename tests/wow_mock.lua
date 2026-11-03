@@ -123,6 +123,75 @@ local function build()
     end
     installBindings(M)
 
+    -- The Profiles page's AceConfig trio (settings/Profiles.lua): the options table AceDBOptions
+    -- builds, the registry it is handed to, and the dialog that draws it, each recorded.
+    libs["AceDBOptions-3.0"] = {
+        GetOptionsTable = function(_, db)
+            return { type = "group", name = "Profiles", args = { desc = { type = "description", order = 1 } }, __db = db }
+        end,
+    }
+    local registered = {}
+    libs["AceConfig-3.0"] = {
+        RegisterOptionsTable = function(_, name, tbl) registered[name] = tbl end,
+        __registered = registered,
+    }
+    libs["AceConfigDialog-3.0"] = {
+        Open = function(self, name, container)
+            self.__opens = (self.__opens or 0) + 1
+            self.__lastOpen = { name = name, container = container }
+        end,
+        Close = function() end,
+        SetDefaultSize = function() end,
+    }
+    libs["AceConfigRegistry-3.0"] = {
+        NotifyChange = function() end,
+        RegisterOptionsTable = function() end,
+    }
+
+    -- The client's macro-option parser (H25, settings/Slash.lua). Clauses split on `;`; each may open
+    -- with bracket groups, OR'd, whose comma-separated conditions are AND'd. The conditions a suite
+    -- steers: combat / nocombat (InCombatLockdown), mod / mod:<key> / nomod (M.__modifiers, a set of
+    -- "shift", "ctrl", "alt") and spec:<n> (M.__spec, default 1). A clause with no brackets always
+    -- matches; the first match answers its trimmed text, and no match answers nil, as the client's does.
+    M.__modifiers, M.__spec = {}, 1
+    local function anyModifier() return next(M.__modifiers) ~= nil end
+    local CONDITIONS = {
+        combat   = function() return M.InCombatLockdown() == true end,
+        nocombat = function() return M.InCombatLockdown() ~= true end,
+        mod      = function(arg)
+            if arg == nil then return anyModifier() end
+            return M.__modifiers[arg] == true
+        end,
+        nomod    = function() return not anyModifier() end,
+        spec     = function(arg) return tonumber(arg) == M.__spec end,
+    }
+    local function conditionHolds(text)
+        local name, arg = text:match("^%s*([%a]+)%s*:?%s*([%w]*)%s*$")
+        local check = name and CONDITIONS[name]
+        if not check then return false end
+        return check(arg ~= "" and arg or nil)
+    end
+    local function groupHolds(group)
+        for cond in (group .. ","):gmatch("([^,]*),") do
+            if cond:find("%S") and not conditionHolds(cond) then return false end
+        end
+        return true
+    end
+    M.SecureCmdOptionParse = function(msg)
+        for clause in (tostring(msg) .. ";"):gmatch("([^;]*);") do
+            local rest, any, matched = clause:match("^%s*(.-)$"), false, false
+            while rest:sub(1, 1) == "[" do
+                local group, after = rest:match("^%[([^%]]*)%]%s*(.*)$")
+                if not group then break end
+                any = true
+                if groupHolds(group) then matched = true end
+                rest = after
+            end
+            if not any or matched then return (rest:gsub("%s+$", "")) end
+        end
+        return nil
+    end
+
     return M
 end
 

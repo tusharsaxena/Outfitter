@@ -67,7 +67,11 @@ files["core/SecureQueue.lua"] = { read_globals = { "geterrorhandler" } }
 
 -- The published slash surface is colon-called by the host and the suites and forwards to the
 -- dispatcher upvalue.
-files["settings/Slash.lua"] = { ignore = { "212/self" } }
+files["settings/Slash.lua"] = {
+    ignore = { "212/self" },
+    -- the client's macro-option parser decides a conditional message or argument (H25)
+    read_globals = { "SecureCmdOptionParse" },
+}
 
 -- The mocks mirror the client's and the libraries' colon-called APIs (`db:SetProfile`, `frame:Show`).
 files["tests/wow_mock.lua"] = { ignore = { "212/self", "432/self" } }

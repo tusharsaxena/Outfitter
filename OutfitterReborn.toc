@@ -68,3 +68,16 @@ core\Database.lua
 
 # Defaults (the only place a default is hardcoded -- savedvariables-§2; pure data)
 defaults\Profile.lua
+
+# Modules -- each reaches the others at CALL time unless noted
+modules\Diagnostics.lua
+
+# Settings (last -- depend on everything else being initialized)
+# LOAD-BEARING: NS.RegisterSchemaRows, which settings\General.lua calls at FILE SCOPE.
+settings\Schema.lua
+settings\Slash.lua
+# LOAD-BEARING: NS.Helpers and NS.RegisterTabbedPage, captured at FILE SCOPE by every page below.
+settings\OptionsSetup.lua
+# LOAD-BEARING: General registers FIRST and Profiles LAST; page order IS registration order.
+settings\General.lua
+settings\Profiles.lua

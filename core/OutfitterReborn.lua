@@ -14,4 +14,9 @@ function NS:OnInitialize()
     self:RunMigrations()
     -- The profile's skin, before any page or window is built (core/SkinSetup.lua).
     NS.ApplySkinChoice()
+    -- The stored switch takes its hold before OnEnable runs, so a disabled login registers nothing.
+    NS.SyncEnabledHold()
+    -- EAGER category registration; the page bodies stay lazy (options-ui-§1/§5).
+    NS.CreateOptionsPanel()
+    NS.Slash:Register()
 end
