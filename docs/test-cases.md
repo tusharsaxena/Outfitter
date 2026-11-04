@@ -811,10 +811,13 @@ Total.
 - quickslots: quickSlots.enabled off silences every hook body; on brings them back
 - quickslots: the stand-down owns nothing to tear down: no event, no timer, no frame
 
-### test_equip_bracket.lua (29)
+### test_equip_bracket.lua (32)
 
 - equip bracket: NS.Equip is published with the bracket and no public Begin/End
 - equip bracket: Batch hands fn every argument, a nil hole included
+- equip bracket: Batch passes exactly the arguments given, none to five
+- equip bracket: Batch holds no reference to fn or its arguments once it returns
+- equip bracket: an idle Batch of up to three arguments allocates nothing
 - equip bracket: the depth is balanced on success and on a raise; the raise is surfaced once
 - equip bracket: after a raise the next Request still schedules
 - equip bracket: the depth never goes below zero
@@ -1546,7 +1549,7 @@ Total.
 | test_states.lua | 29 |
 | test_secrets_states.lua | 6 |
 | test_quickslots.lua | 19 |
-| test_equip_bracket.lua | 29 |
+| test_equip_bracket.lua | 32 |
 | test_tooltips.lua | 18 |
 | test_stack.lua | 27 |
 | test_em_sync.lua | 24 |
@@ -1582,4 +1585,4 @@ Total.
 | test_lizard_sighted.lua | 8 |
 | test_prose.lua | 15 |
 | Skipped | 1 |
-| **Total** | **1288** |
+| **Total** | **1291** |

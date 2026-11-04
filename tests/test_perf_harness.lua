@@ -179,6 +179,9 @@ end)
 
 test("perf scenes: the idle docked window follows once per step and announces nothing", function()
     local step, NS = Scenes.dockIdle()
+    -- red under: the scene settling on a frozen clock (the throttled update it leaves pending is
+    -- re-armed by every poll's flush, about 720 bytes a step the idle client never pays).
+    assertFalse(NS.Equip.Pending(), "the idle scene starts with an equipment update pending")
     local sent = 0
     NS.NewBusTarget():RegisterMessage(NS.MSG.STACK_CHANGED, function() sent = sent + 1 end)
     local seen = watch(NS)
@@ -189,6 +192,7 @@ test("perf scenes: the idle docked window follows once per step and announces no
     -- red under: reverting C-01's st.touched gate (the idle poll's bracket announces on every close).
     assertEqual(sent, 0, "the idle poll announced STACK_CHANGED")
     assertNil(seen.counts.equipUpdate, "the idle step ran an equipment update")
+    assertFalse(NS.Equip.Pending(), "the idle steps left an equipment update pending")
 end)
 
 -- ── the pair verdict ───────────────────────────────────────────────────────────────────────────

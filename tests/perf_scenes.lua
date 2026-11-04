@@ -231,7 +231,12 @@ return function(env)
         NS.Dock.Open()
         M.OutfitterRebornWindow:__fire("OnShow")     -- the Dock's OnShow hook arms the follow
         local driver = M.OutfitterRebornDockDriver
+        -- The clock moves past the 1.5 s throttle before the settle, so the update the setup asked for
+        -- runs: on a frozen clock it stays throttled and every poll's flush re-arms its timer, a cost
+        -- the client (whose timer fires on time) never pays at idle.
+        M.__now = M.__now + 2
         settle(M)
+        assert(not NS.Equip.Pending(), "the idle scene has an equipment update pending")
         driver:__fire("OnUpdate", NS.Dock.FOLLOW_INTERVAL)   -- the first render, done before measuring
         local poll
         for _, h in ipairs(M.__timers()) do

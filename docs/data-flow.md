@@ -91,7 +91,9 @@ NS.Equip.Batch(function()  NS.Stack.Wear / Remove (layer, byTrigger)  end) â—„â”
 - **The bracket cannot strand.** `NS.Equip.Batch(fn, ...)` runs `fn` under `xpcall`, always restores
   its depth counter, flushes at depth 0, and surfaces an error once per tag after the counter is
   restored. Stand-down zeroes it and the first `PLAYER_ENTERING_WORLD` zeroes a stranded one. This is
-  the fix for the fork's stuck `EquipmentUpdateCount`.
+  the fix for the fork's stuck `EquipmentUpdateCount`. With up to three arguments the bracket
+  allocates nothing (file-scope slots and trampolines), since the 0.5 s States poll opens one twice a
+  second for the whole session ([`performance.md`](performance.md#measured-costs)).
 - **Executing.** `E.Update` waits out death, casting, combat lockdown and a 1.5 s throttle, compiles
   the stack into one wanted item per slot, diffs it against the inventory cache into an ordered change
   list, and executes it with the equip sounds muted (`equip.muteSounds`) and the cursor always cleared.

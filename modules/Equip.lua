@@ -113,20 +113,46 @@ end
 
 -- ── the bracket ───────────────────────────────────────────────────────────────────────────────
 
--- Lua 5.1's xpcall forwards no extra arguments, and the kit runs 5.1, so they travel in a closure.
+-- Lua 5.1's xpcall forwards no extra arguments, and the kit runs 5.1. The idle States poll opens a
+-- Batch twice a second for the session, so the common case allocates nothing: up to three arguments
+-- travel in file-scope slots that the trampoline copies to its locals and clears before fn runs (so
+-- a nested Batch reuses them safely and nothing is held after the call); more travel in a closure.
+local slotFn, slotN, slotA, slotB, slotC
+local function trampoline()
+    local fn, n, a, b, c = slotFn, slotN, slotA, slotB, slotC
+    slotFn, slotA, slotB, slotC = nil, nil, nil, nil
+    if n == 0 then return fn() end
+    if n == 1 then return fn(a) end
+    if n == 2 then return fn(a, b) end
+    return fn(a, b, c)
+end
+
+local function call(fn, ...)
+    local n = select("#", ...)
+    if n <= 3 then
+        slotFn, slotN = fn, n
+        slotA, slotB, slotC = ...
+        return xpcall(trampoline, traceback)
+    end
+    local args = { ... }
+    return xpcall(function() return fn(unpack(args, 1, n)) end, traceback)
+end
+
+local flushArg
+local function flushTrampoline() flush(flushArg) end
+
 local function run(now, fn, ...)
     st.depth = st.depth + 1
     st.frames = st.frames + 1
     if now then st.pendingNow = true end
-    local n, args = select("#", ...), { ... }
-    local ok, err = xpcall(function() return fn(unpack(args, 1, n)) end, traceback)
+    local ok, err = call(fn, ...)
     st.frames = st.frames - 1
     st.depth = st.depth - 1
     if st.depth < 0 then st.depth = 0 end   -- the unmatched-close guard (OutfitterEquipment.lua:825-836)
     if st.depth == 0 then
-        local pending = st.pendingNow
+        flushArg = st.pendingNow   -- read by flushTrampoline before flush can open another Batch
         st.pendingNow = false
-        local fok, ferr = xpcall(function() flush(pending) end, traceback)
+        local fok, ferr = xpcall(flushTrampoline, traceback)
         if not fok then surface("flush", ferr) end
     end
     if not ok then surface("batch", err) end

@@ -74,7 +74,7 @@ with capture off and on:
 | `triggerFanout` | One `PLAYER_UPDATE_RESTING` edge through 40 outfits on the Resting trigger | 40 `triggerDispatch` |
 | `tooltips` | The "Used by outfits" line on 100 bag items | 100 `tooltipUsedBy` |
 | `gaGeneration` | One genetic generation: 275 children over whole resumes of the ticker, the search restarted every 20 steps | 3 `optimizeStep` |
-| `dockIdle` | The docked window shown on full bags with nothing changing: one States poll tick (0.5 s) and one follow tick. The idle bracket announces nothing, so the list is not rebuilt (about 1.3 KB a step, against 180 KB if it redrew) | 1 `dockFollow` |
+| `dockIdle` | The docked window shown on full bags with nothing changing: one States poll tick (0.5 s) and one follow tick. The idle bracket announces nothing, so the list is not rebuilt (about 190 bytes a step, against 180 KB if it redrew) | 1 `dockFollow` |
 | `tooltipsAbsent` | The `tooltips` step with `Tooltips.OnItem`'s bracket removed from the source, measured with capture off only (the instrumentation-absent arm, below) | 0: there is no bracket |
 
 Each carries a byte ceiling a little above its measured figure and a pinned note count, and each
@@ -95,23 +95,28 @@ A ceiling is raised only by re-measuring and saying why. The runs are kept in
 
 ## Measured costs
 
-**The idle docked window: about 1256 bytes a step.** Measured 2026-11-04 by `tests/perf.lua`'s
-`dockIdle` scenario (Lua 5.1, the same figure with capture off and on, ceiling 1290). One step is one
+**The idle docked window: about 192 bytes a step.** Measured 2026-11-04 by `tests/perf.lua`'s
+`dockIdle` scenario (Lua 5.1, the same figure with capture off and on, ceiling 200). One step is one
 States poll tick (the 0.5 s mounted and swimming repeater) and one follow tick. The poll runs twice
 a second whenever the addon is up, window or not; the follow tick runs only while the window is
-shown. Of the 1256 bytes:
+shown. Of the 192 bytes:
 
 | Share | Where it goes |
 |---|---|
-| About 1064 | The poll's `NS.Equip.Batch` bracket: `run()` in `modules/Equip.lua` packs the vararg into a table and builds two `xpcall` closures (the call and the flush) on every entry |
+| 0 | The poll's `NS.Equip.Batch` bracket. With up to three arguments, `run()` in `modules/Equip.lua` passes them through file-scope slots to a file-scope trampoline, and the flush goes through a file-scope function too. Only a call with four or more arguments still builds a table and a closure. `test_equip_bracket` pins the bracket at zero bytes |
 | About 96 | The follow tick (`dockFollow`) |
 | About 96 | `Scenes.quiet`, the recorder's own housekeeping, not the addon's |
 
 The idle bracket announces nothing (the C-01 gate), so nothing redraws; with that gate reverted the
-same step costs about 183681 bytes, and the 1290 ceiling is what holds the idle window quiet. The
-remaining cost is the bracket's own allocation, paid on every `Batch` whether or not the stack moves.
-Whether to cut it (for example, a no-argument fast path, or reusing the closures) is the owner's
-call and is not scheduled; it is recorded here as a measured cost, not a defect.
+same step costs about 180 KB. The 200 ceiling catches that, and it also catches the bracket going
+back to allocating: the old vararg table and its two `xpcall` closures cost 344 bytes a step.
+
+The figure before this was 1256 bytes. It also counted about 720 bytes the idle client never pays:
+the scene settled on a frozen clock, so the update its setup asked for stayed throttled, and every
+poll's flush canceled and re-armed that update's timer. The scene now moves the clock past the 1.5 s
+throttle before it settles, and it asserts that no update is pending (`test_perf_harness`). The
+re-arm still happens in game while an update is genuinely waiting (inside the throttle, or behind
+the dead or casting gate): each Batch close cancels the timer and arms a new one.
 
 ## Complexity
 

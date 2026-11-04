@@ -87,6 +87,54 @@ test("equip bracket: Batch hands fn every argument, a nil hole included", functi
     assertEqual(got[3], 3)
 end)
 
+test("equip bracket: Batch passes exactly the arguments given, none to five", function()
+    local _, _, E = scene()
+    local function count(...) return select("#", ...) end
+    -- red under: the fast path always passing its three slots (fn(a1, a2, a3) whatever n).
+    for n, args in ipairs({ {}, { "a" }, { "a", nil }, { 1, 2, 3 }, { 1, 2, 3, 4 }, { 1, nil, 3, nil, 5 } }) do
+        local want = n - 1
+        local ok, got = E.Batch(count, unpack(args, 1, want))
+        assertTrue(ok)
+        assertEqual(got, want, want .. " arguments")
+    end
+    local got
+    E.Batch(function(...) got = { ... } end, 1, 2, 3, 4, 5)
+    assertEqual(table.concat(got, ","), "1,2,3,4,5", "the vararg fallback keeps order")
+end)
+
+test("equip bracket: Batch holds no reference to fn or its arguments once it returns", function()
+    local _, _, E = scene()
+    local weak = setmetatable({}, { __mode = "v" })
+    do
+        local fn, arg = function() end, {}
+        weak.fn, weak.arg = fn, arg
+        E.Batch(fn, arg)
+    end
+    collectgarbage("collect"); collectgarbage("collect")
+    -- red under: the trampoline not clearing its file-scope slots.
+    assertNil(weak.fn, "fn collectable")
+    assertNil(weak.arg, "the argument collectable")
+end)
+
+-- The idle States poll runs E.Batch twice a second for the session (docs/performance.md).
+test("equip bracket: an idle Batch of up to three arguments allocates nothing", function()
+    local _, _, E = scene()
+    local function noop() end
+    local function measure(f)
+        for _ = 1, 10 do f() end   -- warm
+        collectgarbage("collect"); collectgarbage("stop")
+        local before = collectgarbage("count")
+        for _ = 1, 200 do f() end
+        local grown = (collectgarbage("count") - before) * 1024
+        collectgarbage("restart")
+        return grown
+    end
+    -- red under: run() packing the vararg into a table and wrapping fn and the flush in closures.
+    assertEqual(measure(function() E.Batch(noop) end), 0, "no arguments")
+    assertEqual(measure(function() E.Batch(noop, "DINING", false) end), 0, "two arguments")
+    assertEqual(measure(function() E.BatchNow(noop, 1, 2, 3) end), 0, "three arguments, BatchNow")
+end)
+
 test("equip bracket: the depth is balanced on success and on a raise; the raise is surfaced once", function()
     local _, M, E, st = scene()
     local handled, depthAtHandler = {}, nil

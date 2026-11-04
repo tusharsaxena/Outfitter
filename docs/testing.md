@@ -130,7 +130,7 @@ has no row here, or a row leaves its §9.3 group or order.
 | `test_inventory` | The bag range with the bank closed and open, the debounce, the change payload, the sections, one item-info registration, per-pass claims |
 | `test_outfits` | The record shape, categories, the LoadPass seeding, repair, rename, delete's order, the binding uniqueness, the slot tri-state |
 | `test_equip_plan` | The change list: durability order, two-hand and Titan's Grip, unique ranks against the legacy plans, the off-hand ordering, the swaps, an empty plan |
-| `test_equip_bracket` | The one Equip bracket: balanced on success and on a raise, the defers, the throttle, the muted SFX, the bags-full line, the `Diagnostic()` lines |
+| `test_equip_bracket` | The one Equip bracket: balanced on success and on a raise, its exact argument passing, no allocation and no held reference in the common case, the defers, the throttle, the muted SFX, the bags-full line, the `Diagnostic()` lines |
 | `test_stack` | Wear and remove, accessories and Complete outfits, temp outfits, window recording, the compile, toggle and fallback, titles on a hand wear only, the persisted round trip |
 | `test_em_sync` | The Equipment Manager mirror: every set, deletions, the zero-set flake, the 31-byte names, store and restore with every setting, the pending save |
 | `test_bank` | Deposit, unique, others, withdraw and withdraw-others; bank-full; the missing report; refused closed and in combat |
@@ -171,7 +171,7 @@ has no row here, or a row leaves its §9.3 group or order.
 | `test_tooltips` | The "Used by outfits" line on bag, inventory and hyperlink tooltips (never another unit's), its colors and cache; the compare tooltips; the outfit tooltip |
 | `test_skinsetup` | The skin seam: the owner registration, the `of.*` tokens, the choice and the picker |
 | `test_skin` | Only our frames are skinned; the window, bar, dialogs and menus follow a skin switch |
-| `test_perf_harness` | The ten buckets in order with the one nest, each reached on the whole addon (`equipExecute` only inside `E.Update`), the six offline scenarios doing what they are named for (the idle docked window's announcing nothing among them), the `perf` verb, the latch's `perf` hold |
+| `test_perf_harness` | The ten buckets in order with the one nest, each reached on the whole addon (`equipExecute` only inside `E.Update`), the six offline scenarios doing what they are named for (the idle docked window's announcing nothing and leaving no update pending among them), the `perf` verb, the latch's `perf` hold |
 | `test_glyphs` | The display-glyph guard over the addon's own Lua. The zhCN, zhTW, koKR and ruRU overlays are skipped (no western safe set holds them); their faces are left to the H8 client check |
 
 ## Inventory and badge

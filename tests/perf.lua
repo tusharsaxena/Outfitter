@@ -31,10 +31,11 @@
 -- 468127 bytes/iter. Each ceiling is about 2% over its figure. The figures are large because a step
 -- is a whole path on the real addon (an equipment update builds its change list and moves items
 -- through mock_gear; a generation breeds 275 children) and include the mocks' own recording.
--- dockIdle is the exception, 1256 bytes/iter: about 1064 of it is the poll's E.Batch bracket (its
--- vararg table and the two xpcall closures in modules/Equip.lua's run), 96 the follow tick and 96
--- Scenes.quiet's own list; with the C-01 gate reverted the idle bracket redraws the window and the
--- step costs 183681 bytes, so its 1290 ceiling is what holds the idle window quiet.
+-- dockIdle is the exception, 192 bytes/iter: 96 the follow tick and 96 Scenes.quiet's own list; the
+-- poll's E.Batch bracket allocates nothing (it cost 344 with the vararg table and two xpcall closures that
+-- modules/Equip.lua's run used to build). With the C-01 gate reverted the idle bracket redraws the
+-- window and the step costs about 180 KB. Its 200 ceiling holds the idle window quiet and the bracket
+-- allocation-free.
 --
 -- ITERATIONS. ITERS[scene] steps per measured loop (N when absent): a step of the zone, fan-out,
 -- tooltip and genetic scenes is 40 to 275 calls of its path, so they take fewer steps.
@@ -65,7 +66,7 @@ local BYTE_CEILING = {
     triggerFanoutCaptureOff = 122000, triggerFanoutCaptureOn = 122000,
     tooltipsCaptureOff = 141000, tooltipsCaptureOn = 141000, tooltipsAbsent = 141000,
     gaGenerationCaptureOff = 478000, gaGenerationCaptureOn = 478000,
-    dockIdleCaptureOff = 1290, dockIdleCaptureOn = 1290,       -- red under: reverting C-01's st.touched gate
+    dockIdleCaptureOff = 200, dockIdleCaptureOn = 200,         -- red under: reverting C-01's st.touched gate, or run()'s vararg table
 }
 local NOTES_PER_ITER = {
     equipPlanCaptureOff = 0, equipPlanCaptureOn = 3,            -- equipUpdate, equipExecute, bagSync
