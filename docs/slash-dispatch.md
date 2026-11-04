@@ -66,6 +66,7 @@ Added after `version`, with their handlers in `modules/Commands.lua`:
 | `zone` | Show what the addon knows about where you are | answers (read-only) |
 | `iteminfo link` | Print an item link's fields | answers (read-only) |
 | `test` | Sample outfits on the outfit bar | refused |
+| `bar` | Show, hide or toggle the outfit bar (`show`, `hide`, `toggle`; no word toggles), writing `bar.shown` | refused |
 | `lock` / `unlock` | Lock or unlock the outfit bar | refused |
 | `deleteall` | Delete every outfit on this character (asks first) | refused |
 

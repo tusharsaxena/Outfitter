@@ -9,7 +9,7 @@ local L = NS.L
 local function out(line) NS.Print(line) end
 
 local cli   -- built at the bottom, once NS.COMMANDS exists; handlers reach it at CALL time
-local doEnabled, doDebug, doPerf, doAuto, writeRow
+local doEnabled, doDebug, doPerf, doAuto, doBar, writeRow
 
 --- A feature verb's handler behind the stand-down: the dispatcher refuses every feature verb while the
 --- `disabled` hold is taken, and this answers the `perf` hold's line (slash-commands-§7, "Which
@@ -85,6 +85,9 @@ NS.COMMANDS = {
     { "zone",        L["Show what Outfitter knows about where you are"], function() NS.Commands.Zone() end },
     { "iteminfo",    L["Print an item link's fields"], function(rest) NS.Commands.ItemInfo(rest) end },
     { "test",        L["Sample outfits on the outfit bar: /or test"], feature(function() NS.Preview.Toggle() end) },
+    -- A feature noun with its own sub-verbs (slash-commands-§2: the top-level `toggle` reservation
+    -- binds the top level only). Writes `bar.shown` through the CLI; the key binding runs it too.
+    { "bar",         L["Outfit bar: /or bar show, hide or toggle"], feature(function(rest) doBar(rest) end) },
     -- slash-commands-§8: the Lock frame row's path, through the one seam.
     { "lock",        L["Lock the outfit bar in place"],            feature(function() writeRow("locked", true) end) },
     { "unlock",      L["Unlock the outfit bar to move it"],        feature(function() writeRow("locked", false) end) },
@@ -248,6 +251,20 @@ function doAuto(rest)
     local want = AUTO_WORDS[word]
     if want == nil then return out(L["%s auto takes on or off"]:format(NS.SLASH)) end
     writeRow("auto.enabled", want)
+end
+
+-- `/or bar` words: show and hide write `bar.shown`; toggle, or no word, flips it (smoke round 2 G6).
+local BAR_WORDS = { show = true, hide = false }
+
+--- `bar`: show, hide or toggle the outfit bar through its `bar.shown` row.
+function doBar(rest)
+    local word = tostring(rest or ""):match("^%s*(%S*)"):lower()
+    local want = BAR_WORDS[word]
+    if want == nil then
+        if word ~= "" and word ~= "toggle" then return out(L["%s bar takes show, hide or toggle"]:format(NS.SLASH)) end
+        want = NS.GetSetting("bar.shown") ~= true
+    end
+    writeRow("bar.shown", want)
 end
 
 --- `diagnostics` is tested FIRST (debug-logging-§14), then `on`/`off`; any other word, or none,

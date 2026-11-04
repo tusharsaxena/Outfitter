@@ -1,6 +1,6 @@
 local addonName, NS = ...
 -- core/LauncherSetup.lua — the ONE LibDataBroker launcher, registered twice (minimap button and broker
--- row) through LibKa0s-Launcher-1.0, the 14 key-binding buttons (launcher-§6, design §4.4), NS.BINDINGS,
+-- row) through LibKa0s-Launcher-1.0, the 15 key-binding buttons (launcher-§6, design §4.4), NS.BINDINGS,
 -- the one table they are declared in, and NS.WearBoundOutfit, the ten wear keys' handler (design §4.5).
 --
 -- CALLS (at call time): NS.Dock.Toggle, NS.Stack.WearBound, NS.RunVerb (settings/Slash.lua), NS.Print.
@@ -48,12 +48,17 @@ end
 -- click asks the one refusal helper first (slash-commands-§7, "Which refusal, by hold"): a press
 -- while stood down prints the line the verb would and runs nothing. Then it runs the SAME handler
 -- its verb and menu entry run. THE NAMES ARE PERMANENT: the client stores the player's key against
--- them, so a rename unbinds every key. One row per button, in Bindings.xml's order, Show window first.
+-- them, so a rename unbinds every key. One row per button, in Bindings.xml's order, Show window first, then the outfit bar's.
 local BUTTONS = {
     { name    = "OutfitterRebornToggleWindow",
       handler = toggleWindow,
       label   = L["Toggle outfit window"],
       tooltip = L["Shows or hides the outfit window, as the launcher's Show window entry does."] },
+    -- Smoke round 2 design G6: the outfit bar's switch, through its verb.
+    { name    = "OutfitterRebornToggleBar",
+      handler = function() NS.RunVerb("bar", "toggle") end,
+      label   = L["Toggle outfit bar"],
+      tooltip = L["Shows or hides the outfit bar, as /or bar toggle does."] },
 }
 for n = 1, 10 do
     BUTTONS[#BUTTONS + 1] = {

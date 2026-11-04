@@ -9,13 +9,15 @@ local T = _G.OUTFITTERREBORN_TEST
 local test, assertEqual, assertTrue, assertFalse = T.test, T.assertEqual, T.assertTrue, T.assertFalse
 
 local SHOW = "CLICK OutfitterRebornToggleWindow:LeftButton"
+local BAR = "CLICK OutfitterRebornToggleBar:LeftButton"
 local function wearKey(n) return "CLICK OutfitterRebornWearOutfit" .. n .. ":LeftButton" end
 local AUTO_ON = "CLICK OutfitterRebornAutoOn:LeftButton"
 local AUTO_OFF = "CLICK OutfitterRebornAutoOff:LeftButton"
 local UPDATE = "CLICK OutfitterRebornUpdateOutfit:LeftButton"
-local COMMANDS = { SHOW }
+local COMMANDS = { SHOW, BAR }
 local LABELS = {
     [SHOW] = "Toggle outfit window",
+    [BAR] = "Toggle outfit bar",
     [AUTO_ON] = "Turn on automatic outfit changes",
     [AUTO_OFF] = "Turn off automatic outfit changes",
     [UPDATE] = "Update outfit to equipped items",
@@ -274,8 +276,8 @@ test("keybinds: Wear outfit 1 is assigned through the tab like any other row", f
     M.clearBindings()
     local _, rows = showGeneral(M, NS, "Keybindings")
     rows = assert(rows, "the Keybindings tab drew no rows")
-    assertEqual(rows[2].command, wearKey(1))
-    assertEqual(T.keybindThroughTab(rows[2], 1, "1", { shift = true }), M.KEY_BOUND)
+    assertEqual(rows[3].command, wearKey(1), "after Show window and the outfit bar's toggle")
+    assertEqual(T.keybindThroughTab(rows[3], 1, "1", { shift = true }), M.KEY_BOUND)
     assertEqual(M.GetBindingKey(wearKey(1)), "SHIFT-1")
     M.clearBindings()
     showGeneral(M, NS, nil)
@@ -367,6 +369,23 @@ test("keybinds: AutoOn and AutoOff write auto.enabled through the auto verb", fu
     press(M, AUTO_ON)
     assertEqual(NS.GetSetting("auto.enabled"), true)
     assertEqual(table.concat(verbs, ","), "auto off,auto on")
+end)
+
+test("keybinds: Toggle outfit bar runs `/or bar toggle`, so the key and the verb are one handler", function()
+    local NS, M = scene()
+    local verbs = {}
+    local run = NS.RunVerb
+    NS.RunVerb = function(verb, rest)
+        verbs[#verbs + 1] = verb .. " " .. tostring(rest)
+        return run(verb, rest)
+    end
+    local was = NS.GetSetting("bar.shown") == true
+    press(M, BAR)
+    -- red under: a button handler writing bar.shown itself (launcher-§2: one handler per act)
+    assertEqual(table.concat(verbs, ","), "bar toggle")
+    assertEqual(NS.GetSetting("bar.shown"), not was)
+    press(M, BAR)
+    assertEqual(NS.GetSetting("bar.shown"), was)
 end)
 
 test("keybinds: UpdateOutfit with no Complete outfit prints the line and raises nothing", function()

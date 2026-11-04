@@ -34,7 +34,7 @@ with its migration runner, the equipment engine (inventory scan, outfit store, s
 bracket, the Equipment Manager mirror, the bank verbs, the stat optimizer, the battle-pet companion),
 the native trigger catalog with its binder and state producers, the docked outfit window and its
 slot checkboxes, the outfit bar, the dialogs and menus, the tooltips and quick slots, test mode, the
-public API, three settings pages (General, Outfit Bar, Profiles), 35 slash verbs, 14 key bindings
+public API, three settings pages (General, Outfit Bar, Profiles), 36 slash verbs, 15 key bindings
 and six translation overlays. What it does not do yet, and what a client has still to confirm, is
 under Known Limitations.
 
