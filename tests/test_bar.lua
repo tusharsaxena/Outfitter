@@ -169,7 +169,112 @@ end)
 
 local function point(f, i) return f.__pts[i or 1] end
 
-test("bar: the buttons grow away from the saved corner, per quadrant, both orientations", function()
+--- A button's TOPLEFT offset in the bar, as Render anchored it: x, y with y down.
+local function at(btn)
+    local p = point(btn)
+    return p[4], -p[5]
+end
+
+test("bar: the layout's defaults keep the legacy 37 px pitch, 4 px in from the edge", function()
+    local Layout = T.NS.Bar.Layout
+    local D = T.NS.defaults.profile.bar
+    -- red under: a spacing default other than 5 (the legacy Style.ButtonBar pitch, OutfitterUITools.lua)
+    assertEqual(D.icons.size + D.layout.spacing, 37)
+    assertEqual(D.layout.padding, 4)
+    assertEqual(D.layout.perLine, 0)
+    local g = Layout.Compute({ size = 32, spacing = 5, padding = 4, perLine = 0, counts = { 3, 1 },
+                               gx = 1, gy = -1 })
+    assertEqual(g.width, 4 + 3 * 32 + 2 * 5 + 4)
+    assertEqual(g.height, 4 + 32 + 5 + 32 + 4)
+    local a, b = g.blocks[1].icons[1], g.blocks[1].icons[2]
+    assertEqual(a.x, 4); assertEqual(a.y, 4)
+    assertEqual(b.x - a.x, 37, "the pitch along the row")
+    assertEqual(g.blocks[2].icons[1].y - a.y, 37, "the pitch between the rows")
+end)
+
+test("bar: the layout wraps at icons per line, in rows or in columns", function()
+    local Layout = T.NS.Bar.Layout
+    local g = Layout.Compute({ size = 20, spacing = 2, padding = 0, perLine = 2, counts = { 5 }, gx = 1, gy = -1 })
+    -- red under: a perLine read as the number of lines
+    assertEqual(g.width, 2 * 20 + 2); assertEqual(g.height, 3 * 20 + 2 * 2)
+    local i = g.blocks[1].icons
+    assertEqual(i[3].x, 0); assertEqual(i[3].y, 22, "the third icon opens the second row")
+    assertEqual(i[5].y, 44)
+    local v = Layout.Compute({ size = 20, spacing = 2, padding = 0, perLine = 2, counts = { 5 }, vertical = true,
+                               gx = 1, gy = -1 })
+    assertEqual(v.width, 3 * 20 + 2 * 2); assertEqual(v.height, 2 * 20 + 2)
+    assertEqual(v.blocks[1].icons[2].y, 22, "down the column first")
+    assertEqual(v.blocks[1].icons[3].x, 22, "then the next column")
+    local none = Layout.Compute({ size = 20, spacing = 2, padding = 0, perLine = 0, counts = { 5 }, gx = 1, gy = -1 })
+    assertEqual(none.height, 20, "0 is one line")
+end)
+
+test("bar: the layout grows away from its corner, the first icon and block at that corner", function()
+    local Layout = T.NS.Bar.Layout
+    local base = { size = 10, spacing = 0, padding = 1, perLine = 0, counts = { 2, 1 }, top = 7 }
+    local function g(gx, gy, vertical)
+        local s = {}
+        for k, v in pairs(base) do s[k] = v end
+        s.gx, s.gy, s.vertical = gx, gy, vertical
+        return Layout.Compute(s)
+    end
+    local left = g(-1, -1)
+    -- red under: an x grown from the left edge whatever gx says
+    assertEqual(left.blocks[1].icons[1].x, 11, "growing left, the first icon is at the right")
+    assertEqual(left.blocks[1].icons[2].x, 1)
+    assertEqual(left.blocks[2].icons[1].x, 11, "a shorter row is right-aligned")
+    local up = g(1, 1)
+    assertEqual(up.blocks[1].icons[1].y, 7 + 1 + 10, "growing up, the first row is at the bottom")
+    assertEqual(up.blocks[2].icons[1].y, 7 + 1)
+    local down = g(1, -1)
+    assertEqual(down.blocks[1].icons[1].y, 7 + 1, "the header's height is above the first row")
+    local vleft = g(-1, -1, true)
+    assertEqual(vleft.blocks[1].x, vleft.blocks[2].x + 10, "vertical and growing left, the first column is right")
+end)
+
+test("bar: the layout adds each block's label line and never draws narrower than its minimum", function()
+    local Layout = T.NS.Bar.Layout
+    local g = Layout.Compute({ size = 10, spacing = 2, padding = 3, counts = { 1, 1 }, labelH = 12, minWidth = 100,
+                               gx = 1, gy = -1 })
+    assertEqual(g.width, 100)
+    assertEqual(g.height, 3 + 12 + 10 + 2 + 12 + 10 + 3)
+    local b = g.blocks[1]
+    assertEqual(b.icons[1].y, 3 + 12, "the icons sit under the label")
+    assertEqual(b.label.y, 3); assertEqual(b.label.x, 3)
+    assertEqual(b.label.w, 100 - 2 * 3, "a row's label spans the bar")
+    local v = Layout.Compute({ size = 10, spacing = 2, padding = 3, counts = { 1 }, labelH = 12, vertical = true,
+                               gx = 1, gy = -1 })
+    assertEqual(v.blocks[1].label.w, 10, "a column's label is the column's width (truncated)")
+end)
+
+test("bar: Render places the buttons from the layout settings and sizes the bar", function()
+    local NS, M, Bar = scene()
+    complete(NS, "A"); complete(NS, "B"); complete(NS, "C"); accessory(NS, "D")
+    NS.db.profile.windows.bar = { point = "TOPLEFT", x = 0, y = 0 }
+    NS.SetByPath("bar.layout.padding", 6)
+    NS.SetByPath("bar.layout.spacing", 3)
+    NS.SetByPath("bar.icons.size", 20)
+    settle(M)
+    local f, btns = Bar.Frame(), Bar.Buttons()
+    local top = Bar.HeaderHeight()
+    local x1, y1 = at(btns[1])
+    assertEqual(x1, 6); assertEqual(y1, top + 6)
+    local x2 = at(btns[2])
+    -- red under: Render keeping the fixed 37 px PITCH
+    assertEqual(x2 - x1, 23)
+    assertEqual(btns[1].__w, 20, "the icon size")
+    local _, y4 = at(btns[4])
+    assertEqual(y4 - y1, 23, "the second category's row")
+    local g = Bar.Layout.Compute(Bar.LayoutSpec({ 3, 1 }))
+    assertEqual(f.__w, g.width); assertEqual(f.__h, g.height)
+    NS.SetByPath("bar.layout.perLine", 2)
+    settle(M)
+    btns = Bar.Buttons()
+    local x3, y3 = at(btns[3])
+    assertEqual(x3, 6); assertEqual(y3 - y1, 23, "wrapped onto a second row")
+end)
+
+test("bar: with grow direction auto the buttons grow away from the saved corner, per quadrant", function()
     local NS, _, Bar = scene()
     complete(NS, "A"); complete(NS, "B"); accessory(NS, "C")
     local want = { TOPLEFT = { 1, -1 }, TOPRIGHT = { -1, -1 }, BOTTOMLEFT = { 1, 1 }, BOTTOMRIGHT = { -1, 1 } }
@@ -179,21 +284,18 @@ test("bar: the buttons grow away from the saved corner, per quadrant, both orien
             NS.db.profile.bar.vertical = vertical
             Bar.Refresh()
             local btns = Bar.Buttons()
-            local second = point(btns[2])
-            assertEqual(second[1], corner, corner .. " anchors at its corner")
+            local x1, y1 = at(btns[1])
+            local x2, y2 = at(btns[2])
+            local x3, y3 = at(btns[3])
             -- red under: a QUADRANT row with a flipped sign
             if vertical then
-                assertEqual(second[4], 0, corner .. " vertical x")
-                assertEqual(second[5], sign[2] * Bar.PITCH, corner .. " vertical y")
+                assertEqual(x2, x1, corner .. " vertical: one column")
+                assertEqual((y2 - y1) * -sign[2] > 0, true, corner .. " vertical: down the column away from the corner")
+                assertEqual((x3 - x1) * sign[1] > 0, true, corner .. " the second column away from the corner")
             else
-                assertEqual(second[4], sign[1] * Bar.PITCH, corner .. " horizontal x")
-                assertEqual(second[5], 0, corner .. " horizontal y")
-            end
-            local row2 = point(btns[3]:GetParent())
-            if vertical then
-                assertEqual(row2[4], sign[1] * Bar.PITCH, corner .. " second column")
-            else
-                assertEqual(row2[5], sign[2] * Bar.PITCH, corner .. " second row")
+                assertEqual(y2, y1, corner .. " horizontal: one row")
+                assertEqual((x2 - x1) * sign[1] > 0, true, corner .. " along the row away from the corner")
+                assertEqual((y3 - y1) * -sign[2] > 0, true, corner .. " the second row away from the corner")
             end
             local bar = point(Bar.Frame())
             assertEqual(bar[1], corner); assertEqual(bar[3], corner)
@@ -201,19 +303,62 @@ test("bar: the buttons grow away from the saved corner, per quadrant, both orien
     end
 end)
 
-test("bar: the size, the scale and the backplate follow the settings", function()
+test("bar: an explicit grow direction lays out by it and the drag stop saves the corner it implies", function()
     local NS, M, Bar = scene()
-    complete(NS, "A"); complete(NS, "B"); complete(NS, "C"); accessory(NS, "D")
+    complete(NS, "A"); complete(NS, "B")
+    NS.SetByPath("bar.layout.growH", "left")
+    NS.SetByPath("bar.layout.growV", "up")
+    settle(M)
+    local btns = Bar.Buttons()
+    assertTrue(at(btns[1]) > at(btns[2]), "growing left")
+    local f = Bar.Frame()
+    geom(M.UIParent, 0, 1000, 800, 0)
+    geom(f, 10, 60, 790, 740)   -- nearest TOPLEFT, but the grow says BOTTOMRIGHT
+    -- red under: SavePosition saving the nearest corner whatever the grow direction says
+    local p = Bar.SavePosition()
+    assertEqual(p.point, "BOTTOMRIGHT")
+    assertEqual(p.x, 60 - 1000); assertEqual(p.y, 740)
+    NS.SetByPath("bar.layout.growH", "auto")
+    NS.SetByPath("bar.layout.growV", "down")
+    settle(M)
+    p = Bar.SavePosition()
+    -- red under: an auto horizontal taken as the explicit vertical's side
+    assertEqual(p.point, "TOPLEFT", "auto keeps the nearest side, down pins the top")
+end)
+
+test("bar: changing the grow direction re-saves the place at the corner it implies, so the bar does not jump", function()
+    local NS, M, Bar = scene()
+    complete(NS, "A")
     settle(M)
     local f = Bar.Frame()
-    assertEqual(f.__w, 3 * Bar.PITCH); assertEqual(f.__h, 2 * Bar.PITCH)
+    geom(M.UIParent, 0, 1000, 800, 0)
+    geom(f, 10, 60, 790, 740)
+    NS.SetByPath("bar.layout.growH", "left")
+    settle(M)
+    -- red under: no SavePosition on a grow-direction write (the stored TOPLEFT would keep growing right)
+    assertEqual(NS.db.profile.windows.bar.point, "TOPRIGHT")
+    assertEqual(NS.db.profile.windows.bar.x, 60 - 1000)
+end)
+
+test("bar: the scale follows the Master row and divides the offset", function()
+    local NS, M, Bar = scene()
+    complete(NS, "A")
+    settle(M)
+    local f = Bar.Frame()
     NS.SetByPath("scale", 1.5)
     settle(M)
     assertEqual(f.__scale, 1.5)
     local p = point(f)
     assertEqual(p[4], 200 / 1.5, "the offset is divided by the effective scale")
-    NS.db.profile.bar.showBackground = false
-    NS.SendBus(NS.MSG.SETTINGS_CHANGED, "bar.showBackground", false)
+end)
+
+test("bar: the backplate follows bar.showBackground", function()
+    local NS, M, Bar = scene()
+    complete(NS, "A")
+    settle(M)
+    local f = Bar.Frame()
+    assertTrue(f.bg:IsShown())
+    NS.SetByPath("bar.showBackground", false)
     settle(M)
     -- red under: Render's bg:SetShown ignoring bar.showBackground (always true).
     assertFalse(f.bg:IsShown())
@@ -682,7 +827,8 @@ test("bar: test mode shows the sample outfits with the strip, even with the bar 
     assertEqual(ids(Bar), "preview:1,preview:2")
     assertTrue(f.strip ~= nil and f.strip:IsShown(), "the strip is up")
     local first = point(Bar.Buttons()[1]:GetParent())
-    assertEqual(first[5], -(NS.TEST_STRIP_HEIGHT + 2), "the rows sit below the strip")
+    assertEqual(first[5], -(Bar.HeaderHeight(true) + NS.GetSetting("bar.layout.padding")), "the rows sit below the strip")
+    assertTrue(Bar.HeaderHeight(true) >= Bar.HeaderHeight() + NS.TEST_STRIP_HEIGHT, "the strip adds its height")
     local btn = Bar.Buttons()[1]
     assertFalse(btn.worn:IsShown())
     assertEqual(btn.icon:GetTexture(), 132276)

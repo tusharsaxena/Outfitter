@@ -9,15 +9,17 @@ local _, NS = ...
 -- them): each render releases every row and acquires exactly one button per outfit, which fixes the
 -- legacy `_ButtonBar`'s extra button.
 --
--- LAYOUT. A row runs 1 x N, or N x 1 with `bar.vertical` (one column per category, design §4.2), at a
--- 37 px pitch with 32 px buttons. Everything grows AWAY from the saved corner (QUADRANT): a bar saved
--- at a right corner grows left, one saved at a bottom corner grows up. The position is
+-- LAYOUT is modules/Bar_Layout.lua's arithmetic over the Layout and Icons rows (smoke round 2 design
+-- G6): icons per line, padding, spacing, icon size, and the grow direction. "Automatic" grows AWAY
+-- from the saved corner (QUADRANT): a bar saved at a right corner grows left, one saved at a bottom
+-- corner grows up; an explicit direction pins the corner SavePosition saves at, and a write to it
+-- re-saves the place there, so the bar neither jumps nor flips. The position is
 -- `profile.windows.bar` (design §3.4), the storage of the `bar.position` row (settings/OutfitBar.lua),
 -- and its one writer is that row's set through NS.SetByPath (architecture-§5): SavePosition on a drag
--- stop (the nearest screen corner, in screen pixels, divided by the effective scale on the way back,
--- as legacy stored it), `/or set|reset bar.position` and Reset position (NS.ApplyDefault). The set
--- decodes into a new table each time, so a reset COPIES the default (legacy aliased it, so a reset
--- after a drag could do nothing: OutfitterBar.lua:107-115).
+-- stop (that corner, in screen pixels, divided by the effective scale on the way back, as legacy
+-- stored it), `/or set|reset bar.position` and Reset position (NS.ApplyDefault). The set decodes into
+-- a new table each time, so a reset COPIES the default (legacy aliased it, so a reset after a drag
+-- could do nothing: OutfitterBar.lua:107-115).
 --
 -- SHOWN = (bar.shown or test mode) and the Master visibility rule and not in a pet battle and not
 -- stood down. The decision is made here and nowhere else, so a stood-down bar cannot be re-shown.
@@ -40,13 +42,12 @@ local Secrets = NS.Secrets
 local LAYERS = NS.Constants.LAYERS
 local Perf = NS.Perf
 
-local PITCH, BUTTON_SIZE = 37, 32       -- Style.ButtonBar: 37 px buttons (OutfitterUITools.lua)
 local MAX_ROWS = 2                      -- one per category
 local HANDLE_FADE, BAR_FADE = 0.3, 0.5  -- StartFrameFades (OutfitterBar.lua:236-248)
 local HANDLE_GAP = 2
 local HANDLE_HEIGHT = 18                -- W.DragHandle's strip, when the frame cannot say
 
-Bar.PITCH, Bar.BUTTON_SIZE, Bar.HANDLE_FADE, Bar.BAR_FADE = PITCH, BUTTON_SIZE, HANDLE_FADE, BAR_FADE
+Bar.HANDLE_FADE, Bar.BAR_FADE = HANDLE_FADE, BAR_FADE
 
 --- The direction a bar saved at each corner grows in: the sign of x, then of y.
 local QUADRANT = {
@@ -56,6 +57,10 @@ Bar.QUADRANT = QUADRANT
 
 -- The Master rows that govern the bar (options-ui-§15); every `bar.*` row does too.
 local MASTER = { scale = true, alpha = true, locked = true, visibility = true }
+-- The grow-direction rows: a write re-saves the bar's place at the corner it implies.
+local GROW = { ["bar.layout.growH"] = true, ["bar.layout.growV"] = true }
+local GROW_X = { right = 1, left = -1 }
+local GROW_Y = { down = -1, up = 1 }
 
 -- handleFaded: the pointer left since the bar was last locked, so the handle rests faded out until
 -- the next hover; a rebuild must not bring it back (the legacy handle showed only on hover).
@@ -96,6 +101,36 @@ local function scale()
     local s = num(NS.GetSetting("scale"), 1)
     if s <= 0 then return 1 end
     return s
+end
+
+--- The direction the bar grows in, as QUADRANT's signs: the grow rows, "auto" the saved corner's.
+--- @param p table|nil the saved place (nil reads it)
+--- @return number gx, number gy
+function Bar.Growth(p)
+    local q = QUADRANT[(p or position()).point]
+    return GROW_X[NS.GetSetting("bar.layout.growH")] or q[1], GROW_Y[NS.GetSetting("bar.layout.growV")] or q[2]
+end
+
+--- The height above the icons: the test strip while it shows.
+--- @param strip boolean|nil
+--- @return number
+function Bar.HeaderHeight(strip)
+    if strip then return NS.TEST_STRIP_HEIGHT end
+    return 0
+end
+
+--- Bar_Layout's spec from the settings, for categories of `counts` icons.
+--- @param counts number[]
+--- @param strip boolean|nil
+--- @return table
+function Bar.LayoutSpec(counts, strip)
+    local gx, gy = Bar.Growth()
+    return {
+        size = num(NS.GetSetting("bar.icons.size"), 32), spacing = num(NS.GetSetting("bar.layout.spacing"), 5),
+        padding = num(NS.GetSetting("bar.layout.padding"), 4), perLine = num(NS.GetSetting("bar.layout.perLine"), 0),
+        vertical = NS.GetSetting("bar.vertical") == true, labelH = 0, top = Bar.HeaderHeight(strip),
+        minWidth = 0, gx = gx, gy = gy, counts = counts,
+    }
 end
 
 --- Whether the bar is up: the one show decision (see the header).
@@ -149,7 +184,7 @@ local function newHandle(f)
     handle:SetPoint("BOTTOMLEFT", f, "TOPLEFT", 0, HANDLE_GAP)
     handle:HookScript("OnEnter", function() Bar.HoverIn() end)
     handle:HookScript("OnLeave", function() Bar.HoverOut() end)
-    handle:ApplyWidth(BUTTON_SIZE)
+    handle:ApplyWidth(32)
     return handle
 end
 
@@ -215,32 +250,24 @@ local function anchor(p)
     bar:SetPoint(p.point, UIParent, p.point, (num(p.x, 0)) / s, (num(p.y, 0)) / s)
 end
 
---- Lay out row `index` with `outfits`, `top` px below the corner when the bar grows down.
-local function layoutRow(row, index, outfits, p, vertical, top)
-    local q, f = QUADRANT[p.point], row.frame
-    local cross = (index - 1) * PITCH
-    local x, y = 0, q[2] * cross
-    if vertical then x, y = q[1] * cross, 0 end
-    if q[2] < 0 then y = y - top end
+--- Place row frame `row` at layout block `b` and fill it with `outfits`, `size` px buttons at the
+--- block's points (anchored to the bar's TOPLEFT, Bar_Layout's coordinates).
+local function placeRow(row, b, outfits, size)
+    local f = row.frame
     f:ClearAllPoints()
-    f:SetPoint(p.point, bar, p.point, x, y)
+    f:SetPoint("TOPLEFT", bar, "TOPLEFT", b.x, -b.y)
+    f:SetSize(b.w, b.h)
     f:Show()
     local buttonLevel = level(bar) + LAYERS.LEVEL.BAR_BUTTON
     for j, rec in ipairs(outfits) do
         local btn = NS.Pool.Acquire(row.pool, function() return Bar.NewButton(f) end)
-        local along = (j - 1) * PITCH
+        local p = b.icons[j]
         btn:ClearAllPoints()
-        if vertical then
-            btn:SetPoint(p.point, f, p.point, 0, q[2] * along)
-        else
-            btn:SetPoint(p.point, f, p.point, q[1] * along, 0)
-        end
+        btn:SetPoint("TOPLEFT", bar, "TOPLEFT", p.x, -p.y)
+        btn:SetSize(size, size)
         btn:SetFrameLevel(buttonLevel)
         Bar.SetButton(btn, rec)
     end
-    local w, h = #outfits * PITCH, PITCH
-    if vertical then w, h = h, w end
-    f:SetSize(w, h)
 end
 
 --- The rows a source answers, without the empty ones, at most one per row frame.
@@ -252,8 +279,9 @@ local function shownRows(source)
     return out
 end
 
---- Draw `source` (Bar.LiveSource or NS.Preview.Source): its rows, sized, grown from the saved corner,
---- with the test strip's height above the rows while `strip` is set. Perf bucket `barRender`.
+--- Draw `source` (Bar.LiveSource or NS.Preview.Source): its rows, laid out by Bar_Layout from the
+--- settings, the bar sized to them and anchored at the saved corner, with the test strip's height
+--- above the rows while `strip` is set. Perf bucket `barRender`.
 --- @param source table  answers Rows() -> { { categoryID, outfits = { rec, ... } }, ... }
 --- @param strip boolean|nil
 function Bar.Render(source, strip)
@@ -263,20 +291,14 @@ function Bar.Render(source, strip)
         NS.Pool.ReleaseAll(rows[i].pool)
         rows[i].frame:Hide()
     end
-    local list, p = shownRows(source), position()
-    local vertical = NS.GetSetting("bar.vertical") == true
-    local top = strip and (NS.TEST_STRIP_HEIGHT + 2) or 0
-    local longest = 0
-    for i, row in ipairs(list) do
-        layoutRow(rows[i], i, row.outfits, p, vertical, top)
-        longest = math.max(longest, #row.outfits)
-    end
-    local main, cross = math.max(longest, 1) * PITCH, math.max(#list, 1) * PITCH
-    local w, h = main, cross
-    if vertical then w, h = cross, main end
-    bar:SetSize(w, h + top)
+    local list, counts = shownRows(source), {}
+    for i, row in ipairs(list) do counts[i] = #row.outfits end
+    local spec = Bar.LayoutSpec(counts, strip)
+    local g = Bar.Layout.Compute(spec)
+    for i, row in ipairs(list) do placeRow(rows[i], g.blocks[i], row.outfits, spec.size) end
+    bar:SetSize(g.width, g.height)
     bar:SetScale(scale())
-    anchor(p)
+    anchor(position())
     bar.bg:SetShown(NS.GetSetting("bar.showBackground") ~= false)
     if t0 then Perf.Note("barRender", debugprofilestop() - t0) end
 end
@@ -408,9 +430,10 @@ end
 
 -- ── position ──────────────────────────────────────────────────────────────────────────────────
 
---- The drag stop: save the nearest screen corner, in screen pixels (OutfitterBar.lua:279-317), through
---- the `bar.position` row's write seam, then redraw grown from it. The seam's SETTINGS_CHANGED echo
---- schedules one more redraw (onSettings below), after the drag, at the corner just saved.
+--- The drag stop: save the corner the grow direction implies (the nearest screen corner on an axis
+--- left Automatic), in screen pixels (OutfitterBar.lua:279-317), through the `bar.position` row's
+--- write seam, then redraw grown from it. The seam's SETTINGS_CHANGED echo schedules one more redraw
+--- (onSettings below), after the drag, at the corner just saved.
 --- @return table|nil the saved { point, x, y }
 function Bar.SavePosition()
     if not bar then return nil end
@@ -419,10 +442,12 @@ function Bar.SavePosition()
     local top, bottom = num(bar:GetTop(), 0) * s, num(bar:GetBottom(), 0) * s
     local uLeft, uRight = num(UIParent:GetLeft(), 0) * u, num(UIParent:GetRight(), 0) * u
     local uTop, uBottom = num(UIParent:GetTop(), 0) * u, num(UIParent:GetBottom(), 0) * u
+    local gx = GROW_X[NS.GetSetting("bar.layout.growH")] or (((left + right) >= (uLeft + uRight)) and -1 or 1)
+    local gy = GROW_Y[NS.GetSetting("bar.layout.growV")] or (((top + bottom) < (uTop + uBottom)) and 1 or -1)
     local vert, y = "TOP", top - uTop
-    if (top + bottom) < (uTop + uBottom) then vert, y = "BOTTOM", bottom - uBottom end
+    if gy > 0 then vert, y = "BOTTOM", bottom - uBottom end
     local horiz, x = "LEFT", left - uLeft
-    if (left + right) >= (uLeft + uRight) then horiz, x = "RIGHT", right - uRight end
+    if gx < 0 then horiz, x = "RIGHT", right - uRight end
     NS.SetByPath("bar.position", NS.EncodeBarPosition({ point = vert .. horiz, x = x, y = y }))
     if st.active then Bar.Refresh() end
     return NS.db.profile.windows.bar
@@ -432,6 +457,8 @@ end
 
 local function onSettings(_, path)
     if type(path) ~= "string" then return end
+    -- A new grow direction keeps the bar where it is: its place, re-saved at the corner it implies.
+    if GROW[path] and bar and bar:IsShown() then Bar.SavePosition() end
     if MASTER[path] or path:find("^bar%.") then schedule() end
 end
 

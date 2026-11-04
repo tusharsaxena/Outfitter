@@ -1,8 +1,9 @@
 local _, NS = ...
--- settings/OutfitBar.lua — the Outfit Bar settings page, `bar` (design §4.2), registered between General
--- and Profiles. One tab, "Display": the bar has no size row (scale is a Master control) and its one
--- anchor row, `bar.position`, is never drawn, so neither "Size and position" nor "Layout" fits it
--- (options-ui-§16).
+-- settings/OutfitBar.lua — the Outfit Bar settings page, `bar` (design §4.2, smoke round 2 design G6),
+-- registered between General and Profiles. Tabs: Display (what shows, and the bar's one anchor row,
+-- `bar.position`, never drawn), Layout (orientation, wrap, padding, spacing, grow direction) and
+-- Icons (their size). Scale, opacity and the lock stay the Master controls' (options-ui-§15): the
+-- bar is the one frame they govern.
 --
 -- The bar re-renders on SETTINGS_CHANGED for any `bar.*` path (modules/Bar.lua), so no row here needs
 -- an onChange: the panel, `/or set` and a reset all reach the bar the same way.
@@ -11,6 +12,9 @@ local L = NS.L
 local D = NS.defaults.profile
 local PAGE = "bar"
 local DISPLAY = L["Display"]
+local LAYOUT = L["Layout"]
+local ICONS = L["Icons"]
+local DB = D.bar
 
 -- ── bar.position ────────────────────────────────────────────────────────────────────────────────
 -- A string row whose storage is `profile.windows.bar` (`{ point, x, y }`, design §3.4), so the bar's
@@ -60,16 +64,13 @@ end
 NS.RegisterSchemaRows({
     -- Leads the block (options-ui-§16).
     { path = "bar.shown", page = PAGE, group = DISPLAY, type = "bool",
-      label = L["Show outfit bar"], default = D.bar.shown,
+      label = L["Show outfit bar"], default = DB.shown,
       tooltip = L["Shows a bar of outfit buttons you can click to wear or remove an outfit."] },
-    { path = "bar.vertical", page = PAGE, group = DISPLAY, type = "bool",
-      label = L["Vertical layout"], default = D.bar.vertical,
-      tooltip = L["One column per category."] },
     { path = "bar.showBackground", page = PAGE, group = DISPLAY, type = "bool",
-      label = L["Show background"], default = D.bar.showBackground,
+      label = L["Show background"], default = DB.showBackground,
       tooltip = L["Draws a backplate behind the bar's buttons."] },
     { path = "bar.combatAlpha", page = PAGE, group = DISPLAY, type = "number", isPercent = true,
-      min = 0, max = 1, step = 0.05, label = L["Opacity in combat (%)"], default = D.bar.combatAlpha,
+      min = 0, max = 1, step = 0.05, label = L["Opacity in combat (%)"], default = DB.combatAlpha,
       tooltip = L["Multiplied by Master opacity on General > Master controls."] },
     -- Never drawn: the drag handle places the bar, and Reset position (General > Master controls)
     -- resets this row. Its own get/set are its storage.
@@ -79,6 +80,42 @@ NS.RegisterSchemaRows({
       validate = function(v) return decode(v) ~= nil end,
       get = function() return encode(storedPosition()) end,
       set = function(v) NS.db.profile.windows.bar = decode(v) end },
+})
+
+-- ── Layout ─────────────────────────────────────────────────────────────────────────────────────
+-- The geometry modules/Bar_Layout.lua computes from. A grow direction other than Automatic pins the
+-- corner the bar is saved at (modules/Bar.lua's SavePosition), so a drag never flips its growth.
+local GROW_H = { auto = L["Automatic"], right = L["Right"], left = L["Left"] }
+local GROW_V = { auto = L["Automatic"], down = L["Down"], up = L["Up"] }
+
+NS.RegisterSchemaRows({
+    { path = "bar.vertical", page = PAGE, group = LAYOUT, type = "bool",
+      label = L["Vertical layout"], default = DB.vertical,
+      tooltip = L["One column per category."] },
+    { path = "bar.layout.perLine", page = PAGE, group = LAYOUT, type = "number", min = 0, max = 20, step = 1,
+      label = L["Per row or column (0 = one line)"], default = DB.layout.perLine,
+      tooltip = L["How many icons a row (or a column, in the vertical layout) holds before the next one starts. 0 keeps each category on one line."] },
+    { path = "bar.layout.growH", page = PAGE, group = LAYOUT, type = "string", startsLine = true,
+      values = GROW_H, sorting = { "auto", "right", "left" },
+      label = L["Grow horizontally"], default = DB.layout.growH,
+      tooltip = L["Which way the bar grows when it gets wider. Automatic grows away from the screen edge it is nearest."] },
+    { path = "bar.layout.growV", page = PAGE, group = LAYOUT, type = "string",
+      values = GROW_V, sorting = { "auto", "down", "up" },
+      label = L["Grow vertically"], default = DB.layout.growV,
+      tooltip = L["Which way the bar grows when it gets taller. Automatic grows away from the screen edge it is nearest."] },
+    { path = "bar.layout.padding", page = PAGE, group = LAYOUT, type = "number", min = 0, max = 20, step = 1,
+      startsLine = true, label = L["Padding (px)"], default = DB.layout.padding,
+      tooltip = L["Space between the icons and the bar's edge, in pixels."] },
+    { path = "bar.layout.spacing", page = PAGE, group = LAYOUT, type = "number", min = 0, max = 20, step = 1,
+      label = L["Spacing (px)"], default = DB.layout.spacing,
+      tooltip = L["Space between two icons, and between two rows or columns, in pixels."] },
+})
+
+-- ── Icons ──────────────────────────────────────────────────────────────────────────────────────
+NS.RegisterSchemaRows({
+    { path = "bar.icons.size", page = PAGE, group = ICONS, subgroup = L["Size"], type = "number",
+      min = 16, max = 64, step = 1, label = L["Icon size (px)"], default = DB.icons.size,
+      tooltip = L["The width and height of each outfit icon, in pixels."] },
 })
 
 -- ── The page ────────────────────────────────────────────────────────────────────────────────────

@@ -148,11 +148,30 @@ end)
 
 -- ── Outfit Bar (design §4.2) ──────────────────────────────────────────────────────────────────
 
-test("settings: the Outfit Bar page is one Display tab, the position row never drawn", function()
+test("settings: the Outfit Bar page's tabs and rows, the position row never drawn", function()
     local out = {}
     for _, r in ipairs(NS.SchemaForPage("bar")) do out[#out + 1] = r.path .. "=" .. r.group end
-    assertEqual(table.concat(out, ","), "bar.shown=Display,bar.vertical=Display,bar.showBackground=Display,"
-        .. "bar.combatAlpha=Display,bar.position=Display")
+    -- red under: a layout row registered on the Display tab
+    assertEqual(table.concat(out, ","), "bar.shown=Display,bar.showBackground=Display,"
+        .. "bar.combatAlpha=Display,bar.position=Display,"
+        .. "bar.vertical=Layout,bar.layout.perLine=Layout,bar.layout.growH=Layout,bar.layout.growV=Layout,"
+        .. "bar.layout.padding=Layout,bar.layout.spacing=Layout,"
+        .. "bar.icons.size=Icons")
+    local function range(path, lo, hi, step)
+        local r = NS.FindSchemaRow(path)
+        assertTrue(r.min == lo and r.max == hi and r.step == step, path .. " range")
+    end
+    range("bar.layout.perLine", 0, 20, 1)
+    range("bar.layout.padding", 0, 20, 1)
+    range("bar.layout.spacing", 0, 20, 1)
+    range("bar.icons.size", 16, 64, 1)
+    assertEqual(NS.FindSchemaRow("bar.layout.perLine").label, "Per row or column (0 = one line)")
+    for _, path in ipairs({ "bar.layout.growH", "bar.layout.growV" }) do
+        local values = NS.FindSchemaRow(path).values
+        assertEqual(values.auto, "Automatic", path)
+    end
+    assertEqual(NS.FindSchemaRow("bar.layout.growH").values.left, "Left")
+    assertEqual(NS.FindSchemaRow("bar.layout.growV").values.up, "Up")
     assertEqual(NS.FindSchemaRow("bar.shown").label, "Show outfit bar")
     assertEqual(NS.FindSchemaRow("bar.vertical").tooltip, "One column per category.")
     assertEqual(NS.FindSchemaRow("bar.showBackground").label, "Show background")

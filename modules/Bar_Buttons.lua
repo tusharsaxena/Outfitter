@@ -5,7 +5,7 @@ local _, NS = ...
 -- THE ICON is NS.OutfitIcon (modules/Outfits.lua), the one resolver the window's rows and the broker
 -- draw too, its tint included (plan Task 3.5); Bar.OutfitIcon stays as its name on the bar.
 --
--- A BUTTON is 32 x 32: its icon (`btn.icon`, square-cropped and edged as a HUD icon), its worn mark
+-- A BUTTON is `bar.icons.size` square (Render sizes it): its icon (`btn.icon`, square-cropped and edged as a HUD icon), its worn mark
 -- (`btn.worn`, in `of.bar.worn`) and the outfit record it stands for (`btn.outfit`). No Masque (INV
 -- §7.6 Decide: LibButtonFacade is dead and nothing replaces it).
 --
@@ -163,7 +163,6 @@ end
 function Bar.NewButton(parent)
     local S = NS.Skin
     local btn = CreateFrame("Button", nil, parent)
-    btn:SetSize(Bar.BUTTON_SIZE, Bar.BUTTON_SIZE)
     btn:RegisterForClicks("LeftButtonUp", "RightButtonUp")
     btn.icon = btn:CreateTexture(nil, "ARTWORK")
     btn.icon:SetAllPoints(btn)

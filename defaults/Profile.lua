@@ -11,7 +11,12 @@ NS.defaults = {
         equip      = { muteSounds = true, showErrors = true, announceKeys = true },
         tooltip    = { usedBy = true, compare = true },
         quickSlots = { enabled = true },
-        bar        = { shown = false, vertical = false, showBackground = true, combatAlpha = 1.0 },
+        -- The outfit bar (smoke round 2 design G6): 32 px icons 5 px apart keep the legacy 37 px
+        -- pitch; padding 4 from the edge; one line per category unless perLine wraps it; grow
+        -- direction "auto" follows the saved corner.
+        bar        = { shown = false, vertical = false, showBackground = true, combatAlpha = 1.0,
+                       layout = { perLine = 0, padding = 4, spacing = 5, growH = "auto", growV = "auto" },
+                       icons  = { size = 32 } },
         -- Named non-setting state (architecture-§5): the bar's dragged place, each dialog's.
         windows    = { bar = { point = "TOPLEFT", x = 200, y = -200 }, dialogs = {} },
         skin       = { source = "ka0s", skin = "ka0s", ignorePanel = true, ignoreFonts = false,
