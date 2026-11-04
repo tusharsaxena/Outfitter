@@ -37,7 +37,7 @@ Research outputs live in `docs/superpowers/specs/2026-11-03-*.md`.
 | P6 | Push milestone 1 | done | origin/feat/2026-11-03-ka0s-conversion at 5a66cce |
 | P7 | `/dev-copilot:wow-standards-audit` → fix all deviations | done | docs/audits/2026-11-04/ (3201274; 0 High, 1 Medium, 6 Low, 2 Info). OR-03..OR-09 fixed in bdf93be, fc56242 and independently verified; OR-01 (doc drift) carried to P11, OR-02 (README) to P10 |
 | P8 | `/dev-copilot:review` → fix all findings | done | docs/reviews/2026-11-04/ (70797d0; 0 Critical, 0 High, 5 Medium, 5 Low). C-01..C-03, C-05..C-10 in 5b7278d..ccb1e24, each independently verified; gate 1285 passed / 0 failed / 1 skipped, lint 0/0. C-04 (frFR/koKR Trinket Queue patterns, F-004) deferred to docs/known-limitations.md pending a client capture |
-| P9 | Roster row in WowAddonStandards, push | pending | |
+| P9 | Roster row in WowAddonStandards, push | done | WowAddonStandards origin/feat/2026-11-03-outfitter-roster: c21052b (roster row), ee7aa01 (H10 UnitFactionGroup erratum, v2.99.1). Unmerged: waits on the owner |
 | P10 | README in Ka0s style, credits kept | pending | |
 | P11 | `/dev-copilot:sync-docs` | pending | |
 | P12 | Push; wait for merge go-ahead | pending | |
