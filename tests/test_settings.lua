@@ -152,11 +152,13 @@ test("settings: the Outfit Bar page's tabs and rows, the position row never draw
     local out = {}
     for _, r in ipairs(NS.SchemaForPage("bar")) do out[#out + 1] = r.path .. "=" .. r.group end
     -- red under: a layout row registered on the Display tab
-    assertEqual(table.concat(out, ","), "bar.shown=Display,"
+    assertEqual(table.concat(out, ","), "bar.shown=Display,bar.worn.style=Display,"
         .. "bar.combatAlpha=Display,bar.position=Display,"
         .. "bar.vertical=Layout,bar.layout.perLine=Layout,bar.layout.growH=Layout,bar.layout.growV=Layout,"
         .. "bar.layout.padding=Layout,bar.layout.spacing=Layout,"
-        .. "bar.icons.size=Icons,"
+        .. "bar.icons.size=Icons,bar.icons.borderShow=Icons,bar.icons.borderStyle=Icons,bar.icons.borderSize=Icons,"
+        .. "bar.icons.borderColor=Icons,bar.icons.useClassColorBorder=Icons,bar.icons.borderStyleFromSkin=Icons,"
+        .. "bar.icons.borderColorFromSkin=Icons,"
         .. "bar.labels.show=Labels,bar.labels.font=Labels,bar.labels.fontSize=Labels,bar.labels.fontColor=Labels,"
         .. "bar.labels.useClassColorFont=Labels,bar.labels.fontFlags=Labels,bar.labels.fontShadow=Labels,"
         .. "bar.labels.fontFromSkin=Labels,bar.labels.fontColorFromSkin=Labels,bar.labels.fontShadowFromSkin=Labels,"
@@ -166,6 +168,7 @@ test("settings: the Outfit Bar page's tabs and rows, the position row never draw
         .. "bar.frame.borderColorFromSkin=Frame")
     -- skinning-§6: every color's companion, default on, in the row and in the defaults tree.
     for _, path in ipairs({ "bar.bgFromSkin", "bar.frame.borderStyleFromSkin", "bar.frame.borderColorFromSkin",
+                            "bar.icons.borderStyleFromSkin", "bar.icons.borderColorFromSkin",
                             "bar.labels.fontFromSkin", "bar.labels.fontColorFromSkin", "bar.labels.fontShadowFromSkin" }) do
         assertEqual(NS.FindSchemaRow(path).default, true, path .. " row default")
         assertEqual(NS.GetSetting(path), true, path)
@@ -176,6 +179,9 @@ test("settings: the Outfit Bar page's tabs and rows, the position row never draw
     assertNil(NS.FindSchemaRow("bar.bgFromSkin").composed)
     assertNil(NS.FindSchemaRow("bar.frame.borderColorFromSkin").composed)
     assertEqual(NS.FindSchemaRow("bar.bgFromSkin").label, "Use the skin's background")
+    local worn = NS.FindSchemaRow("bar.worn.style")
+    assertEqual(worn.label, "Worn outfit highlight")
+    assertTrue(worn.values.mark and worn.values.border and worn.values.both and worn.values.none, "the four styles")
     -- The label font block: From skin flags, its rows dimmed while the labels are off, never the swatch.
     assertEqual(NS.FindSchemaRow("bar.labels.fontFlags").default, "@skin")
     NS.db.profile.bar.labels.show = false

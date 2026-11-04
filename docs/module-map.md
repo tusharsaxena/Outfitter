@@ -195,6 +195,7 @@ the diagnostics sections.
 | `tests/unit_load.lua` | A unit instance: the whole load and login with the resume walk emptied, for a suite that drives one module's `Resume` itself |
 | `tests/spy.lua` | A recorder over a REAL module's members: the call is recorded, then made (it replaced the fakes once their modules landed, P4.27) |
 | `tests/dock_scene.lua` | The shared scene of the four window suites (`test_dock`, `test_list_model`, `test_rows_secure`, `test_slot_enables`) |
+| `tests/bar_scene.lua` | The outfit bar suite's shared scene and helpers (`test_bar`) |
 | `tests/dialog_scene.lua` | The shared scene of the three dialog suites (`test_outfit_menu`, `test_dialogs`, `test_trigger_dialog`) |
 | `tests/test_*.lua` | The local suites ([testing.md](testing.md)) |
 | `tests/skin_surfaces.lua` | The skin-switch suite's painted surfaces (skinning-§1) |

@@ -233,7 +233,8 @@ test("skin: the bar's icons are HUD icons, cropped and edged from the skin", fun
     -- without hud (the bar would wear a window's icon.outline), or S.SquareIcon without crop.
     local _, _, Skin, built = buildAll()
     local btn = built["a bar button"]
-    local o = iconBorder(Skin, btn)
+    -- On the button's own skin-edge frame, so the player's edge can stand in for it (G6).
+    local o = iconBorder(Skin, btn.skinEdge)
     assertTrue(o ~= nil, "the bar button has no S.IconBorder")
     assertEqual(o.hud, true, "hud")
     assertEqual(o.fromSkin, true, "fromSkin")

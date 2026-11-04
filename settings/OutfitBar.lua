@@ -2,7 +2,7 @@ local _, NS = ...
 -- settings/OutfitBar.lua — the Outfit Bar settings page, `bar` (design §4.2, smoke round 2 design G6),
 -- registered between General and Profiles. Tabs: Display (what shows, and the bar's one anchor row,
 -- `bar.position`, never drawn), Layout (orientation, wrap, padding, spacing, grow direction), Icons
--- (their size), Labels (each category's, a composed font block) and Frame (the background and the
+-- (their size and border), Labels (each category's, a composed font block) and Frame (the background and the
 -- border, options-ui-§16's composed blocks).
 --
 -- NO SECOND SWITCHES (options-ui-§15). Scale, opacity, the lock, Reset position and General
@@ -103,6 +103,11 @@ NS.RegisterSchemaRows({
     { path = "bar.shown", page = PAGE, group = DISPLAY, type = "bool",
       label = L["Show outfit bar"], default = DB.shown,
       tooltip = L["Shows a bar of outfit buttons you can click to wear or remove an outfit."] },
+    { path = "bar.worn.style", page = PAGE, group = DISPLAY, type = "string",
+      values = { mark = L["Corner mark"], border = L["Border"], both = L["Mark and border"], none = L["None"] },
+      sorting = { "both", "mark", "border", "none" },
+      label = L["Worn outfit highlight"], default = DB.worn.style,
+      tooltip = L["How the bar marks an outfit you are wearing: a check mark in its corner, a border in the skin's highlight color, both, or nothing."] },
     { path = "bar.combatAlpha", page = PAGE, group = DISPLAY, type = "number", isPercent = true,
       min = 0, max = 1, step = 0.05, label = L["Opacity in combat (%)"], default = DB.combatAlpha,
       tooltip = L["Multiplied by Master opacity on General > Master controls. To hide the bar in combat, set General visibility there."] },
@@ -146,11 +151,22 @@ NS.RegisterSchemaRows({
 })
 
 -- ── Icons ──────────────────────────────────────────────────────────────────────────────────────
+-- Size, then the Border block on the skin's icon family (`fromSkin = "icon"`: its companion governs
+-- the thickness too), with *Use the skin's color* after it. Both companions on, the button wears the
+-- skin's own HUD icon edge (S.IconBorder); either off, the player's (modules/Bar_Buttons.lua).
 NS.RegisterSchemaRows({
     { path = "bar.icons.size", page = PAGE, group = ICONS, subgroup = L["Size"], type = "number",
       min = 16, max = 64, step = 1, label = L["Icon size (px)"], default = DB.icons.size,
       tooltip = L["The width and height of each outfit icon, in pixels."] },
 })
+registerComposed(H.BorderGroup({
+    prefix = "bar.icons.", page = PAGE, group = ICONS, subgroup = L["Border"], order = 100, show = true,
+    fromSkin = "icon", classColor = PLAYER_CLASS,
+    defaults = { borderShow = DB.icons.borderShow, borderStyle = DB.icons.borderStyle,
+                 borderSize = DB.icons.borderSize, borderColor = DB.icons.borderColor,
+                 useClassColorBorder = DB.icons.useClassColorBorder },
+    extra = { borderColorFollow("bar.icons.", DB.icons) },
+}))
 
 -- ── Labels ─────────────────────────────────────────────────────────────────────────────────────
 -- One label per category, over its row (over its column, truncated, in the vertical layout), drawn

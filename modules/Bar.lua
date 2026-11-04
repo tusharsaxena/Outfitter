@@ -225,7 +225,7 @@ end
 
 --- Place row frame `row` at layout block `b` and fill it with `outfits`, `size` px buttons at the
 --- block's points (anchored to the bar's TOPLEFT, Bar_Layout's coordinates).
-local function placeRow(row, b, outfits, size)
+local function placeRow(row, b, outfits, size, style)
     local f = row.frame
     f:ClearAllPoints()
     f:SetPoint("TOPLEFT", bar, "TOPLEFT", b.x, -b.y)
@@ -239,7 +239,7 @@ local function placeRow(row, b, outfits, size)
         btn:SetPoint("TOPLEFT", bar, "TOPLEFT", p.x, -p.y)
         btn:SetSize(size, size)
         btn:SetFrameLevel(buttonLevel)
-        Bar.SetButton(btn, rec)
+        Bar.SetButton(btn, rec, style)
     end
 end
 
@@ -268,8 +268,9 @@ function Bar.Render(source, strip)
     for i, row in ipairs(list) do counts[i] = #row.outfits end
     local spec = Bar.LayoutSpec(counts, strip)
     local g = Bar.Layout.Compute(spec)
+    local style = Bar.IconStyle()
     for i, row in ipairs(list) do
-        placeRow(rows[i], g.blocks[i], row.outfits, spec.size)
+        placeRow(rows[i], g.blocks[i], row.outfits, spec.size, style)
         placeLabel(rows[i], g.blocks[i], spec, row.categoryID)
     end
     bar:SetSize(g.width, g.height)

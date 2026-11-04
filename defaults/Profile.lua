@@ -16,7 +16,11 @@ NS.defaults = {
         -- direction "auto" follows the saved corner.
         bar        = { shown = false, vertical = false, showBackground = true, combatAlpha = 1.0,
                        layout = { perLine = 0, padding = 4, spacing = 5, growH = "auto", growV = "auto" },
-                       icons  = { size = 32 },
+                       icons  = { size = 32, borderShow = true, borderStyle = "Solid", borderSize = 1,
+                                  borderColor = { r = 0, g = 0, b = 0, a = 1 }, useClassColorBorder = false,
+                                  borderStyleFromSkin = true, borderColorFromSkin = true },
+                       -- The worn outfit's highlight: mark | border | both | none.
+                       worn   = { style = "both" },
                        -- Each category's label: the HUD font block, each part following the skin.
                        labels = { show = true, font = "Ka0s Prototype", fontSize = 11,
                                   fontColor = { r = 1, g = 0.82, b = 0, a = 1 }, useClassColorFont = false,

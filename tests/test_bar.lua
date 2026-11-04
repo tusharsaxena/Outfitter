@@ -6,90 +6,18 @@
 -- mode and the window's state itself; NS.OutfitMenu is the real menu under a recorder (tests/spy.lua,
 -- its fake retired at P4.27). Outfits, Stack, Equip, Inventory, Triggers and OutfitTooltip are
 -- the real modules, and the items move for real in tests/mock_gear.lua. The bar's frames are built
--- lazily, so the kit's paint and layer recorders and this file's geometry recorder are installed after
--- the load and still see every frame the bar makes.
+-- lazily, so the kit's paint and layer recorders and the scene's geometry recorder
+-- (tests/bar_scene.lua) are installed after the load and still see every frame the bar makes. Since
+-- smoke round 2 (design G6) it also pins the layout, the header, the labels, the icon edge and the
+-- worn highlight.
 
 local T = _G.OUTFITTERREBORN_TEST
-local spy = dofile(T.root .. "/tests/spy.lua")
 local test, assertEqual, assertTrue, assertFalse, assertNil =
     T.test, T.assertEqual, T.assertTrue, T.assertFalse, T.assertNil
 
-local SLOTS = {
-    "HeadSlot", "ShoulderSlot", "ChestSlot", "WristSlot", "HandsSlot", "WaistSlot", "LegsSlot", "FeetSlot",
-    "MainHandSlot", "SecondaryHandSlot", "BackSlot", "NeckSlot", "ShirtSlot", "TabardSlot", "Finger0Slot",
-    "Finger1Slot", "Trinket0Slot", "Trinket1Slot",
-}
-
---- Every frame built from here on records its points, mouse, scale and size, and answers geometry
---- from `geom` when the suite sets it.
-local function recordGeometry(M)
-    local prev = M.CreateFrame
-    M.CreateFrame = function(...)
-        local f = prev(...)
-        if type(f) ~= "table" then return f end
-        rawset(f, "__pts", {})
-        rawset(f, "SetPoint", function(self, ...) local p = rawget(self, "__pts"); p[#p + 1] = { ... } end)
-        rawset(f, "ClearAllPoints", function(self) rawset(self, "__pts", {}) end)
-        rawset(f, "EnableMouse", function(self, on) rawset(self, "__mouse", on and true or false) end)
-        rawset(f, "SetScale", function(self, s) rawset(self, "__scale", s) end)
-        rawset(f, "GetScale", function(self) return rawget(self, "__scale") or 1 end)
-        rawset(f, "GetEffectiveScale", function(self) return rawget(self, "__scale") or 1 end)
-        rawset(f, "SetSize", function(self, w, h) rawset(self, "__w", w); rawset(self, "__h", h) end)
-        return f
-    end
-end
-
---- Arm `f`'s edges (UIParent was built before the recorder, so they are set on the frame itself).
-local function geom(f, left, right, top, bottom)
-    local g = { Left = left, Right = right, Top = top, Bottom = bottom }
-    for edge, v in pairs(g) do rawset(f, "Get" .. edge, function() return v end) end
-end
-
-local function naked()
-    local items = {}
-    for _, s in ipairs(SLOTS) do items[s] = { id = 0 } end
-    return items
-end
-
---- A fresh instance at t = 100 on the geared scenario, the engine resumed, the recorders in, the
---- two fakes and the menu recorder installed, and the bar resumed with `bar.shown` on unless `opts.hidden`.
-local function scene(opts)
-    opts = opts or {}
-    local inst = T.load({ mutate = function(M) M.__gear:load("geared") end })
-    local NS, M = inst.NS, inst.mocks
-    M.__now = 100
-    NS.PlayerState.Resume()
-    NS.Inventory.Resume()
-    NS.Equip.Resume()
-    M.__fireTimers()
-    dofile(T.root .. "/tests/_kit/mock_paint.lua")(M)
-    dofile(T.root .. "/tests/_kit/mock_layers.lua")(M)
-    recordGeometry(M)
-    local ctl = { preview = false, previewRows = {}, fades = {}, stops = 0 }
-    M.UIFrameFadeOut = function(f, secs, from, to) ctl.fades[#ctl.fades + 1] = { f, secs, from, to } end
-    M.UIFrameFadeRemoveFrame = function() ctl.stops = ctl.stops + 1 end
-    -- Both are in the latch's MODULES walk, so each answers Suspend and Resume too.
-    T.fake(NS, "Dock", { IsShown = function() return false end, Suspend = true, Resume = true })
-    local preview = T.fake(NS, "Preview", { IsActive = function() return ctl.preview end, Suspend = true,
-                                            Resume = true })
-    rawset(preview, "Source", { Rows = function() return ctl.previewRows end })
-    ctl.menu = spy(NS, "OutfitMenu", { "Open" })
-    if not opts.hidden then NS.db.profile.bar.shown = true end
-    NS.Bar.Resume()
-    M.__fireTimers()
-    return NS, M, NS.Bar, ctl
-end
-
-local function complete(NS, name) return NS.Outfits.Create(name, naked()) end
-local function accessory(NS, name, slot) return NS.Outfits.Create(name, { [slot or "HeadSlot"] = { id = 0 } }) end
-
-local function ids(Bar)
-    local out = {}
-    for _, btn in ipairs(Bar.Buttons()) do out[#out + 1] = btn.outfit.id end
-    return table.concat(out, ",")
-end
-
-local function settle(M) M.__fireTimers() end
+local H = dofile(T.root .. "/tests/bar_scene.lua")(T)
+local geom, naked, scene, complete, accessory = H.geom, H.naked, H.scene, H.complete, H.accessory
+local ids, settle, buttonFor, point, at = H.ids, H.settle, H.buttonFor, H.point, H.at
 
 -- ── the surface and the default ───────────────────────────────────────────────────────────────
 
@@ -166,14 +94,6 @@ test("bar: an outfit whose trigger is off is not on the bar, and a manual wear o
 end)
 
 -- ── layout ────────────────────────────────────────────────────────────────────────────────────
-
-local function point(f, i) return f.__pts[i or 1] end
-
---- A button's TOPLEFT offset in the bar, as Render anchored it: x, y with y down.
-local function at(btn)
-    local p = point(btn)
-    return p[4], -p[5]
-end
 
 test("bar: the layout's defaults keep the legacy 37 px pitch, 4 px in from the edge", function()
     local Layout = T.NS.Bar.Layout
@@ -628,13 +548,60 @@ test("bar: the icon ladder: own, the trigger's descriptor, the Birthday Suit, a 
     assertTrue(r == 1 and g == 1 and b == 1, "a fileID is drawn white")
 end)
 
+-- ── the icon border and the worn highlight ───────────────────────────────────────────────────
+
+test("bar: an icon's border is the skin's HUD edge while it follows the skin, the player's when not", function()
+    local NS, M, Bar = scene()
+    accessory(NS, "Hat")
+    settle(M)
+    local btn = Bar.Buttons()[1]
+    assertTrue(btn.skinEdge:IsShown(), "the skin's edge")
+    assertTrue(btn.edge == nil or not btn.edge:IsShown(), "no edge of the player's")
+    NS.SetByPath("bar.icons.borderColorFromSkin", false)
+    NS.SetByPath("bar.icons.borderColor", { r = 1, g = 0, b = 0, a = 1 })
+    NS.SetByPath("bar.icons.borderStyleFromSkin", false)
+    NS.SetByPath("bar.icons.borderSize", 2)
+    settle(M)
+    btn = Bar.Buttons()[1]
+    -- red under: a button that keeps S.IconBorder's skin edge whatever the companions say
+    assertFalse(btn.skinEdge:IsShown(), "the skin's edge steps aside")
+    assertTrue(btn.edge ~= nil and btn.edge:IsShown(), "the player's edge")
+    local r, g, b = btn.edge:GetBackdropBorderColor()
+    assertTrue(r == 1 and g == 0 and b == 0, "the swatch")
+    assertEqual(btn.edge:GetBackdrop().edgeSize, 2, "the thickness")
+    NS.SetByPath("bar.icons.borderShow", false)
+    settle(M)
+    btn = Bar.Buttons()[1]
+    assertFalse(btn.skinEdge:IsShown()); assertFalse(btn.edge:IsShown())
+end)
+
+test("bar: the worn highlight is the corner mark, an accent edge, both or neither", function()
+    local NS, M, Bar = scene()
+    local hat = accessory(NS, "Hat")
+    accessory(NS, "Hood")
+    NS.Stack.Wear(hat, { hw = true })
+    settle(M)
+    local function shown()
+        local btn = buttonFor(Bar, hat)
+        local other = Bar.Buttons()[2]
+        assertFalse(other.worn:IsShown() or (other.wornEdge ~= nil and other.wornEdge:IsShown()), "an outfit not worn")
+        return btn.worn:IsShown(), btn.wornEdge ~= nil and btn.wornEdge:IsShown()
+    end
+    assertEqual(NS.GetSetting("bar.worn.style"), "both")
+    local mark, edge = shown()
+    -- red under: a worn style read as the mark alone
+    assertTrue(mark and edge, "both by default")
+    for style, want in pairs({ mark = { true, false }, border = { false, true }, none = { false, false } }) do
+        NS.SetByPath("bar.worn.style", style)
+        settle(M)
+        mark, edge = shown()
+        assertEqual(mark, want[1], style .. " mark")
+        assertEqual(edge, want[2], style .. " edge")
+    end
+end)
+
 -- ── clicks, drops, the menu, the tooltip ──────────────────────────────────────────────────────
 
-local function buttonFor(Bar, id)
-    for _, btn in ipairs(Bar.Buttons()) do
-        if btn.outfit.id == id then return btn end
-    end
-end
 
 test("bar: a left click wears; a worn accessory is removed; a worn Complete outfit stays on", function()
     local NS, M, Bar = scene()
