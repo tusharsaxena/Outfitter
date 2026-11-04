@@ -46,7 +46,7 @@ local _, NS = ...
 -- client's value as its fallback). Every link is read through NS.Compat, which hands a secret one back
 -- as nil.
 --
--- CALLS (at call time; design §12): NS.Dock.IsShown, NS.SlotEnables.COLUMN.
+-- CALLS (at call time; design §12): NS.Dock.IsVisible, NS.SlotEnables.COLUMN.
 
 local QS = {}
 NS.QuickSlots = QS
@@ -164,9 +164,10 @@ local flyoutMoved = false         -- buttonFrame carries this file's TOPRIGHT, n
 
 local function locked() return Compat.InCombatLockdown() end
 
--- The drawer opens outward: standing up and the outfit window on screen.
+-- The drawer opens outward: standing up and the outfit window on screen. Visible, not shown: a
+-- window parked in the sheet holder keeps its shown flag when the sheet hides it.
 local function drawerWanted()
-    return not NS.IsStoodDown() and NS.Dock.IsShown() == true
+    return not NS.IsStoodDown() and NS.Dock.IsVisible() == true
 end
 
 local function leftColumn(button)

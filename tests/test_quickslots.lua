@@ -492,7 +492,8 @@ end)
 -- anchorY) with no ClearAllPoints (Blizzard_FrameXML/EquipmentFlyout.lua:331-339); and
 -- EquipmentFlyoutPopoutButton_SetReversed's horizontal coord pairs (:633-651). Both functions are
 -- globals the instance's hooksecurefunc really post-hooks by name. The window is a recorded fake
--- (`state.shown`, NS.Dock.IsShown): QuickSlots reads it at call time and owns no part of it.
+-- (`state.shown`, NS.Dock.IsShown; `state.visible`, NS.Dock.IsVisible): QuickSlots reads it at call
+-- time and owns no part of it.
 
 local ARROW_FWD = { 0.15625, 0.5, 0.84375, 0.5, 0.15625, 0, 0.84375, 0 }      -- PaperDollFrame.lua:1527
 local ARROW_BACK = { 0.15625, 0, 0.84375, 0, 0.15625, 0.5, 0.84375, 0.5 }     -- EquipmentFlyout.lua:644
@@ -524,7 +525,7 @@ end
 -- client functions the instance does not have.
 local function drawerInstance(opts)
     opts = opts or {}
-    local state = { shown = false }
+    local state = { shown = false, visible = false }
     local inst = unitLoad({ mutate = function(M)
         local fs = M.PaperDollItemsFrame.flyoutSettings
         fs.anchorX, fs.anchorY, fs.verticalAnchorX, fs.verticalAnchorY = 0, -3, 0, 0
@@ -579,6 +580,7 @@ local function drawerInstance(opts)
     end })
     local NS, M = inst.NS, inst.mocks
     NS.Dock.IsShown = function() return state.shown end
+    NS.Dock.IsVisible = function() return state.visible end
     QS(NS).Resume()
     return NS, M, state
 end
@@ -597,7 +599,7 @@ end
 
 -- The window opening or closing, as Dock's OnShow / OnHide hooks report it.
 local function setWindow(NS, state, shown)
-    state.shown = shown
+    state.shown, state.visible = shown, shown
     QS(NS).DrawerSync()
 end
 
@@ -722,6 +724,20 @@ test("drawer: closing the window restores the left-column arrows and an open fly
     assertEqual(#bf.pts, 1)
     assertEqual(bf.pts[1][1], "TOPLEFT"); assertEqual(bf.pts[1][2], head); assertEqual(bf.pts[1][3], "TOPRIGHT")
     assertEqual(bf.pts[1][4], 0); assertEqual(bf.pts[1][5], -3)
+end)
+
+-- A window parked in the sheet holder (Dock.Attach's refused-anchor fallback) is hidden through its
+-- parent when the sheet closes: its OnHide runs while its own shown flag is still set.
+test("drawer: a window hidden through its parent restores the drawer", function()
+    local NS, M, state = drawerInstance()
+    setWindow(NS, state, true)
+    local bf = openFlyout(M, "HeadSlot")
+    state.visible = false
+    QS(NS).DrawerSync()
+    -- red under: a drawer gate that reads the window's shown flag (NS.Dock.IsShown), not its visibility.
+    local head = M.__slotButtons.HeadSlot.popoutButton
+    assertEqual(head.pts[1][1], "LEFT", "the arrow stayed outward under a hidden parent")
+    assertEqual(bf.pts[1][1], "TOPLEFT", "the flyout stayed outward under a hidden parent")
 end)
 
 test("drawer: stood down nothing is moved", function()

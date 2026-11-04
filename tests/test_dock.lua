@@ -180,6 +180,27 @@ test("dock: the window takes ONE UIParent-relative SetPoint, and falls back to t
     assertEqual(win:GetParent(), M.OutfitterRebornSheetHolder)
 end)
 
+-- The drawer follows the window (modules/QuickSlots.lua). A window parked in the holder is hidden by
+-- its parent, after which its own Hide fires nothing in the client, so the sheet's OnHide syncs too.
+test("dock: closing the sheet syncs the drawer after the window is gone", function()
+    local NS, M, _, win = opened()
+    local seen = {}
+    local real = NS.QuickSlots.DrawerSync
+    NS.QuickSlots.DrawerSync = function(...)
+        seen[#seen + 1] = win:IsVisible() == true
+        return real(...)
+    end
+    -- The client's hide through the parent: the window's OnHide runs, its own shown flag still set.
+    win:__fire("OnHide")
+    rawset(win, "Hide", function(self) rawset(self, "__shown", false) end)
+    M.__world:closeCharacter()
+    NS.QuickSlots.DrawerSync = real
+    -- red under: no DrawerSync in the sheet's OnHide (the window's own hide fired nothing).
+    assertTrue(#seen >= 2, "the sheet's hide did not sync the drawer")
+    assertFalse(seen[#seen], "the last sync ran while the window was still visible")
+    assertFalse(NS.Dock.IsVisible(), "Dock.IsVisible answers a window under a hidden sheet")
+end)
+
 test("dock: a sheet that was never laid out parks the window at the UIParent TOPLEFT", function()
     local NS, M = scene()
     M.__world:openCharacter()

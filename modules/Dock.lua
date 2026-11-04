@@ -68,9 +68,16 @@ local function locked() return NS.Compat.InCombatLockdown() end
 --- @return table|nil the sheet holder, `OutfitterRebornSheetHolder`, once installed
 function Dock.Holder() return holder end
 
---- @return boolean the window is on screen
+--- @return boolean the window's own shown flag is set
 function Dock.IsShown()
     return win ~= nil and win:IsShown() == true
+end
+
+--- The window is on screen: shown, and every parent too. A window parked in the sheet holder
+--- (Dock.Attach's fallback) keeps its shown flag when the sheet hides it.
+--- @return boolean
+function Dock.IsVisible()
+    return win ~= nil and win:IsVisible() == true
 end
 
 --- Whether the window should be up: wanted, not suspended for combat, standing up, the sheet showing.
@@ -266,6 +273,9 @@ local function onSheetHide()
     local wasShown = Dock.IsShown()
     Dock.wanted = false
     Dock.Refresh()
+    -- A window parked in the holder was hidden with the sheet, so its own Hide above fired no OnHide:
+    -- the drawer is put back here as well (design G8).
+    NS.QuickSlots.DrawerSync()
     NS.CloseMenu()
     -- A shown window's own OnHide closed the dialogs; this covers a window hidden for combat (O30).
     if not wasShown then NS.Dialogs.CloseAll("host") end
