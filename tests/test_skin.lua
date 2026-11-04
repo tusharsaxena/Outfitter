@@ -240,16 +240,14 @@ test("skin: the bar's icons are HUD icons, cropped and edged from the skin", fun
     assertCropped(btn.icon, "a bar button's icon")
 end)
 
-test("skin: the sheet button is borderless, its icon untinted by any token", function()
-    -- Sheet and window feedback design G1: borderless like the tab icons beside it. Smoke round 2
-    -- design G1 retired the gold accent: red under the icon token remap to of.sheet.button.
-    local _, _, Skin, built = buildAll()
-    local btn = built["the sheet button"]
-    local calls = Skin.painted[btn].calls
-    local opts = calls.Button and calls.Button[1]
-    assertTrue(type(opts) == "table" and opts.noBg == true and opts.noBorder == true, "S.Button(btn, { noBg, noBorder })")
-    assertTrue(opts.tokens == nil, "the retired icon token remap")
-    assertTrue(calls.SquareIcon == nil, "S.SquareIcon outlines the icon")
+test("skin: the sheet button wears the host's look and is never painted through the skin", function()
+    -- Smoke round 2 design G2 (D4): the accepted deviation DEV-SKIN-SHEET-BUTTON (skinning-§1/§9,
+    -- docs/ARCHITECTURE.md -> Documented deviations). It left Kit.skinSwitch.surfaces with it.
+    -- red under: NS.Skin.Button(button) kept in modules/Dock.lua's buildSheet.
+    local _, M, Skin = buildAll()
+    local btn = M.OutfitterRebornSheetButton
+    assertTrue(btn ~= nil, "no sheet button")
+    assertTrue(Skin.painted[btn] == nil, "the sheet button is painted through the skin")
 end)
 
 test("window: the header gear has no border", function()

@@ -18,6 +18,12 @@ local _, NS = ...
 -- to CharacterFrame and set above the close button's level: in the sheet holder it shared
 -- PaperDollFrame's level (useParentLevel), and the frame's NineSlice (500) and close button (510)
 -- drew over it, which hid it on the stock sheet. It is a plain button: no secure frame is touched.
+-- It wears the HOST'S look, not the skin (smoke round 2 design G2; the accepted deviation
+-- DEV-SKIN-SHEET-BUTTON, skinning-§1/§9, docs/ARCHITECTURE.md -> Documented deviations): on the stock
+-- and Chonky sheets a hand-built copy of PaperDollSidebarTabTemplate (its OnLoad indexes
+-- PAPERDOLL_SIDEBARS by id, so it cannot be inherited), selected while the window shows; on
+-- EllesmereUI a text label in its tab style, idle, hover and active (its accent) as _paintTopButton
+-- paints its own. The button builds both looks once and placeButton picks one (NS.Sheet.ButtonAnchor).
 --
 -- THE PAPER-DOLL PANE. The button and the window belong to the Character tab: the Reputation and
 -- Currency tabs hide PaperDollFrame but not CharacterFrame, the button's parent, so the doll's OnHide
@@ -59,6 +65,7 @@ local WINDOW_NAME = "OutfitterRebornWindow"
 
 local holder, button, driver, win, events
 local placedKind -- the sheet kind the button was last anchored for
+local placedLook -- the look it wears there: "tab" | "text"
 local installed = false
 local sinceTick = 0
 local toldCombat = false
@@ -153,14 +160,101 @@ local function followTick(_, elapsed)
     if t0 then Perf.Note("dockFollow", debugprofilestop() - t0) end
 end
 
+-- ── the sheet button's host look (smoke round 2 design G2; deviation DEV-SKIN-SHEET-BUTTON) ──────
+
+-- PaperDollSidebarTabTemplate's art and coords (wow-ui-source@297d7aa:Interface/AddOns/
+-- Blizzard_UIPanels_Game/Mainline/PaperDollFrame.xml:393-430), and the selected TabBg
+-- PaperDollFrame_UpdateSidebarTabs writes (PaperDollFrame.lua:2673-2694). Chonky's own extra tab,
+-- MyTransmogButton, is built by hand from the same file (characterSheet.lua:878-922).
+local TAB_ART = "Interface\\PaperDollInfoFrame\\PaperDollSidebarTabs"
+local TAB_BG = { 0.015625, 0.796875, 0.61328125, 0.78125 }
+local TAB_BG_SELECTED = { 0.015625, 0.796875, 0.7890625, 0.95703125 }
+local TAB_HIDER = { 0.015625, 0.546875, 0.11328125, 0.1875 }
+local TAB_HIGHLIGHT = { 0.015625, 0.5, 0.1953125, 0.31640625 }
+-- The icon inside the tab: Chonky's 30 x 30 centered (its full-bleed tab icon), cropped as item art is.
+local TAB_ICON_SIZE = 30
+local ICON_CROP = { 0.07, 0.93, 0.07, 0.93 }
+-- EllesmereUI's label face size (CreateEUIButton: SetFont(fontPath, 10, "")).
+local EUI_FONT_SIZE = 10
+
+local function tabTexture(layer, w, h, coords)
+    local t = button:CreateTexture(nil, layer)
+    t:SetTexture(TAB_ART)
+    t:SetSize(w, h)
+    t:SetTexCoord(unpack(coords))
+    return t
+end
+
+-- Both looks, built once; placeButton shows one.
+local function buildLooks()
+    button.TabBg = tabTexture("BACKGROUND", 50, 43, TAB_BG)
+    button.TabBg:SetPoint("BOTTOMLEFT", button, "BOTTOMLEFT", -9, -2)
+    button.icon = button:CreateTexture(nil, "ARTWORK")
+    button.icon:SetSize(TAB_ICON_SIZE, TAB_ICON_SIZE)
+    button.icon:SetPoint("CENTER", button, "CENTER", 0, 0)
+    button.icon:SetTexture(NS.Constants.DEFAULT_OUTFIT_ICON)
+    button.icon:SetTexCoord(unpack(ICON_CROP))
+    button.Hider = tabTexture("OVERLAY", 34, 19, TAB_HIDER)
+    button.Hider:SetPoint("BOTTOM", button, "BOTTOM", 0, 0)
+    button.Highlight = tabTexture("HIGHLIGHT", 31, 31, TAB_HIGHLIGHT)
+    button.Highlight:SetPoint("TOPLEFT", button, "TOPLEFT", 2, -3)
+    button.label = button:CreateFontString(nil, "OVERLAY")
+    button.label:SetPoint("TOP", button, "TOP", 0, 0)
+    button.label:SetText(L["Outfits"])
+end
+
+-- The tab: unselected, or selected while the window shows (PaperDollFrame_UpdateSidebarTabs' rule).
+local function paintTab(selected)
+    button.TabBg:SetTexCoord(unpack(selected and TAB_BG_SELECTED or TAB_BG))
+    button.Hider:SetShown(not selected)
+    button.Highlight:SetShown(not selected)
+end
+
+-- The label: EllesmereUI's accent while the window shows, white on hover, white at 0.6 idle
+-- (_paintTopButton, EllesmereUIBlizzardSkin_CharacterSheet.lua:3133-3145).
+local function paintLabel(selected)
+    if selected then
+        local r, g, b = NS.Sheet.EUIAccent()
+        button.label:SetTextColor(r, g, b, 1)
+    elseif button.hovered then
+        button.label:SetTextColor(1, 1, 1, 1)
+    else
+        button.label:SetTextColor(1, 1, 1, 0.6)
+    end
+end
+
+-- Repaint the look the button wears for the window's state now.
+local function paintButton()
+    if not button then return end
+    local selected = Dock.IsShown()
+    if placedLook == "text" then return paintLabel(selected) end
+    paintTab(selected)
+end
+
+-- Show one look's regions and hide the other's; the label copies EllesmereUI's face on each placing.
+local function applyLook(look)
+    local tab = look ~= "text"
+    for _, key in ipairs({ "TabBg", "icon", "Hider", "Highlight" }) do button[key]:SetShown(tab) end
+    button.label:SetShown(not tab)
+    if not tab then
+        local source = NS.Sheet.EUILabelText()
+        local face = source and source:GetFont()
+        button.label:SetFont(face or STANDARD_TEXT_FONT, EUI_FONT_SIZE, "")
+    end
+    placedLook = look
+    paintButton()
+end
+
 local function onWindowShow()
     sinceTick = 0
     driver:Show()
     driver:SetScript("OnUpdate", followTick)
     NS.QuickSlots.DrawerSync()
+    paintButton()
 end
 
 local function onWindowHide()
+    paintButton()
     driver:SetScript("OnUpdate", nil)
     driver:Hide()
     -- The outward drawer is for the open window only (sheet and window feedback design G8).
@@ -238,13 +332,14 @@ end
 
 -- ── hooks and events ──────────────────────────────────────────────────────────────────────────
 
--- Re-anchor the sheet button where the current sheet wants it, over the close button. Out of the
--- stand-down only; a plain button, so allowed in combat.
+-- Re-anchor the sheet button where the current sheet wants it, over the close button, in that
+-- sheet's look. Out of the stand-down only; a plain button, so allowed in combat.
 local function placeButton()
-    local point, rel, relPoint, x, y, size = NS.Sheet.ButtonAnchor()
+    local point, rel, relPoint, x, y, w, h, look = NS.Sheet.ButtonAnchor()
     button:ClearAllPoints()
     button:SetPoint(point, rel, relPoint, x, y)
-    button:SetSize(size, size)
+    button:SetSize(w, h)
+    applyLook(look)
     local close = CharacterFrameCloseButton
     local base = close and NS.SafeNumber(close:GetFrameLevel(), 0) or NS.SafeNumber(CharacterFrame:GetFrameLevel(), 0)
     button:SetFrameLevel(base + LEVEL.SHEET_BUTTON_OVER_CLOSE)
@@ -304,18 +399,21 @@ local function buildSheet()
     holder:EnableMouse(false)
     button = CreateFrame("Button", "OutfitterRebornSheetButton", CharacterFrame)
     button:Hide()
-    button.icon = button:CreateTexture(nil, "ARTWORK")
-    button.icon:SetAllPoints(button)
-    button.icon:SetTexture(NS.Constants.DEFAULT_OUTFIT_ICON)
-    -- Borderless, like the tab icons beside it.
-    NS.Skin.Button(button, { noBg = true, noBorder = true })
+    -- The host's look, never the skin's (DEV-SKIN-SHEET-BUTTON): no NS.Skin call on this button.
+    buildLooks()
     button:SetScript("OnClick", function() if not NS.IsStoodDown() then Dock.Toggle() end end)
     button:SetScript("OnEnter", function(self)
+        self.hovered = true
+        paintButton()
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
         GameTooltip:SetText(L["Toggle the Outfitter window"])
         GameTooltip:Show()
     end)
-    button:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    button:SetScript("OnLeave", function(self)
+        self.hovered = false
+        paintButton()
+        GameTooltip:Hide()
+    end)
     -- Draws nothing: its OnUpdate is the follow, set only while the window is shown.
     driver = CreateFrame("Frame", "OutfitterRebornDockDriver", UIParent)
     driver:Hide()

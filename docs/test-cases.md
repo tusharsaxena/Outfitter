@@ -1150,10 +1150,11 @@ Total.
 - pvp: a disabled spec keeps the outfit off, and the spec change puts it on or takes it off
 - pvp: every zone trigger honors each of the four spec toggles
 
-### test_sheet.lua (15)
+### test_sheet.lua (16)
 
 - sheet: NS.Sheet is published with the adapter's surface
 - sheet: stock by default
+- sheet: without the stock tab the button keeps its place left of the close X, as a tab
 - sheet: EllesmereUI with its equipment tab shown is eui
 - sheet: EllesmereUI loaded with the blizzard style resolves to stock
 - sheet: EllesmereUI's tab hidden off the Character tab still reads eui
@@ -1168,7 +1169,7 @@ Total.
 - sheet: with no Chonky panel shown DockRight is the backdrop's edge
 - sheet: the adapter creates, anchors and shows nothing
 
-### test_dock.lua (36)
+### test_dock.lua (42)
 
 - dock: NS.Dock is published with the §7.2 surface
 - dock: the holder fills the sheet, and the sheet button toggles the window
@@ -1193,10 +1194,16 @@ Total.
 - dock: the footer's New outfit opens the outfit dialog, the title-strip button the settings
 - dock: no file in modules/ names a strata literal (frame-layering-§5)
 - dock: the sheet button sits right of the Equipment Manager tab
-- dock: on EllesmereUI the button follows the Equipment label
+- dock: on EllesmereUI the button is a label above the Equipment label
 - dock: the button is parented to CharacterFrame and above the close button's level
 - dock: the button shows with the paper doll and hides with it
 - dock: the button's icon is the default outfit icon, the gold tint retired
+- dock: on the stock sheet the button is a sidebar tab, selected while the window shows
+- dock: on Chonky the button is the same sidebar tab
+- dock: on EllesmereUI the button is a text label in EUI's tab style
+- dock: without EllesmereUI's accent the active label takes EUI's own fallback
+- dock: a sheet kind that changes after the show re-places and re-looks the button
+- dock: the button is placed and shown in combat: it is a plain, insecure button
 - dock: the window's top is flush with the sheet's top
 - dock: an open Chonky side panel pushes the window right
 - dock: stood down, a sheet show neither shows nor re-anchors the button
@@ -1453,7 +1460,7 @@ Total.
 - skin: the window and the dialogs wear NS.ApplySkin's Shell, the bar a Panel
 - skin: Blizzard icon art in a window is cropped and edged from the skin, never as a HUD
 - skin: the bar's icons are HUD icons, cropped and edged from the skin
-- skin: the sheet button is borderless, its icon untinted by any token
+- skin: the sheet button wears the host's look and is never painted through the skin
 - window: the header gear has no border
 - skin: no source file writes inline icon markup by hand (W.IconText crops it)
 - skin: a switch recolors a dialog's error line through of.dialog.error
@@ -1466,11 +1473,9 @@ Total.
 - skin values: no typed value outside the kit's categories and the host's rows
 - skin values: the check is falsifiable, a planted value of each shape is reported
 
-### test_skin_switch.lua (83)
+### test_skin_switch.lua (81)
 
 - skin switch: the check is falsifiable, a surface that redraws a literal is reported
-- skin switch: the sheet button changes
-- skin switch: the sheet button changes with the Scope ignored
 - skin switch: the window's shell changes
 - skin switch: the window's shell changes with the Scope ignored
 - skin switch: the window's settings button changes
@@ -1668,8 +1673,8 @@ Total.
 | test_triggers_quest.lua | 12 |
 | test_triggers_class.lua | 11 |
 | test_triggers_pvp.lua | 7 |
-| test_sheet.lua | 15 |
-| test_dock.lua | 36 |
+| test_sheet.lua | 16 |
+| test_dock.lua | 42 |
 | test_list_model.lua | 7 |
 | test_rows_secure.lua | 21 |
 | test_slot_enables.lua | 17 |
@@ -1685,11 +1690,11 @@ Total.
 | test_credits.lua | 8 |
 | test_skin.lua | 14 |
 | test_skin_values.lua | 3 |
-| test_skin_switch.lua | 83 |
+| test_skin_switch.lua | 81 |
 | test_eol.lua | 2 |
 | test_layout_cap.lua | 13 |
 | test_diagnostics_contract.lua | 8 |
 | test_lizard_sighted.lua | 8 |
 | test_prose.lua | 15 |
 | Skipped | 1 |
-| **Total** | **1386** |
+| **Total** | **1391** |

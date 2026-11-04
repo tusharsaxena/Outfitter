@@ -3,11 +3,12 @@
 -- from it; tests/test_skin.lua builds the same surfaces for its own checks. Loaded with dofile (it
 -- registers no case of its own).
 --
--- THE DESIGN §9.5 BUILDERS (P4.30), one per painted object: the sheet button, the window, a row of
--- each of the three kinds, a slot checkbox in each of the three states, the footer buttons, the
+-- THE DESIGN §9.5 BUILDERS (P4.30), one per painted object: the window, a row of each of the three
+-- kinds, a slot checkbox in each of the three states, the footer buttons, the
 -- outfit, trigger, rebuild and progress dialogs, a trigger field of each of the nine types, the icon
 -- browser, the bar and a bar button, the drag handle, the test strip and a compare tooltip. Beside
--- them, the controls P4.19 to P4.21 handed this task to check: the window's scroll bar and settings
+-- them, the controls P4.19 to P4.21 handed this task to check (the sheet button is not one: it
+-- wears the host sheet's look, the accepted deviation DEV-SKIN-SHEET-BUTTON, smoke round 2 G2): the window's scroll bar and settings
 -- button, a row's trigger mark and an item row's name, the dialogs' error line, the progress fill,
 -- the bar's worn mark, the icon browser's selected cell and dim, and a list editor's remove mark.
 --
@@ -153,7 +154,6 @@ return function(T)
     end
 
     local surfaces = {
-        { name = "the sheet button", build = function() return named("OutfitterRebornSheetButton") end },
         { name = "the window's shell", build = function() return named("OutfitterRebornWindow") end },
         { name = "the window's settings button", build = function() return named("OutfitterRebornWindowSettings") end },
         { name = "the window's scroll bar", build = function() return named("OutfitterRebornWindowScroll") end },
