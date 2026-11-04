@@ -124,15 +124,21 @@ local function titleStrip(f)
     f.divider:SetPoint("TOPLEFT", f, "TOPLEFT", 1, -26)
     f.divider:SetPoint("TOPRIGHT", f, "TOPRIGHT", -1, -26)
     NS.ApplySkin(f)
+    -- NS.MakeCloseButton makes and skins the x but anchors nothing: the caller places it, as
+    -- modules/UIDialogs.lua does. Unanchored it never drew (design G10).
     local close = NS.MakeCloseButton(f, function() NS.Dock.Close() end)
-    if close then chrome[#chrome + 1] = close end
+    if close then
+        close:SetPoint("TOPRIGHT", f, "TOPRIGHT", -6, -5)
+        f.close = close
+        chrome[#chrome + 1] = close
+    end
     local gear = CreateFrame("Button", "OutfitterRebornWindowSettings", f)
     gear:SetSize(18, 18)
     gear:SetPoint("TOPRIGHT", f, "TOPRIGHT", -28, -5)
     gear.icon = gear:CreateTexture(nil, "ARTWORK")
     gear.icon:SetAllPoints(gear)
     gear.icon:SetTexture(NS.Icon("settings"))
-    NS.Skin.Button(gear)
+    NS.Skin.Button(gear, { noBg = true, noBorder = true })
     gear:SetScript("OnClick", function() if not NS.IsStoodDown() then NS.OpenOptionsPanel() end end)
     chrome[#chrome + 1] = gear
 end

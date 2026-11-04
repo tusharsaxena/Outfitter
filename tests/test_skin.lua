@@ -258,6 +258,20 @@ test("skin: the sheet button is borderless, its glyph in of.sheet.button", funct
     assertTrue(calls.SquareIcon == nil, "S.SquareIcon outlines the glyph")
 end)
 
+test("window: the header gear has no border", function()
+    -- Sheet and window feedback design G10: the window's small icon buttons lose their box and
+    -- bevel; the text buttons (New outfit..., Slots: All / None) keep theirs. red under:
+    -- modules/Window.lua's NS.Skin.Button(gear) without { noBg, noBorder }.
+    local _, _, Skin, built = buildAll()
+    local gear = built["the window's settings button"]
+    local opts = Skin.painted[gear].calls.Button and Skin.painted[gear].calls.Button[1]
+    assertTrue(type(opts) == "table" and opts.noBg == true and opts.noBorder == true, "S.Button(gear, { noBg, noBorder })")
+    -- The New outfit mark is an S.Mark on a texture (a tint, never a box); its button keeps its border.
+    local new = built["the New outfit button"]
+    local newOpts = Skin.painted[new].calls.Button[1]
+    assertTrue(not (type(newOpts) == "table" and newOpts.noBorder), "the New outfit text button lost its border")
+end)
+
 --- The lines of `srcs` that write inline texture markup by hand (a "|T" in a string).
 local function handMarkup(srcs)
     local out = {}

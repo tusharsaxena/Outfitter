@@ -497,3 +497,30 @@ test("dock: stood down, a sheet show neither shows nor re-anchors the button", f
     assertFalse(button:IsShown(), "the button came up while stood down")
     assertEqual(#button.__pts, before, "the button was re-anchored while stood down")
 end)
+
+-- ── the window's header chrome (sheet and window feedback design G10, plan Task 3.3) ──────────────
+
+test("window: the close button is anchored at the header's top right", function()
+    -- G10: NS.MakeCloseButton makes the x but anchors nothing, so a close with no point never drew.
+    -- red under: drop the close's SetPoint from modules/Window.lua's titleStrip.
+    local _, M, _, win = opened()
+    local close = win.close
+    assertTrue(close ~= nil, "the window keeps no close button (win.close)")
+    local p = close.__pts[#close.__pts]
+    assertTrue(p ~= nil, "the close button was never anchored")
+    assertEqual(p[1], "TOPRIGHT"); assertEqual(p[2], win); assertEqual(p[3], "TOPRIGHT")
+    assertEqual(p[4], -6); assertEqual(p[5], -5)
+    assertTrue(M.OutfitterRebornWindowSettings ~= close, "the close is the settings button")
+end)
+
+test("window: the gear sits left of the close button", function()
+    -- Both 18 px, both TOPRIGHT-anchored to the window: the gear's right edge (-28) clears the
+    -- close's left edge (-6 - 18 = -24). red under: the gear moved onto the close's -6.
+    local _, M, _, win = opened()
+    local gear, close = M.OutfitterRebornWindowSettings, win.close
+    local g, c = gear.__pts[#gear.__pts], close.__pts[#close.__pts]
+    assertEqual(g[1], "TOPRIGHT"); assertEqual(g[2], win); assertEqual(g[3], "TOPRIGHT")
+    assertEqual(g[4], -28); assertEqual(g[5], c[5])
+    local CLOSE_SIZE = 18
+    assertTrue(g[4] < c[4] - CLOSE_SIZE, "the gear overlaps the close button")
+end)
