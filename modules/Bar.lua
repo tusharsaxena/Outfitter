@@ -38,6 +38,7 @@ NS.Bar = Bar
 local L = NS.L
 local Secrets = NS.Secrets
 local LAYERS = NS.Constants.LAYERS
+local Perf = NS.Perf
 
 local PITCH, BUTTON_SIZE = 37, 32       -- Style.ButtonBar: 37 px buttons (OutfitterUITools.lua)
 local MAX_ROWS = 2                      -- one per category
@@ -256,7 +257,6 @@ end
 --- @param source table  answers Rows() -> { { categoryID, outfits = { rec, ... } }, ... }
 --- @param strip boolean|nil
 function Bar.Render(source, strip)
-    local Perf = NS.Perf
     local t0 = Perf.on and debugprofilestop()
     ensureFrame()
     for i = 1, MAX_ROWS do

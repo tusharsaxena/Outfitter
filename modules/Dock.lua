@@ -34,6 +34,7 @@ NS.Dock = Dock
 
 local L = NS.L
 local LEVEL = NS.Constants.LAYERS.LEVEL
+local Perf = NS.Perf
 
 local WINDOW_NAME = "OutfitterRebornWindow"
 
@@ -120,7 +121,6 @@ local function followTick(_, elapsed)
     sinceTick = sinceTick + NS.SafeNumber(elapsed, 0)
     if sinceTick < Dock.FOLLOW_INTERVAL then return end
     sinceTick = 0
-    local Perf = NS.Perf
     local t0 = Perf.on and debugprofilestop()
     Dock.ApplyLayers()
     if cornerMoved() then Dock.Attach() end

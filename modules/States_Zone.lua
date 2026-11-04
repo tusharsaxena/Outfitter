@@ -21,6 +21,7 @@ local _, NS = ...
 -- whose first sighting of a state reads NS.Triggers.ForState and NS.Stack.IsWorn.
 
 local S, Z, L = NS.States, NS.Zones, NS.L
+local Perf = NS.Perf
 
 local ZONE_DELAY = 0.01            -- the cancel-and-reschedule debounce
 local EVENT_NAMES = { "ZONE_CHANGED_NEW_AREA", "ZONE_CHANGED", "ZONE_CHANGED_INDOORS", "PLAYER_ENTERING_WORLD" }
@@ -102,7 +103,6 @@ end
 function S.UpdateZone()
     timer = nil
     if not zoneActive or NS.IsStoodDown() then return end
-    local Perf = NS.Perf
     local t0 = Perf.on and debugprofilestop()
     local _, itype, mapID = readInstance()
     local text = NS.Secrets.PlainString(GetZoneText())

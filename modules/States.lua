@@ -32,6 +32,7 @@ local S = {}
 NS.States = S
 
 local Compat, Secrets, D = NS.Compat, NS.Secrets, NS.TriggerData
+local Perf = NS.Perf
 
 local MAX_AURAS = 100              -- the scan's bound (Outfitter.cMaxScannedAuras)
 local COMBAT_SCAN_DELAY = 2.0      -- the unique in-combat re-scan
@@ -276,7 +277,6 @@ local function scanAuras()
     if combatTimer then target:CancelTimer(combatTimer) end
     combatTimer = nil
     if not active or NS.IsStoodDown() then return end
-    local Perf = NS.Perf
     local t0 = Perf.on and debugprofilestop()
     local want, spells = {}, {}
     readAuras(want, spells)

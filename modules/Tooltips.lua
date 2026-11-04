@@ -26,6 +26,7 @@ NS.Tooltips = Tooltips
 
 local Compat, Secrets = NS.Compat, NS.Secrets
 local L = NS.L
+local Perf = NS.Perf
 
 local MAX_LINES = 100        -- a ceiling on one tooltip's walk, far beyond any item tooltip
 local STATUS_TOKEN = {
@@ -175,7 +176,6 @@ function Tooltips.OnItem(tooltip)
     if not wanted(tooltip) then return end
     local link = displayedLink(tooltip)
     if not link then return end
-    local Perf = NS.Perf
     local t0 = Perf.on and debugprofilestop()
     Tooltips.Decorate(tooltip, link)
     if t0 then Perf.Note("tooltipUsedBy", debugprofilestop() - t0) end

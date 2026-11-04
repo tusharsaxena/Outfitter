@@ -32,6 +32,7 @@ local Inv = {}
 NS.Inventory = Inv
 
 local Compat = NS.Compat
+local Perf = NS.Perf
 
 local SYNC_DELAY = 0.01   -- the legacy RescheduleTask(0.01, Synchronize)
 
@@ -372,7 +373,6 @@ end
 --- @return boolean equippedChanged
 --- @return boolean bagsChanged
 function Inv.Sync()
-    local Perf = NS.Perf
     local t0 = Perf.on and debugprofilestop()
     local worn = syncWorn()
     local bags = Inv.BagIDs()
