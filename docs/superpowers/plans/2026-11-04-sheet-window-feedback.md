@@ -20,6 +20,7 @@
 - New strings go through `L[...]` in `locales/enUS.lua` (addons) or `lib.STRINGS` (library). The brand is never localized.
 - No secure frame is anchored, re-parented or shown/hidden in combat (`modules/Dock.lua` header, `docs/taint.md`). Flyout and sheet changes are `hooksecurefunc` post-hooks and plain frames only.
 - Re-vendor from the **tag**, never untagged master (`tests/test_vendor_sync.lua`).
+- Blizzard UI symbols are verified against `Gethe/wow-ui-source` (`live`), cited `wow-ui-source@<sha>:path:line`; this plan's citations are at `297d7aa`. Shallow-clone it into the session scratchpad to check any other symbol.
 
 ## Review Focus
 
@@ -118,7 +119,7 @@ Source to lift: `QuickComms/settings/IconBrowser.lua` (824), `IconBrowser_Source
 - Test: `tests/test_sheet.lua` (SUITES), mocks for `EUI_CharSheet_Equipment`, `CharacterFrameBgbg`, `PaperDollSidebarTab3` in `tests/wow_mock.lua`
 
 **Interfaces:**
-- Produces: `NS.Sheet.Kind() -> "stock"|"eui"|"chonky"` (re-evaluated on each sheet show); `NS.Sheet.Frame() -> frame` (the visible sheet: `CharacterFrame` for stock and EUI, `CharacterFrameBgbg` for Chonky); `NS.Sheet.ButtonAnchor() -> point, relFrame, relPoint, x, y, size` (stock/Chonky: `"LEFT", PaperDollSidebarTab3, "RIGHT", 4, 0`, size from `PaperDollSidebarTab3:GetSize()`; EUI: `"LEFT", EUI_CharSheet_Equipment, "RIGHT", 2, 0`, 20); `NS.Sheet.DockRight() -> x, top` (the right edge of the sheet or of the rightmost shown Chonky side panel among `ccsf_af`, `ccsm_af`, `ccsrf_af`, `ccsgf_af`; the sheet's top).
+- Produces: `NS.Sheet.Kind() -> "stock"|"eui"|"chonky"` (re-evaluated on each sheet show); `NS.Sheet.Frame() -> frame` (the visible sheet: `CharacterFrame` for stock and EUI, `CharacterFrameBgbg` for Chonky); `NS.Sheet.ButtonAnchor() -> point, relFrame, relPoint, x, y, size` (stock/Chonky: `"LEFT", PaperDollSidebarTab3, "RIGHT", 4, 0`, size from `PaperDollSidebarTab3:GetSize()` — 33×35 from `PaperDollSidebarTabTemplate`; Tab3 sits at `PaperDollSidebarTabs` BOTTOMRIGHT -30,0, leaving 30 px, so the button overhangs the 168-px container by ~7 px, `wow-ui-source@297d7aa:Interface/AddOns/Blizzard_UIPanels_Game/Mainline/PaperDollFrame.xml:475-503`; EUI: `"LEFT", EUI_CharSheet_Equipment, "RIGHT", 2, 0`, 20); `NS.Sheet.DockRight() -> x, top` (the right edge of the sheet or of the rightmost shown Chonky side panel among `ccsf_af`, `ccsm_af`, `ccsrf_af`, `ccsgf_af`; the sheet's top).
 - Detection: EUI = `IsAddOnLoaded("EllesmereUIBlizzardSkin")` and `_G.EUI_CharSheet_Equipment` exists and is shown; Chonky = `IsAddOnLoaded("ChonkyCharacterSheet")` and `_G.CharacterFrameBgbg` exists and is shown. Otherwise stock.
 
 - [ ] **Step 1:** Failing tests: `sheet: stock by default`; `sheet: EllesmereUI with its equipment tab shown is eui`; `sheet: EllesmereUI loaded with the blizzard style resolves to stock` (addon loaded, no `EUI_CharSheet_Equipment`); `sheet: Chonky with its backdrop shown is chonky`; `sheet: Chonky skipped its setup (backdrop hidden) resolves to stock`; `sheet: DockRight takes the rightmost shown Chonky side panel`.
@@ -157,7 +158,7 @@ Source to lift: `QuickComms/settings/IconBrowser.lua` (824), `IconBrowser_Source
 
 Layout (row 228×18): worn checkbox 16 at LEFT +14; outfit icon 16 at LEFT +32; EM icon 16 at LEFT +50; name LEFT +68 → RIGHT -38; lightning 12 at RIGHT -22 (a `Mark`, no border); gear 14 at RIGHT -4 (`ph:gear-six`, borderless button, opens `NS.OutfitMenu.Open`).
 
-The EM icon is a Button (not a CheckButton) whose texture is `PAPERDOLL_SIDEBARS[3].icon` with `.texCoords`, read at run time; alpha 1 when `NS.Outfits.IsEM(id)`, else 0.35; its click runs the existing `onEmClick` logic with the toggled state.
+The EM icon is a Button (not a CheckButton) whose texture is `PAPERDOLL_SIDEBARS[3].icon` with `.texCoords`, read at run time (`wow-ui-source@297d7aa:Interface/AddOns/Blizzard_UIPanels_Game/Mainline/PaperDollFrame.lua:97-100`: `Interface\PaperDollInfoFrame\PaperDollSidebarTabs`, `{0.015625, 0.53125, 0.46875, 0.60546875}`); alpha 1 when `NS.Outfits.IsEM(id)`, else 0.35; its click runs the existing `onEmClick` logic with the toggled state.
 
 - [ ] **Step 1:** Failing tests: `rows: an outfit row shows worn, icon, EM mark, name in that order` (x offsets as above); `rows: the EM mark is full for an EM outfit and dimmed otherwise`; `rows: clicking the dimmed EM mark stores the outfit on the server, as the checkbox did`; `rows: clicking the EM mark in combat refuses and changes nothing`; `rows: the menu control is a borderless gear that opens the outfit menu`; `rows: the lightning has no border`.
 - [ ] **Step 2:** Run → FAIL.
@@ -199,10 +200,29 @@ The EM icon is a Button (not a CheckButton) whose texture is `PAPERDOLL_SIDEBARS
 Columns: LEFT = Head, Neck, Shoulder, Back, Chest, Shirt, Tabard, Wrist. RIGHT = Hands, Waist, Legs, Feet, Finger0, Finger1, Trinket0, Trinket1 (fixes today's `RIGHT_SIDE`, which misses Hands–Feet). BOTTOM = MainHand, SecondaryHand.
 
 - Boxes 14×14. LEFT column: `TOPRIGHT` of the slot (+2, +2). RIGHT column: `TOPLEFT` (-2, +2). BOTTOM: `TOPRIGHT`.
-- Drawer, **only while `NS.Dock.IsShown()`** and not stood down: `hooksecurefunc("EquipmentFlyout_Show", fn)` re-anchors `EquipmentFlyoutFrame.buttonFrame` to open left of a LEFT-column slot (`TOPRIGHT` of buttonFrame → slot `TOPLEFT`) and right of a RIGHT-column slot (Blizzard's default side for that column already opens right, so verify and leave it if equal); `hooksecurefunc("PaperDollItemSlotButton_Update", fn)` moves a LEFT-column slot's `popoutButton` to the slot's LEFT edge with mirrored texcoords. When the window hides, restore Blizzard's anchors (call the slot's own `PaperDollItemSlotButton_Update` path or re-apply the stock points recorded at first move). BOTTOM untouched. Never in combat lockdown.
-  - The FrameXML names above are from memory (no FrameXML on disk); each hook is guarded by `type(_G[name]) == "function"` and the mock grows the same names. CP4 confirms them in the client.
+- Drawer, **only while `NS.Dock.IsShown()`** and not stood down, LEFT column only. Verified at
+  `wow-ui-source@297d7aa` (`live`): the right column already has its arrow on the slot's right
+  (`Blizzard_UIPanels_Game/Mainline/PaperDollFrame.lua:1527-1532`, `LEFT` → slot `RIGHT` -8,0) and opens
+  right (`Blizzard_FrameXML/EquipmentFlyout.lua:339`), so it needs nothing.
+  - **Arrow**: Blizzard anchors `slot.popoutButton` once, in `PaperDollItemSlotButton_OnLoad`
+    (`PaperDollFrame.lua:1515-1534`); nothing re-anchors it later. On window show (out of combat),
+    re-anchor each LEFT-column arrow `RIGHT` → slot `LEFT` +8,0 and mirror its texcoords; on window hide
+    or stand-down, restore Blizzard's exact `LEFT` → slot `RIGHT` -8,0 and its unreversed texcoords
+    (`:1529-1532`).
+  - **Arrow direction**: `hooksecurefunc("EquipmentFlyoutPopoutButton_SetReversed", fn)`
+    (`EquipmentFlyout.lua:633-651`): for a LEFT-column arrow while active, apply the mirrored pair of
+    the coords Blizzard just set.
+  - **Flyout**: placement happens in `EquipmentFlyout_UpdateItems`, not `_Show`
+    (`EquipmentFlyout.lua:238-339`): `flyout.buttonFrame` is anchored `TOPLEFT` → `relativeAnchor`
+    (`itemButton.popoutButton or itemButton`) `TOPRIGHT` + (`anchorX`, `anchorY`) from
+    `PaperDollItemsFrame.flyoutSettings` (`PaperDollFrame.lua:343-354`: 0, -3). Post-hook
+    `EquipmentFlyout_UpdateItems`: when `EquipmentFlyoutFrame.button` is a LEFT-column slot and the
+    window is shown, `buttonFrame:ClearAllPoints()` and anchor `TOPRIGHT` → `relativeAnchor` `TOPLEFT`
+    (-anchorX, anchorY). The background textures hang off `buttonFrame`, so they follow.
+  - Blizzard's `flyoutSettings` table is never written. BOTTOM untouched. Never in combat lockdown.
+  - Each hook is guarded by `type(_G[name]) == "function"`; the mock grows the same names.
 
-- [ ] **Step 1:** Failing tests: `slots: boxes are 14 px`; `slots: Hands is in the right column and its box is top-left`; `slots: Head's box is top-right`; `drawer: with the window open a left-column flyout opens left`; `drawer: with the window closed the flyout keeps Blizzard's anchors`; `drawer: closing the window restores the left-column arrows`; `drawer: stood down nothing is moved`; `drawer: a missing Blizzard function installs nothing and errors nothing`.
+- [ ] **Step 1:** Failing tests: `slots: boxes are 14 px`; `slots: Hands is in the right column and its box is top-left`; `slots: Head's box is top-right`; `drawer: with the window open a left-column flyout's buttonFrame is anchored TOPRIGHT to the arrow's TOPLEFT`; `drawer: a right-column flyout is left alone`; `drawer: SetReversed on a left-column arrow mirrors its coords`; `drawer: with the window closed the flyout keeps Blizzard's anchors`; `drawer: closing the window restores the left-column arrows`; `drawer: stood down nothing is moved`; `drawer: a missing Blizzard function installs nothing and errors nothing`.
 - [ ] **Step 2:** FAIL. **Step 3:** Implement. **Step 4:** PASS.
 - [ ] **Step 5:** Commit `Slots: smaller boxes on the inner corner; the drawer opens outward while the window is open`.
 
