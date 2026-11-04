@@ -493,7 +493,7 @@ test("binder: the binder holds no binding and dispatches nothing until the first
     -- red under: an unconditional B.BindAll() in B.Resume (modules/Triggers_Binder.lua).
     assertFalse(NS.TriggerBinder.IsBound(id), "bound before the first LoadPass")
     assertEqual(log(st), "", "a verdict was applied before the first LoadPass")
-    -- `/of auto on` before it records the wish (the setting) and lets the LoadPass bind.
+    -- `/or auto on` before it records the wish (the setting) and lets the LoadPass bind.
     assertTrue(NS.SetByPath("auto.enabled", false))
     assertTrue(NS.SetByPath("auto.enabled", true))
     M.__fireTimers()

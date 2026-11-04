@@ -29,7 +29,7 @@ test("perf: the descriptor declares the ten buckets in order, the SavedVariable 
     assertEqual(table.concat(keys, ","), table.concat(BUCKETS, ","))
     assertEqual(d.sv, "OutfitterRebornPerfDB")
     assertEqual(d.name, "OutfitterReborn")
-    assertEqual(d.slash, "/of")
+    assertEqual(d.slash, "/or")
     assertTrue(d.lifecycle == NS.lifecycle, "the harness holds a latch other than NS.lifecycle")
     assertNil(d.suspend, "a second teardown path beside the latch (performance-§6)")
     assertNil(d.resume, "a second stand-up path beside the latch (performance-§6)")
@@ -330,7 +330,7 @@ test("perf: the disabled hold outlasts the perf hold, and its refusal wins", fun
     NS.ApplyEnabled(false)
     assertTrue(NS.IsDisabled())
     assertEqual(NS.StoodDownRefusal(),
-        "Ka0s Outfitter Reborn is disabled \226\128\148 enable it with |cFFFFFF00/of enable|r",
+        "Ka0s Outfitter Reborn is disabled \226\128\148 enable it with |cFFFFFF00/or enable|r",
         "the capture line answered while the addon is disabled")
     assertTrue(NS.Perf.Resume())
     assertTrue(NS.IsStoodDown(), "releasing perf stood a disabled addon up")

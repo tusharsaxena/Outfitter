@@ -173,7 +173,7 @@ local S = SchemaLib:New({
     print        = function(line) NS.Print(line) end,
     resetExempt  = RESET_EXEMPT,
     -- options-ui-§1 route (a): on a load where the Master-controls composer is hollow, the host
-    -- verbs that write these rows still land (`/of enable`, `/of lock`, `/of auto on`).
+    -- verbs that write these rows still land (`/or enable`, `/or lock`, `/or auto on`).
     writeThrough = { "enabled", "locked", "auto.enabled" },
 })
 NS.SchemaRuntime = S

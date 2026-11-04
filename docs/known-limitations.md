@@ -26,7 +26,7 @@ open issues (§14); a row here leaves when its check passes or its owner rules.
   `OutfitterReborn.API.v1`.
 - **No Custom scripts** (R3). An outfit with a hand-written script has no equivalent; the shipped
   triggers cover every preset.
-- **Automatic changes are per profile** (O35): on the shared Default profile, `/of auto off` affects
+- **Automatic changes are per profile** (O35): on the shared Default profile, `/or auto off` affects
   every character on it.
 - **Smart unequip forgets across `/reload`** (O9): a trigger that equipped an outfit before a reload
   will not remove it after one, because "did equip" is runtime state.
@@ -36,8 +36,9 @@ open issues (§14); a row here leaves when its check passes or its owner rules.
 
 - If the old Outfitter is also loaded, both change gear: the addon warns once at login and does not
   hold its triggers (O2, owner ruling). Disable the old one.
-- `/outfitter` goes to whichever addon registered it last; `/of` is unambiguous.
-- `/of` itself has not been checked against other common addons (O3).
+- The old addon keeps `/outfitter`; this one answers only to `/or` and `/outfitterreborn`, so the two
+  never compete for a command.
+- `/or` itself has not been checked against other common addons (O3).
 
 ## Not covered
 
@@ -63,13 +64,13 @@ Each is a row in [smoke-tests.md](smoke-tests.md) with its pass criterion.
 | O5 | Find Fish tracking is spellID 43308 in `C_Minimap.GetTrackingInfo` | Texture 133888 |
 | O7 | `Category-enUS: Inventory` is accepted | `Misc` |
 | O8 | `ToggleCharacter` from an insecure CLICK binding works in combat | The "opens when combat ends" line |
-| O10 | Spec triggers on `ACTIVE_PLAYER_SPECIALIZATION_CHANGED` | A rejection shows in `/of diagnostics` |
+| O10 | Spec triggers on `ACTIVE_PLAYER_SPECIALIZATION_CHANGED` | A rejection shows in `/or diagnostics` |
 | O11 | No `ADDON_ACTION_BLOCKED` from the window or its rows out of combat | — |
 | O17 | The item, uniqueness, account-bound, usability, stats, Azerite and bank-container APIs on 12.x | A tooltip or ladder fallback per API |
 | O18 | `EQUIPMENT_SETS_CHANGED` timing inside a save | Widen the ignore window, or match the set id |
 | O22 | The lockpicking line's composed GlobalString | `L["Requires Lockpicking"]` (row D4) |
 | O23 | `ChangeActionBarPage` in combat (Fishing) | Skipped in lockdown, retried on regen |
-| O27 | Druid and rogue form spell IDs | A forms dump under `/of debug` |
+| O27 | Druid and rogue form spell IDs | A forms dump under `/or debug` |
 | O29 | The sheet button beside the close button does not overlap | Move it |
 | O31 | The window title fits 260 px | Shorten it |
 | O34 | The Equipment Sets tooltip line | Suppression through `AddLinePreCall` |

@@ -3,7 +3,7 @@
 How Ka0s Outfitter Reborn is configured (documentation-§3, Tier 1; options-ui). The panel is
 LibKa0s-Options, built from the rows in `NS.Schema`; categories are registered eagerly at
 `OnInitialize` and page bodies are built on first open (options-ui-§1, §5). It is reached from the
-game's **Settings → AddOns → Ka0s Outfitter Reborn**, from `/of config`, and from a left-click on
+game's **Settings → AddOns → Ka0s Outfitter Reborn**, from `/or config`, and from a left-click on
 the minimap button.
 
 The options stay in the addon: three subcategories, below options-ui-§4's five-subpanel threshold, so
@@ -61,7 +61,7 @@ rows, so the reset's session sweep reaches them (design §3.6).
 | *(last, no heading)* | act | button | Delete all outfits… (`NS.Popups.ShowDeleteAll()`) |
 
 `auto.enabled` has no `onChange`: the trigger binder's `SETTINGS_CHANGED` handler is the one route,
-so the panel, `/of auto`, the key bindings and a profile change all reach it the same way.
+so the panel, `/or auto`, the key bindings and a profile change all reach it the same way.
 `quickSlots.enabled` reacts with `NS.QuickSlots.SetEnabled(v)`. The act is drawn by
 `NS.GENERAL_AFTER_GROUP["Behavior"]`, after the tab's last row (options-ui-§7).
 
@@ -79,7 +79,7 @@ themselves.
 
 `H.AppearanceTab({ owner = addonName, get = NS.SkinChoice, set = NS.WriteSkinChoice })`, the
 library's tab, which draws every row itself. The eight rows stay schema rows with `skipRender`, so
-the defaults resolve, every reset reaches them and `/of set skin.skin` validates:
+the defaults resolve, every reset reaches them and `/or set skin.skin` validates:
 
 | Path | Default |
 |---|---|

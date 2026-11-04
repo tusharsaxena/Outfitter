@@ -12,14 +12,14 @@ each line is `superpowers/specs/2026-11-03-outfitter-feature-inventory.md` (INV)
   Which slots an outfit owns is set with the checkboxes beside each slot on the character sheet: a
   slot can be used, unused, or required to be empty.
 - **Wearing.** By hand from the outfit window docked to the character sheet, from the outfit bar,
-  from ten "Wear outfit N" key bindings, and from `/of wear`, `unwear`, `toggle` and `update`, each
-  of which also accepts macro conditionals (`/of wear [spec:1] Tank; DPS`).
+  from ten "Wear outfit N" key bindings, and from `/or wear`, `unwear`, `toggle` and `update`, each
+  of which also accepts macro conditionals (`/or wear [spec:1] Tank; DPS`).
 - **Native triggers.** 77 shipped triggers wear and remove an outfit automatically: the
   gathering professions, fishing, cooking, lockpicking, riding, swimming, falling, resting, dining,
   druid forms, rogue stealth, ghost wolf, a spec, a dungeon or a difficulty, a buff, a target, PvP
   flagging, a battleground or arena by map (every one in the game, by instance map ID), a list of
   zones, quest phases, pet battles and more. Each takes typed parameters the player sets in a dialog.
-  `/of auto on|off` and two key bindings turn automatic changes on and off.
+  `/or auto on|off` and two key bindings turn automatic changes on and off.
 - **The stack.** Worn outfits form a stack, so removing an Accessory or leaving a battleground puts
   back what was worn before, including across `/reload`. Shapeshift outfits sit in a layer of their
   own.
@@ -50,7 +50,7 @@ each line is `superpowers/specs/2026-11-03-outfitter-feature-inventory.md` (INV)
 - **No free-floating window.** The outfit window is docked to the character sheet and follows it; it
   has no saved position and hides for the length of combat (D2, O4).
 - **No quick-switch minimap menu.** The minimap button is the standard Ka0s launcher; quick switching
-  lives on the bar, the window, the bindings and `/of wear` (H6).
+  lives on the bar, the window, the bindings and `/or wear` (H6).
 - **No simulator.** Nothing simulates a fight or a zone change for preview (H18). Test mode fills the
   outfit bar with sample outfits and nothing else (H17).
 - **Nothing Blizzard took away.** Void storage, TankPoints, gem capture, the spellbook half of the

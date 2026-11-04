@@ -37,15 +37,15 @@ the window's follow tick exists only while the window is shown. The poll's cost 
 
 ## Taking a capture
 
-All in game, through the reserved `perf` verb (`/of perf help` lists the words):
+All in game, through the reserved `perf` verb (`/or perf help` lists the words):
 
-- `/of perf start [label]`: begin a run; records who and where you are.
-- `/of perf measure a`: arm experiment A, the addon active. It records only while combat lasts.
+- `/or perf start [label]`: begin a run; records who and where you are.
+- `/or perf measure a`: arm experiment A, the addon active. It records only while combat lasts.
 - Fight, then leave combat.
-- `/of perf measure b`: arm experiment B, the same with the addon suspended through the latch's
+- `/or perf measure b`: arm experiment B, the same with the addon suspended through the latch's
   `perf` hold.
 - Fight the same way for about as long, then leave combat.
-- `/of perf finish`, `/reload`, then `/of perf report`: prints the summary and the one JSON line.
+- `/or perf finish`, `/reload`, then `/or perf report`: prints the summary and the one JSON line.
 
 Run both arms back to back, in the same place, with the same outfits and triggers. While suspended the
 addon is inert: every registration is dropped, and its feature verbs refuse.

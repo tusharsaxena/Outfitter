@@ -25,7 +25,7 @@ local _, NS = ...
 -- outfit changed, and a TAG moves an already-worn outfit to a layer.
 --
 -- ONE ROUTE FOR auto.enabled. The binder's own SETTINGS_CHANGED handler is how every writer (the
--- panel, /of auto, the AutoOn/AutoOff bindings) reaches SetActive; a profile change reaches it through
+-- panel, /or auto, the AutoOn/AutoOff bindings) reaches SetActive; a profile change reaches it through
 -- PROFILE_CHANGED, re-read from the new profile. A loaded legacy Outfitter does not hold binding (O2:
 -- warn only).
 --
@@ -43,7 +43,7 @@ local L, Perf = NS.L, NS.Perf
 local TRIGGER = "trigger"
 local TOOLTIP_KEY = "TOOLTIP"
 
---- Event names SafeRegisterEvent refused (listed in /of diagnostics).
+--- Event names SafeRegisterEvent refused (listed in /or diagnostics).
 B.rejected = {}
 --- [outfitId .. ":" .. triggerId] = the error text: bindings switched off for this session.
 B.faulted = {}

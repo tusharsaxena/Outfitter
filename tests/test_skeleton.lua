@@ -4,7 +4,7 @@
 -- 5.1, and every literal debug tag the code writes is in docs/debug.md's register. The slash case
 -- is tests/test_slash.lua's (P3 C12). P4.27 adds the login: every module the latch walks has landed
 -- and the login resumes each one, and the legacy guard (design §4.7) warns once and flags the state
--- for /of diagnostics. It sends nothing on the bus: LEGACY_DETECTED had no receiver and was dropped.
+-- for /or diagnostics. It sends nothing on the bus: LEGACY_DETECTED had no receiver and was dropped.
 
 local T = _G.OUTFITTERREBORN_TEST
 local NS = T.NS
@@ -16,8 +16,8 @@ test("skeleton: the addon registers with AceAddon under its folder name", functi
     assertEqual(NS.addon, NS)
     assertEqual(NS.name, "OutfitterReborn")
     assertEqual(NS.BRAND, "Ka0s Outfitter Reborn")
-    assertEqual(NS.SLASH, "/of")
-    assertEqual(NS.SLASH_LONG, "/outfitter")
+    assertEqual(NS.SLASH, "/or")
+    assertEqual(NS.SLASH_LONG, "/outfitterreborn")
     assertEqual(NS.version, "1.1.0")
 end)
 
@@ -260,7 +260,7 @@ local function legacyLogin(opts)
     return ns, M
 end
 
-local LEGACY_LINE = "The old Outfitter addon is also loaded. Disable it: both change your gear and both own /outfitter."
+local LEGACY_LINE = "The old Outfitter addon is also loaded. Disable it: both change your gear."
 
 local function legacyLines(M)
     local n = 0
@@ -284,7 +284,7 @@ test("skeleton: a loaded legacy Outfitter is warned once and flagged, and the Lo
     assertTrue(ns.TriggerBinder.IsActive(), "the legacy guard held the trigger binder")
 end)
 
-test("skeleton: a disabled login flags the legacy addon for /of diagnostics and prints nothing", function()
+test("skeleton: a disabled login flags the legacy addon for /or diagnostics and prints nothing", function()
     -- red under: a checkLegacy that prints before its NS.IsStoodDown() read.
     local ns, M = legacyLogin({ disabled = true })
     assertTrue(ns.State.legacyLoaded, "the flag is set while stood down too")

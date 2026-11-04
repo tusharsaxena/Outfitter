@@ -66,7 +66,7 @@ local descriptor = {
 }
 
 -- ── The global reset (options-ui-§12, design §3.6) ───────────────────────────────────────────────
--- One act with three entry points: General's Reset all settings, `/of resetall` and the Profiles
+-- One act with three entry points: General's Reset all settings, `/or resetall` and the Profiles
 -- page's Reset Profile. options-ui-§12's one wording, verbatim: outfits are per character, so the
 -- profile is all the popup speaks of.
 StaticPopupDialogs["OUTFITTERREBORN_RESET_ALL"] = {
@@ -84,7 +84,7 @@ StaticPopupDialogs["OUTFITTERREBORN_RESET_ALL"] = {
     end,
 }
 
---- `Reset all settings` and `/of resetall` both ask first, through this one popup.
+--- `Reset all settings` and `/or resetall` both ask first, through this one popup.
 function NS.ShowResetAll()
     return StaticPopup_Show("OUTFITTERREBORN_RESET_ALL")
 end
@@ -163,7 +163,7 @@ if not lib then
     -- HideSkinPicker is a no-op.
     Helpers.SkinPicker     = function() return nil end
     Helpers.HideSkinPicker = function() end
-    -- The reserved `/of skin` verb (OptionsSkinPicker minor 3): no picker without the library, so it
+    -- The reserved `/or skin` verb (OptionsSkinPicker minor 3): no picker without the library, so it
     -- answers nil, "absent" and NS.RunSkinVerb prints the library-absent line.
     Helpers.SkinVerb       = function() return nil, "absent" end
     Helpers.SkinNotice = function() return nil, "unavailable" end

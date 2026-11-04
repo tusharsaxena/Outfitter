@@ -42,7 +42,7 @@ end
 
 -- ── the degraded load, and the seams that landed before C14 ──────────────────────────────────
 
-test("parity: the degraded load still initializes, enables and answers /of version", function()
+test("parity: the degraded load still initializes, enables and answers /or version", function()
     -- red under: any stub above that raises at load or in OnInitialize (the instance never gets a db)
     local _, d = pair()
     assertNil(d.mocks.LibStub("LibKa0s-Core-1.0", true), "the library is not absent")
@@ -52,7 +52,7 @@ test("parity: the degraded load still initializes, enables and answers /of versi
     d.mocks.__resetPrinted()
     d.NS.Slash:OnSlash("version")
     local said = table.concat(d.mocks.__printed(), "\n")
-    assertTrue(said:find("1.1.0", 1, true) ~= nil, "/of version answered: " .. said)
+    assertTrue(said:find("1.1.0", 1, true) ~= nil, "/or version answered: " .. said)
 end)
 
 --- Form two against an INSTANCE: the stub mirrors what `lib:New(descriptor)` returned, so the

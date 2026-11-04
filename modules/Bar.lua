@@ -15,7 +15,7 @@ local _, NS = ...
 -- `profile.windows.bar` (design §3.4), the storage of the `bar.position` row (settings/OutfitBar.lua),
 -- and its one writer is that row's set through NS.SetByPath (architecture-§5): SavePosition on a drag
 -- stop (the nearest screen corner, in screen pixels, divided by the effective scale on the way back,
--- as legacy stored it), `/of set|reset bar.position` and Reset position (NS.ApplyDefault). The set
+-- as legacy stored it), `/or set|reset bar.position` and Reset position (NS.ApplyDefault). The set
 -- decodes into a new table each time, so a reset COPIES the default (legacy aliased it, so a reset
 -- after a drag could do nothing: OutfitterBar.lua:107-115).
 --

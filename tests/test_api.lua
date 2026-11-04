@@ -387,7 +387,7 @@ test("api: the allow-list scan catches a legacy global and passes an allowed one
     assertFalse(allowed("OUTFITTERREBORN_DELETE_ALL", {}), "a popup lives in StaticPopupDialogs, not _G")
     assertTrue(allowed("OutfitterRebornWearOutfit3", { GetObjectType = function() return "Button" end }))
     assertTrue(allowed("BINDING_NAME_CLICK OutfitterRebornWearOutfit3:LeftButton", "Wear outfit 3"))
-    assertTrue(allowed("SLASH_OUTFITTERREBORN1", "/of"))
+    assertTrue(allowed("SLASH_OUTFITTERREBORN1", "/or"))
     assertFalse(allowed("LibKa0sSkinPickerOutfitterReborn1", function() end), "a function under the picker's name")
     local planted = {}
     planted.Outfitter_FindOutfitByName = function() end

@@ -335,13 +335,13 @@ test("skin seam: a choice written through the seam is stored and worn", function
     assertEqual(select(2, Skin:GetChoice(OWNER)), "obsidian", "the row's onChange applied it")
 end)
 
-test("skin seam: /of skin without the library prints the library-absent line", function()
+test("skin seam: /or skin without the library prints the library-absent line", function()
     local NS = T.load({ libFiles = {} }).NS
     local said
     NS.Print = function(line) said = line end
     local win, why = NS.RunSkinVerb()
     assertEqual(win, nil); assertEqual(why, "absent")
-    assertEqual(said, "/of skin is unavailable: the LibKa0s library did not load.")
+    assertEqual(said, "/or skin is unavailable: the LibKa0s library did not load.")
 end)
 
 -- ── without the library ──────────────────────────────────────────────────────────────────────────

@@ -16,7 +16,7 @@ The design behind it is `superpowers/specs/2026-11-03-design.md`, §5 and §6.
 2. **`OnInitialize`** (`ADDON_LOADED`): `InitDB` (AceDB on the shared "Default" profile, the three
    profile callbacks), `RunMigrations`, `ApplySkinChoice`, `SyncEnabledHold` (so a disabled login
    registers nothing), `NS.Launcher:Register()`, `CreateOptionsPanel()` (eager categories, lazy
-   bodies) and `NS.Slash:Register()` (`/of`, `/outfitter`).
+   bodies) and `NS.Slash:Register()` (`/or`, `/outfitterreborn`).
 3. **`OnEnable`** (`PLAYER_LOGIN`, `core/OutfitterReborn.lua`): the legacy guard first (a loaded
    original Outfitter sets `NS.State.legacyLoaded` and, standing up, prints one warning; warn only, no
    hold). Stood down, it stops there. Standing up, it calls the latch's own stand-up, `NS.StandUp()`
@@ -24,7 +24,7 @@ The design behind it is `superpowers/specs/2026-11-03-design.md`, §5 and §6.
    `NS.RegisterGameEvents()` (the host owns no game event; every one is a module's), then every
    module in `NS.LIFECYCLE_MODULES` resumed bottom to top (a name with no module table, or one
    without `Resume`, is skipped), so PlayerState, Inventory and the stack are up before the binder
-   wears through them. The binder's resume installs its receivers only: it binds nothing until the first LoadPass has run (`/of auto on` before it records the setting and lets the
+   wears through them. The binder's resume installs its receivers only: it binds nothing until the first LoadPass has run (`/or auto on` before it records the setting and lets the
    LoadPass bind). Last, the first-run skin picker's 2 s AceTimer. Nothing is dispatched on the bus
    before this and the first LoadPass.
 4. **First `PLAYER_ENTERING_WORLD`**: a 1 s AceTimer runs `NS.Outfits.LoadPass()`, which seeds
@@ -35,7 +35,7 @@ The design behind it is `superpowers/specs/2026-11-03-design.md`, §5 and §6.
 
 ## The settings write seam
 
-Every settings write, from the panel, `/of set`, a key binding or a reset, goes through
+Every settings write, from the panel, `/or set`, a key binding or a reset, goes through
 `NS.SetByPath(path, value)` (`settings/Schema.lua`): validate → store under the row's root →
 the row's `onChange` → one `SETTINGS_CHANGED (path, value)` on the bus. A `instanceId` argument
 forwards the same call to `NS.OutfitSchema`, whose announce calls `NS.Outfits.Changed(id, what)` and
@@ -116,7 +116,7 @@ through `tools/gen-zones.lua`, never from memory.
 
 Every game event is registered through `NS.SafeRegisterEvent` (or `NS.SafeRegisterUnitEvent` for a
 player-only unit event), on the owning module's own target, in its `Resume()`, and dropped by its
-`Suspend()`. A name the client rejects lands in `NS.rejectedEvents` and `/of diagnostics`.
+`Suspend()`. A name the client rejects lands in `NS.rejectedEvents` and `/or diagnostics`.
 
 | Module | Events |
 |---|---|

@@ -12,7 +12,7 @@ local lib = LibStub and LibStub("LibKa0s-DebugLog-1.0", true)
 
 if not lib then
     -- Degrade, never error. Every member the addon calls, and SetEnabled still flips OUR flag and
-    -- still acknowledges, because a player who types `/of debug on` must not be told nothing. What
+    -- still acknowledges, because a player who types `/or debug on` must not be told nothing. What
     -- is lost is the window, said once.
     local missing = NS.LIBKA0S_MISSING .. ", so the debug console window is unavailable."
     local announced = false
@@ -101,7 +101,7 @@ NS.DebugLog = lib:New({
             S(NS.version), S(schema), S(profile), S(n), S(m))
     end,
 
-    -- So a console opened by `/of debug` moves the checkbox on an already-open options panel.
+    -- So a console opened by `/or debug` moves the checkbox on an already-open options panel.
     -- NS.Helpers lands with settings/OptionsSetup.lua, after this file: resolved at call time.
     onVisibilityChanged = function()
         local H = NS.Helpers

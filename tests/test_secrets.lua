@@ -7,7 +7,7 @@
 -- outside the compat family, core/Secrets.lua and modules/States.lua. The states part lives in
 -- tests/test_secrets_states.lua (P4.14: PlayerIsFull, the aura scan, prevMana). The engine cases,
 -- final at P4.27, run on the whole login: a secret bag or worn link is an empty slot, a secret
--- UnitLevel lets an item through, the tooltip, compare, quick-slot and `/of iteminfo` paths refuse a
+-- UnitLevel lets an item through, the tooltip, compare, quick-slot and `/or iteminfo` paths refuse a
 -- secret link quietly, and the Equip count is balanced after a raise.
 
 local T = _G.OUTFITTERREBORN_TEST
@@ -833,7 +833,7 @@ test("secrets engine: a secret player level lets an item through the live stats"
     end)
 end)
 
-test("secrets engine: tooltip, compare, quick slots and /of iteminfo refuse a secret link quietly", function()
+test("secrets engine: tooltip, compare, quick slots and /or iteminfo refuse a secret link quietly", function()
     -- red under: a Secrets.PlainString in core/Secrets.lua without its IsSealed test (the secret link
     -- reaches the used-by, compare, quick-slot and iteminfo string work and raises). Each tooltip half
     -- has a plain-link control first, so its silence on the secret link is the guard, not an empty

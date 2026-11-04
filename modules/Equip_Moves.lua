@@ -1,6 +1,6 @@
 local _, NS = ...
 -- modules/Equip_Moves.lua — NS.Moves: pickup, a move to an empty bag slot, the empty-slot lists and
--- /of unequip (design §5.11; OutfitterEquipment.lua:711-797, Outfitter.lua:2119-2147, 4099-4195 at
+-- /or unequip (design §5.11; OutfitterEquipment.lua:711-797, Outfitter.lua:2119-2147, 4099-4195 at
 -- 7ea3dc3).
 --
 -- A LOCATION is a bag slot `{ bag, slot }` or an equipment slot `{ slotID, slotName }` (the infos'
@@ -128,7 +128,7 @@ local function slotFor(arg)
     return nil
 end
 
---- /of unequip: move one worn item, named or by slot number, into the bags. On a name or slot that
+--- /or unequip: move one worn item, named or by slot number, into the bags. On a name or slot that
 --- holds nothing, prints `"Couldn't find an item named %s"` and RETURNS (the legacy function went
 --- on to pick up nothing; INV §4, §19). A full bag prints ToEmpty's line.
 --- @param arg string

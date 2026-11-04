@@ -103,7 +103,7 @@ the diagnostics sections.
 | `modules/OutfitStack_Watch.lua` | The inventory watch: the temporary outfit, window-open recording and `SWAP_COMPLETE` (extends `NS.Stack`) |
 | `modules/Equip.lua` | `NS.Equip`: the bracket that cannot strand, its gates, execution and the muted SFX |
 | `modules/Equip_Changes.lua` | `NS.Changes`: the pure change-list builder, unique-equip order and the optimize rules |
-| `modules/Equip_Moves.lua` | `NS.Moves`: pickup, a move to an empty bag slot, the empty-slot lists and `/of unequip` |
+| `modules/Equip_Moves.lua` | `NS.Moves`: pickup, a move to an empty bag slot, the empty-slot lists and `/or unequip` |
 | `modules/EquipmentManager.lua` | `NS.EM`: the Blizzard Equipment Manager mirror |
 | `modules/Bank.lua` | `NS.Bank`: deposit, withdraw and the missing-items report |
 | `modules/ItemStats.lua` | `NS.Stats`: the stats the optimizer scores items by |
@@ -125,7 +125,7 @@ the diagnostics sections.
 | `modules/Triggers.lua` | `NS.Triggers`: the trigger registry, the `PSEUDO` table and the schema rows |
 | `modules/Triggers_Binder.lua` | `NS.TriggerBinder`: bind, unbind, dispatch and apply |
 | `modules/States.lua` | `NS.States`: auras, forms, the 0.5 s mounted and swimming poll, Dining, Spirit and the tooltip hooks |
-| `modules/States_Zone.lua` | The zone producer, its derived tables and `/of zone`'s zone half |
+| `modules/States_Zone.lua` | The zone producer, its derived tables and `/or zone`'s zone half |
 
 **UI, API and diagnostics**
 
@@ -155,7 +155,7 @@ the diagnostics sections.
 | `modules/QuickSlots_Sort.lua` | The flyout's upgrade-track sort (extends `NS.QuickSlots`) |
 | `modules/Preview.lua` | `NS.Preview`: test mode |
 | `modules/Api.lua` | The public API, `NS.API.v1`, published as `OutfitterReborn.API.v1` ([ARCHITECTURE.md](ARCHITECTURE.md#public-api)) |
-| `modules/Diagnostics.lua` | This addon's sections of `/of diagnostics` (debug-logging-§14) |
+| `modules/Diagnostics.lua` | This addon's sections of `/or diagnostics` (debug-logging-§14) |
 
 ## settings/
 

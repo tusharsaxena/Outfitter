@@ -86,21 +86,21 @@ function Commands.Bank(method, rest)
     return ok
 end
 
---- /of missing: the report's lines, or the one refusal line while the bank is closed.
+--- /or missing: the report's lines, or the one refusal line while the bank is closed.
 function Commands.Missing()
     local lines, why = NS.Bank.MissingReport()
     if not lines then return out(why) end
     printAll(lines)
 end
 
---- /of zone (ShowZoneInfo, Outfitter.lua:5008-5042): what the zone detection sees, then the equipment
+--- /or zone (ShowZoneInfo, Outfitter.lua:5008-5042): what the zone detection sees, then the equipment
 --- bracket's state with its STUCK tripwire.
 function Commands.Zone()
     printAll(NS.States.ZoneInfo())
     printAll(NS.Equip.Diagnostic())
 end
 
---- /of iteminfo <link>: every field, through the secret-safe reader.
+--- /or iteminfo <link>: every field, through the secret-safe reader.
 function Commands.ItemInfo(rest)
     printAll(NS.ItemInfo.LinkInfoLines(rest))
 end

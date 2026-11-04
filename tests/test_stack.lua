@@ -263,7 +263,7 @@ test("stack: Toggle removes a worn outfit, Complete too (the fallback puts the p
     assertTrue(St.Toggle(o.hat)); assertTrue(St.IsWorn(o.hat))
     assertFalse(St.Toggle(o.hat)); assertFalse(St.IsWorn(o.hat))
     St.Wear(o.hat)
-    -- ToggleOutfit (Outfitter.lua:3549-3567) has no Complete check: `/of toggle` swaps back.
+    -- ToggleOutfit (Outfitter.lua:3549-3567) has no Complete check: `/or toggle` swaps back.
     -- red under: a Toggle that re-wears a worn Complete outfit.
     assertFalse(St.Toggle(o.normal), "a worn Complete outfit is taken off")
     assertEqual(shape(NS), o.naked, "the fallback walk wore the previous Complete outfit")

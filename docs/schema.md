@@ -73,7 +73,7 @@ anything reads `NS.db.profile`, and again over a reset profile:
 | `NS.OutfitSchema` | `modules/Outfits_Schema.lua` | The instance rows: `outfit.trigger.id`, `outfit.trigger.disabled`, `outfit.trigger.combatDisabled`, `outfit.icon`, `outfit.bar.hide`, and one `trigger.<TID>.<key>` row per trigger parameter (about 250) | `NS.ResolveOutfitRoot`: `outfit.*` under `db.char.outfits[id]`, `trigger.*` under its `triggerParams`; a nil or unknown id is refused |
 
 The settings instance has no outfit arm and the outfit instance refuses a nil id, so a profile reset
-can never reach an outfit (H7). Options, the slash CLI (`/of list|get|set`) and Reset all read only
+can never reach an outfit (H7). Options, the slash CLI (`/or list|get|set`) and Reset all read only
 `NS.Schema`, so none of them sees an instance row, with no filter to forget.
 
 **The one write seam.** `NS.SetByPath(path, value, instanceId)`, `NS.GetSetting(path, instanceId)`
@@ -87,7 +87,7 @@ Special rows: `global.minimap.shown` (`NS.MINIMAP_PATH`) reads and writes LibDBI
 and is exempt from every reset; `state.debugConsole` and `state.testMode` are session rows with no
 storage; `writeThrough = { "enabled", "locked", "auto.enabled" }`. `bar.position` is closure-backed:
 its storage is `profile.windows.bar` (`{ point, x, y }`, encoded as `POINT X Y`), so every writer goes
-through the seam: the bar's drag stop (`NS.Bar.SavePosition`), `/of set|reset bar.position` and
+through the seam: the bar's drag stop (`NS.Bar.SavePosition`), `/or set|reset bar.position` and
 Reset position (`NS.ApplyDefault`), each decoding into a new table, never the default itself.
 
 ## Outfit and item records
@@ -140,10 +140,10 @@ function that writes it (architecture-§5).
 
 ## Reset semantics
 
-- **Reset all settings** (General Defaults, `/of resetall`, Profiles "Reset Profile") resets the
+- **Reset all settings** (General Defaults, `/or resetall`, Profiles "Reset Profile") resets the
   **active profile only**, after the `OUTFITTERREBORN_RESET_ALL` confirmation. `db.char` and
   `db.global` survive; the minimap row is exempt.
-- **Delete all outfits…** (`/of deleteall`, General › Behavior) is a separate confirmed act: it
+- **Delete all outfits…** (`/or deleteall`, General › Behavior) is a separate confirmed act: it
   wipes this character's outfits, stack and bindings, re-seeds the built-in outfits and re-reads the
   Equipment Manager. The profile is untouched.
-- A page's Defaults restores that page's rows only; `/of reset path` resets one row.
+- A page's Defaults restores that page's rows only; `/or reset path` resets one row.

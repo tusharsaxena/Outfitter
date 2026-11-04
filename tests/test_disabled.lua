@@ -64,7 +64,7 @@ local function eventTargets(inst)
 end
 
 local function refusalLine(inst)
-    return inst.mocks.LibStub("LibKa0s-Slash-1.0").DISABLED_LINE_FORMAT:format("Ka0s Outfitter Reborn", "/of enable")
+    return inst.mocks.LibStub("LibKa0s-Slash-1.0").DISABLED_LINE_FORMAT:format("Ka0s Outfitter Reborn", "/or enable")
 end
 
 --- The printed lines, with the chat tag stripped, so a line compares against its bare text.
@@ -407,7 +407,7 @@ test("Disabled 7: every verb answers while disabled; a feature verb answers one 
     assertTrue(NS.SetByPath("enabled", false))
 
     NS.Slash:OnSlash("")
-    assertEqual(opened, 1, "bare /of opens the panel while disabled")
+    assertEqual(opened, 1, "bare /or opens the panel while disabled")
 
     local refusal = refusalLine(inst)
     assertTrue(verbsWhileDisabled(NS, M, refusal) >= 2, "skin and the probe were not both exercised")
@@ -510,7 +510,7 @@ test("Disabled 8: launcher clicks and the key binding write nothing and show not
     assertEqual(#M.__svWrites(), 0, "a key press wrote SavedVariables")
     assertEqual(#M.__shownFrames(), shownBefore, "a key press showed a frame")
     -- red under: a binding OnClick in core/LauncherSetup.lua without its NS.StoodDownRefusal() read
-    -- (AutoOff then runs `/of auto off`, a live verb, and writes auto.enabled while disabled).
+    -- (AutoOff then runs `/or auto off`, a live verb, and writes auto.enabled while disabled).
     assertEqual(NS.GetSetting("auto.enabled"), auto, "an auto press changed auto.enabled while disabled")
 
     -- Enabled again, the perf hold alone: the capture line, never the disabled one, and no handler.
@@ -574,7 +574,7 @@ test("Disabled 10: releasing ONE hold does not resurrect an addon the other hold
 end)
 
 test("Disabled 10 (degraded): the library-absent latch holds the same order", function()
-    -- The stub latch in core/LifecycleSetup.lua, written through `/of enable` and `/of disable`: on
+    -- The stub latch in core/LifecycleSetup.lua, written through `/or enable` and `/or disable`: on
     -- this arm a written-through `enabled` runs no onChange, and the verb takes the hold itself.
     local inst, NS = scene{ libFiles = {} }
     T.assertLatchHoldOrder{

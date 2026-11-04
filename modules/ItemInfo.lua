@@ -347,11 +347,11 @@ function II.MetaSlot(item)
     return meta
 end
 
--- ── /of iteminfo ──────────────────────────────────────────────────────────────────────────────
+-- ── /or iteminfo ──────────────────────────────────────────────────────────────────────────────
 
 local INFO_FIELDS = { "id", "name", "enchant", "gems", "suffix", "uid", "upType", "diff", "bonus", "mods" }
 
---- The lines `/of iteminfo` prints for a link: the link, then each parsed field. Every value goes
+--- The lines `/or iteminfo` prints for a link: the link, then each parsed field. Every value goes
 --- through NS.SafeToString, so a secret prints as the sentinel and never raises.
 --- @param link any
 --- @return string[]

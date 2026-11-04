@@ -1,7 +1,7 @@
 local _, NS = ...
--- modules/Diagnostics.lua — this addon's sections of `/of diagnostics` (debug-logging-§14); the library
+-- modules/Diagnostics.lua — this addon's sections of `/or diagnostics` (debug-logging-§14); the library
 -- writes the markers, the identity header, the per-section pcall and the cap. The zone and equip
--- sections are the two halves of `/of zone` (NS.States.ZoneInfo, NS.Equip.Diagnostic with its STUCK
+-- sections are the two halves of `/or zone` (NS.States.ZoneInfo, NS.Equip.Diagnostic with its STUCK
 -- tripwire, INV §16 quirk 4); bindings lists the trigger bindings switched off for the session.
 --
 -- CALLS (at call time, no nil guard; design §12): NS.States, NS.Equip, NS.TriggerBinder.

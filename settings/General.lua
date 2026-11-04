@@ -107,7 +107,7 @@ local CHANGES = L["Outfit changes"]
 
 NS.RegisterSchemaRows({
     -- No onChange: the trigger binder's SETTINGS_CHANGED handler is this row's one route, so the panel,
-    -- `/of auto`, the key bindings and a profile change all reach SetActive the same way (design §6.9).
+    -- `/or auto`, the key bindings and a profile change all reach SetActive the same way (design §6.9).
     { path = "auto.enabled", page = PAGE, group = BEHAVIOR, subgroup = CHANGES, type = "bool",
       label = L["Switch outfits automatically"], default = D.auto.enabled,
       tooltip = L["Lets outfits with a trigger equip and unequip themselves. Turning this off stops every trigger; outfits you wear by hand are unaffected."] },
@@ -157,13 +157,13 @@ end
 -- ── Skin ── (skinning-§2/§3, core/SkinSetup.lua) the skin this addon wears, per profile. The tab is
 -- the library's O.AppearanceTab, which draws every row below itself (its choice grids, the Scope's
 -- check boxes, the Font and texture dropdowns), so each row carries `skipRender`; they stay schema
--- rows so the defaults resolve, every reset reaches them, and `/of get|set skin.skin` validates
+-- rows so the defaults resolve, every reset reaches them, and `/or get|set skin.skin` validates
 -- against `values`. Their group is the tab's key, so the tab takes the group's place in the strip:
 -- after Master controls, Behavior and Tooltips, before Keybindings.
 --
 -- Each onChange applies ONLY its own half (core/SkinSetup.lua says why): the tab and another addon's
 -- "Copy to every Ka0s addon" call Skin:SetChoice before they write, so the write is a no-op, and a
--- bare `/of set` still repaints.
+-- bare `/or set` still repaints.
 local SKIN_TAB = H.AppearanceTab({ owner = addonName, get = NS.SkinChoice, set = NS.WriteSkinChoice })
 local SKIN = SKIN_TAB.key
 local SD = D.skin
@@ -196,7 +196,7 @@ NS.RegisterSchemaRows({
       tooltip = L["Keep every font in this addon as the game draws it. The skin still colors the text."],
       onChange = function(v) NS.ApplySkinIgnore(nil, v) end },
     -- The Font and texture overrides (LibKa0s-Skin-1.0 minor 6): free text, not a list of `values`,
-    -- because a media pack may register its keys after this file loads and `/of set` takes any key;
+    -- because a media pack may register its keys after this file loads and `/or set` takes any key;
     -- "" is the skin's own.
     { path = "skin.font", page = PAGE, group = SKIN, type = "string", skipRender = true,
       label = L["Font"], default = SD.font,
@@ -207,7 +207,7 @@ NS.RegisterSchemaRows({
       tooltip = L["The texture this addon's bars use, over the skin's own. Empty keeps the skin's."],
       onChange = function(v) NS.ApplySkinOverride(nil, v) end },
     -- The Font outline (LibKa0s-Skin-1.0 minor 9): where the skin outlines this addon's text. The
-    -- library's three modes, in its order, so `/of set skin.outline` validates against them.
+    -- library's three modes, in its order, so `/or set skin.outline` validates against them.
     { path = "skin.outline", page = PAGE, group = SKIN, type = "string", skipRender = true,
       label = L["Font outline"], default = SD.outline, values = NS.SKIN_OUTLINE_OPTIONS,
       validate = oneOf(NS.SKIN_OUTLINE_OPTIONS),

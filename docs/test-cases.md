@@ -23,7 +23,7 @@ Total.
 - skeleton: every module the latch walks has landed, with Suspend and Resume
 - skeleton: the login resumes every module bottom to top, and nothing while stood down
 - skeleton: a loaded legacy Outfitter is warned once and flagged, and the LoadPass still runs
-- skeleton: a disabled login flags the legacy addon for /of diagnostics and prints nothing
+- skeleton: a disabled login flags the legacy addon for /or diagnostics and prints nothing
 - skeleton: without the legacy addon nothing is said or flagged
 
 ### test_toc.lua (5)
@@ -128,7 +128,7 @@ Total.
 - compat: macro icons, Pawn scales and values, dual wield and BitAnd
 - secrets engine: a secret worn or carried link is an empty slot to the live scan
 - secrets engine: a secret player level lets an item through the live stats
-- secrets engine: tooltip, compare, quick slots and /of iteminfo refuse a secret link quietly
+- secrets engine: tooltip, compare, quick slots and /or iteminfo refuse a secret link quietly
 - secrets engine: the Equip count is balanced after a raise inside a Batch
 - secrets seam: the scanner catches a securable read and nothing else (mutation self-test)
 - secrets seam: no securable client API is named outside the compat family, Secrets and States
@@ -167,14 +167,14 @@ Total.
 - skin seam: the Blizzard-frame scan is falsifiable
 - skin seam: with the options seam, an unseen profile shows the picker and the close marks it seen
 - skin seam: a choice written through the seam is stored and worn
-- skin seam: /of skin without the library prints the library-absent line
+- skin seam: /or skin without the library prints the library-absent line
 - skin seam: the degraded facade answers every name the live facade carries
 - skin seam: the degraded HudFont draws the face, a picked flag and no shadow
 - skin seam: each host-copy skin token is the live library's Ka0s Default value
 
 ### test_surface_parity.lua (27)
 
-- parity: the degraded load still initializes, enables and answers /of version
+- parity: the degraded load still initializes, enables and answers /or version
 - parity: the Options stub carries every public member of the live Helpers surface
 - parity: the Bus stub carries the library surface, and its record the instance's
 - parity: the Schema stub carries the runtime surface this addon binds
@@ -273,7 +273,7 @@ Total.
 ### test_slash.lua (44)
 
 - slash: the reserved verbs open NS.COMMANDS, in the DpsRace order
-- slash: bare /of opens the settings panel
+- slash: bare /or opens the settings panel
 - slash: help lists every COMMANDS verb, in order
 - slash: the landing page's rows come from the same table
 - slash: disable and enable write the `enabled` row through the seam and echo it
@@ -282,7 +282,7 @@ Total.
 - slash: the schema CLI reads and writes through the seam
 - slash: `list` shows settings rows only
 - slash: `resetall` asks first, through the one popup
-- slash: /of and /outfitter both reach the dispatcher
+- slash: /or and /outfitterreborn both reach the dispatcher
 - slash: `skin` is refused with the enable line while disabled; the live verbs still answer
 - slash H25: a top-level conditional is decided by the client's parser
 - slash H25: no matching clause is a silent no-op
@@ -291,18 +291,18 @@ Total.
 - slash H25: a verb's `;` reaches the argument parse whole
 - slash H25: both chat commands are registered on the routing wrapper
 - slash: the stub's refusal format is byte-equal to the live library's
-- slash: library absent, /of still answers, and enable/disable still land
+- slash: library absent, /or still answers, and enable/disable still land
 - slash: the stub's live-verb set is the library's LIVE_VERBS, no more and no less
 - slash: the live dispatcher's live set is the library's LIVE_VERBS, then auto, zone and iteminfo
 - slash: the stub carries no library string but the refusal format
 - slash: the outfit verbs follow the reserved ones, in design §4.3.2's order
-- slash: every verb is in /of help, and the README's Usage points at it rather than listing them
+- slash: every verb is in /or help, and the README's Usage points at it rather than listing them
 - slash: auto, zone and iteminfo answer while disabled on both arms; wear is refused
 - slash: an outfit name matches case-insensitively, and every wear passes now and hw
 - slash: an empty argument means the current Complete outfit, or says there is none
 - slash: an outfit argument opening with `[` is decided by the client's parser
 - slash: wear, wear <unknown> and zone print the lines legacy printed (fixtures/legacy)
-- slash: /of zone routes to Commands.Zone: the zone lines, then the equipment bracket's
+- slash: /or zone routes to Commands.Zone: the zone lines, then the equipment bracket's
 - slash: the dropped verbs are unknown commands, and no /unequip is registered
 - slash: `set equip.muteSounds` is the old `sound`, and its echo is not inverted
 - slash: `reset bar.position` is the old `reset bar`; `deleteall` is the old `reset`

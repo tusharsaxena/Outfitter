@@ -16,7 +16,7 @@ rows that verify it.
 - Install the build as `Interface\AddOns\OutfitterReborn\`, with the old `Outfitter` folder **disabled**
   unless a row says otherwise.
 - Use a character with a few equipment sets, a profession, and access to a battleground queue.
-- Turn on `/of debug on` before starting and keep the console open; copy it into the result of any
+- Turn on `/or debug on` before starting and keep the console open; copy it into the result of any
   failed row.
 - Note the client build in the Sign-off row.
 
@@ -26,7 +26,7 @@ rows that verify it.
 |---|---|---|
 | L1 | Log in | No Lua error; nothing is printed except the first-run skin picker on a new profile |
 | L2 | The AddOns list | The entry reads **Ka0s Outfitter Reborn** with the 128 px logo; Category is accepted (O7) |
-| L3 | `/of version` and `/outfitter version` | Both print `[OR]` and `1.1.0` |
+| L3 | `/or version` and `/outfitterreborn version` | Both print `[OR]` and `1.1.0` |
 | L4 | `/reload` | No error; settings kept |
 
 ## 2. Settings panel
@@ -48,19 +48,19 @@ rows that verify it.
 | K1 | Minimap button left-click | Opens the settings panel |
 | K2 | Minimap button right-click | The library menu: Enabled, Locked, Test mode, Show window, Open settings, Open skin selector |
 | K3 | Minimap button tooltip | The brand and "Current outfit: …" |
-| K4 | `/of` and `/of help` | The command list, with the alias line |
-| K5 | `/of disable`, then a feature verb | The one disabled line; `/of enable` restores |
+| K4 | `/or` and `/or help` | The command list, with the alias line |
+| K5 | `/or disable`, then a feature verb | The one disabled line; `/or enable` restores |
 | K6 | Show window key, out of combat and in combat | Toggles the window, and from combat prints that it opens when combat ends (O8) |
-| K7 | `/of wear [combat] A; B` | Wears B out of combat and A in combat |
+| K7 | `/or wear [combat] A; B` | Wears B out of combat and A in combat |
 
 ## 4. Debug, diagnostics and performance
 
 | # | Check | Pass when |
 |---|---|---|
-| D1 | `/of debug on`, `/of debug` | The console opens with one Init line (brand, version, schema, profile, outfit counts) |
-| D2 | `/of diagnostics` | The report is appended, with the brand in both markers, the addon's seven sections (identity, settings, state, zone, equip, bindings, rejected), and no error |
-| D3 | `/of diagnostics` while disabled | Still runs |
-| D4 | `/of perf start`, `measure a`, a fight, `measure b`, a fight, `finish`, `/reload`, `report` | A report and one JSON line |
+| D1 | `/or debug on`, `/or debug` | The console opens with one Init line (brand, version, schema, profile, outfit counts) |
+| D2 | `/or diagnostics` | The report is appended, with the brand in both markers, the addon's seven sections (identity, settings, state, zone, equip, bindings, rejected), and no error |
+| D3 | `/or diagnostics` while disabled | Still runs |
+| D4 | `/or perf start`, `measure a`, a fight, `measure b`, a fight, `finish`, `/reload`, `report` | A report and one JSON line |
 
 ## 5. The outfit window and the sheet
 
@@ -83,15 +83,15 @@ rows that verify it.
 | T1 | Wear a Complete outfit, then an Accessory, then remove it | The Complete outfit's items come back |
 | T2 | `/reload` with an Accessory worn | The stack is restored |
 | T3 | Fishing, a gathering node, riding, swimming | Each trigger wears and removes its outfit |
-| T4 | Enter a battleground and an arena | The map's outfit is worn over the generic one; `/of zone` shows the map ID and the active ids |
+| T4 | Enter a battleground and an arena | The map's outfit is worn over the generic one; `/or zone` shows the map ID and the active ids |
 | T5 | Druid forms, rogue stealth, a spec change | Each trigger fires (O10, O27) |
 | T6 | A lockbox tooltip | LOCKPICKING fires (O22, row D4) |
 | T7 | Find Fish tracking | FISHING's tracking restore works (O5) |
-| T8 | An error inside a trigger | Updates keep working afterward; `/of zone` reports no stuck bracket |
+| T8 | An error inside a trigger | Updates keep working afterward; `/or zone` reports no stuck bracket |
 | T9 | Blizzard equipment sets | Each shows as an outfit, a save from the addon appears in the Equipment Manager (O18), and a save is refused in combat (O44) |
-| T10 | Wear an outfit that holds two unique-equipped items of one family (two of the same unique ring or trinket, or past an equipped-limit category's count) | The outfit is worn in full with no "unique-equipped" error; if the client still refuses one item, the rest is worn, the error does not repeat on every update, and `/of zone` shows no stuck bracket (O17 uniqueness shape) |
+| T10 | Wear an outfit that holds two unique-equipped items of one family (two of the same unique ring or trinket, or past an equipped-limit category's count) | The outfit is worn in full with no "unique-equipped" error; if the client still refuses one item, the rest is worn, the error does not repeat on every update, and `/or zone` shows no stuck bracket (O17 uniqueness shape) |
 | T11 | Fishing with a pole outfit, entering combat with Fishing worn | The action bar page change is skipped in combat and applied when combat ends (O23) |
-| T12 | A boss encounter (a raid or dungeon boss) with triggers on and `/of debug on` | No Lua error while health, power, auras or item links read as secret values; a trigger that needs one holds its outfit instead of flapping; `/of diagnostics` after the fight shows no stuck bracket |
+| T12 | A boss encounter (a raid or dungeon boss) with triggers on and `/or debug on` | No Lua error while health, power, auras or item links read as secret values; a trigger that needs one holds its outfit instead of flapping; `/or diagnostics` after the fight shows no stuck bracket |
 | T13 | A potion or trinket with a use duration | The duration the addon reads matches the tooltip; record the item and the client build when it does not (O15) |
 
 ## 7. Bar, bank, tooltips and quick slots
@@ -110,9 +110,9 @@ rows that verify it.
 | # | Check | Pass when |
 |---|---|---|
 | X1 | A zhCN, zhTW, koKR and ruRU client | Text renders in the skin's face, or the D7 row is written (H8) |
-| X2 | The old Outfitter enabled too | One warning at login; `/of diagnostics` reports it |
-| X3 | Common addons that register slash commands (e.g. a bag addon, a raid tool) | `/of` reaches this addon; record any collision (O3) |
-| X4 | `/of diagnostics` after login | The O17 client APIs (uniqueness, warbound, usability, item stats, Azerite, bank container) answer, or their tooltip or ladder fallback is the one in use |
+| X2 | The old Outfitter enabled too | One warning at login; `/or diagnostics` reports it |
+| X3 | Common addons that register slash commands (e.g. a bag addon, a raid tool) | `/or` reaches this addon; record any collision (O3) |
+| X4 | `/or diagnostics` after login | The O17 client APIs (uniqueness, warbound, usability, item stats, Azerite, bank container) answer, or their tooltip or ladder fallback is the one in use |
 
 ## 9. The skin switch
 
@@ -158,4 +158,4 @@ this list. Each is checked by the rows named beside it; an O-number is a design 
 | O34 The Equipment Sets tooltip line | Tooltip data lines | B4 |
 | O38 Title submenu with 200+ titles | Usability | W9 |
 | O41 `GetPrimaryTooltipInfo()` field names | Tooltip info | B4 |
-| O3 `/of` collision | Other addons | X3 |
+| O3 `/or` collision | Other addons | X3 |
