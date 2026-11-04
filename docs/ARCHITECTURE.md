@@ -211,7 +211,7 @@ behind them, and `docs/reviews/2026-09-16/` is the fork's last review, kept froz
 | Rule | What differs | Why | Decided | Re-check trigger |
 |---|---|---|---|---|
 | `versioning-git` (the semver line) | The release is 1.1.0, although the public API (the `Outfitter_*` globals are gone, H3) and the saved-data format (a fresh `OutfitterRebornDB`) both break, which would call for a MAJOR | D1. Owner ruling 2026-11-03 (the plan's Version decision): 1.1.0 continues the fork's numbering on CurseForge project 1698220. The consumers that lose globals are named in the Version History (design §5.16) | 2026-11-03 | The next MAJOR release |
-| `standalone-windows` (movable, saved position, Lock/Reset, toplevel; the `UISpecialFrames` MUST is honored) | The main window is docked to the character sheet: not movable, no saved position, no Lock or Reset, strata and level copied from `OutfitterRebornSheetHolder`, not toplevel. It is hidden for the length of combat and returns at `PLAYER_REGEN_ENABLED`. Its dialogs stay open through that combat suspend. Escape closes it through `UISpecialFrames` | D2. Owner ruling R5 (H4). The outfit list's secure item buttons make every in-combat Show, Hide or SetPoint on the window a blocked action (fork `Outfitter.lua:1326-1331, 8448-8494`). Closing dialogs in combat would lose input (O30) | 2026-11-03 | Blizzard ships a docking API, or the list stops needing secure buttons |
+| `standalone-windows` (plain non-secure window, movable, saved position, Lock/Reset, toplevel; the `UISpecialFrames` MUST is honored) | The main window is a protected frame: each outfit row carries a `SecureActionButtonTemplate` child (`modules/Window_Rows.lua`). It is docked to the character sheet: not movable, no saved position, no Lock or Reset, strata and level copied from `OutfitterRebornSheetHolder`, not toplevel. It is hidden for the length of combat and returns at `PLAYER_REGEN_ENABLED`. Its dialogs stay open through that combat suspend. Escape closes it through `UISpecialFrames` | D2. Owner ruling R5 (H4). The outfit list's secure item buttons make every in-combat Show, Hide or SetPoint on the window a blocked action (fork `Outfitter.lua:1326-1331, 8448-8494`). Closing dialogs in combat would lose input (O30) | 2026-11-03 | Blizzard ships a docking API, or the list stops needing secure buttons |
 | `standalone-windows` (explicit window verbs `show` / `hide` / `toggle`, a SHOULD) | `/of show` and `/of hide` open and close the window, but there is no window `toggle` verb: `/of toggle <outfit>` stays the outfit verb. The key binding and the sheet button toggle the window | C35. `toggle` has been the outfit verb in players' macros since before this fork, and taking it for the window would break them. The reason is also at the comment above `NS.COMMANDS` (`settings/Slash.lua`) and in [`slash-dispatch.md`](slash-dispatch.md) | 2026-11-03 | `toggle` retires as an outfit verb, or the standard names a different window-toggle verb |
 | `localization-§4` | The IN_ZONES subzone list matches `GetMinimapZoneText()` strings captured on the player's own client | D3. No API exposes the current areaID; zones match on uiMapID (H9) | 2026-11-03 | Blizzard exposes the current areaID |
 | `localization-§4` | LOCKPICKING matches the lockbox tooltip line against `LOCKED_WITH_SPELL` + `GetTradeSkillDisplayName(633)`, and falls back to `L["Requires Lockpicking"]` when that does not reproduce the line | D4. No GlobalString for the line is confirmed (O22); without the fallback the trigger is dead on any client where the composed form differs | 2026-11-03 | The client check confirms the composed GlobalString form on every shipped locale, after which the `L` fallback and this row go |
@@ -219,10 +219,11 @@ behind them, and `docs/reviews/2026-09-16/` is the fork's last review, kept froz
 | `localization-§4` | `Inv.SlotItemActive` (the TRINKET_QUEUE skip-while-active rule) parses the item's use-duration tooltip line with the `cUseDurationTooltipLineFormat*` patterns kept in `L` | D8. No GlobalString or ID route gives an active use effect's remaining duration yet (O15) | 2026-11-03 | `C_Item.GetItemSpell` plus spell-duration data (or an aura read) covers it, after which the `L` keys and this row go |
 | `localization-§4` | The gathering triggers (GATHER_HERBALISM, GATHER_MINING) match the node tooltip's line against `C_TradeSkillUI.GetTradeSkillDisplayName(skillLine)`, the client's own localized name for an ID, not a GlobalString constant | D10. Tooltip data exposes no skill line for a node; the name is never hardcoded or put in `L`, so the match is correct on every locale | 2026-11-03 | `TooltipDataProcessor` exposes the node's skill line |
 
-Two more rows are conditional and are written only if their check goes the way they describe (the
-design's §10, tracked as open issues rather than parked here): **D7** (`localization-§7`, CJK and
-Cyrillic text in Skin faces, if LibKa0s-Skin has no locale font fallback) and **D11** (`skinning-§7`,
-the quick slots' flyout hooks, if an audit reads them as writes into Blizzard tables).
+One more row is conditional (the design's §10): **D7** (`localization-§7`, CJK and Cyrillic text
+in Skin faces) is written only if smoke test X1 shows a box glyph. The vendored Skin major already
+refuses a face the client's locale cannot draw, so only that client check remains. The client checks
+the design's §14 still owes are mapped to their rows in
+[`smoke-tests.md`](smoke-tests.md#10-what-the-headless-run-cannot-reach) section 10.
 
 Not deviations, recorded for audit clarity: `UnitFactionGroup`'s first return is read with a comment,
 and the standard's defect is raised upstream (H10); the per-outfit trigger parameters are instance
@@ -230,7 +231,9 @@ rows on LibKa0s-Schema v3, so no row is needed (H13); triggers translate onto Ac
 dispatcher (H14); no simulator ships, a MAY (H18); the options ship in the addon with three
 subcategories, below options-ui-§4's five-subpanel trigger, so this is compliance and is the comment in
 `settings/OptionsSetup.lua` (H21); the macro-conditional wrapper is host routing, not a dispatcher fork
-(H25).
+(H25); the quick slots' flyout post-hooks (`modules/QuickSlots.lua`) are not a skin path, since
+`skinning-§7` governs what a skin paints and `events-frames-taint-§3` binds only an addon that
+replaces a Blizzard frame (the design's D11, ruled out by the 2026-11-04 audit).
 
 ### Files over the 1500-line cap
 

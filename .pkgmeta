@@ -16,4 +16,5 @@ ignore:
   - media/logos/*.jpg   # a .jpg render of the logo, for the project page; same reason
   - media/screenshots   # the project page's screenshots (H28)
   - _dev
+  - .claude          # dev-only agent tooling (worktrees); never packaged
   - "*.bak"

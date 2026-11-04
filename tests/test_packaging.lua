@@ -59,7 +59,9 @@ test("packaging: every maintainer file and folder is ignored", function()
     for _, path in ipairs({ ".luacheckrc", ".pkgmeta", ".gitignore", ".gitattributes", "docs/ARCHITECTURE.md",
                             "tests/run.lua", "tools/legacy_capture.lua", "CLAUDE.md", "DEPENDENCIES.md",
                             "media/logos/outfitterreborn.logo.png", "media/logos/outfitterreborn.logo.jpg",
-                            "media/screenshots/outfitterreborn.screenshot.01.png", "_dev/x.lua", "a.bak" }) do
+                            "media/screenshots/outfitterreborn.screenshot.01.png", "_dev/x.lua", "a.bak",
+                            -- red under: no `.claude` line in .pkgmeta (the root's agent tooling, packaging)
+                            ".claude/worktrees/x" }) do
         assertTrue(ignored(path, list) ~= nil, path .. " would ship")
     end
 end)
