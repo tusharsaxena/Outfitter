@@ -2,7 +2,9 @@ local _, NS = ...
 -- modules/Triggers_Binder.lua — NS.TriggerBinder: bind, unbind, dispatch and apply (design §6.9).
 --
 -- ONE TARGET PER BOUND OUTFIT (H14). Each binding owns an AceEvent+AceTimer target from
--- NS.NewBusTarget (kept per outfit id and reused, so a rebind adds nothing to the bus record), a
+-- NS.NewBusTarget (kept per outfit id and reused, so a rebind adds nothing to the bus record; a
+-- deleted outfit's target goes to a free list the next new id takes from, so the record is bounded
+-- by the most outfits held at once and not by every id the session ever bound), a
 -- context `ctx` (design §6.3) and nothing else. Game events go through NS.SafeRegisterEvent; the
 -- pseudo events arrive as bus messages through Triggers.PSEUDO; TIMER is the binding's ticker and BIND
 -- its one 0 s evaluation. No pseudo key ever reaches RegisterEvent (quirk 8).
@@ -50,6 +52,7 @@ B.unavailable = {}
 
 local bound = {}          -- [outfitId] = ctx
 local targets = {}        -- [outfitId] = the reused target
+local freeTargets = {}    -- deleted outfits' unbound targets, taken before NS.NewBusTarget
 local dirty = {}          -- [outfitId] = true, awaiting the coalesced rebind
 local active = false      -- BindAll ran and nothing has unbound everything since
 local mod                 -- the module's own target: OUTFIT_*, SETTINGS_CHANGED, PROFILE_CHANGED, the rebind timer
@@ -282,8 +285,11 @@ end
 local function targetFor(id)
     local t = targets[id]
     if t then return t end
-    t = NS.NewBusTarget()
-    LibStub("AceTimer-3.0"):Embed(t)
+    t = table.remove(freeTargets)
+    if not t then
+        t = NS.NewBusTarget()
+        LibStub("AceTimer-3.0"):Embed(t)
+    end
     targets[id] = t
     return t
 end
@@ -391,7 +397,14 @@ local function onEdited(_, id, what)
 end
 
 local function onAdded(_, id) if active then B.Bind(id) end end
-local function onDeleted(_, id) B.Unbind(id) end
+-- Unbound, the target holds no registration and no timer, so the next new id may reuse it (F-009).
+local function onDeleted(_, id)
+    B.Unbind(id)
+    local t = targets[id]
+    if not t then return end
+    targets[id] = nil
+    freeTargets[#freeTargets + 1] = t
+end
 
 local function onSettings(_, path, value)
     if path == "auto.enabled" then B.SetActive(value ~= false) end

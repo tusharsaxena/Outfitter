@@ -415,6 +415,23 @@ test("binder: a 5-entry SetMany on one outfit rebinds it once; OUTFIT_ADDED bind
     assertFalse(NS.TriggerBinder.IsBound(added), "unbound on delete")
 end)
 
+test("binder: deleting and re-creating outfits does not grow the bus record", function()
+    local NS = scene()
+    T.fake(NS, "Stack", { Remove = true, Selected = function() return nil end, IsWorn = function() return false end })
+    NS.TriggerBinder.BindAll()
+    local made, newTarget = 0, NS.NewBusTarget
+    NS.NewBusTarget = function() made = made + 1; return newTarget() end
+    for _ = 1, 3 do
+        local ids = {}
+        for i = 1, 5 do ids[i] = NS.Outfits.Create("Throwaway " .. i, {}, { trigger = "SWIMMING" }) end
+        for i = 1, 5 do assertTrue(NS.TriggerBinder.IsBound(ids[i]), "bound on OUTFIT_ADDED") end
+        for i = 1, 5 do NS.Outfits.Delete(ids[i]) end
+    end
+    NS.NewBusTarget = newTarget
+    -- red under: targetFor without the free list (fifteen targets, one per id ever bound).
+    assertEqual(made, 5, "the bus record grows by the most outfits held at once, not by every id ever bound")
+end)
+
 -- ── refusals and diagnostics ──────────────────────────────────────────────────────────────────
 
 test("binder: an unknown or unwritten trigger prints once and binds nothing; refuseEM; ctx:Disable", function()
