@@ -9,6 +9,16 @@ local _, NS = ...
 -- at the sheet's right and top (no ClearAllPoints), re-issued from a 0.05 s follow on an owned driver
 -- frame only when the corner moved (Outfitter.lua:1355-1488). If the client refuses even that anchor,
 -- the window parks in the holder: usable, but the sheet is pinned (the old fallback, :1477-1488).
+-- The corner is NS.Sheet.DockRight(): the right edge of the visible sheet (CharacterFrame, or
+-- Chonky's backdrop) or of an open Chonky side panel, and the sheet's top. The window's top is flush
+-- with the sheet's (Y_OFFSET 0; sheet and window feedback design G3).
+--
+-- THE SHEET BUTTON sits right of the Equipment Manager tab (NS.Sheet.ButtonAnchor; design G1),
+-- re-anchored on every sheet show, since the sheet kind can change with another addon. It is parented
+-- to CharacterFrame and set above the close button's level: in the sheet holder it shared
+-- PaperDollFrame's level (useParentLevel), and the frame's NineSlice (500) and close button (510)
+-- drew over it, which hid it on the stock sheet. It is a plain button: no secure frame is touched. It
+-- shows with the paper doll and hides with it, since its parent outlives the Character tab.
 --
 -- THE ONLY SHOW AND HIDE. Dock.Refresh is the one place this addon shows or hides
 -- `OutfitterRebornWindow`. It never does so in combat lockdown (design §7.0 rule 2): the window hides
@@ -26,10 +36,11 @@ local _, NS = ...
 -- stand-up (Resume), and stay; a stand-down drops the events and the follow and hides the window.
 --
 -- CALLS (at call time; design §12): NS.Window, NS.WindowRows.DisarmSecure, NS.SlotEnables.MaybeRestack,
--- NS.Stack.Select, NS.Dialogs.CloseAll, NS.IconChooser.Close, NS.CloseMenu, NS.SecureQueue.
+-- NS.Stack.Select, NS.Dialogs.CloseAll, NS.IconChooser.Close, NS.CloseMenu, NS.SecureQueue,
+-- NS.Sheet.Refresh/DockRight/Frame/ButtonAnchor.
 
 local Dock = { wanted = false, suspended = false, followDisabled = false, built = false,
-               Y_OFFSET = -30, FOLLOW_INTERVAL = 0.05 }
+               Y_OFFSET = 0, FOLLOW_INTERVAL = 0.05 }
 NS.Dock = Dock
 
 local L = NS.L
@@ -61,9 +72,7 @@ end
 
 -- ── position and layers ───────────────────────────────────────────────────────────────────────
 
-local function corner()
-    return NS.SafeNumber(PaperDollFrame:GetRight(), nil), NS.SafeNumber(PaperDollFrame:GetTop(), nil)
-end
+local function corner() return NS.Sheet.DockRight() end
 
 -- The one SetPoint, at the sheet's corner times the anchor-to-own scale ratio.
 local function positionWindow()
@@ -75,7 +84,7 @@ local function positionWindow()
         return
     end
     local scale = NS.SafeNumber(win:GetEffectiveScale(), 1)
-    local hostScale = NS.SafeNumber(PaperDollFrame:GetEffectiveScale(), 1)
+    local hostScale = NS.SafeNumber(NS.Sheet.Frame():GetEffectiveScale(), 1)
     if scale <= 0 then scale = 1 end
     Dock.followRight, Dock.followTop = right, top
     win:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", right * hostScale / scale, top * hostScale / scale + Dock.Y_OFFSET)
@@ -210,14 +219,30 @@ end
 
 -- ── hooks and events ──────────────────────────────────────────────────────────────────────────
 
+-- Re-anchor the sheet button where the current sheet wants it, over the close button. Out of the
+-- stand-down only; a plain button, so allowed in combat.
+local function placeButton()
+    local point, rel, relPoint, x, y, size = NS.Sheet.ButtonAnchor()
+    button:ClearAllPoints()
+    button:SetPoint(point, rel, relPoint, x, y)
+    button:SetSize(size, size)
+    local close = CharacterFrameCloseButton
+    local base = close and NS.SafeNumber(close:GetFrameLevel(), 0) or NS.SafeNumber(CharacterFrame:GetFrameLevel(), 0)
+    button:SetFrameLevel(base + LEVEL.SHEET_BUTTON_OVER_CLOSE)
+    button:Show()
+end
+
 local function onSheetShow()
     if NS.IsStoodDown() then return end
+    NS.Sheet.Refresh()
+    placeButton()
     Dock.Refresh()
 end
 
 -- "Doesn't reappear next open" (Outfitter.lua:1500-1504).
 local function onSheetHide()
     if NS.IsStoodDown() then return end
+    button:Hide()
     local wasShown = Dock.IsShown()
     Dock.wanted = false
     Dock.Refresh()
@@ -247,14 +272,13 @@ local function buildSheet()
     holder = CreateFrame("Frame", "OutfitterRebornSheetHolder", PaperDollFrame)
     holder:SetAllPoints(PaperDollFrame)
     holder:EnableMouse(false)
-    button = CreateFrame("Button", "OutfitterRebornSheetButton", holder)
-    button:SetSize(22, 22)
-    button:SetPoint("RIGHT", CharacterFrameCloseButton, "LEFT", -2, 0)
+    button = CreateFrame("Button", "OutfitterRebornSheetButton", CharacterFrame)
+    button:Hide()
     button.icon = button:CreateTexture(nil, "ARTWORK")
     button.icon:SetAllPoints(button)
-    button.icon:SetTexture(NS.Constants.LOGO_128)
-    NS.Skin.Button(button)
-    NS.Skin.SquareIcon(button, { crop = true })
+    button.icon:SetTexture(NS.Constants.DEFAULT_OUTFIT_ICON)
+    -- Borderless, like the tab icons beside it; the glyph in the accent token, which follows the skin.
+    NS.Skin.Button(button, { noBg = true, noBorder = true, tokens = { icon = "of.sheet.button" } })
     button:SetScript("OnClick", function() if not NS.IsStoodDown() then Dock.Toggle() end end)
     button:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
@@ -302,7 +326,10 @@ function Dock.Resume()
     if not events then events = LibStub("AceEvent-3.0"):Embed({}) end
     events:UnregisterAllEvents()
     for event in pairs(EVENTS) do NS.SafeRegisterEvent(events, event, onEvent, NS.rejectedEvents) end
-    button:Show()
+    if PaperDollFrame:IsVisible() == true then
+        NS.Sheet.Refresh()
+        placeButton()
+    end
     Dock.suspended = false
     Dock.Refresh()
 end

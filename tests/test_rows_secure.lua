@@ -84,7 +84,7 @@ test("rows: after build no SetPoint or SetParent reaches a secure child (quirk 3
     NS.Window.ToggleCollapsed("Complete"); NS.Window.ToggleCollapsed("Complete")
     NS.Window.MarkDirty(true); NS.Window.Render()
     NS.Window.Relevel(10)
-    rawset(M.PaperDollFrame, "GetRight", function() return 400 end)
+    rawset(M.CharacterFrame, "GetRight", function() return 400 end)
     M.OutfitterRebornDockDriver:__fire("OnUpdate", 1)
     M.__world:closeCharacter(); M.__world:openCharacter(); NS.Dock.Open()
     assertEqual(count, 0, "a secure child was re-anchored or re-parented")

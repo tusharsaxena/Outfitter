@@ -41,6 +41,11 @@ local installLayers = dofile(root .. "/tests/_kit/mock_layers.lua")
 --   M.__sheets.chonkyPanel(name, right, top) a Chonky side panel (CCSf, ccsm_sf, ccsrf_sf, ccsgf_sf)
 --   M.__sheets.place(frame, right, top)      lay a frame out: its GetRight / GetTop answer these
 -- Each answers the frame, shown. Marking the addon loaded is the case's (M.__loadedAddOns).
+-- CharacterFrameCloseButton is on every build too, at UIPanelCloseButtonNoScripts' frameLevel 510,
+-- over the frame's NineSlice at 500 (wow-ui-source@297d7aa:Interface/AddOns/Blizzard_SharedXML/
+-- Mainline/SharedUIPanelTemplates.xml:134, :381, :680; CharacterFrame is a ButtonFrameTemplate,
+-- Blizzard_UIPanels_Game/Mainline/CharacterFrame.xml:147).
+local CLOSE_BUTTON_LEVEL = 510
 local function installSheets(M)
     local function place(f, right, top)
         rawset(f, "GetRight", function() return right end)
@@ -50,6 +55,8 @@ local function installSheets(M)
     local tabs = M.CreateFrame("Frame", "PaperDollSidebarTabs", M.PaperDollFrame)
     local tab3 = M.CreateFrame("Button", "PaperDollSidebarTab3", tabs)
     rawset(tab3, "GetSize", function() return 33, 35 end)
+    local close = M.CreateFrame("Button", "CharacterFrameCloseButton", M.CharacterFrame)
+    close:SetFrameLevel(CLOSE_BUTTON_LEVEL)
     M.__sheets = {
         place  = place,
         eui    = function() return M.CreateFrame("Frame", "EUI_CharSheet_Equipment", M.CharacterFrame) end,

@@ -245,13 +245,17 @@ test("skin: the bar's icons are HUD icons, cropped and edged from the skin", fun
     assertCropped(btn.icon, "a bar button's icon")
 end)
 
-test("skin: the sheet button's logo is a cropped square icon", function()
-    -- red under: modules/Dock.lua's NS.Skin.SquareIcon(button) without crop (the logo's art edge shows).
+test("skin: the sheet button is borderless, its glyph in of.sheet.button", function()
+    -- Sheet and window feedback design G1: borderless like the tab icons beside it, the coat hanger in
+    -- the accent. red under: modules/Dock.lua's NS.Skin.Button(button) without noBg / noBorder, or
+    -- without the icon remap (the glyph is drawn in btn.icon gray), or the old SquareIcon outline.
     local _, _, Skin, built = buildAll()
     local btn = built["the sheet button"]
-    local call = Skin.painted[btn].calls.SquareIcon
-    assertTrue(call ~= nil and type(call[1]) == "table" and call[1].crop == true, "S.SquareIcon(btn, { crop = true })")
-    assertCropped(btn.icon, "the sheet button's logo")
+    local calls = Skin.painted[btn].calls
+    local opts = calls.Button and calls.Button[1]
+    assertTrue(type(opts) == "table" and opts.noBg == true and opts.noBorder == true, "S.Button(btn, { noBg, noBorder })")
+    assertTrue(type(opts.tokens) == "table" and opts.tokens.icon == "of.sheet.button", "the icon token remap")
+    assertTrue(calls.SquareIcon == nil, "S.SquareIcon outlines the glyph")
 end)
 
 --- The lines of `srcs` that write inline texture markup by hand (a "|T" in a string).

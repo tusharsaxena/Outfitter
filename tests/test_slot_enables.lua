@@ -141,7 +141,10 @@ test("slot enables: the first Restack is in Show, from the sheet's strata and hi
     assertTrue(frame:IsShown())
     assertEqual(frame:GetFrameStrata(), RAISED_HOST_STRATA)
     local highest = NS.SlotEnables.HighestLevel(M.CharacterFrame, M.OutfitterRebornSheetHolder)
-    assertEqual(highest, M.CharacterHeadSlot:GetFrameLevel(), "the slot buttons are the sheet's top frames")
+    -- The sheet's top frame is the outfit button, set over the close button (510, the title bar's
+    -- level; modules/Dock.lua), which is over the slot buttons: the boxes clear all three.
+    assertTrue(highest > M.CharacterHeadSlot:GetFrameLevel(), "the boxes do not clear the slot buttons")
+    assertEqual(highest, M.OutfitterRebornSheetButton:GetFrameLevel(), "the sheet's top frame")
     assertEqual(frame:GetFrameLevel(), highest + 1)
     assertEqual(M.OutfitterRebornEnableHeadSlot:GetFrameLevel(), frame:GetFrameLevel() + 1)
 end)
