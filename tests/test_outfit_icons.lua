@@ -180,6 +180,22 @@ test("icons: an EM outfit draws its set's icon, and a fileID on it goes to the s
     assertNil(NS.EM.Icon(rec))
 end)
 
+-- The outfit bar's Alt-drop wrote `outfit.icon` on any outfit, Equipment Manager mirrors included, and
+-- that row was drawn before the override and the set's icon, so no Change icon pick ever showed.
+test("icons: an EM outfit's stale own icon never hides its override or its set's icon", function()
+    local NS = scene()
+    local id, rec = emOutfit(NS, "Tank")
+    rec.icon = 136000
+    -- red under: ownIcon reading rec.icon first for an EM outfit.
+    assertEqual((NS.OutfitIcon(rec)), 132341, "a stale own icon hid the set's icon")
+    assertTrue(NS.Outfits.SetIcon(id, glyph(NS), "00ff00"))
+    assertEqual((NS.OutfitIcon(rec)), glyph(NS), "a stale own icon hid the glyph override")
+    -- The EM writer drops the stale row, so Outfitter chooses is not shadowed by it either.
+    assertNil(rec.icon, "SetIcon on an EM outfit left its own icon behind")
+    assertTrue(NS.Outfits.SetIcon(id, WILDCARD))
+    assertTrue(NS.OutfitIcon(rec) ~= 136000, "the stale own icon came back")
+end)
+
 test("icons: deleting an EM set clears its override", function()
     local NS, M = scene()
     local tankId, tank = emOutfit(NS, "Tank")

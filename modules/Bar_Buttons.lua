@@ -15,14 +15,15 @@ local _, NS = ...
 --                menu frame and checked `.released`; the library hides the menu itself)
 --   Hover        the outfit tooltip, `always` (the legacy pShowEmptyTooltips), and the bar's hover
 --   Drop         Alt held: the dropped item's, spell's or macro's icon becomes the outfit's icon
---                (`outfit.icon`; the spell through C_Spell, fixing the removed GetSpellTexture).
+--                (NS.Outfits.SetIcon, so an Equipment Manager outfit's goes to its set; the spell
+--                through C_Spell, fixing the removed GetSpellTexture).
 --                Without Alt, a dropped item becomes a new outfit named after it, which is worn.
 --
 -- A PLACEHOLDER (test mode's sample outfits, `placeholder = true`) does nothing on any click or drop,
 -- and its tooltip says so (H17): no write path below runs for one.
 --
 -- CALLS (at call time, no nil guard; design §12): NS.Stack, NS.Outfits, NS.OutfitMenu.Open,
--- NS.OutfitTooltip.Show, NS.OutfitIcon, NS.SetByPath, NS.ItemInfo.FromLink.
+-- NS.OutfitTooltip.Show, NS.OutfitIcon, NS.Outfits.SetIcon, NS.ItemInfo.FromLink.
 
 local Bar = NS.Bar
 
@@ -69,7 +70,8 @@ local function dropIcon(btn, kind, a, b, c)
     local read = CURSOR_ICON[kind]
     local icon = read and plainIcon(read(a, b, c))
     if not icon then return false end
-    NS.SetByPath("outfit.icon", icon, btn.outfit.id)
+    -- The one icon writer, so an Equipment Manager outfit's drop reaches its set (Outfits.lua).
+    NS.Outfits.SetIcon(btn.outfit.id, icon)
     Compat.ClearCursor()
     return true
 end

@@ -662,13 +662,15 @@ local function singleItem(rec)
 end
 
 -- The outfit's own icon: its stored one; for an Equipment Manager outfit, its glyph override, then
--- its set's icon.
+-- its set's icon, and only then a stored one, which setEMIcon drops (an Alt-drop on the bar wrote it
+-- before the drop went through O.SetIcon), so it never hides a Change icon pick.
 local function ownIcon(rec)
-    local tex, r, g, b = drawn(rec.icon, rec.iconColor)
-    if tex or rec.kind ~= "em" then return tex, r, g, b end
-    tex, r, g, b = drawn(O.EMGlyph(rec))
+    if rec.kind ~= "em" then return drawn(rec.icon, rec.iconColor) end
+    local tex, r, g, b = drawn(O.EMGlyph(rec))
     if tex then return tex, r, g, b end
-    return drawn(NS.EM.Icon(rec))
+    tex, r, g, b = drawn(NS.EM.Icon(rec))
+    if tex then return tex, r, g, b end
+    return drawn(rec.icon, rec.iconColor)
 end
 
 -- What Outfitter chooses for an outfit with none: its trigger's descriptor icon (INSTANCE_DIFFICULTY's
@@ -704,9 +706,11 @@ local function validIcon(icon)
 end
 
 -- An Equipment Manager outfit: a glyph is kept here and the set is untouched; anything else is the
--- set's icon (nil writes the wildcard) and drops the override.
+-- set's icon (nil writes the wildcard) and drops the override. Either way a stored `outfit.icon` row
+-- left on the mirror goes: the override and the set are its icon's only homes.
 local function setEMIcon(rec, icon, color, glyph)
     if not rec.setID then return false end
+    rec.icon, rec.iconColor = nil, nil
     if glyph then
         emIcons()[rec.setID] = { icon = icon, color = color }
     else

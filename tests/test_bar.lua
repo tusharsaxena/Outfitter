@@ -392,6 +392,25 @@ test("bar: Alt + a dropped spell sets the icon through C_Spell; item and macro t
     assertEqual(NS.Outfits.Get(hat).icon, M.C_Item.GetItemIconByID(info.id))
 end)
 
+test("bar: Alt + a drop writes through the one icon writer, NS.Outfits.SetIcon", function()
+    local NS, M, Bar = scene()
+    local hat = accessory(NS, "Hat")
+    settle(M)
+    local btn = buttonFor(Bar, hat)
+    local seen = {}
+    local real = NS.Outfits.SetIcon
+    NS.Outfits.SetIcon = function(id, icon, color) seen[#seen + 1] = { id, icon, color }; return real(id, icon, color) end
+    M.IsAltKeyDown = function() return true end
+    M.GetMacroInfo = function(i) if i == 3 then return "m", 136000, "" end end
+    M.GetCursorInfo = function() return "macro", 3 end
+    btn:__fire("OnReceiveDrag")
+    NS.Outfits.SetIcon = real
+    -- red under: the drop writing the `outfit.icon` row itself (an EM outfit's set is never told).
+    assertEqual(#seen, 1, "the drop did not go through NS.Outfits.SetIcon")
+    assertEqual(seen[1][1], hat); assertEqual(seen[1][2], 136000)
+    assertEqual(NS.Outfits.Get(hat).icon, 136000)
+end)
+
 test("bar: a dropped item without Alt becomes a new outfit named after it, worn", function()
     local NS, M, Bar = scene()
     local hat = accessory(NS, "Hat")
