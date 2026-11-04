@@ -204,6 +204,33 @@ local function placeArrow(button, out)
     paintArrow(popout, popout.flyoutLocked == true, out)
 end
 
+-- The button's own host's settings, as Blizzard reads them (EquipmentFlyout.lua:244): the Item
+-- Upgrade, Item Interaction and Runeforge frames share this flyout with their own (20, -8).
+local function hostSettings(button)
+    local host = button.GetParent and button:GetParent()
+    if type(host) == "table" and type(host.flyoutSettings) == "table" then return host.flyoutSettings end
+    return PaperDollItemsFrame and PaperDollItemsFrame.flyoutSettings or {}
+end
+
+-- Anchor the cleared item frame to `button` by its host's settings: below a vertical flyout, else
+-- beside it, outward when `out`. True when the frame now carries this file's TOPRIGHT.
+local function anchorFlyout(frame, button, out)
+    local settings = hostSettings(button)
+    local rel = button.popoutButton or button
+    if button.verticalFlyout then
+        frame:SetPoint("TOPLEFT", rel, "BOTTOMLEFT", NS.SafeNumber(settings.verticalAnchorX, 0),
+            NS.SafeNumber(settings.verticalAnchorY, 0))
+        return false
+    end
+    local x, y = NS.SafeNumber(settings.anchorX, 0), NS.SafeNumber(settings.anchorY, 0)
+    if out then
+        frame:SetPoint("TOPRIGHT", rel, "TOPLEFT", -x, y)
+        return true
+    end
+    frame:SetPoint("TOPLEFT", rel, "TOPRIGHT", x, y)
+    return false
+end
+
 -- The flyout's item frame: outward for a left-column slot while wanted, else Blizzard's own point,
 -- written back only when this file moved it.
 local function placeFlyout()
@@ -216,24 +243,7 @@ local function placeFlyout()
     frame:ClearAllPoints()
     flyoutMoved = false
     if not button then return end
-    -- The button's own host's settings, as Blizzard reads them (EquipmentFlyout.lua:244): the Item
-    -- Upgrade, Item Interaction and Runeforge frames share this flyout with their own (20, -8).
-    local host = button.GetParent and button:GetParent()
-    local settings = type(host) == "table" and type(host.flyoutSettings) == "table" and host.flyoutSettings
-        or PaperDollItemsFrame and PaperDollItemsFrame.flyoutSettings or {}
-    local rel = button.popoutButton or button
-    if button.verticalFlyout then
-        frame:SetPoint("TOPLEFT", rel, "BOTTOMLEFT", NS.SafeNumber(settings.verticalAnchorX, 0),
-            NS.SafeNumber(settings.verticalAnchorY, 0))
-        return
-    end
-    local x, y = NS.SafeNumber(settings.anchorX, 0), NS.SafeNumber(settings.anchorY, 0)
-    if out then
-        frame:SetPoint("TOPRIGHT", rel, "TOPLEFT", -x, y)
-        flyoutMoved = true
-    else
-        frame:SetPoint("TOPLEFT", rel, "TOPRIGHT", x, y)
-    end
+    flyoutMoved = anchorFlyout(frame, button, out)
 end
 
 -- EquipmentFlyout_UpdateItems' post-hook.
