@@ -49,7 +49,8 @@ In outline: `core/` holds the seams, each a lease on one `LibKa0s` major with a 
 profile defaults, the item and zone tables, the trigger catalog and its ID tables, the test-mode
 outfits; `defaults/Profile.lua` is the only place a default is hardcoded); `modules/` holds, in load
 order, the engine (`PlayerState` through `Companion`), the triggers and their state producers
-(`Triggers_*`, `States`, `States_Zone`), then the UI (`Commands` through `Preview`), the public API
+(`Triggers_*`, `States`, `States_Zone`), then the UI (`Commands` through `Preview`, with `Sheet`
+reading which character sheet is up for the dock, and `Broker` the Outfits data source), the public API
 (`Api`) and the diagnostics sections; `settings/` holds the schema, the slash dispatcher and the
 pages, last.
 
@@ -269,6 +270,7 @@ player-facing document, documentation-§1), and its slash-command table was a se
 | `localization-§4` | LOCKPICKING matches the lockbox tooltip line against `LOCKED_WITH_SPELL` + `GetTradeSkillDisplayName(633)`, and falls back to `L["Requires Lockpicking"]` when that does not reproduce the line | D4. No GlobalString for the line is confirmed (O22); without the fallback the trigger is dead on any client where the composed form differs | 2026-11-03 | The client check confirms the composed GlobalString form on every shipped locale, after which the `L` fallback and this row go |
 | `documentation-§1` | The README has no screenshots of the 1.1.0 UI | D6. They need a client capture of the reskinned docked window and settings pages after the smoke test; stale shots would mislead (H22) | 2026-11-03 | The first client capture of 1.1.0 |
 | `localization-§4` | `Inv.SlotItemActive` (the TRINKET_QUEUE skip-while-active rule) parses the item's use-duration tooltip line with the `cUseDurationTooltipLineFormat*` patterns kept in `L` | D8. No GlobalString or ID route gives an active use effect's remaining duration yet (O15) | 2026-11-03 | `C_Item.GetItemSpell` plus spell-duration data (or an aura read) covers it, after which the `L` keys and this row go |
+| `launcher-§1` | A second LibDataBroker object, `OutfitterRebornOutfits` (type `data source`, `modules/Broker.lua`), carries the old addon's outfit switcher; the launcher object is unchanged, and the second object is never put on the minimap | Owner ruling 2026-11-04: players used the old broker plugin to switch outfits, and the launcher's clicks and logo are fixed by launcher-§2/§4 | 2026-11-04 | The standard allows a feature data source next to the launcher |
 | `localization-§4` | The gathering triggers (GATHER_HERBALISM, GATHER_MINING) match the node tooltip's line against `C_TradeSkillUI.GetTradeSkillDisplayName(skillLine)`, the client's own localized name for an ID, not a GlobalString constant | D10. Tooltip data exposes no skill line for a node; the name is never hardcoded or put in `L`, so the match is correct on every locale | 2026-11-03 | `TooltipDataProcessor` exposes the node's skill line |
 
 One more row is conditional (the design's §10): **D7** (`localization-§7`, CJK and Cyrillic text

@@ -71,7 +71,7 @@ Each is a row in [smoke-tests.md](smoke-tests.md) with its pass criterion.
 | O22 | The lockpicking line's composed GlobalString | `L["Requires Lockpicking"]` (row D4) |
 | O23 | `ChangeActionBarPage` in combat (Fishing) | Skipped in lockdown, retried on regen |
 | O27 | Druid and rogue form spell IDs | A forms dump under `/or debug` |
-| O29 | The sheet button beside the close button does not overlap | Move it |
+| O29 | The sheet button after the Equipment Manager tab (stock), the Equipment tab (EllesmereUI) or the last tab icon (ChonkyCharacterSheet) overlaps nothing on any of the three sheets | Move it (`NS.Sheet.ButtonAnchor`) |
 | O31 | The window title fits 260 px | Shorten it |
 | O34 | The Equipment Sets tooltip line | Suppression through `AddLinePreCall` |
 | O38 | The title submenu with 200+ titles | — |

@@ -3,7 +3,8 @@
 The in-game checks no headless run can reach: real rendering, layering, taint, and client behavior
 the design could not measure ahead of time (audit-review-history). The owner runs them end to end
 before a release. Each row has a pass criterion, and every row can run on the 1.1.0 build; section 10 maps what the headless gate leaves unverified to the
-rows that verify it.
+rows that verify it. Section 11 is the sheet, window and broker round of 2026-11-04, the owner's CP4
+pass.
 
 ## Sign-off
 
@@ -71,7 +72,7 @@ rows that verify it.
 | W3 | Enter combat with the window open | It hides at once; no `ADDON_ACTION_BLOCKED`; it returns when combat ends (O4, O11) |
 | W4 | Escape | Closes the window |
 | W5 | Slot checkboxes | Beat the item buttons and any addon drawing over them; tri-state works |
-| W6 | The sheet button | Does not overlap the close button (O29) |
+| W6 | The sheet button | Shows on the stock sheet, sits after the Equipment Manager tab, matches the tab icons' size and overlaps nothing; S1 to S3 check each sheet (O29) |
 | W7 | The window title | Fits (O31) |
 | W8 | In combat with the window gone: change an outfit from the bar, press a wear key, rebind a key on the Keybindings tab | The wear follows the client's combat rules; the window's secure rows are not rebuilt until combat ends; a binding change in combat is refused or waits, never half-applied; no `ADDON_ACTION_BLOCKED` appears (O11) |
 | W9 | The icon browser's search (Change icon...); the Title submenu on a character with 200+ titles | Search on Recommended and Equipped and bags finds icons by item or trigger name, on Game icons by texture id; the submenu opens in 30-row chunks with "More" and stays usable (O38) |
@@ -138,7 +139,10 @@ this list. Each is checked by the rows named beside it; an O-number is a design 
 |---|---|---|
 | Real equips | The mock moves items by the plan; the client's swap timing, item locks and bag-full refusals are its own | T1, T2, T3, T10 |
 | The unique-equip error path | The mock ranks unique keys from captured fixtures; the client's error and `GetItemUniquenessByID`'s 12.x shape are not mocked (O17) | T10, X4 |
-| Docked layout, anchoring and strata against real CharacterFrame children | The layer mock records levels; it cannot see Blizzard's or another addon's frames redrawn over the sheet (O29, O31) | W1, W2, W5, W6, W7, SK6 |
+| Docked layout, anchoring and strata against real CharacterFrame children | The layer mock records levels; it cannot see Blizzard's or another addon's frames redrawn over the sheet (O29, O31) | W1, W2, W5, W6, W7, SK6, S1-S9 |
+| EllesmereUI's and ChonkyCharacterSheet's live frames | The harness stands in for the frames their sources build; their timing and their own hooks are theirs | S2, S3, S5, S7 |
+| The outward drawer against Blizzard's flyout | The flyout is a recorded stand-in; the real arrow, flyout and hosts that share it are the client's | S6, S7 |
+| Broker displays | LibDataBroker's object is real; how a display draws its text, icon tint, menu and tooltip is the display's | R1-R6 |
 | The combat hide and restore of the window | Lockdown is a flag in the mock; implicit protection of the rows is assumed worst-case (O4, O11) | W3 |
 | Refusals of secure rows and bindings in combat | The client's `ADDON_ACTION_BLOCKED` and binding protection are not emulated (O8, O11, O44) | K6, W8, T9 |
 | Escape ordering | `UISpecialFrames` order is the client's | W4, SK5 |
@@ -159,3 +163,32 @@ this list. Each is checked by the rows named beside it; an O-number is a design 
 | O38 Title submenu with 200+ titles | Usability | W9 |
 | O41 `GetPrimaryTooltipInfo()` field names | Tooltip info | B4 |
 | O3 `/or` collision | Other addons | X3 |
+
+## 11. Sheet, window and broker (2026-11-04)
+
+The sheet and window feedback round (design
+[2026-11-04](superpowers/specs/2026-11-04-sheet-and-window-feedback-design.md), G1 to G10). Run each
+S row on all three sheets: the stock sheet, EllesmereUI with its Character Sheet skin on, and
+ChonkyCharacterSheet. Note which sheet a failure is on.
+
+| # | Check | Pass when |
+|---|---|---|
+| S1 | Stock sheet: open it on the Character tab | The gold coat hanger shows (it did not show at all before), right after the Equipment Manager tab icon, the tab icons' size, borderless; a click opens and closes the window |
+| S2 | EllesmereUI sheet: open it, first open of the session and again | The button sits after the Equipment text tab, not over the close X; it is there on the first open too |
+| S3 | ChonkyCharacterSheet: open it, also in a fresh session after combat or a key | The button sits after the last tab icon above the item-level readout |
+| S4 | Each sheet: the Reputation and Currency tabs, then back to Character | The button and the window go with the Character tab and come back with it |
+| S5 | Each sheet: open the window; on Chonky also open its stats, M+, raid and GearFinder side panels | The window's top is flush with the sheet's top and its left edge touches the sheet's right edge, or the open side panel's; it follows a moved sheet and a panel opening and closing |
+| S6 | Each sheet: select an outfit | The slot boxes are about half their old size; on the left column top-right, on the right column top-left, on the weapons top-right; none covers an item's icon badly |
+| S7 | Each sheet, window open: click a left-column slot's arrow, then a right-column one and a weapon's; close the window and repeat | With the window open the left column's arrows sit on the slot's left and the flyout opens left; the right column and the weapons are Blizzard's. With the window closed every arrow and flyout is Blizzard's again. Then open the Item Upgrade frame's flyout: it opens where Blizzard puts it. No `ADDON_ACTION_BLOCKED` |
+| S8 | Close the sheet with the window open, reopen the sheet without the window, open a left-column flyout | Blizzard's drawer (arrow on the right, opening right) |
+| S9 | The window's header | The close X shows beside the gear and closes the window; the gear, the scroll buttons and the New outfit mark have no bevel |
+| S10 | An outfit row | Reads worn box, outfit icon, Equipment Manager icon, name, then the lightning and the gear at the right, none of the icons beveled; the EM icon is full for an outfit in the Equipment Manager and dimmed otherwise, and a click toggles it |
+| S11 | Outfit icons | An outfit with no icon shows the white coat hanger, whole (not cropped) and without an edge; a game icon shows edged, as an item's does; the bar and the broker show the same icon |
+| S12 | Change icon... on a native outfit: each tab (Recommended, Equipped and bags, Game icons, Glyphs), search, a glyph with a color, Cancel | Markers is not offered; a glyph pick shows in its color on the row, the bar and the broker object; Cancel changes nothing |
+| S13 | Change icon... on an Equipment Manager outfit: a glyph, then a game icon, then Outfitter chooses | The glyph shows while the Equipment Manager keeps its own icon; the game icon becomes the set's icon in the Equipment Manager; Outfitter chooses goes back to the trigger's or an item's icon |
+| R1 | A broker display (Titan Panel, ChocolateBar, or similar): add *Ka0s Outfitter Reborn: Outfits* | Its text is the worn outfit's name with its icon; with none, the brand and the gold coat hanger. The minimap still has one button |
+| R2 | Left-click it | The menu: the brand, Open outfit window, Automatic changes, then each category with its visible outfits, icons, and a tick on each worn one; a missing outfit's name is red and a banked one's blue |
+| R3 | In the menu: click an Accessory, click it again, click another Complete outfit | It goes on and its tick shows; it comes off; the new Complete outfit goes on and the old one's tick goes, while the menu stays open |
+| R4 | In the menu: Shift-click an outfit; Open outfit window with the window open and closed | The menu closes and the set-current prompt asks; Open outfit window opens the window and never closes it or the sheet |
+| R5 | Right-click it; hover it | The window toggles; the tooltip shows the brand, the current outfit and both click hints |
+| R6 | `/or disable`, then the object | The text is the brand, the outfit rows and Open outfit window are grayed and refuse with the one line, Automatic changes still works; `/or enable` restores it |

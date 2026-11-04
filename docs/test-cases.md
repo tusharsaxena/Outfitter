@@ -793,7 +793,7 @@ Total.
 - secrets states: a secret icon falls through to the spell; a secret spell id matches nothing
 - secrets states: the last mana reading survives a secret sample
 
-### test_quickslots.lua (32)
+### test_quickslots.lua (33)
 
 - quickslots: NS.QuickSlots and its sort are published
 - quickslots: the hooks are post-hooks, built once however often the addon stands up
@@ -823,6 +823,7 @@ Total.
 - drawer: SetReversed on a left-column arrow mirrors its coords
 - drawer: with the window closed the flyout keeps Blizzard's anchors
 - drawer: closing the window restores the left-column arrows and an open flyout
+- drawer: a window hidden through its parent restores the drawer
 - drawer: stood down nothing is moved
 - drawer: a stand-down with the window open puts Blizzard's drawer back
 - drawer: in combat lockdown nothing is moved
@@ -1166,7 +1167,7 @@ Total.
 - sheet: with no Chonky panel shown DockRight is the backdrop's edge
 - sheet: the adapter creates, anchors and shows nothing
 
-### test_dock.lua (35)
+### test_dock.lua (36)
 
 - dock: NS.Dock is published with the §7.2 surface
 - dock: the holder fills the sheet, and the sheet button toggles the window
@@ -1176,6 +1177,7 @@ Total.
 - dock: PLAYER_REGEN_DISABLED hides the window, PLAYER_REGEN_ENABLED restores it, dialogs stay
 - dock: the sheet's OnHide clears the wish, so the window does not come back on the next open
 - dock: the window takes ONE UIParent-relative SetPoint, and falls back to the holder when refused
+- dock: closing the sheet syncs the drawer after the window is gone
 - dock: a sheet that was never laid out parks the window at the UIParent TOPLEFT
 - dock: the follow runs every 0.05 s on the driver frame, only while shown and standing up
 - dock: an idle States poll sends no STACK_CHANGED, and a stack change keeps the status cache
@@ -1214,7 +1216,7 @@ Total.
 - list model: a collapsed category keeps its header and drops its rows
 - list model: Status caches O.Status in the table it is handed, until that is wiped
 
-### test_rows_secure.lua (20)
+### test_rows_secure.lua (21)
 
 - rows: NS.WindowRows is published with the secure surface
 - rows: fourteen rows and their secure children are created once, each SetAllPoints'd at birth
@@ -1228,6 +1230,7 @@ Total.
 - rows: a category click collapses it for the session
 - rows: an item right-click uses it, except on the merchant's buyback tab
 - rows: an outfit row shows worn, icon, EM mark, name in that order
+- rows: a glyph outfit icon is drawn uncropped; a fileID one edged and cropped
 - rows: the EM mark is full for an EM outfit and dimmed otherwise
 - rows: clicking the dimmed EM mark stores the outfit on the server, as the checkbox did
 - rows: clicking the EM mark in combat refuses and changes nothing
@@ -1257,7 +1260,7 @@ Total.
 - slot enables: hidden when stood down, and a selection while down shows nothing
 - drawer: the window's show and hide tell the drawer, with the window's state already set
 
-### test_bar.lua (28)
+### test_bar.lua (29)
 
 - bar: NS.Bar is published with the §7.7 surface
 - bar: bar.shown defaults false, so a fresh profile and a repaired one both come up hidden
@@ -1273,6 +1276,7 @@ Total.
 - bar: a left click wears; a worn accessory is removed; a worn Complete outfit stays on
 - bar: a right click opens the outfit menu afresh on every open
 - bar: Alt + a dropped spell sets the icon through C_Spell; item and macro too
+- bar: Alt + a drop writes through the one icon writer, NS.Outfits.SetIcon
 - bar: a dropped item without Alt becomes a new outfit named after it, worn
 - bar: a dropped item that cannot make an outfit stays on the cursor, and says why
 - bar: the hover shows the outfit tooltip with always = true, and hides GameTooltip when it shows nothing
@@ -1288,7 +1292,7 @@ Total.
 - bar: Suspend hides it and stops the rebuilds; the stand-down keeps it down
 - bar: test mode shows the sample outfits with the strip, even with the bar off, and they do nothing
 
-### test_outfit_icons.lua (14)
+### test_outfit_icons.lua (15)
 
 - icons: NS.OutfitIcon and NS.Outfits.SetIcon are published, and char.emIcons defaults empty
 - icons: a 1.1.0 fileID draws as before
@@ -1298,6 +1302,7 @@ Total.
 - icons: 134400 stores nil
 - icons: a glyph on an EM outfit is kept per character and the set is not modified
 - icons: an EM outfit draws its set's icon, and a fileID on it goes to the set and clears the override
+- icons: an EM outfit's stale own icon never hides its override or its set's icon
 - icons: deleting an EM set clears its override
 - icons: storing a glyph outfit on the server keeps the glyph as the set's override, and back
 - icons: a mirror matched to a new set id keeps its glyph override under that id
@@ -1305,7 +1310,7 @@ Total.
 - icons: a pruned mirror on the set id another mirror moved to does not take that mirror's glyph
 - icons: deleting a mirror leaves an override another outfit's set id still owns
 
-### test_broker.lua (10)
+### test_broker.lua (13)
 
 - broker: a data source named OutfitterRebornOutfits exists and is not on the minimap
 - broker: text and icon follow the worn outfit
@@ -1315,6 +1320,9 @@ Total.
 - broker: clicking a worn accessory removes it; clicking a Complete wears it
 - broker: a modifier-click asks to set current
 - broker: right-click toggles the window
+- broker: the menu's Open outfit window opens, and never closes, the window
+- broker: wearing a Complete outfit from the menu clears the ticks of the outfits it took off
+- broker: a modifier-click closes the menu before the set-current prompt
 - broker: the tooltip names the brand, the current outfit and both clicks
 - broker: in combat a wear is queued or refused as the window's is
 
@@ -1641,7 +1649,7 @@ Total.
 | test_companion.lua | 25 |
 | test_states.lua | 29 |
 | test_secrets_states.lua | 6 |
-| test_quickslots.lua | 32 |
+| test_quickslots.lua | 33 |
 | test_equip_bracket.lua | 32 |
 | test_tooltips.lua | 18 |
 | test_stack.lua | 27 |
@@ -1658,13 +1666,13 @@ Total.
 | test_triggers_class.lua | 11 |
 | test_triggers_pvp.lua | 7 |
 | test_sheet.lua | 15 |
-| test_dock.lua | 35 |
+| test_dock.lua | 36 |
 | test_list_model.lua | 7 |
-| test_rows_secure.lua | 20 |
+| test_rows_secure.lua | 21 |
 | test_slot_enables.lua | 17 |
-| test_bar.lua | 28 |
-| test_outfit_icons.lua | 14 |
-| test_broker.lua | 10 |
+| test_bar.lua | 29 |
+| test_outfit_icons.lua | 15 |
+| test_broker.lua | 13 |
 | test_triggers_parity.lua | 13 |
 | test_preview.lua | 14 |
 | test_outfit_menu.lua | 11 |
@@ -1681,4 +1689,4 @@ Total.
 | test_lizard_sighted.lua | 8 |
 | test_prose.lua | 15 |
 | Skipped | 1 |
-| **Total** | **1375** |
+| **Total** | **1383** |

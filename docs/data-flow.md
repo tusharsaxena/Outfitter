@@ -68,7 +68,7 @@ outfit's trigger target (NS.TriggerBinder) ◄───────────�
 NS.Equip.Batch(function()  NS.Stack.Wear / Remove (layer, byTrigger)  end) ◄──┘
    └─ on close ─► E.Update(): gates (dead, casting, delay, throttle, combat)
                   ─► St.Compile() ─► Changes.Build(compiled, Inv.Cache()) ─► E.Execute(changes)
-                  ─► STACK_CHANGED (only when the stack moved) ─► window
+                  ─► STACK_CHANGED (only when the stack moved) ─► window, Outfits broker
 ```
 
 - **Triggers are data.** A descriptor in `defaults/Triggers.lua` names its events, its typed
@@ -97,6 +97,15 @@ NS.Equip.Batch(function()  NS.Stack.Wear / Remove (layer, byTrigger)  end) ◄�
 - **Executing.** `E.Update` waits out death, casting, combat lockdown and a 1.5 s throttle, compiles
   the stack into one wanted item per slot, diffs it against the inventory cache into an ordered change
   list, and executes it with the equip sounds muted (`equip.muteSounds`) and the cursor always cleared.
+- **The Outfits broker** (`modules/Broker.lua`) is one more reader of the stack: it redraws its text
+  and icon from `NS.Stack.Top()` and `NS.OutfitIcon` on the stack and outfit messages, and its menu
+  wears and removes through the same `NS.Stack.Wear` / `Remove` calls the window's rows make, so a
+  wear asked for in combat is queued exactly as theirs is.
+- **The sheet and the window.** `NS.Sheet` reads which character sheet is up (stock, EllesmereUI,
+  ChonkyCharacterSheet) and where its button and right edge are; `NS.Dock` asks it on every sheet
+  show and from its 0.05 s follow. The window's show and hide, and the sheet's hide, call
+  `NS.QuickSlots.DrawerSync`, which turns the left column's equipment drawer outward only while the
+  window is visible ([`taint.md`](taint.md)).
 - **Matching uses IDs, never names.** Maps by uiMapID or instance mapID, spells and auras by spellID,
   items by itemID, NPCs by creatureID, professions by skillLine. The documented exceptions are rows
   D3, D4, D8 and D10 in `ARCHITECTURE.md`.

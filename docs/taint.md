@@ -51,6 +51,34 @@ anchors, so in combat:
 `NS.SecureQueue.Run("dock.layers", …)`, because the window has secure children. The slot checkboxes
 hold no secure frames and may restack in combat.
 
+### The equipment flyout (the quick slots and the outward drawer)
+
+`modules/QuickSlots.lua` meets Blizzard's equipment flyout through post-hooks only: `HookScript`
+PreClick and PostClick on the paper doll's 18 slot buttons (`Character<Slot>`), `hooksecurefunc` on
+its `flyoutSettings.getItemsFunc` and `postGetItemsFunc`, and `hooksecurefunc` on the globals `EquipmentFlyout_UpdateItems` and
+`EquipmentFlyoutPopoutButton_SetReversed`
+(wow-ui-source@297d7aa:Interface/AddOns/Blizzard_FrameXML/EquipmentFlyout.lua:238, :633). A missing
+global is skipped, never hooked.
+
+While the outfit window is on screen (visible, not just shown: a window parked in the sheet holder
+keeps its shown flag when the sheet hides it), the left column's drawer opens outward (design G8):
+
+- Each left-column popout arrow is re-anchored `RIGHT` to its slot's `LEFT` and its coords mirrored.
+  Blizzard anchors it once, `LEFT` to the slot's `RIGHT` (-8, 0)
+  (wow-ui-source@297d7aa:Interface/AddOns/Blizzard_UIPanels_Game/Mainline/PaperDollFrame.lua:1529-1532).
+- After `EquipmentFlyout_UpdateItems` anchors `buttonFrame` `TOPLEFT` to the arrow's `TOPRIGHT`
+  (EquipmentFlyout.lua:334-338), the post-hook clears it and anchors it `TOPRIGHT` to the arrow's
+  `TOPLEFT`, for a left-column slot only. A flyout this file moved is put back on Blizzard's anchor,
+  read off the button's own host's `flyoutSettings`, so the Item Upgrade, Item Interaction and
+  Runeforge frames that share the flyout keep theirs.
+- `EquipmentFlyoutPopoutButton_SetReversed`'s post-hook re-mirrors a moved arrow's coords.
+
+These are anchor and texcoord writes on the arrows and `buttonFrame`, which are not protected. Every
+one is **out of combat only** (each hook and `QuickSlots.DrawerSync` return in lockdown), and each hook
+reads the stand-down first. The window's OnShow and OnHide, the sheet's OnHide and the stand-down all
+call `DrawerSync`, which puts Blizzard's anchors and coords back when the window is gone. No Blizzard
+function is replaced and no Blizzard table is written.
+
 ### Combat-gated acts
 
 The equipment-set checkbox is refused in combat (O44); the bank verbs and Delete all outfits refuse in

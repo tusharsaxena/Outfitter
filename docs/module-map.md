@@ -63,7 +63,7 @@ The libraries load first, each in its own folder under `libs/`, and are vendored
 | `core/Bus.lua` | `NS.MSG`, `NS.NewBusTarget`, `NS.SendBus`, `NS.BusStandDown`/`BusStandUp` (LibKa0s-Bus; [message-bus.md](message-bus.md)) |
 | `core/PoolSetup.lua` | `NS.Pool`, the array and keyed widget pools (LibKa0s-Pool) |
 | `core/ItemSetup.lua` | `NS.Item`: `ItemIDFromLink`, `BonusIDsFromLink` on plain links only (LibKa0s-Item) |
-| `core/WidgetsSetup.lua` | `NS.MakeDropdown`, `NS.OpenMenu`, `NS.CloseMenu`, `NS.MakeTestStrip`, `NS.TEST_STRIP_HEIGHT`, `NS.MakeDragHandle` (LibKa0s-Widgets) |
+| `core/WidgetsSetup.lua` | `NS.MakeDropdown`, `NS.OpenMenu`, `NS.CloseMenu`, `NS.IconText`, `NS.MakeTestStrip`, `NS.TEST_STRIP_HEIGHT`, `NS.MakeDragHandle` (LibKa0s-Widgets) |
 | `core/SecureQueue.lua` | `NS.SecureQueue`: a protected write runs now or waits out combat lockdown, latest per key |
 | `core/LifecycleSetup.lua` | `NS.lifecycle`, the one stand-down latch with its `disabled` and `perf` holds, `NS.ApplyEnabled`, `NS.IsStoodDown`, `NS.StoodDownRefusal` (LibKa0s-Lifecycle) |
 | `core/PerfSetup.lua` | `NS.Perf`, the performance harness over `OutfitterRebornPerfDB` with its ten fixed buckets (LibKa0s-Perf; [performance.md](performance.md)) |
@@ -137,6 +137,7 @@ the diagnostics sections.
 | `modules/Tooltips.lua` | `NS.Tooltips`: the "Used by outfits" line on item tooltips |
 | `modules/Tooltips_Compare.lua` | `NS.Compare`: up to five comparison tooltips with the items your outfits use in the hovered slot |
 | `modules/OutfitTooltip.lua` | `NS.OutfitTooltip`: an outfit's tooltip, for the window's rows and the bar's buttons |
+| `modules/Sheet.lua` | `NS.Sheet`: which character sheet is up (stock, EllesmereUI, ChonkyCharacterSheet) and where on it the sheet button and the window go; reads only, anchors nothing |
 | `modules/Dock.lua` | `NS.Dock`: the sheet holder and button, the window's show model, its follow and its layer sync |
 | `modules/Window.lua` | `NS.Window`: the outfit window's chrome, list body, scroll bar, footer and render |
 | `modules/Window_ListModel.lua` | `NS.WindowListModel`: what the outfit list shows, in order |
@@ -151,7 +152,8 @@ the diagnostics sections.
 | `modules/Dialog_Progress.lua` | `NS.ProgressDialog`: the optimizer's progress window |
 | `modules/Bar.lua` | `NS.Bar`: the outfit bar |
 | `modules/Bar_Buttons.lua` | The outfit bar's pooled buttons |
-| `modules/QuickSlots.lua` | `NS.QuickSlots`: the equipment flyout hooks |
+| `modules/Broker.lua` | `NS.Broker`: the `OutfitterRebornOutfits` LibDataBroker data source, the old addon's outfit switcher (a second object beside the launcher; [ARCHITECTURE.md](ARCHITECTURE.md#documented-deviations)) |
+| `modules/QuickSlots.lua` | `NS.QuickSlots`: the equipment flyout hooks, and the left column's drawer turned outward while the window shows |
 | `modules/QuickSlots_Sort.lua` | The flyout's upgrade-track sort (extends `NS.QuickSlots`) |
 | `modules/Preview.lua` | `NS.Preview`: test mode |
 | `modules/Api.lua` | The public API, `NS.API.v1`, published as `OutfitterReborn.API.v1` ([ARCHITECTURE.md](ARCHITECTURE.md#public-api)) |
