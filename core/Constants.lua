@@ -27,7 +27,7 @@ C.LOGO = ("Interface\\AddOns\\%s\\media\\logos\\%s.logo.tga"):format(addonName, 
 --   DIALOG             MODAL     the outfit, trigger, rebuild and progress dialogs
 --   DIALOG             (library) the LibKa0s debug console, which the icon chooser and a dialog can
 --                                cover; Blizzard StaticPopups, raised by NS.RaiseStaticPopups
---   FULLSCREEN         (library) the LibKa0s copy window
+--   FULLSCREEN         (library) the LibKa0s copy window the debug console's Copy opens
 --   FULLSCREEN_DIALOG  POPUP     the icon chooser; the LibKa0s menus and dropdown pullouts share it
 --   TOOLTIP            CURSOR    the compare tooltips; GameTooltip and ShoppingTooltip1/2 (Blizzard)
 --

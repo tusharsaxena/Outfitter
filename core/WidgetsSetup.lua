@@ -1,5 +1,5 @@
 local addonName, NS = ...
--- core/WidgetsSetup.lua — NS.MakeDropdown / NS.OpenMenu / NS.CloseMenu / NS.MakeSearchBox / NS.MakeTestStrip / NS.MakeDragHandle / NS.ShowCopy from LibKa0s-Widgets-1.0 (BP §6.13).
+-- core/WidgetsSetup.lua — NS.MakeDropdown / NS.OpenMenu / NS.CloseMenu / NS.MakeSearchBox / NS.MakeTestStrip / NS.MakeDragHandle from LibKa0s-Widgets-1.0 (BP §6.13).
 --
 -- A seam, nothing else (library-stack-§7): one file leases the major, so the art the controls draw
 -- is resolved once, here, and every control is handed this addon's skin owner. The library is
@@ -9,8 +9,8 @@ local addonName, NS = ...
 --
 -- The users, as they land in P4: the outfit context menu (modules/OutfitMenu.lua, through
 -- NS.OpenMenu; it replaces LibDropdown and the MC2 menus, design §7.5), the dialogs' dropdowns
--- (NS.MakeDropdown, §7.6), the outfit bar's test strip (NS.MakeTestStrip, §7.7, H17) and the copy
--- window the diagnostics open (NS.ShowCopy).
+-- (NS.MakeDropdown, §7.6) and the outfit bar's test strip (NS.MakeTestStrip, §7.7, H17). The seam
+-- exports no copy window: the diagnostics report is copied from the debug console's own Copy button.
 --
 -- THE POPUP IS A PROCESS-WIDE SINGLETON parented to UIParent, so hiding a window does not reach it.
 -- Every non-click close path of a window that opens a menu calls NS.CloseMenu(): the character
@@ -18,8 +18,7 @@ local addonName, NS = ...
 --
 -- DEGRADED (the library absent): NS.MakeDropdown, NS.MakeSearchBox and NS.MakeTestStrip answer nil, and the caller
 -- draws no control rather than a dead one; NS.OpenMenu hands the same `fill` to the client's
--- MenuUtil; NS.CloseMenu is a no-op, because no Ka0s menu can be open; NS.ShowCopy answers false
--- and its caller prints the text instead.
+-- MenuUtil; NS.CloseMenu is a no-op, because no Ka0s menu can be open.
 
 local W = LibStub and LibStub("LibKa0s-Widgets-1.0", true)
 
@@ -209,29 +208,4 @@ function NS.MakeDragHandle(parent, spec)
         for k, v in pairs(spec) do o[k] = v end
     end
     return W.DragHandle(parent, o)
-end
-
--- ── the copy window ──────────────────────────────────────────────────────────────────────────────
-
--- The one copy window, its frame built on the first ShowCopy (the library's lazy handle), over the
--- window that asked for it.
-local copyWindow, copyAnchor
-
---- Show `text` selected in the copy window (Ctrl+C copies it, Escape closes it), titled `title`, over
---- `anchor` when it is shown.
---- @param text string
---- @param title string
---- @param anchor table|nil the window to center it over
---- @return boolean shown  false on a degraded install
-function NS.ShowCopy(text, title, anchor)
-    if not (W and W.CopyWindow) then return false end
-    copyAnchor = anchor
-    copyWindow = copyWindow or W.CopyWindow({
-        addonName = addonName, name = "OutfitterRebornCopyWindow", width = 520, height = 150, title = title,
-        anchorTo = function() return copyAnchor end,
-    })
-    if not copyWindow then return false end
-    local f = copyWindow:Show(text)
-    if f and f.title then f.title:SetText(title) end
-    return true
 end

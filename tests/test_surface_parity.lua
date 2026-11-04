@@ -289,18 +289,22 @@ end)
 -- ── Widgets ────────────────────────────────────────────────────────────────────────────────────
 
 test("parity: the Widgets seam answers on both arms, nil being a real answer", function()
+    -- The seam exports no copy window: no shipped feature opens one (the diagnostics report is
+    -- copied from the debug console's own Copy button). red under: restoring NS.ShowCopy in
+    -- core/WidgetsSetup.lua.
     bothArms("NS", function(NS) return NS end, {
         MakeDropdown = "function", OpenMenu = "function", CloseMenu = "function",
-        MakeTestStrip = "function", ShowCopy = "function", TEST_STRIP_HEIGHT = "number",
+        MakeTestStrip = "function", TEST_STRIP_HEIGHT = "number",
     })
     local l, d = pair()
+    assertNil(l.NS.ShowCopy, "the live load exports a copy window no feature opens")
+    assertNil(d.NS.ShowCopy, "the stub exports a copy window no feature opens")
     T.assertLibraryConstant(d.NS.TEST_STRIP_HEIGHT, "LibKa0s-Widgets-1.0", "TEST_STRIP.HEIGHT",
         "the stub's strip height")
     assertTrue(l.NS.MakeDropdown(l.mocks.UIParent, 100) ~= nil, "the live load drew no dropdown")
     assertTrue(l.NS.MakeTestStrip(l.mocks.UIParent, "Test mode") ~= nil, "the live load drew no strip")
     assertNil(d.NS.MakeDropdown(d.mocks.UIParent, 100), "the stub drew a dead dropdown")
     assertNil(d.NS.MakeTestStrip(d.mocks.UIParent, "Test mode"), "the stub drew a strip")
-    assertFalse(d.NS.ShowCopy("text", "title"), "the stub claimed a copy window")
     d.NS.CloseMenu()
     l.NS.CloseMenu()
 end)
