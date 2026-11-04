@@ -37,9 +37,9 @@ Update the row and commit the plan at every checkpoint. A resumed run reads this
 | CP | Milestone / task | Repo | State |
 |---|---|---|---|
 | CP0 | Slash rename + design committed | OR | done (11ead73, f4aa2b0) |
-| CP1 | M1 LibKa0s IconBrowser released as v1.86.0, pushed | LK | todo |
+| CP1 | M1 LibKa0s IconBrowser released as v1.86.0, pushed | LK | done (tag v1.86.0 = cad1609, branch pushed) |
 | CP2 | M2 Quick Comms re-vendored onto the library browser, pushed | QC | todo |
-| CP3a | M3 Tasks 3.1–3.4 (sheet adapter, dock, chrome, rows) | OR | todo |
+| CP3a | M3 Tasks 3.1–3.4 (sheet adapter, dock, chrome, rows) | OR | done (b70853e..4793a91, pushed) |
 | CP3b | M3 Tasks 3.5–3.6 (re-vendor, icon model, browser) | OR | todo |
 | CP3c | M3 Tasks 3.7–3.9 (slots/drawers, broker, docs), pushed | OR | todo |
 | CP4 | Owner's in-game smoke pass; fixes on the branches | all | todo |
