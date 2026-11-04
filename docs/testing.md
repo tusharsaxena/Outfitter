@@ -170,7 +170,7 @@ has no row here, or a row leaves its §9.3 group or order.
 | `test_rows_secure` | The secure row children: built once, never moved after the build, disarmed in lockdown |
 | `test_slot_enables` | The slot checkboxes: one per slot on the character sheet, the tri-state, All and None, the restack |
 | `test_outfit_menu` | The outfit context menu: the rows per kind, the bank rows, the binding labels, the title submenu, the trigger switch |
-| `test_dialogs` | The new-outfit and rename dialogs, the popups' data, the icon chooser, the row's Equipment Manager checkbox |
+| `test_dialogs` | The new-outfit and rename dialogs, the popups' data, the icon browser (Change icon...), the row's Equipment Manager checkbox |
 | `test_trigger_dialog` | The trigger dialog: the draft, validation, Done writes through `SetMany` only, X and Escape discard, the nine field types |
 | `test_bar` | The outfit bar: defaults, buttons, stacking, the icon ladder, drag, alpha and fades, pet battles, the menu, disabled-trigger outfits |
 | `test_outfit_icons` | The outfit icon model: one resolver for row, bar and broker (a 1.1.0 fileID as before, a tinted glyph, the trigger, item and coat-hanger fall-through), `NS.Outfits.SetIcon`, the wildcard as nil, an Equipment Manager outfit's per-character glyph override and its clearing |

@@ -1,5 +1,5 @@
 local addonName, NS = ...
--- core/WidgetsSetup.lua — NS.MakeDropdown / NS.OpenMenu / NS.CloseMenu / NS.MakeSearchBox / NS.MakeTestStrip / NS.MakeDragHandle from LibKa0s-Widgets-1.0 (BP §6.13).
+-- core/WidgetsSetup.lua — NS.MakeDropdown / NS.OpenMenu / NS.CloseMenu / NS.MakeTestStrip / NS.MakeDragHandle from LibKa0s-Widgets-1.0 (BP §6.13).
 --
 -- A seam, nothing else (library-stack-§7): one file leases the major, so the art the controls draw
 -- is resolved once, here, and every control is handed this addon's skin owner. The library is
@@ -16,7 +16,7 @@ local addonName, NS = ...
 -- Every non-click close path of a window that opens a menu calls NS.CloseMenu(): the character
 -- sheet's OnHide, the outfit window's OnHide and each dialog's OnHide (design §7.2, §7.3, §7.6).
 --
--- DEGRADED (the library absent): NS.MakeDropdown, NS.MakeSearchBox and NS.MakeTestStrip answer nil, and the caller
+-- DEGRADED (the library absent): NS.MakeDropdown and NS.MakeTestStrip answer nil, and the caller
 -- draws no control rather than a dead one; NS.OpenMenu hands the same `fill` to the client's
 -- MenuUtil; NS.CloseMenu is a no-op, because no Ka0s menu can be open.
 
@@ -147,23 +147,6 @@ end
 --- open. Safe when none ever opened, and a no-op on a degraded install.
 function NS.CloseMenu()
     if W then W.CloseMenu() end
-end
-
--- ── the search box ───────────────────────────────────────────────────────────────────────────────
-
---- The flat filter box (the library's W.SearchBox, owned by this addon's skin), or nil when the
---- library is absent: the caller then filters nothing. The icon chooser's (design §7.8).
---- @param parent table
---- @param width number|nil
---- @param opts table|nil W.SearchBox's opts (`hint`, `onChange`); `owner` is this addon
---- @return table|nil
-function NS.MakeSearchBox(parent, width, opts)
-    if not (W and W.SearchBox) then return nil end
-    local o = { owner = addonName }
-    if type(opts) == "table" then
-        for k, v in pairs(opts) do o[k] = v end
-    end
-    return W.SearchBox(parent, width, o)
 end
 
 -- ── the test-mode strip ──────────────────────────────────────────────────────────────────────────

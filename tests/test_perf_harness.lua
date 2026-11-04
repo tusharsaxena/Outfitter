@@ -346,7 +346,7 @@ end)
 local MODULES = {
     "Preview", "TriggerBinder", "States", "Optimize", "Companion", "EM", "Equip", "Stack",
     "Outfits", "Inventory", "PlayerState", "Stats", "Tooltips", "Compare", "QuickSlots", "Bar",
-    "Dock", "SlotEnables", "Dialogs", "IconChooser",
+    "Dock", "SlotEnables", "Dialogs", "IconBrowser",
 }
 
 test("lifecycle: the module list is design §5.12's, in its order", function()

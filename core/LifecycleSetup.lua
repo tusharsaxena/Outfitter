@@ -24,7 +24,7 @@ local L = NS.L
 -- skipped by the walks below rather than raised on.
 local MODULES = { "Preview", "TriggerBinder", "States", "Optimize", "Companion", "EM", "Equip", "Stack",
                   "Outfits", "Inventory", "PlayerState", "Stats", "Tooltips", "Compare", "QuickSlots", "Bar",
-                  "Dock", "SlotEnables", "Dialogs", "IconChooser" }
+                  "Dock", "SlotEnables", "Dialogs", "IconBrowser" }
 NS.LIFECYCLE_MODULES = MODULES
 
 --- Disabled means NOT RUNNING. Every registration goes -- not gated -- every timer is canceled, and

@@ -138,7 +138,6 @@ modules\Dialog_Trigger.lua
 modules\Dialog_TriggerFields.lua
 modules\Dialog_Rebuild.lua
 modules\Dialog_Progress.lua
-modules\IconChooser.lua
 modules\Bar.lua
 modules\Bar_Buttons.lua
 modules\QuickSlots.lua

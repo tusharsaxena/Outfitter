@@ -262,7 +262,7 @@ test("menu: Delete, Update and Rebuild ask through popups carrying the id; the d
     assertTrue(NS.OutfitDialog.IsOpen())
     open(NS, ctl, acc)
     click(ctl, "Change icon")
-    assertTrue(NS.IconChooser.IsOpen())
+    assertTrue(NS.IconBrowser.IsOpen())
 end)
 
 test("menu: nothing opens for an unknown id or while stood down", function()

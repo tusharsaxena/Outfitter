@@ -153,7 +153,7 @@ local PLANNED = {
     "modules/OutfitTooltip.lua", "modules/Sheet.lua", "modules/Dock.lua", "modules/Window.lua", "modules/Window_ListModel.lua",
     "modules/Window_Rows.lua", "modules/SlotEnables.lua", "modules/OutfitMenu.lua", "modules/UIDialogs.lua",
     "modules/Dialog_Outfit.lua", "modules/Dialog_Trigger.lua", "modules/Dialog_TriggerFields.lua",
-    "modules/Dialog_Rebuild.lua", "modules/Dialog_Progress.lua", "modules/IconChooser.lua",
+    "modules/Dialog_Rebuild.lua", "modules/Dialog_Progress.lua",
     "modules/Bar.lua", "modules/Bar_Buttons.lua", "modules/QuickSlots.lua", "modules/QuickSlots_Sort.lua",
     "modules/Preview.lua", "modules/Api.lua", "modules/Diagnostics.lua",
     "settings/Schema.lua", "settings/Slash.lua", "settings/OptionsSetup.lua", "settings/General.lua",

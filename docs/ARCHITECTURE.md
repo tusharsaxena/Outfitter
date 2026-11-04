@@ -179,7 +179,8 @@ above it, and the slot checkboxes take `CharacterFrame`'s strata, one level abov
 under it, so they beat the item buttons and any addon drawing over them. Both re-sync from the
 window's follow tick, because raising the sheet changes its level. Neither ever gets a fixed strata,
 which would poke it through a window that covers the sheet (the fork's lesson, kept). The bar is
-`HUD`, the dialogs `MODAL`, the icon chooser `POPUP` and the compare tooltips `CURSOR`. The full stack
+`HUD`, the dialogs and the icon browser `MODAL` (the browser in a band over the dialogs), the menus
+`POPUP` and the compare tooltips `CURSOR`. The full stack
 is in the design's §7.1 and the limitations it leaves are in [`known-limitations.md`](known-limitations.md).
 
 ## Taint Notes

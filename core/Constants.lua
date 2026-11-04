@@ -24,11 +24,14 @@ C.LOGO = ("Interface\\AddOns\\%s\\media\\logos\\%s.logo.tga"):format(addonName, 
 --                      (the sheet holder's strata, its level + DOCK_OVER_HOST) and the slot
 --                      checkboxes (the sheet's strata, the highest descendant + SLOT_ENABLES_OVER_HOST)
 --   MEDIUM             HUD       the outfit bar: movable, clamped, toplevel
---   DIALOG             MODAL     the outfit, trigger, rebuild and progress dialogs
---   DIALOG             (library) the LibKa0s debug console, which the icon chooser and a dialog can
+--   DIALOG             MODAL     the outfit, trigger, rebuild and progress dialogs; the LibKa0s icon
+--                                browser (modules/IconBrowserSetup.lua), a modal over them in a band
+--                                based UIParent + ICON_BROWSER (catcher +0, window +2, page +3, X +5)
+--   DIALOG             (library) the LibKa0s debug console, which the icon browser and a dialog can
 --                                cover; Blizzard StaticPopups, raised by NS.RaiseStaticPopups
 --   FULLSCREEN         (library) the LibKa0s copy window the debug console's Copy opens
---   FULLSCREEN_DIALOG  POPUP     the icon chooser; the LibKa0s menus and dropdown pullouts share it
+--   FULLSCREEN_DIALOG  POPUP     the LibKa0s menus, the icon browser's Wowhead link window; AceGUI's
+--                                pullouts and the color picker the browser's toolbar opens share it
 --   TOOLTIP            CURSOR    the compare tooltips; GameTooltip and ShoppingTooltip1/2 (Blizzard)
 --
 -- Levels inside a surface (base W): chrome W+1, content W+2, the scroll bar W+3, the row's secure
@@ -39,6 +42,7 @@ C.LAYERS = {
         DOCK_OVER_HOST = 1, SLOT_ENABLES_OVER_HOST = 1, SLOT_CHECKBOX = 1, SHEET_BUTTON_OVER_CLOSE = 1,
         CHROME = 1, CONTENT = 2, ROW_CONTROLS = 1, ROW_SECURE = 2, SCROLL = 3,
         BAR_ROW = 1, BAR_BUTTON = 2, COVER = 30, MARKER = 40, HANDLE = 50,
+        ICON_BROWSER = 1200,
     },
 }
 

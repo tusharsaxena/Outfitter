@@ -51,7 +51,7 @@ L["Test mode: sample outfits. Nothing is equipped or saved"] = "Test mode: sampl
 L["Couldn't get information about the item being dropped"] = "Couldn't get information about the item being dropped"
 L["Couldn't make an outfit from %s because it isn't equippable"] = "Couldn't make an outfit from %s because it isn't equippable"
 
--- P4.21 keys (modules/OutfitMenu.lua, modules/UIDialogs.lua, modules/Dialog_*.lua, modules/Popups.lua, modules/IconChooser.lua)
+-- P4.21 keys (modules/OutfitMenu.lua, modules/UIDialogs.lua, modules/Dialog_*.lua, modules/Popups.lua, modules/IconBrowserSetup.lua)
 L["Class"] = "Class"
 L["Activities"] = "Activities"
 L["PvP"] = "PvP"
@@ -127,11 +127,6 @@ L["OK"] = "OK"
 L["Outfitter chooses"] = "Outfitter chooses"
 L["Recommended"] = "Recommended"
 L["Equipped and bags"] = "Equipped and bags"
-L["Item icons"] = "Item icons"
-L["Ability icons"] = "Ability icons"
-L["Filter by item name"] = "Filter by item name"
-L["The search works on the named sets only."] = "The search works on the named sets only."
-L["Choose an icon for %s"] = "Choose an icon for %s"
 
 -- P4.22 keys (modules/Preview.lua, defaults/PreviewOutfits.lua)
 L["Test Outfit 1"] = "Test Outfit 1"

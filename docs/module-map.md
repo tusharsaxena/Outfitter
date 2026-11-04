@@ -63,7 +63,7 @@ The libraries load first, each in its own folder under `libs/`, and are vendored
 | `core/Bus.lua` | `NS.MSG`, `NS.NewBusTarget`, `NS.SendBus`, `NS.BusStandDown`/`BusStandUp` (LibKa0s-Bus; [message-bus.md](message-bus.md)) |
 | `core/PoolSetup.lua` | `NS.Pool`, the array and keyed widget pools (LibKa0s-Pool) |
 | `core/ItemSetup.lua` | `NS.Item`: `ItemIDFromLink`, `BonusIDsFromLink` on plain links only (LibKa0s-Item) |
-| `core/WidgetsSetup.lua` | `NS.MakeDropdown`, `NS.OpenMenu`, `NS.CloseMenu`, `NS.MakeSearchBox`, `NS.MakeTestStrip`, `NS.TEST_STRIP_HEIGHT`, `NS.MakeDragHandle` (LibKa0s-Widgets) |
+| `core/WidgetsSetup.lua` | `NS.MakeDropdown`, `NS.OpenMenu`, `NS.CloseMenu`, `NS.MakeTestStrip`, `NS.TEST_STRIP_HEIGHT`, `NS.MakeDragHandle` (LibKa0s-Widgets) |
 | `core/SecureQueue.lua` | `NS.SecureQueue`: a protected write runs now or waits out combat lockdown, latest per key |
 | `core/LifecycleSetup.lua` | `NS.lifecycle`, the one stand-down latch with its `disabled` and `perf` holds, `NS.ApplyEnabled`, `NS.IsStoodDown`, `NS.StoodDownRefusal` (LibKa0s-Lifecycle) |
 | `core/PerfSetup.lua` | `NS.Perf`, the performance harness over `OutfitterRebornPerfDB` with its ten fixed buckets (LibKa0s-Perf; [performance.md](performance.md)) |
@@ -96,7 +96,7 @@ the diagnostics sections.
 | `modules/ItemInfo.lua` | `NS.ItemInfo`: link parse, item identity and comparison |
 | `modules/Inventory.lua` | `NS.Inventory`: the bag and equipment scan, its cache and the bank-open rules |
 | `modules/Inventory_Lists.lua` | The missing, unused, BoE, warbound, in-use and cooldown lists and their sections (extends `NS.Inventory`) |
-| `modules/IconBrowserSetup.lua` | `NS.Glyph`: the glyph helpers (`IsGlyph`, `ValidColor`, `Tint`) from LibKa0s-IconBrowser, with a library-absent stub |
+| `modules/IconBrowserSetup.lua` | `NS.Glyph`: the glyph helpers (`IsGlyph`, `ValidColor`, `Tint`) from LibKa0s-IconBrowser, with a library-absent stub; `NS.IconBrowser` (`Open(id)`, `Close`, `IsOpen`, `Browser`): Change icon...'s library browser, tabs Recommended and Equipped and bags ahead of Game icons and Glyphs, no Markers |
 | `modules/Outfits.lua` | `NS.Outfits`: the outfit store and its one writer API; `NS.OutfitIcon`, the one outfit icon resolver, and `NS.Outfits.SetIcon` |
 | `modules/Outfits_Seed.lua` | The LoadPass: store repair, the built-in outfits' seed and the 1 s timer that runs the first one (extends `NS.Outfits`) |
 | `modules/Outfits_Schema.lua` | `NS.OutfitSchema`: the per-outfit instance rows, `outfit.*` and `trigger.<TID>.*` |
@@ -149,7 +149,6 @@ the diagnostics sections.
 | `modules/Dialog_TriggerFields.lua` | `NS.TriggerFields`: the trigger parameter editors, nine field types |
 | `modules/Dialog_Rebuild.lua` | `NS.RebuildDialog`: the multi-stat rebuild dialog |
 | `modules/Dialog_Progress.lua` | `NS.ProgressDialog`: the optimizer's progress window |
-| `modules/IconChooser.lua` | `NS.IconChooser`: the outfit icon picker |
 | `modules/Bar.lua` | `NS.Bar`: the outfit bar |
 | `modules/Bar_Buttons.lua` | The outfit bar's pooled buttons |
 | `modules/QuickSlots.lua` | `NS.QuickSlots`: the equipment flyout hooks |

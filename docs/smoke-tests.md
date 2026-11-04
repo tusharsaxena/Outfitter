@@ -74,7 +74,7 @@ rows that verify it.
 | W6 | The sheet button | Does not overlap the close button (O29) |
 | W7 | The window title | Fits (O31) |
 | W8 | In combat with the window gone: change an outfit from the bar, press a wear key, rebind a key on the Keybindings tab | The wear follows the client's combat rules; the window's secure rows are not rebuilt until combat ends; a binding change in combat is refused or waits, never half-applied; no `ADDON_ACTION_BLOCKED` appears (O11) |
-| W9 | The icon chooser's search; the Title submenu on a character with 200+ titles | Search finds icons from named sets (O33); the submenu opens in 30-row chunks with "More" and stays usable (O38) |
+| W9 | The icon browser's search (Change icon...); the Title submenu on a character with 200+ titles | Search on Recommended and Equipped and bags finds icons by item or trigger name, on Game icons by texture id; the submenu opens in 30-row chunks with "More" and stays usable (O38) |
 
 ## 6. Wearing and triggers
 
@@ -121,10 +121,10 @@ checked by eye in the client.
 
 | # | Check | Pass when |
 |---|---|---|
-| SK1 | Open the window with an outfit selected, the outfit bar, the icon chooser, and each dialog in turn (outfit, trigger with a field of each type, rebuild, the optimize progress); switch the skin from the Skin tab | Every one repaints at once with no `/reload`: the sheet button, the window and its scroll bar, a category, outfit and item row, the slot checkboxes in all three states, the footer buttons, the dialogs and their error line, the icon chooser, the bar, a bar button and its worn mark, the drag handle and the test strip |
+| SK1 | Open the window with an outfit selected, the outfit bar, the icon browser, and each dialog in turn (outfit, trigger with a field of each type, rebuild, the optimize progress); switch the skin from the Skin tab | Every one repaints at once with no `/reload`: the sheet button, the window and its scroll bar, a category, outfit and item row, the slot checkboxes in all three states, the footer buttons, the dialogs and their error line, the icon browser, the bar, a bar button and its worn mark, the drag handle and the test strip |
 | SK2 | Hover an item that an outfit holds, with comparisons on | The compare tooltips wear the skin; the stock comparison tooltips beside them keep Blizzard's look |
 | SK3 | The character sheet under each skin | The sheet itself keeps Blizzard's look; only this addon's frames change |
-| SK4 | Item icons in the list, the icon chooser and the bar | Cropped with no art border showing; a 1 px edge in the window and in the icon chooser, the HUD edge on the bar |
+| SK4 | Item icons in the list, the icon browser and the bar | Cropped with no art border showing; a 1 px edge in the window and in the icon browser, the HUD edge on the bar |
 | SK5 | A dialog open over the window, then Escape twice | The dialog closes first, then the window |
 | SK6 | Another addon moves the character sheet with the window open | The sheet still moves, and the window follows it |
 

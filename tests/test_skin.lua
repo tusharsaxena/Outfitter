@@ -6,8 +6,8 @@
 --     file calls is in the library's VOCAB (so the degraded facade answers it too), and every library
 --     color a call site reads by name has a host copy in NS.SKIN_FALLBACK;
 --   - only this addon's frames are painted: with every §9.5 surface built, no Blizzard frame is in the
---     skin's record, and the window, the dialogs, the icon chooser, the bar and the compare tooltips
---     each wear their own primitive (NS.ApplySkin's Shell, Panel, Tooltip);
+--     skin's record, and the window, the dialogs, the bar and the compare tooltips each wear their own
+--     primitive (NS.ApplySkin's Shell, Panel, Tooltip); the icon browser is the library's, painted by it;
 --   - the icon rule (LibKa0s docs/api/README.md "Icon art: the rule"): Blizzard icon art in a window is
 --     cropped at least 0.07 a side and edged with S.IconBorder{ fromSkin = true }, on the HUD bar with
 --     { fromSkin = true, hud = true }, and no source file writes inline `|T` markup by hand;
@@ -182,15 +182,13 @@ local SHELLS = {
     { "the trigger dialog's shell", "Shell" },
     { "the rebuild dialog's shell", "Shell" },
     { "the progress dialog's shell", "Shell" },
-    { "the icon chooser's shell", "Panel" },
     { "the bar's backplate", "Panel" },
     { "a compare tooltip", "Tooltip" },
 }
 
-test("skin: the window and the dialogs wear NS.ApplySkin's Shell, the chooser and bar a Panel", function()
+test("skin: the window and the dialogs wear NS.ApplySkin's Shell, the bar a Panel", function()
     -- red under: NS.ApplySkin dropped from modules/UIDialogs.lua's chrome (a dialog keeps Core's
-    -- fixed edge), S.Panel(f, { popup = true }) dropped from the icon chooser, S.Tooltip from a
-    -- compare tooltip.
+    -- fixed edge), S.Tooltip from a compare tooltip.
     local _, _, Skin, built = buildAll()
     for _, pair in ipairs(SHELLS) do
         local f = assert(built[pair[1]], pair[1] .. " was not built")
@@ -198,8 +196,6 @@ test("skin: the window and the dialogs wear NS.ApplySkin's Shell, the chooser an
         assertTrue(rec ~= nil and rec.owner == OWNER, pair[1] .. " is not painted for " .. OWNER)
         assertTrue(rec.calls[pair[2]] ~= nil, pair[1] .. " does not wear " .. pair[2])
     end
-    local chooser = Skin.painted[built["the icon chooser's shell"]].calls.Panel[1]
-    assertTrue(type(chooser) == "table" and chooser.popup == true, "the icon chooser is not a popup panel")
 end)
 
 -- ── the icon rule ───────────────────────────────────────────────────────────────────────────────
@@ -219,11 +215,10 @@ end
 
 test("skin: Blizzard icon art in a window is cropped and edged from the skin, never as a HUD", function()
     -- red under: S.IconBorder(row.icon) without fromSkin, or with hud = true (a window's icon wears
-    -- icon.outline, the HUD's icon.border never), or zoom = false on the icon chooser's grid.
+    -- icon.outline, the HUD's icon.border never). The icon browser's grid is the library's.
     local NS, _, Skin, built = buildAll()
     local itemRow = built["an item row"]
-    local grid = built["an icon chooser grid button"]
-    for what, tex in pairs({ ["an item row's icon"] = itemRow.icon, ["a grid button's icon"] = grid.icon }) do
+    for what, tex in pairs({ ["an item row's icon"] = itemRow.icon }) do
         local o = iconBorder(Skin, tex)
         assertTrue(o ~= nil, what .. " has no S.IconBorder")
         assertEqual(o.fromSkin, true, what .. ": fromSkin")

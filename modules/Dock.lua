@@ -43,7 +43,7 @@ local _, NS = ...
 -- stand-up (Resume), and stay; a stand-down drops the events and the follow and hides the window.
 --
 -- CALLS (at call time; design §12): NS.Window, NS.WindowRows.DisarmSecure, NS.SlotEnables.MaybeRestack,
--- NS.Stack.Select, NS.Dialogs.CloseAll, NS.IconChooser.Close, NS.CloseMenu, NS.SecureQueue,
+-- NS.Stack.Select, NS.Dialogs.CloseAll, NS.IconBrowser.Close, NS.CloseMenu, NS.SecureQueue,
 -- NS.Sheet.Refresh/Kind/DockRight/Frame/ButtonAnchor.
 
 local Dock = { wanted = false, suspended = false, followDisabled = false, built = false,
@@ -163,7 +163,7 @@ local function onWindowHide()
     end
     NS.Stack.Select(nil)
     NS.CloseMenu()
-    NS.IconChooser.Close("opener")
+    NS.IconBrowser.Close("opener")
 end
 
 -- ── the show model ────────────────────────────────────────────────────────────────────────────

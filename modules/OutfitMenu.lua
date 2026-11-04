@@ -25,7 +25,7 @@ local _, NS = ...
 -- record flags and the binding through NS.Outfits.
 --
 -- CALLS (at call time, no nil guard; design §12): NS.Outfits, NS.Stack.UpdateTitle, NS.Bank, NS.Stats,
--- NS.Triggers, NS.Popups, NS.OutfitDialog, NS.RebuildDialog, NS.TriggerDialog, NS.IconChooser.
+-- NS.Triggers, NS.Popups, NS.OutfitDialog, NS.RebuildDialog, NS.TriggerDialog, NS.IconBrowser.
 
 local OM = {}
 NS.OutfitMenu = OM
@@ -201,7 +201,7 @@ end
 
 -- ── Outfit bar ────────────────────────────────────────────────────────────────────────────────
 
-local function fillBar(root, rec, anchor)
+local function fillBar(root, rec)
     local id = rec.id
     root:CreateDivider()
     local function shown()
@@ -210,7 +210,7 @@ local function fillBar(root, rec, anchor)
     end
     root:CreateCheckbox(L["Show in outfit bar"], shown,
         function() NS.SetByPath("outfit.bar.hide", shown(), id) end)
-    root:CreateButton(L["Change icon..."], function() NS.IconChooser.Open(id, anchor) end)
+    root:CreateButton(L["Change icon..."], function() NS.IconBrowser.Open(id) end)
 end
 
 --- Open the context menu for outfit `id` at the cursor.
@@ -225,6 +225,6 @@ function OM.Open(anchor, id)
         fillGeneral(root, rec)
         fillRebuild(root, rec)
         fillAutomation(root, rec)
-        fillBar(root, rec, anchor)
+        fillBar(root, rec)
     end) == true
 end

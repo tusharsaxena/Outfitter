@@ -11,7 +11,7 @@
 -- as the client runs them. Each wraps whatever the frame already has, so a protected frame keeps
 -- refusing in lockdown.
 --
--- The dialogs, the icon chooser, the outfit menu and the outfit dialog (P4.21) the window, the dock,
+-- The dialogs, the icon browser, the outfit menu and the outfit dialog (P4.21) the window, the dock,
 -- the rows and the footer call into are the REAL modules (their P4.19 fakes retired at P4.27, design
 -- §12): each member a suite counts is wrapped in a recorder that calls straight through, so a case
 -- asserts the call and the real module still answers it (tests/spy.lua).
@@ -70,7 +70,7 @@ return function(T)
         M.__fireTimers()
         local fakes = {
             Dialogs      = spy(NS, "Dialogs", { "CloseAll" }),
-            IconChooser  = spy(NS, "IconChooser", { "Close" }),
+            IconBrowser  = spy(NS, "IconBrowser", { "Close" }),
             OutfitMenu   = spy(NS, "OutfitMenu", { "Open" }),
             OutfitDialog = spy(NS, "OutfitDialog", { "OpenNew" }),
         }

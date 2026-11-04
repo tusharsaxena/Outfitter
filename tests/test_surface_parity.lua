@@ -183,6 +183,23 @@ test("parity: the IconBrowser seam's glyph helpers answer on both arms, the stub
     assertTrue(r == 1 and g == 1 and b == 1, "the stub tints nothing")
 end)
 
+test("parity: the IconBrowser seam's browser answers on both arms, the stub opening nothing", function()
+    -- members from: grep -rhoE "NS\.IconBrowser\.[A-Za-z]+" modules/ settings/ core/
+    bothArms("NS.IconBrowser", function(NS) return NS.IconBrowser end,
+        { Open = "function", Close = "function", IsOpen = "function", Browser = "function",
+          Suspend = "function", Resume = "function" })
+    local l, d = pair()
+    local id = d.NS.Outfits.Create("Pretty", {})
+    -- red under: a stub Open that answers true (the menu would think a browser is up).
+    assertFalse(d.NS.IconBrowser.Open(id), "the stub opened a browser with no library")
+    assertFalse(d.NS.IconBrowser.IsOpen())
+    assertNil(d.NS.IconBrowser.Browser())
+    d.NS.IconBrowser.Close("test")
+    assertTrue(l.NS.IconBrowser.Open(l.NS.Outfits.Create("Pretty", {})))
+    l.NS.IconBrowser.Close("test")
+    assertFalse(l.NS.IconBrowser.IsOpen())
+end)
+
 test("parity: the Env seam answers the TOC's version on both arms", function()
     -- members from: grep -rhoE "NS\.(Meta|Version)\b" core/ modules/ settings/
     bothArms("NS", function(NS) return NS end, { Meta = "function", Version = "function" })

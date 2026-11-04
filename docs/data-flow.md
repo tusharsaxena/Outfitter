@@ -134,5 +134,6 @@ player-only unit event), on the owning module's own target, in its `Resume()`, a
 | `core/SecureQueue.lua` | `PLAYER_REGEN_ENABLED`, only while a protected write waits out lockdown |
 | `core/SkinSetup.lua` | `PLAYER_REGEN_ENABLED`, only while the first-run skin picker's start waits out combat |
 
-The icon chooser's frame also registers `GLOBAL_MOUSE_DOWN` while it is shown, to close on an outside
-click.
+The icon browser (Change icon..., the library's, modules/IconBrowserSetup.lua) registers nothing: it is
+a modal whose catcher swallows outside clicks, and it closes from the window's `OnHide` and the
+stand-down.

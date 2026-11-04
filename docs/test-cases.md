@@ -172,7 +172,7 @@ Total.
 - skin seam: the degraded HudFont draws the face, a picked flag and no shadow
 - skin seam: each host-copy skin token is the live library's Ka0s Default value
 
-### test_surface_parity.lua (28)
+### test_surface_parity.lua (29)
 
 - parity: the degraded load still initializes, enables and answers /or version
 - parity: the Options stub carries every public member of the live Helpers surface
@@ -186,6 +186,7 @@ Total.
 - parity: the Core seam carries every member this addon reads, on both arms
 - parity: the Media seam answers on both arms, nil being a real answer
 - parity: the IconBrowser seam's glyph helpers answer on both arms, the stub drawing no glyph
+- parity: the IconBrowser seam's browser answers on both arms, the stub opening nothing
 - parity: the Env seam answers the TOC's version on both arms
 - parity: the Compat and Secrets seams carry the same surface on both arms
 - parity: the Pool stub carries every public member of the library
@@ -1150,7 +1151,7 @@ Total.
 - sheet: with no Chonky panel shown DockRight is the backdrop's edge
 - sheet: the adapter creates, anchors and shows nothing
 
-### test_dock.lua (34)
+### test_dock.lua (35)
 
 - dock: NS.Dock is published with the §7.2 surface
 - dock: the holder fills the sheet, and the sheet button toggles the window
@@ -1168,7 +1169,8 @@ Total.
 - dock: Open shows the sheet first when it is hidden, and Toggle closes the window
 - dock: Toggle(true), the launcher's, closes the sheet with the window; the dialogs close once
 - dock: closing the window (Close, Escape) closes the dialogs; only the combat suspend keeps them
-- dock: the window's OnHide clears the selection and closes the menu and the icon chooser
+- dock: the window's OnHide clears the selection and closes the menu and the icon browser
+- browser: closing the window or the sheet closes the browser
 - dock: a stand-down hides the window and the sheet button; a stand-up shows the button
 - dock: the footer's New outfit opens the outfit dialog, the title-strip button the settings
 - dock: no file in modules/ names a strata literal (frame-layering-§5)
@@ -1330,7 +1332,7 @@ Total.
 - menu: nothing opens for an unknown id or while stood down
 - menu: the class category reads the client's class name, the rest their own labels
 
-### test_dialogs.lua (20)
+### test_dialogs.lua (24)
 
 - dialogs: NS.Dialogs builds a MODAL, toplevel, clamped, Escape-closed frame that saves its place
 - dialogs: CloseAll closes every open dialog and its draft writes nothing
@@ -1344,11 +1346,15 @@ Total.
 - popups: the row EM mark selects first, stores on the second click, says the EM is full, and unstores
 - rebuild: the rows give the §5.14 cfg, and Done keeps it on the outfit and rebuilds
 - progress: OPTIMIZE_* drive it, High speed sets the job's, and Cancel cancels that job
-- icons: the wildcard saves nil, a pick writes outfit.icon, Cancel discards, an EM outfit sets its set
-- icons: the sets, the search on named sets only, and the 6x5 grid
-- icons: it closes on an outside press but not its own, on Escape, on stand-down and with its opener
-- icons: a redraw that hides and re-shows the pooled opener keeps it open; its surface closing closes it
-- icons: a second click on the set dropdown closes its menu, and the next outside press closes the chooser
+- browser: Change icon opens on Recommended with the outfit's icon selected
+- browser: Equipped and bags lists the carried items' icons, named and searchable
+- browser: no Markers tab
+- browser: choosing a glyph writes icon and color
+- browser: an Equipment Manager outfit opens on its glyph and a game icon goes to its set
+- browser: in combat Choose refuses with one line and writes nothing
+- browser: Escape closes the browser only, the outfit window back in UISpecialFrames after
+- browser: deleting the outfit it edits makes Choose close it unwritten
+- browser: stood down, it cannot open
 - popups: Delete all accepted in combat refuses before it closes any dialog
 - new outfit and rename: the name box takes the keys when the dialog opens
 - progress: closing the window by Escape or its X cancels the search it shows
@@ -1400,7 +1406,7 @@ Total.
 - skin: the primitive scan is falsifiable
 - skin: every library color a call site reads by name has a host copy
 - skin: with every surface built, no Blizzard frame is painted
-- skin: the window and the dialogs wear NS.ApplySkin's Shell, the chooser and bar a Panel
+- skin: the window and the dialogs wear NS.ApplySkin's Shell, the bar a Panel
 - skin: Blizzard icon art in a window is cropped and edged from the skin, never as a HUD
 - skin: the bar's icons are HUD icons, cropped and edged from the skin
 - skin: the sheet button is borderless, its glyph in of.sheet.button
@@ -1416,7 +1422,7 @@ Total.
 - skin values: no typed value outside the kit's categories and the host's rows
 - skin values: the check is falsifiable, a planted value of each shape is reported
 
-### test_skin_switch.lua (85)
+### test_skin_switch.lua (83)
 
 - skin switch: the check is falsifiable, a surface that redraws a literal is reported
 - skin switch: the sheet button changes
@@ -1485,12 +1491,10 @@ Total.
 - skin switch: a pet field's button changes with the Scope ignored
 - skin switch: a list field's scroll bar changes
 - skin switch: a list field's scroll bar changes with the Scope ignored
-- skin switch: the icon chooser's shell changes
-- skin switch: the icon chooser's shell changes with the Scope ignored
-- skin switch: an icon chooser grid button changes
-- skin switch: an icon chooser grid button changes with the Scope ignored
-- skin switch: the icon chooser's scroll bar changes
-- skin switch: the icon chooser's scroll bar changes with the Scope ignored
+- skin switch: the icon browser's selected cell changes
+- skin switch: the icon browser's selected cell changes with the Scope ignored
+- skin switch: the icon browser's dim changes
+- skin switch: the icon browser's dim changes with the Scope ignored
 - skin switch: the bar's backplate changes
 - skin switch: the bar's backplate changes with the Scope ignored
 - skin switch: a bar button changes
@@ -1579,7 +1583,7 @@ Total.
 | test_secrets.lua | 42 |
 | test_bus.lua | 12 |
 | test_skinsetup.lua | 21 |
-| test_surface_parity.lua | 28 |
+| test_surface_parity.lua | 29 |
 | test_perf_harness.lua | 19 |
 | test_schema.lua | 25 |
 | test_settings.lua | 15 |
@@ -1621,7 +1625,7 @@ Total.
 | test_triggers_class.lua | 11 |
 | test_triggers_pvp.lua | 7 |
 | test_sheet.lua | 15 |
-| test_dock.lua | 34 |
+| test_dock.lua | 35 |
 | test_list_model.lua | 7 |
 | test_rows_secure.lua | 20 |
 | test_slot_enables.lua | 12 |
@@ -1630,17 +1634,17 @@ Total.
 | test_triggers_parity.lua | 13 |
 | test_preview.lua | 14 |
 | test_outfit_menu.lua | 11 |
-| test_dialogs.lua | 20 |
+| test_dialogs.lua | 24 |
 | test_trigger_dialog.lua | 11 |
 | test_diagnostics.lua | 12 |
 | test_credits.lua | 8 |
 | test_skin.lua | 14 |
 | test_skin_values.lua | 3 |
-| test_skin_switch.lua | 85 |
+| test_skin_switch.lua | 83 |
 | test_eol.lua | 2 |
 | test_layout_cap.lua | 13 |
 | test_diagnostics_contract.lua | 8 |
 | test_lizard_sighted.lua | 8 |
 | test_prose.lua | 15 |
 | Skipped | 1 |
-| **Total** | **1341** |
+| **Total** | **1345** |
