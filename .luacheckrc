@@ -1,525 +1,189 @@
--- luacheck configuration.
---
--- Libraries/ is vendored third-party code (LibStub, CallbackHandler, LibBabble,
--- LibDataBroker, LibDropdown and upstream's own MC2* set).  It is not ours to
--- restyle, and linting it would bury Outfitter's own findings under someone
--- else's, so it is excluded -- the syntax suite still parses every one of those
--- files, BOM and all.
---
--- tests/ IS ours and is linted.
-
 std = "lua51"
 max_line_length = false
 codes = true
-exclude_files = {"Libraries/"}
 
--- The addon's own globals.  Outfitter predates addon namespaces: the table is a
--- global, the public API is a set of globals, and the XML reaches text bindings
--- as globals because XML has no other way to.
-globals = {
-	"Outfitter", "OutfitterAPI",
-	"gOutfitter_Settings", "gOutfitter_GlobalSettings",
-	"gOutfitter_OutfitToDelete",
+-- libs/ and tests/_kit/ are byte copies of code linted in its own repo (LibKa0s); linting the copy
+-- would report every finding twice and let the copy drift green (lint). The frozen docs/ bundles must
+-- never be "fixed" by a lint pass.
+exclude_files = { "libs/", "tests/_kit/", "docs/audits/", "docs/reviews/", "docs/revendor/", "_dev/" }
 
-	-- Assigned to at file scope as a throwaway.
-	"_",
+-- No top-level `ignore`: a blanket reaches every file, including the ones with no business producing
+-- the code it silences (lint). A receiver a calling convention forces gets a per-file stanza below.
 
-	-- The public API other addons and macros call.
-	"Outfitter_AddOutfit", "Outfitter_DeleteOutfit", "Outfitter_FindOutfitByName",
-	"Outfitter_FindOutfitByStatID", "Outfitter_GenerateSmartOutfit",
-	"Outfitter_GetCategoryOrder", "Outfitter_GetCurrentOutfitInfo",
-	"Outfitter_GetItemInfoFromLink", "Outfitter_GetOutfitsByCategoryID",
-	"Outfitter_GetOutfitsUsingItem", "Outfitter_HasVisibleOutfits",
-	"Outfitter_IsInitialized", "Outfitter_OnLoad", "Outfitter_OutfitIsVisible",
-	"Outfitter_RegisterOutfitEvent", "Outfitter_RemoveOutfit",
-	"Outfitter_SetShowMinimapButton", "Outfitter_UnregisterOutfitEvent",
-	"Outfitter_Update", "Outfitter_WearOutfit", "Outfitter_WearingOutfit",
-	"Outfitter_OnAddonCompartmentClick",
-	"OutfitterItemList_GetEquippableItems", "OutfitterItemList_GetMissingItems",
-
-	-- Frames Outfitter.xml creates, and the text bindings the XML can only reach
-	-- as globals.  They exist at runtime; luacheck cannot see XML.
-	"OutfitterAboutFrame",
-	"OutfitterAutoSwitch",
-	"OutfitterButtonFrame",
-	"OutfitterChooseIconDialog",
-	"OutfitterEditScriptDialog",
-	"OutfitterFrame",
-	"OutfitterItemComparisons",
-	"OutfitterMainFrameHighlight",
-	"OutfitterMainFrameScrollFrame",
-	"OutfitterMinimapButton",
-	"OutfitterShowHotkeyMessages",
-	"OutfitterShowMinimapButton",
-	"OutfitterShowOutfitBar",
-	"OutfitterSlotEnables",
-	"OutfitterTooltipInfo",
-	"OutfitterTooltipTextLeft2",
-	"Outfitter_cAboutTabTitle",
-	"Outfitter_cAccessoryOutfits",
-	"Outfitter_cAutomationLabel",
-	"Outfitter_cCompleteOutfits",
-	"Outfitter_cCreateUsingTitle",
-	"Outfitter_cEditScriptEllide",
-	"Outfitter_cEditScriptTitle",
-	"Outfitter_cIconFilterLabel",
-	"Outfitter_cIconSetLabel",
-	"Outfitter_cNameAlreadyUsedError",
-	"Outfitter_cNewOutfit",
-	"Outfitter_cOddsNEndsOutfits",
-	"Outfitter_cOptionsTabTitle",
-	"Outfitter_cOptionsTitle",
-	"Outfitter_cOutfitterTabTitle",
-	"Outfitter_cPresetScript",
-	"Outfitter_cSettings",
-	"Outfitter_cSource",
-	"Outfitter_cTitle",
-	"Outfitter_cTitleVersion",
-
-
-	-- Keybinding names.  Bindings.xml declares the bindings; these globals are how
-	-- the client is told what to label them.
-	"BINDING_HEADER_OUTFITTER_TITLE",
-	"BINDING_NAME_OUTFITTER_DISABLEAUTOMATION",
-	"BINDING_NAME_OUTFITTER_ENABLEAUTOMATION",
-	"BINDING_NAME_OUTFITTER_OUTFIT",
-	"BINDING_NAME_OUTFITTER_OUTFIT1",
-	"BINDING_NAME_OUTFITTER_OUTFIT10",
-	"BINDING_NAME_OUTFITTER_OUTFIT2",
-	"BINDING_NAME_OUTFITTER_OUTFIT3",
-	"BINDING_NAME_OUTFITTER_OUTFIT4",
-	"BINDING_NAME_OUTFITTER_OUTFIT5",
-	"BINDING_NAME_OUTFITTER_OUTFIT6",
-	"BINDING_NAME_OUTFITTER_OUTFIT7",
-	"BINDING_NAME_OUTFITTER_OUTFIT8",
-	"BINDING_NAME_OUTFITTER_OUTFIT9",
-	"BINDING_NAME_OUTFITTER_UPDATEOUTFIT",
-	"Outfitter_cEnableAll", "Outfitter_cEnableNone",
-
-	-- Blizzard tables an addon is expected to write into.
-	"StaticPopupDialogs", "SlashCmdList", "PaperDollItemsFrame",
-	"SLASH_OUTFITTER1", "SLASH_UNEQUIP1",
-}
-
--- Everything the WoW client provides.  read_globals rather than globals: the
--- addon reads these and must never assign to one, and luacheck will say so.
 read_globals = {
-	"CHESTSLOT",
-	"CT_oldPickupContainerItem",
-	"CharacterFrame",
-	"CharacterFrameInsetRight",
-	"DELETE",
-	"EQUIPMENTFLYOUT_FIRST_SPECIAL_LOCATION",
-	"EQUIPMENTFLYOUT_PLACEINBAGS_LOCATION",
-	"EQUIPMENT_SETS",
-	"EquipmentFlyoutFrame",
-	"EquipmentFlyoutPopoutButton_SetReversed",
-	"EquipmentFlyout_Show",
-	"EquipmentManager_GetLocationData",
-	"FEETSLOT",
-	"GRAY_FONT_COLOR",
-	"GRAY_FONT_COLOR_CODE",
-	"GameTooltipDataMixin",
-	"GameTooltip_SetDefaultAnchor",
-	"GetCombatRatingBonus",
-	"GetCursorPosition",
-	"GetMacroIcons",
-	"GetMacroItemIcons",
-	"GetNumTitles",
-	"GetTitleName",
-	"HANDSSLOT",
-	"HIGHLIGHT_FONT_COLOR",
-	"INVSLOT_FIRST_EQUIPPED",
-	"INV_MISC_QUESTIONMARK",
-	"ITEM_ACCOUNTBOUND_UNTIL_EQUIP",
-	"ITEM_BIND_ON_EQUIP",
-	"ITEM_INVENTORY_LOCATION_BAGS",
-	"ITEM_INVENTORY_LOCATION_BANK",
-	"ITEM_INVENTORY_LOCATION_PLAYER",
-	"IsModifierKeyDown",
-	"IsTitleKnown",
-	"LEGSSLOT",
-	"LOCALIZED_CLASS_NAMES_FEMALE",
-	"LOCALIZED_CLASS_NAMES_MALE",
-	"MAX_EQUIPMENT_SETS_PER_PLAYER",
-	"MI2_TooltipFrame",
-	"MerchantFrame",
-	"NECKSLOT",
-	"NORMAL_FONT_COLOR",
-	"NORMAL_FONT_COLOR_CODE",
-	"NUM_BAG_SLOTS",
-	"OKAY",
-	"PET_RENAME",
-	"PLAYERSTAT_BASE_STATS",
-	"PanelTemplates_SetTab",
-	"PaperDollFrame",
-	"PaperDollSidebarTabs",
-	"PawnGetAllScales",
-	"PawnGetItemData",
-	"PawnIsScaleVisible",
-	"RED_FONT_COLOR",
-	"RED_FONT_COLOR_CODE",
-	"REMOVE",
-	"SECONDARYHANDSLOT",
-	"SHIRTSLOT",
-	"SHOULDERSLOT",
-	"SOUNDKIT",
-	"SetCurrentTitle",
-	"StackSplitFrame",
-	"TooltipUtil",
-	"UIErrorsFrame",
-	"UIFrameFadeOut",
-	"UIFrameFadeRemoveFrame",
-	"UIMenus",
-	"UnitIsUnit",
-	"WRISTSLOT",
-	"change",
-	"getglobal",
-	"items",
-	"pItemName",
-	"pPreviousOutfit",
-	"pSettings",
-	"self",
-	"vExpectedInventoryCache",
-	"ww_charVars",
-	"ww_vars",
-	"ww_weightCache",
-	"ARMOR",
-	"ATTACK_POWER",
-	"BACKSLOT",
-	"BANK_CONTAINER",
-	"CANCEL",
-	"C_AddOns",
-	"C_AzeriteEmpoweredItem",
-	"C_Bank",
-	"C_Calendar",
-	"C_Container",
-	"C_EquipmentSet",
-	"C_Item",
-	"C_ItemUpgrade",
-	"C_Map",
-	"C_Minimap",
-	"C_MountJournal",
-	"C_PaperDollInfo",
-	"C_PetJournal",
-	"C_PvP",
-	"C_QuestLog",
-	"C_RestrictedActions",
-	"C_Spell",
-	"C_SpellBook",
-	"C_Timer",
-	"C_TradeSkillUI",
-	"C_UnitAuras",
-	"ChatFrameUtil",
-	"ClearCursor",
-	"CloseDropDownMenus",
-	"CreateColor",
-	"CreateFrame",
-	"CreateFramePool",
-	"CreateFromMixins",
-	"CursorHasItem",
-	"DEFAULT_CHAT_FRAME",
-	"EMPTY",
-	"Enum",
-	"EquipCursorItem",
-	"EventRegistry",
-	"FINGER0SLOT",
-	"FONT_COLOR_CODE_CLOSE",
-	"FauxScrollFrame_GetOffset",
-	"FauxScrollFrame_Update",
-	"GREEN_FONT_COLOR_CODE",
-	"GameTooltip",
-	"GetActiveSpecGroup",
-	"GetArmorPenetration",
-	"GetAttackPowerForStat",
-	"GetAverageItemLevel",
-	"GetAvoidance",
-	"GetBlockChance",
-	"GetBuildInfo",
-	"GetCVar",
-	"GetCVarBool",
-	"GetCombatRating",
-	"GetCritChance",
-	"GetCursorInfo",
-	"GetDetailedItemLevelInfo",
-	"GetDodgeChance",
-	"GetExpertise",
-	"GetHaste",
-	"GetInstanceInfo",
-	"GetInventoryItemBroken",
-	"GetInventoryItemCooldown",
-	"GetInventoryItemCount",
-	"GetInventoryItemDurability",
-	"GetInventoryItemID",
-	"GetInventoryItemLink",
-	"GetInventoryItemQuality",
-	"GetInventoryItemTexture",
-	"GetInventorySlotInfo",
-	"GetItemCount",
-	"GetItemInfo",
-	"GetItemInfoInstant",
-	"GetItemQualityColor",
-	"GetItemSpell",
-	"GetItemStats",
-	"GetLifesteal",
-	"GetLocale",
-	"GetMastery",
-	"GetMinimapZoneText",
-	"GetMoney",
-	"GetNumQuestLogEntries",
-	"GetNumShapeshiftForms",
-	"GetNumSpecializations",
-	"GetParryChance",
-	"GetProfessionInfo",
-	"GetProfessions",
-	"GetQuestLink",
-	"GetQuestLogLeaderBoard",
-	"GetRealZoneText",
-	"GetRealmName",
-	"GetScreenHeight",
-	"GetScreenWidth",
-	"GetShapeshiftFormInfo",
-	"GetShieldBlock",
-	"GetSpecialization",
-	"GetSpecializationInfo",
-	"GetSpeed",
-	"GetSpellBonusDamage",
-	"GetSpellBonusHealing",
-	"GetSpellCritChance",
-	"GetSpellInfo",
-	"GetSpellTexture",
-	"GetTime",
-	"GetVersatilityBonus",
-	"GetZoneText",
-	"HEADSLOT",
-	"HIGHLIGHT_FONT_COLOR_CODE",
-	"HideUIPanel",
-	"INTELLECT_COLON",
-	"INVSLOT_LAST_EQUIPPED",
-	"ITEM_BIND_ON_PICKUP",
-	"ITEM_BNETACCOUNTBOUND",
-	"ITEM_MIN_LEVEL",
-	"ITEM_MOD_INTELLECT_SHORT",
-	"ITEM_MOD_SPIRIT_SHORT",
-	"ITEM_MOD_STAMINA_SHORT",
-	"ITEM_QUALITY_COLORS",
-	"ITEM_SOULBOUND",
-	"InCombatLockdown",
-	"InRepairMode",
-	"IsAltKeyDown",
-	"IsControlKeyDown",
-	"IsFalling",
-	"IsFlying",
-	"IsInInstance",
-	"IsIndoors",
-	"IsLoggedIn",
-	"IsModifiedClick",
-	"IsMounted",
-	"IsResting",
-	"IsShiftKeyDown",
-	"IsStealthed",
-	"IsSwimming",
-	"ItemLocation",
-	"LE_ITEM_QUALITY_POOR",
-	"LOCKED",
-	"LibStub",
-	"MAINHANDSLOT",
-	"MAX_CONTAINER_ITEMS",
-	"Mixin",
-	"NUM_CHAT_WINDOWS",
-	"NUM_TOTAL_EQUIPPED_BAG_SLOTS",
-	"PanelTemplates_SetNumTabs",
-	"PanelTemplates_UpdateTabs",
-	"PickupInventoryItem",
-	"PlaySound",
-	"PlaySoundFile",
-	"RANGEDSLOT",
-	"REPAIR_COST",
-	"ResetCursor",
-	"SPIRIT_COLON",
-	"STAMINA_COLON",
-	"STAT_CRITICAL_STRIKE",
-	"STAT_DODGE",
-	"SecureCmdOptionParse",
-	"SetCVar",
-	"SetCursor",
-	"SetTooltipMoney",
-	"ShowUIPanel",
-	"SpellCanTargetItem",
-	"SpellCanTargetItemID",
-	"SpellIsTargeting",
-	"StaticPopup_Hide",
-	"StaticPopup_Show",
-	"TABARDSLOT",
-	"TRINKET0SLOT",
-	"ToggleDropDownMenu",
-	"TooltipDataProcessor",
-	"UIParent",
-	"UNIT_SKINNABLE_BOLT",
-	"UNIT_SKINNABLE_LEATHER",
-	"UnitAffectingCombat",
-	"UnitArmor",
-	"UnitAttackPower",
-	"UnitCastingInfo",
-	"UnitChannelInfo",
-	"UnitClass",
-	"UnitDamage",
-	"UnitFactionGroup",
-	"UnitHealth",
-	"UnitHealthMax",
-	"UnitInVehicle",
-	"UnitIsDeadOrGhost",
-	"UnitIsPVP",
-	"UnitLevel",
-	"UnitName",
-	"UnitOnTaxi",
-	"UnitPower",
-	"UnitPowerMax",
-	"UnitPowerType",
-	"UnitRace",
-	"UnitRangedAttackPower",
-	"UnitResistance",
-	"UnitSex",
-	"UnitStat",
-	"WAISTSLOT",
-	"WorldFrame",
-	"abs",
-	"bit",
-	"ceil",
-	"date",
-	"debugprofilestop",
-	"floor",
-	"format",
-	"getfenv",
-	"gsub",
-	"hooksecurefunc",
-	"issecretvalue",
-	"issecuretable",
-	"issecurevariable",
-	"loadstring",
-	"max",
-	"min",
-	"module",
-	"newproxy",
-	"random",
-	"rawlen",
-	"scrubsecretvalues",
-	"securecall",
-	"select",
-	"setfenv",
-	"strfind",
-	"strjoin",
-	"strlower",
-	"strmatch",
-	"strrep",
-	"strsplit",
-	"strsub",
-	"strtrim",
-	"strupper",
-	"tContains",
-	"time",
-	"tinsert",
-	"tremove",
-	"unpack",
-	"wipe",
+    "_G", "LibStub", "CreateFrame", "GetTime", "UIParent", "STANDARD_TEXT_FONT",
+    "DEFAULT_CHAT_FRAME", "UISpecialFrames",
+    -- the perf bracket's clock (performance-§2)
+    "debugprofilestop",
+    "C_Timer", "C_AddOns", "Enum", "GetLocale",
+    -- combat state: InCombatLockdown() gates secure writes; UnitAffectingCombat() drives display
+    "InCombatLockdown", "UnitAffectingCombat",
+    "UnitGUID", "UnitName", "UnitClass",
+    -- settings panel plumbing
+    "Settings", "SettingsPanel", "StaticPopup_Show",
 }
 
--- ---------------------------------------------------------------------------
--- Per-file exemptions
--- ---------------------------------------------------------------------------
-
-files["Compat.lua"] = {
-	-- Compat.lua's whole job is to prefer the modern API and fall back to the old
-	-- global when the client still has it.  The fallback branch names an API that
-	-- may well be gone -- that is the point, and it is guarded by the `if` above it.
-	read_globals = {
-		"ContainerIDToInventoryID",
-		"GetContainerItemInfo",
-		"GetContainerItemLink",
-		"GetContainerNumFreeSlots",
-		"GetContainerNumSlots",
-		"GetNumTrackingTypes",
-		"GetTrackingInfo",
-		"PickupContainerItem",
-		"SetTracking",
-		"ShowContainerSellCursor",
-		"UseContainerItem",
-	},
+globals = {
+    "OutfitterRebornDB",      -- the SavedVariables write target (the AceDB tree)
+    "OutfitterRebornPerfDB",  -- the LibKa0s-Perf capture ring, outside the AceDB tree (performance-§5)
+    "StaticPopupDialogs",     -- the addon registers its named popups into this table
+    "BINDING_HEADER_OUTFITTERREBORN",   -- the key-binding category (launcher-§6); BINDING_NAME_* go via rawset
+    "OutfitterReborn",        -- the public API table, _G.OutfitterReborn.API.v1 (H3)
 }
 
-files["Deprecated.lua"] = {
-	-- Every one of these was REMOVED from the game.  Naming them is the entire
-	-- purpose of this file: it holds the retired implementations verbatim so they
-	-- can be read, and nothing in it is ever called.  Listing them here rather
-	-- than globally keeps them undefined everywhere else, where they would be a
-	-- real defect -- which is how the live code is kept clean of them.
-	read_globals = {
-		"BOOKTYPE_SPELL",
-		"BankButtonIDToInvSlotID",
-		"CallCompanion",
-		"ClickVoidTransferDepositSlot",
-		"EquipmentManager_UnpackLocation",
-		"GetCompanionInfo",
-		"GetContainerItemGems",
-		"GetInventoryItemGems",
-		"GetNumCompanions",
-		"GetSpellTabInfo",
-		"GetVoidTransferDepositInfo",
-		"MAX_SKILLLINE_TABS",
-		"UnitDefense",
-	},
-}
-
+-- The test tree is linted; these are the globals it WRITES. Scoped here so no shipped file can reach
+-- for the harness.
 files["tests/"] = {
-	-- The harness IS a mock client: replacing a client global is what it does.
-	-- Nothing under tests/ ships, so this cannot mask a defect in the addon.
-	globals = {"_G"},
-	ignore = {"121", "122", "111", "112", "113"},
+    globals = { "_G.OUTFITTERREBORN_TEST", "_G.OutfitterRebornDB", "_G.OutfitterRebornPerfDB" },
 }
 
--- ---------------------------------------------------------------------------
--- Conventions, not defects
--- ---------------------------------------------------------------------------
---
--- What is left after every real finding was fixed at source.  Each of these is a
--- house style of a 2006-era addon, applied consistently across 230KB of code that
--- cannot be exercised outside a client -- so rewriting ~570 lines of it to satisfy
--- a linter would be churn with real regression risk and no behavioural payoff.
--- They are listed by code, with the reason, rather than hidden behind a blanket
--- `ignore`, so that adding to this list is a decision someone has to write down.
---
--- What was NOT suppressed, and was fixed instead: an accidental `items` global in
--- OutfitterLDB.lua, two writes to undeclared globals in OutfitterBar.lua, a
--- duplicated `local location` in OutfitterInventory.lua, 587 whitespace-only
--- lines, and five lines of trailing whitespace.
-ignore = {
-	-- 211/212/213: unused variable, argument, loop variable.  The codebase names
-	-- every return of a multiple-return call and every loop variable whether or not
-	-- it reads them (`local vStartIndex, vEndIndex, vCommand = string.find(...)`),
-	-- and every method takes `self` by the colon syntax.  Renaming ~490 of these to
-	-- `_` would lose the names that document what each return IS.
-	"211", "212", "213",
+-- `NS:InitDB` / `NS:RunMigrations` are colon-called from OnInitialize and read NS.db, not the receiver.
+files["core/Database.lua"] = { ignore = { "212/self" } }
 
-	-- 231/311: a variable assigned and then not read.  Same pattern, seen from the
-	-- other side.
-	"231", "311",
+-- AceEvent invokes a handler registered by method name as `self[name](self, event, ...)`.
+files["core/OutfitterReborn.lua"] = { ignore = { "212/self" } }
 
-	-- 411/421/431/432/433: shadowing.  `local vCommand = ...` then
-	-- `local _, _, vCommand = string.find(vCommand, ...)` is used throughout to
-	-- narrow a value in steps.  Renaming the inner one is a mechanical change to
-	-- live parsing code with no test able to prove it equivalent.
-	"411", "413", "421", "423", "431", "432", "433",
+-- The compat family (compat.md :7): the version-variant client calls and the client's secret
+-- detectors, readable from this one file only, so "the client is read only through NS.Compat" is a
+-- lint fact (design §1.5). core/Secrets.lua names no client global; it binds this file's guards.
+-- C_SpecializationInfo and the bare IsAddOnLoaded are the upper and lower rungs of two ladders.
+files["core/Compat.lua"] = {
+    read_globals = {
+        "issecretvalue", "canaccessvalue", "issecrettable", "canaccesstable",
+        "C_SpecializationInfo", "GetSpecialization", "GetSpecializationInfo", "GetNumSpecializations",
+        "UnitFactionGroup", "UnitLevel", "UnitIsDeadOrGhost", "GetCVar", "SetCVar", "C_PlayerInfo",
+        "IsAddOnLoaded",
+        "UnitCastingInfo", "UnitChannelInfo",   -- Compat.PlayerCasting (P4.4 handback, design §5.2)
+        -- P4.2's accessors (design §5.13): items, containers, the Equipment Manager, pets, tooltip data,
+        -- titles and macro icons. Every equipment call lives here and nowhere else.
+        "C_Container", "C_Item", "C_ItemUpgrade", "C_EquipmentSet", "C_PetJournal", "C_TooltipInfo",
+        "C_AzeriteEmpoweredItem", "GetInventoryItemLink", "GetInventoryItemID", "GetInventorySlotInfo",
+        "GetInventoryItemCooldown", "PickupInventoryItem", "EquipCursorItem", "ClearCursor", "CursorHasItem",
+        "GetCursorInfo", "SetCurrentTitle", "GetMacroIcons", "GetMacroItemIcons",
+        "EquipmentManager_GetLocationData", "PawnGetItemData", "GetNumTitles", "GetTitleName", "IsTitleKnown",
+        "ItemLocation", "hooksecurefunc", "MAX_EQUIPMENT_SETS_PER_PLAYER", "PawnGetAllScales", "PawnIsScaleVisible",
+        "CanDualWield",
+        "NUM_TOTAL_EQUIPPED_BAG_SLOTS",   -- Compat.LastEquippedBagID (P4.5 handback)
+        "IsFlying",                       -- Compat.IsFlying (P4.13 handback)
+    },
+}
 
-	-- 542: an empty `if` branch.  Deliberate here and commented at each site --
-	-- `if <condition> then -- SaveEquipmentSet will pick it up` reads better than
-	-- the inverted condition.
-	"542",
+-- The skin seam falls back to the client's item-quality colors where the skin sets no q.* token.
+files["core/SkinSetup.lua"] = { read_globals = { "ITEM_QUALITY_COLORS" } }
 
-	-- 613: trailing whitespace inside a string.  Editing one changes the string,
-	-- and the remaining cases are inside preserved script bodies in Deprecated.lua
-	-- and generated script text, where the whitespace is part of what shipped.
-	"613",
+-- The degraded context menu hands its `fill` to the client's own menu (core/WidgetsSetup.lua).
+files["core/WidgetsSetup.lua"] = { read_globals = { "MenuUtil" } }
 
-	-- 621: indentation.  The file set mixes tabs and spaces by origin.
-	"621",
+-- A queued protected write that raises goes to the client's error handler, and the next one runs.
+files["core/SecureQueue.lua"] = { read_globals = { "geterrorhandler" } }
+
+-- The bound-outfit key announces its wear on the client's error frame, as legacy did (INV §14).
+files["core/LauncherSetup.lua"] = { read_globals = { "UIErrorsFrame" } }
+
+-- The equipment bracket surfaces a failed update through the client error handler, with its stack.
+files["modules/Equip.lua"] = { read_globals = { "geterrorhandler", "debugstack" } }
+
+-- ── the P4 modules' client reads (design §1.5), declared whole in P4.0 ────────────────────────────
+-- Each stanza names only what its files may touch. Every engine module not listed here names NO
+-- client global: it reads the client through NS.Compat (design §5), and luacheck makes that a fact.
+-- This file is a spine file (design §12): a task that needs another global hands it back.
+
+-- The state producers: auras (behind the restriction check), forms, movement, the unit reads the
+-- Secrets seam guards, and the GameTooltip OnShow/OnHide hooks.
+files["modules/States.lua"] = {
+    read_globals = {
+        "C_UnitAuras", "C_RestrictedActions", "GetShapeshiftFormInfo", "GetNumShapeshiftForms", "IsMounted",
+        "IsSwimming", "UnitOnTaxi", "UnitPower", "UnitPowerMax", "UnitHealth", "UnitHealthMax", "GameTooltip",
+        "UnitPowerType",   -- PlayerIsFull (P4.14 handback)
+    },
+}
+
+-- The zone producer: map IDs first, the zone texts only for /of zone's report (H9).
+files["modules/States_Zone.lua"] = {
+    read_globals = {
+        "C_Map", "GetInstanceInfo", "IsInInstance", "GetZoneText", "GetMinimapZoneText", "GetRealZoneText",
+    },
+}
+
+-- The trigger files: the reads their conditions make and the two effects that act on the client.
+local TRIGGER_READS = {
+    "IsFalling", "IsResting", "UnitIsPVP", "UnitGUID", "UnitIsPlayer", "UnitName", "UnitInVehicle",
+    "C_QuestLog", "C_TradeSkillUI", "C_Minimap", "SpellIsTargeting", "HasFullControl", "DoEmote",
+    "ChangeActionBarPage", "IsInInstance", "C_Map", "GameTooltip", "C_Spell", "C_Item", "C_PetJournal",
+    "C_UnitAuras", "GetCursorInfo", "GetMinimapZoneText", "GetNormalizedRealmName", "GetActionBarPage",
+    "GetInstanceInfo",
+}
+for _, f in ipairs({ "modules/Triggers_Params.lua", "modules/Triggers_Families.lua",
+                     "modules/Triggers_CondGeneral.lua", "modules/Triggers_CondTrade.lua",
+                     "modules/Triggers_CondQuest.lua", "modules/Triggers_Effects.lua",
+                     "modules/Triggers_Binder.lua" }) do
+    files[f] = { read_globals = TRIGGER_READS }
+end
+-- The trigger catalog: the zone text a captured zone trigger reads.
+files["modules/Triggers.lua"] = { read_globals = { "GetRealZoneText" } }
+
+-- The tooltip lines and the compare tooltips: the post-call processor, the shopping tooltips, and the
+-- EQUIPMENT_SETS line the outfit line replaces.
+for _, f in ipairs({ "modules/Tooltips.lua", "modules/Tooltips_Compare.lua", "modules/OutfitTooltip.lua" }) do
+    files[f] = {
+        read_globals = {
+            "TooltipDataProcessor", "TooltipUtil", "GameTooltip", "ShoppingTooltip1", "ShoppingTooltip2",
+            "EQUIPMENT_SETS", "hooksecurefunc", "IsModifiedClick", "GetScreenWidth",
+        },
+    }
+end
+
+-- The dock, the window and the slot checkboxes sit on the character sheet and stack with it.
+for _, f in ipairs({ "modules/Dock.lua", "modules/Window.lua", "modules/Window_ListModel.lua",
+                     "modules/Window_Rows.lua", "modules/SlotEnables.lua" }) do
+    files[f] = {
+        read_globals = {
+            "CharacterFrame", "PaperDollFrame", "CharacterFrameCloseButton", "ToggleCharacter", "UISpecialFrames",
+            "GameTooltip", "SpellCanTargetItem", "SpellCanTargetItemID", "MerchantFrame", "CursorHasItem",
+        },
+    }
+end
+
+-- The flyout hooks.
+for _, f in ipairs({ "modules/QuickSlots.lua", "modules/QuickSlots_Sort.lua" }) do
+    files[f] = {
+        read_globals = {
+            "PaperDollItemsFrame", "EquipmentFlyout_Hide", "EquipmentFlyoutPopoutButton_OnClick", "hooksecurefunc",
+            -- P4.18 handback: the cursor, the flyout frame and its location bits.
+            "CursorHasItem", "EquipmentFlyoutFrame", "EQUIPMENTFLYOUT_FIRST_SPECIAL_LOCATION",
+            "EQUIPMENTFLYOUT_PLACEINBAGS_LOCATION", "ITEM_INVENTORY_LOCATION_PLAYER", "ITEM_INVENTORY_LOCATION_BAGS",
+            "ITEM_INVENTORY_LOCATION_BANK",
+        },
+    }
+end
+
+-- The bar and the icon chooser take a dropped spell, item or macro as an icon.
+for _, f in ipairs({ "modules/Bar.lua", "modules/Bar_Buttons.lua", "modules/IconChooser.lua" }) do
+    files[f] = {
+        read_globals = {
+            "GetCursorInfo", "C_Spell", "C_Item", "GetMacroInfo", "IsAltKeyDown",
+            "UIFrameFadeOut", "UIFrameFadeRemoveFrame", "GameTooltip",
+        },
+    }
+end
+
+-- The published slash surface is colon-called by the host and the suites and forwards to the
+-- dispatcher upvalue.
+files["settings/Slash.lua"] = {
+    ignore = { "212/self" },
+    -- the client's macro-option parser decides a conditional message or argument (H25)
+    read_globals = { "SecureCmdOptionParse" },
+}
+
+-- The mocks mirror the client's and the libraries' colon-called APIs (`db:SetProfile`, `frame:Show`).
+files["tests/wow_mock.lua"] = { ignore = { "212/self", "432/self" } }
+files["tests/mock_gear.lua"] = { ignore = { "212/self", "432/self" } }
+files["tests/mock_world.lua"] = { ignore = { "212/self", "432/self" } }
+
+-- The legacy capture tool (§9.4) drives the RETIRED harness inside a read-only worktree of the old
+-- addon: it steers that harness's mock by replacing client functions on its global table (`G` is
+-- `_G` there) and calls the old addon's slash handler. Never loaded by the client, never shipped.
+files["tools/legacy_capture.lua"] = {
+    globals = { "_G.GetNumSpecializations", "_G.GetSpecializationInfo", "_G.UnitClass", "_G.C_Item" },
+    read_globals = { "SlashCmdList" },
 }

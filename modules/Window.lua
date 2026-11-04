@@ -1,0 +1,225 @@
+local _, NS = ...
+-- modules/Window.lua — NS.Window: the outfit window's chrome, the list body, the scroll bar and the
+-- footer, and its render (design §7.1, §7.3, INV §7.1-§7.2).
+--
+-- `OutfitterRebornWindow` is built once, by modules/Dock.lua, which owns every Show and Hide of it,
+-- its position and its layers. This file draws what is in it. No tabs: the old Options and About
+-- panels are the settings pages and their landing page. No scale of its own: it inherits UIParent's.
+--
+-- DIRTY, THEN DRAWN. Window.MarkDirty(wipeCache) replaces the old Update(true): the bus receivers
+-- below mark the list dirty (and wipe the outfit status cache), and the dock's follow tick draws it
+-- while the window is shown (Window.RenderIfDirty). Nothing renders while the window is hidden.
+--
+-- CALLS (at call time; design §12): NS.Dock.Close, NS.WindowRows, NS.WindowListModel, NS.Stack.Selected,
+-- NS.Outfits.SetAllSlotsEnabled, NS.OutfitDialog.OpenNew, NS.OpenOptionsPanel.
+
+local Win = { collapsed = {}, offset = 0, dirty = true, entries = {}, WIDTH = 260, HEIGHT = 320 }
+NS.Window = Win
+
+local L = NS.L
+local LEVEL = NS.Constants.LAYERS.LEVEL
+
+local frame, list, scroll
+local chrome = {}          -- the title-strip and footer controls, re-leveled at W + CHROME
+local footer = {}          -- the Slots: [All] [None] trio, shown while an outfit is selected
+local statusCache = {}
+local installed = false
+
+-- Every message that can change a row: each marks the list dirty and wipes the status cache.
+-- STACK_CHANGED is not among them: a stack change re-draws the worn marks, and an outfit's missing
+-- or banked status is inventory-driven, so it marks the list dirty and keeps the cache (Win.Install).
+local DIRTY_ON = { "OUTFIT_ADDED", "OUTFIT_DELETED", "OUTFIT_EDITED", "OUTFIT_RENAMED", "OUTFIT_WORN",
+                   "OUTFIT_REMOVED", "INVENTORY_CHANGED", "SELECTION_CHANGED", "EM_SYNCED",
+                   "TRIGGERS_REBOUND" }
+
+local function wipe(t) for k in pairs(t) do t[k] = nil end end
+
+--- Mark the list for a redraw; `wipeCache` drops the outfit status cache too.
+--- @param wipeCache boolean|nil
+function Win.MarkDirty(wipeCache)
+    if wipeCache then wipe(statusCache) end
+    Win.dirty = true
+end
+
+--- @return table|nil the window frame, once built
+function Win.Frame() return frame end
+
+local function selectedFooter()
+    local on = NS.Stack.Selected() ~= nil
+    for _, f in ipairs(footer) do f:SetShown(on) end
+end
+
+--- Draw the list now (a no-op while the window is hidden).
+function Win.Render()
+    if not (frame and frame:IsShown()) then return end
+    Win.dirty = false
+    local entries = NS.WindowListModel.Build(Win.collapsed, statusCache)
+    Win.entries = entries
+    local Rows = NS.WindowRows
+    local maxOffset = math.max(0, #entries - Rows.COUNT)
+    if Win.offset > maxOffset then Win.offset = maxOffset end
+    scroll:SetMinMaxValues(0, maxOffset)
+    scroll:SetValue(Win.offset)
+    for i, row in ipairs(Rows.rows) do
+        local n = Win.offset + i
+        Rows.Bind(row, entries[n], n)
+    end
+    selectedFooter()
+end
+
+--- The dock's follow tick: draw if something marked the list.
+function Win.RenderIfDirty()
+    if Win.dirty then Win.Render() end
+end
+
+--- Scroll to `n` rows down (clamped at render).
+--- @param n number
+function Win.SetOffset(n)
+    n = math.max(0, math.floor(NS.SafeNumber(n, 0)))
+    if n == Win.offset and not Win.dirty then return end
+    Win.offset = n
+    Win.Render()
+end
+
+--- Collapse or expand a category for the session.
+--- @param id string
+function Win.ToggleCollapsed(id)
+    Win.collapsed[id] = not Win.collapsed[id] or nil
+    Win.MarkDirty(false)
+    Win.Render()
+end
+
+--- Re-assert the window's stack over `base`, its own level (frame-layering-§3): chrome +CHROME, the
+--- body and rows +CONTENT, the scroll bar +SCROLL. After every strata or level change, and after a
+--- SetParent.
+--- @param base number|nil
+function Win.Relevel(base)
+    if not frame then return end
+    base = NS.SafeNumber(base, nil) or NS.SafeNumber(frame:GetFrameLevel(), 0)
+    for _, c in ipairs(chrome) do c:SetFrameLevel(base + LEVEL.CHROME) end
+    list:SetFrameLevel(base + LEVEL.CONTENT)
+    NS.WindowRows.Relevel(base + LEVEL.CONTENT)
+    scroll:SetFrameLevel(base + LEVEL.SCROLL)
+end
+
+-- ── build ─────────────────────────────────────────────────────────────────────────────────────
+
+local function labeledButton(name, parent, w, h, text, opts)
+    local b = CreateFrame("Button", name, parent)
+    b:SetSize(w, h)
+    b.text = b:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    b.text:SetPoint("CENTER", b, "CENTER", 0, 0)
+    b.text:SetText(text)
+    NS.Skin.Button(b, opts)
+    chrome[#chrome + 1] = b
+    return b
+end
+
+local function titleStrip(f)
+    f.title = f:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    f.title:SetPoint("TOPLEFT", f, "TOPLEFT", 10, -8)
+    f.title:SetText(L["Outfitter Reborn"])
+    f.divider = f:CreateTexture(nil, "ARTWORK")
+    f.divider:SetHeight(1)
+    f.divider:SetPoint("TOPLEFT", f, "TOPLEFT", 1, -26)
+    f.divider:SetPoint("TOPRIGHT", f, "TOPRIGHT", -1, -26)
+    NS.ApplySkin(f)
+    local close = NS.MakeCloseButton(f, function() NS.Dock.Close() end)
+    if close then chrome[#chrome + 1] = close end
+    local gear = CreateFrame("Button", "OutfitterRebornWindowSettings", f)
+    gear:SetSize(18, 18)
+    gear:SetPoint("TOPRIGHT", f, "TOPRIGHT", -28, -5)
+    gear.icon = gear:CreateTexture(nil, "ARTWORK")
+    gear.icon:SetAllPoints(gear)
+    gear.icon:SetTexture(NS.Icon("settings"))
+    NS.Skin.Button(gear)
+    gear:SetScript("OnClick", function() if not NS.IsStoodDown() then NS.OpenOptionsPanel() end end)
+    chrome[#chrome + 1] = gear
+end
+
+local function body(f)
+    local Rows = NS.WindowRows
+    list = CreateFrame("Frame", "OutfitterRebornWindowList", f)
+    list:SetSize(Rows.ROW_W, Rows.COUNT * Rows.ROW_H)
+    list:SetPoint("TOPLEFT", f, "TOPLEFT", 8, -30)
+    list:EnableMouseWheel(true)
+    list:SetScript("OnMouseWheel", function(_, delta) Win.SetOffset(Win.offset - NS.SafeNumber(delta, 0)) end)
+    Rows.Build(list)
+    scroll = CreateFrame("Slider", "OutfitterRebornWindowScroll", f)
+    scroll:SetOrientation("VERTICAL")
+    scroll:SetSize(12, Rows.COUNT * Rows.ROW_H)
+    scroll:SetPoint("TOPLEFT", list, "TOPRIGHT", 4, 0)
+    scroll:SetValueStep(1)
+    scroll:SetObeyStepOnDrag(true)
+    scroll:SetMinMaxValues(0, 0)
+    local track, thumb = scroll:CreateTexture(nil, "BACKGROUND"), scroll:CreateTexture(nil, "OVERLAY")
+    track:SetAllPoints(scroll)
+    thumb:SetSize(12, 24)
+    scroll:SetThumbTexture(thumb)
+    NS.Skin.ScrollBar(scroll, { track = track, thumb = thumb })
+    scroll:SetScript("OnValueChanged", function(_, value) Win.SetOffset(value) end)
+end
+
+local function footerRow(f)
+    local new = labeledButton("OutfitterRebornNewOutfitButton", f, 120, 20, L["New outfit..."], { primary = true })
+    new:SetPoint("BOTTOMLEFT", f, "BOTTOMLEFT", 8, 8)
+    new.mark = new:CreateTexture(nil, "ARTWORK")
+    new.mark:SetSize(12, 12)
+    new.mark:SetPoint("LEFT", new, "LEFT", 4, 0)
+    new.mark:SetTexture(NS.Icon("add"))
+    NS.Skin.Mark(new.mark)
+    new:SetScript("OnClick", function() if not NS.IsStoodDown() then NS.OutfitDialog.OpenNew() end end)
+    local none = labeledButton("OutfitterRebornSlotsNone", f, 40, 18, L["None"])
+    none:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -8, 9)
+    local all = labeledButton("OutfitterRebornSlotsAll", f, 40, 18, L["All"])
+    all:SetPoint("RIGHT", none, "LEFT", -4, 0)
+    local label = f:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    label:SetPoint("RIGHT", all, "LEFT", -4, 0)
+    label:SetText(L["Slots:"])
+    NS.Skin.Text(label, "muted")
+    local function setAll(on)
+        local sel = NS.Stack.Selected()
+        if NS.IsStoodDown() or not sel then return end
+        NS.Outfits.SetAllSlotsEnabled(sel, on)
+    end
+    all:SetScript("OnClick", function() setAll(true) end)
+    none:SetScript("OnClick", function() setAll(false) end)
+    footer[1], footer[2], footer[3] = label, all, none
+    for _, x in ipairs(footer) do x:Hide() end
+end
+
+--- Build the window, once. Hidden until the dock shows it; out of combat only (Dock.Refresh).
+--- @return table the frame
+function Win.Build()
+    if frame then return frame end
+    local f = CreateFrame("Frame", "OutfitterRebornWindow", UIParent, "BackdropTemplate")
+    f:SetSize(Win.WIDTH, Win.HEIGHT)
+    f:Hide()
+    titleStrip(f)
+    body(f)
+    footerRow(f)
+    frame = f
+    return f
+end
+
+--- The bus receivers, once per session; the bus record drops and replays them across a stand-down.
+--- And the skin's looks-changed listener: an item row's name wears its quality color, NS.QualityColor
+--- (the skin's q.* tokens), written at render rather than by a recorded primitive, so a skin switch
+--- marks the list for the follow tick's redraw (core/SkinSetup.lua: a surface that draws at render
+--- subscribes to NS.Skin.OnLooksChanged).
+function Win.Install()
+    if installed then return end
+    installed = true
+    NS.Skin.OnLooksChanged(function() Win.MarkDirty(false) end)
+    local bus = NS.NewBusTarget()
+    if not bus then return end
+    for _, key in ipairs(DIRTY_ON) do
+        bus:RegisterMessage(NS.MSG[key], function() Win.MarkDirty(true) end)
+    end
+    bus:RegisterMessage(NS.MSG.STACK_CHANGED, function() Win.MarkDirty(false) end)
+    bus:RegisterMessage(NS.MSG.SETTINGS_CHANGED, function(_, path)
+        if path == "auto.enabled" then Win.MarkDirty(false) end
+    end)
+    -- A profile switch writes no row, so the new profile's auto.enabled reaches the trigger marks here.
+    bus:RegisterMessage(NS.MSG.PROFILE_CHANGED, function() Win.MarkDirty(false) end)
+end

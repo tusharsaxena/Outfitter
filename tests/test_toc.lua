@@ -1,80 +1,72 @@
--- The TOC is the load order and the shipping manifest.  Both directions matter:
--- a listed file that is missing breaks the addon at startup, and an unlisted file
--- that exists is dead weight nobody notices.
-local Ctx = ...
-local Kit = Ctx.Kit
+-- tests/test_toc.lua — the TOC header (toc-file-§1/§2): the fields in their order, the Title, the
+-- version the namespace falls back to, an IconTexture that is on disk, the SavedVariables names, the
+-- kept CurseForge project, and none of the fields this release drops (H20).
 
-Kit.suite("toc")
+local T = _G.OUTFITTERREBORN_TEST
+local NS = T.NS
+local test, assertEqual, assertTrue = T.test, T.assertEqual, T.assertTrue
 
-local function tocLines()
-	local out = {}
-	for line in Ctx.readLF("Outfitter.toc"):gmatch("[^\n]*") do out[#out + 1] = line end
-	return out
+-- The `## Field: value` lines, in order, and the same as a map.
+local function header()
+    local f = assert(io.open(T.root .. "/OutfitterReborn.toc", "r"))
+    local order, fields = {}, {}
+    for line in f:lines() do
+        line = line:gsub("\r$", "")
+        local k, v = line:match("^##%s*([^:]+):%s*(.-)%s*$")
+        if k then
+            order[#order + 1] = k
+            fields[k] = v
+        end
+    end
+    f:close()
+    return order, fields
 end
 
-Kit.test("every file the TOC lists exists on disk", function()
-	local missing = {}
-	for _, line in ipairs(tocLines()) do
-		local rel = line:match("^%s*([%w_/%-%.]+%.[lx][um][al])%s*$")
-		if rel and not line:match("^#") then
-			local f = io.open(Ctx.root .. "/" .. rel, "r")
-			if f then f:close() else missing[#missing + 1] = rel end
-		end
-	end
-	Kit.equal(#missing, 0, "listed but missing: " .. table.concat(missing, ", "))
+test("toc: the header fields are written in the standard's order", function()
+    local order = header()
+    local want = { "Interface", "Title", "Notes", "Author", "Version", "IconTexture", "SavedVariables",
+                   "OptionalDeps", "DefaultState", "Category-enUS", "X-License", "X-Standard",
+                   "X-Curse-Project-ID" }
+    assertEqual(#order, #want, "header field count")
+    for i, k in ipairs(want) do assertEqual(order[i], k, "field " .. i) end
 end)
 
-Kit.test("every addon .lua on disk is in the TOC", function()
-	local listed = {}
-	for _, rel in ipairs(Ctx.loadedFiles) do listed[rel] = true end
-	local orphans = {}
-	for _, rel in ipairs(Ctx.luaFiles(true)) do
-		-- tests/ is deliberately not shipped, and neither is anything under it.
-		if not rel:match("^tests/") and not listed[rel] then orphans[#orphans + 1] = rel end
-	end
-	Kit.equal(#orphans, 0, "on disk but not in the TOC: " .. table.concat(orphans, ", "))
+test("toc: Title, Version and the brand agree", function()
+    local _, f = header()
+    assertEqual(f.Title, "Ka0s Outfitter Reborn")
+    assertEqual(f.Title, NS.BRAND)
+    assertEqual(f.Version, "1.1.0")
+    assertEqual(f.Version, NS.FALLBACK_VERSION)
+    assertEqual(f["X-License"], "MIT")
+    assertEqual(f["X-Standard"], "https://github.com/tusharsaxena/WowAddonStandards")
+    assertEqual(f["X-Curse-Project-ID"], "1698220")
+    assertTrue(f.Interface:match("^%d+$") ~= nil, "Interface is a number: " .. tostring(f.Interface))
 end)
 
-Kit.test("the TOC declares the headers the client needs", function()
-	local toc = Ctx.readLF("Outfitter.toc")
-	for _, key in ipairs({"Interface", "Version", "Title", "Notes",
-	                      "SavedVariables", "SavedVariablesPerCharacter"}) do
-		Kit.notNil(toc:match("##%s*" .. key .. ":"), "## " .. key)
-	end
+test("toc: the IconTexture is the shipped 128 logo, under the folder name", function()
+    local _, f = header()
+    local prefix = "Interface\\AddOns\\OutfitterReborn\\"
+    assertEqual(f.IconTexture:sub(1, #prefix), prefix)
+    assertEqual(f.IconTexture, NS.Constants.LOGO_128)
+    local rel = f.IconTexture:sub(#prefix + 1):gsub("\\", "/")
+    local file = io.open(T.root .. "/" .. rel, "rb")
+    assertTrue(file ~= nil, rel .. " is on disk")
+    if file then file:close() end
 end)
 
-Kit.test("every declared interface version is a plausible retail build", function()
-	local ifaces = Ctx.readLF("Outfitter.toc"):match("##%s*Interface:%s*([^\n]+)")
-	Kit.notNil(ifaces, "## Interface")
-	local n = 0
-	for part in ifaces:gmatch("[^,%s]+") do
-		local v = tonumber(part)
-		Kit.notNil(v, "interface value " .. part .. " is a number")
-		-- Six digits, expansion 10 or later: catches a transposed or truncated bump.
-		Kit.isTrue(v >= 100000 and v <= 999999, "interface " .. part .. " in range")
-		n = n + 1
-	end
-	Kit.isTrue(n > 0, "at least one interface version")
+test("toc: the SavedVariables are the addon's two, derived from the folder name", function()
+    local _, f = header()
+    assertEqual(f.SavedVariables, "OutfitterRebornDB, OutfitterRebornPerfDB")
+    assertTrue(f.SavedVariables:find(NS.name .. "DB", 1, true) == 1)
 end)
 
-Kit.test("the CurseForge project ID is present and numeric", function()
-	-- The packager uploads to whatever project this names. A missing one fails the
-	-- upload; a mistyped one succeeds against somebody else's project, which is
-	-- the worse outcome and the quiet one.
-	local id = Ctx.readLF("Outfitter.toc"):match("##%s*X%-Curse%-Project%-ID:%s*(%d+)")
-	Kit.notNil(id, "## X-Curse-Project-ID")
-	Kit.equal(id, "1698220", "the project ID")
-end)
-
-Kit.test("Deprecated.lua loads after Outfitter.lua", function()
-	local seenOutfitter = false
-	for _, rel in ipairs(Ctx.loadedFiles) do
-		if rel == "Outfitter.lua" then seenOutfitter = true end
-		if rel == "Deprecated.lua" then
-			-- It hangs off the Outfitter table, so it cannot load first.
-			Kit.isTrue(seenOutfitter, "Outfitter.lua loads before Deprecated.lua")
-			return
-		end
-	end
-	Kit.fail("Deprecated.lua is not in the TOC")
+test("toc: none of the dropped fields is back", function()
+    local _, f = header()
+    for _, k in ipairs({ "X-ReloadTag", "AddonCompartmentFunc", "AddonCompartmentFuncOnEnter",
+                         "RequiredDeps", "Dependencies", "SavedVariablesPerCharacter" }) do
+        assertEqual(f[k], nil, k)
+    end
+    for dep in (f.OptionalDeps or ""):gmatch("[^,%s]+") do
+        assertTrue(dep ~= "LibKa0s", "LibKa0s is vendored, never a dependency")
+    end
 end)
