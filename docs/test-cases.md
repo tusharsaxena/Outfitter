@@ -1169,7 +1169,7 @@ Total.
 - sheet: with no Chonky panel shown DockRight is the backdrop's edge
 - sheet: the adapter creates, anchors and shows nothing
 
-### test_dock.lua (42)
+### test_dock.lua (44)
 
 - dock: NS.Dock is published with the §7.2 surface
 - dock: the holder fills the sheet, and the sheet button toggles the window
@@ -1209,6 +1209,8 @@ Total.
 - dock: stood down, a sheet show neither shows nor re-anchors the button
 - window: the close button is anchored at the header's top right
 - window: the gear sits left of the close button
+- window: the gear's art is the close X's size, centered, in the X's rest and hover tint
+- window: without a close art texture the gear's art falls back to 12 px
 - dock: switching to the Reputation tab on EllesmereUI does not re-anchor the button to stock
 - dock: a sheet tab built after the paper doll's OnShow is picked up on the next frame
 - dock: the next frame's sheet check does nothing once the doll is gone or stood down
@@ -1674,7 +1676,7 @@ Total.
 | test_triggers_class.lua | 11 |
 | test_triggers_pvp.lua | 7 |
 | test_sheet.lua | 16 |
-| test_dock.lua | 42 |
+| test_dock.lua | 44 |
 | test_list_model.lua | 7 |
 | test_rows_secure.lua | 21 |
 | test_slot_enables.lua | 17 |
@@ -1697,4 +1699,4 @@ Total.
 | test_lizard_sighted.lua | 8 |
 | test_prose.lua | 15 |
 | Skipped | 1 |
-| **Total** | **1391** |
+| **Total** | **1393** |

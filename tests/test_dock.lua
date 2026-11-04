@@ -714,6 +714,39 @@ test("window: the gear sits left of the close button", function()
     assertTrue(g[4] < c[4] - CLOSE_SIZE, "the gear overlaps the close button")
 end)
 
+local function rgb(tex) return ("%.3f %.3f %.3f"):format(tex:GetVertexColor()) end
+
+test("window: the gear's art is the close X's size, centered, in the X's rest and hover tint", function()
+    -- Smoke round 2 design G5 (D7): the gear drew 18 x 18 (SetAllPoints) against the X's 12 x 12.
+    local _, M, _, win = opened()
+    local gear, close = M.OutfitterRebornWindowSettings, win.close
+    assertTrue(close.icon ~= nil, "the close has no art texture to measure")
+    local art = close.icon:GetWidth()
+    assertEqual(art, 12, "LibKa0s Core's CLOSE_ART")
+    -- red under: gear.icon:SetAllPoints(gear) (the art fills the 18 px button).
+    assertEqual(gear.icon:GetWidth(), art); assertEqual(gear.icon:GetHeight(), art)
+    local p = { gear.icon:GetPoint(1) }
+    assertEqual(p[1], "CENTER"); assertEqual(p[2], gear)
+    -- red under: the gear left untinted (white) beside the X's gray, or no hover.
+    local rest = rgb(close.icon)
+    assertEqual(rgb(gear.icon), rest, "the gear's rest tint is not the X's")
+    gear:__fire("OnEnter"); close:__fire("OnEnter")
+    assertEqual(rgb(gear.icon), rgb(close.icon), "the gear's hover tint is not the X's")
+    assertTrue(rgb(gear.icon) ~= rest, "the gear has no hover tint")
+    gear:__fire("OnLeave"); close:__fire("OnLeave")
+    assertEqual(rgb(gear.icon), rgb(close.icon), "the gear did not go back to the X's rest tint")
+end)
+
+test("window: without a close art texture the gear's art falls back to 12 px", function()
+    local NS, M = scene()
+    rawset(NS, "MakeCloseButton", function() return nil end)
+    M.__sheets.place(M.CharacterFrame, 300, 500)
+    M.__world:openCharacter()
+    NS.Dock.Open()
+    local gear = M.OutfitterRebornWindowSettings
+    assertEqual(gear.icon:GetWidth(), 12); assertEqual(gear.icon:GetHeight(), 12)
+end)
+
 -- ── the paper-doll pane across the sheet's tabs (review follow-up to Tasks 3.1-3.2) ──────────────
 -- The button and the window belong to the paper doll: the Reputation and Currency tabs hide
 -- PaperDollFrame, not CharacterFrame, and the Character tab shows it again.

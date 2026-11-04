@@ -252,12 +252,14 @@ end)
 
 test("window: the header gear has no border", function()
     -- Sheet and window feedback design G10: the window's small icon buttons lose their box and
-    -- bevel; the text buttons (New outfit..., Slots: All / None) keep theirs. red under:
-    -- modules/Window.lua's NS.Skin.Button(gear) without { noBg, noBorder }.
+    -- bevel; the text buttons (New outfit..., Slots: All / None) keep theirs. Smoke round 2 design
+    -- G5: the gear is painted as the close X is (S.CloseButton: close.rest, close.hot), which draws
+    -- no box. red under: modules/Window.lua's NS.Skin.Button(gear) (a box, and no X tint).
     local _, _, Skin, built = buildAll()
     local gear = built["the window's settings button"]
-    local opts = Skin.painted[gear].calls.Button and Skin.painted[gear].calls.Button[1]
-    assertTrue(type(opts) == "table" and opts.noBg == true and opts.noBorder == true, "S.Button(gear, { noBg, noBorder })")
+    local calls = Skin.painted[gear].calls
+    assertTrue(calls.CloseButton ~= nil, "the gear is not painted as the close X is")
+    assertTrue(calls.Button == nil, "S.Button(gear) draws a box")
     -- The New outfit mark is an S.Mark on a texture (a tint, never a box); its button keeps its border.
     local new = built["the New outfit button"]
     local newOpts = Skin.painted[new].calls.Button[1]

@@ -115,6 +115,17 @@ local function labeledButton(name, parent, w, h, text, opts)
     return b
 end
 
+-- The close X's art size, read off its own art (LibKa0s Core's CLOSE_ART is a file-local), so the
+-- gear follows it; 12, that value, when the close draws a font glyph or is not there.
+local GEAR_ART_FALLBACK = 12
+
+local function closeArtSize(close)
+    local icon = close and rawget(close, "icon")
+    local w = type(icon) == "table" and type(icon.GetWidth) == "function" and NS.SafeNumber(icon:GetWidth(), 0) or 0
+    if w <= 0 then return GEAR_ART_FALLBACK end
+    return w
+end
+
 local function titleStrip(f)
     f.title = f:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     f.title:SetPoint("TOPLEFT", f, "TOPLEFT", 10, -8)
@@ -135,10 +146,15 @@ local function titleStrip(f)
     local gear = CreateFrame("Button", "OutfitterRebornWindowSettings", f)
     gear:SetSize(18, 18)
     gear:SetPoint("TOPRIGHT", f, "TOPRIGHT", -28, -5)
+    -- The art at the close X's art size, centered in the unchanged 18 px click target, and painted as
+    -- the X is (close.rest, close.hot under the pointer), so the two header controls read as a pair
+    -- (smoke round 2 design G5).
+    local art = closeArtSize(close)
     gear.icon = gear:CreateTexture(nil, "ARTWORK")
-    gear.icon:SetAllPoints(gear)
+    gear.icon:SetPoint("CENTER", gear, "CENTER", 0, 0)
+    gear.icon:SetSize(art, art)
     gear.icon:SetTexture(NS.Icon("settings"))
-    NS.Skin.Button(gear, { noBg = true, noBorder = true })
+    NS.Skin.CloseButton(gear)
     gear:SetScript("OnClick", function() if not NS.IsStoodDown() then NS.OpenOptionsPanel() end end)
     chrome[#chrome + 1] = gear
 end
