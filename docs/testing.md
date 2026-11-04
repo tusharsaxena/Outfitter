@@ -42,7 +42,7 @@ places in Lua, and the kit's sighted shadow is what the complexity suite measure
 
 - **`tests/_kit/`** is the shared harness, vendored byte-identical from the LibKa0s tag named in root
   `CLAUDE.md` (test kit revision 50). Never edit it; `test_vendor_sync` fails on any drift.
-- **`tests/run.lua`** loads the vendored library in `LibKa0s.xml` order (asserting the sixteen leased
+- **`tests/run.lua`** loads the vendored library in `LibKa0s.xml` order (asserting the seventeen leased
   majors' files are present) and the addon in **TOC order** (`Loader.tocFiles`), so the harness cannot
   drift from what the client loads (testing-§9). It runs `OnInitialize` and `OnEnable` like the
   client, and `loadInstance` builds isolated instances (a library-absent load passes `libFiles = {}`).

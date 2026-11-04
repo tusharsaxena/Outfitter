@@ -13,7 +13,7 @@ Loader.addonName = "OutfitterReborn"
 -- The vendored library's files, read out of LibKa0s.xml in its own order rather than remembered:
 -- omit one and its module refuses to register, the host takes its stub, and the suite measures the
 -- stub -- green, and testing nothing (testing-§9). The floor below fails loudly if the .xml ever
--- stops naming a file of one of the sixteen majors this addon leases (§1.3; Glow, Toast, Charts and
+-- stops naming a file of one of the seventeen majors this addon leases (§1.3; Glow, Toast, Charts and
 -- Sim load with the rest of the .xml and are not leased).
 local LIB_FILES = Loader.xmlFiles(root .. "/libs/LibKa0s/LibKa0s.xml")
 do
@@ -30,6 +30,7 @@ do
         "OptionsKeybinds.lua", "OptionsAppearance.lua", "OptionsSkinPicker.lua", "OptionsSkinPickerRows.lua",
         "OptionsSwitch.lua", "OptionsMedia.lua",
         "Perf.lua", "PerfSampler.lua", "PerfCommands.lua", "PerfPanel.lua",
+        "IconBrowser.lua", "IconBrowserSources.lua", "IconBrowserWindow.lua",
     }
     local present = {}
     for _, path in ipairs(LIB_FILES) do present[path:match("([^/]+)$")] = true end
