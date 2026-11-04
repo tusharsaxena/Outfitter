@@ -32,17 +32,18 @@ archaeology, for the same reason a skip is never a pass (`automated-tests-§4`).
 
 | Run | Commit | Tree | Version | Lint w/e | Files | Tests | Perf | NLOC | Funcs | Avg NLOC | Avg CCN | Max CCN | CCN warn | Verdict |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| [`20261104-134211`](20261104-134211/) | `ff19950` | clean | 1.1.0 | 0/0 | 188 | 1291/1/1292 | pass | 40505 | 5091 | 6.9 | 2.3 | 15 | 0 | **green** |
 | [`20261104-044201`](20261104-044201/) | `9a27eb7` | clean | 1.1.0 | 0/0 | 188 | 1277/1/1278 | pass | 40002 | 5040 | 6.9 | 2.3 | 15 | 0 | **green** |
 | [`20261104-042841`](20261104-042841/) | `bd45fa5` | clean | 1.1.0 | 0/0 | 188 | 1277/1/1278 | pass | 39999 | 5040 | 6.9 | 2.3 | 15 | 0 | **green** |
 | [`20261103-143906`](20261103-143906/) | `9252d3d` | **dirty** | 1.1.0 | 0/0 | 73 | 271/4/275 | — | — | — | — | — | — | — | **green** |
 
 ## Test suite
 
-**1278 cases** — 1277 passed, 0 failed, 1 skipped. The generated inventory
-[`20261104-044201/test-cases.md`](20261104-044201/test-cases.md) is the authority on which cases existed at this run;
+**1292 cases** — 1291 passed, 0 failed, 1 skipped. The generated inventory
+[`20261104-134211/test-cases.md`](20261104-134211/test-cases.md) is the authority on which cases existed at this run;
 `docs/test-cases.md` is that same list at HEAD.
 
-Unchanged from the previous run at 1278 cases.
+Moved **1278 → 1292** since the previous run.
 
 **1 case(s) reported a `skip`.** A skip is counted in the total and never in `passed`, and at
 the release gate it is NOT EVALUATED rather than passed (`automated-tests-§3`).
@@ -58,28 +59,31 @@ to whoever thinks to open `.luacheckrc`.
 
 ## Perf
 
-**10 scenarios** from `tests/perf.lua`; the measurements are in
-[`20261104-044201/perf.json`](20261104-044201/perf.json).
+**13 scenarios** from `tests/perf.lua`; the measurements are in
+[`20261104-134211/perf.json`](20261104-134211/perf.json).
 
 | `scenario` | `iters` | `ms/iter` | `notes/iter` | `bytes/iter` |
 |---|---|---|---|---|
-| `equipPlanCaptureOff` | 500 | 1.32146 | 0.00 | 224032.1 |
-| `equipPlanCaptureOn` | 500 | 1.26361 | 3.00 | 224032.1 |
-| `zoneFlipsCaptureOff` | 50 | 0.80616 | 0.00 | 149217.0 |
-| `zoneFlipsCaptureOn` | 50 | 0.88616 | 100.00 | 149134.4 |
-| `triggerFanoutCaptureOff` | 100 | 0.58528 | 0.00 | 119534.4 |
-| `triggerFanoutCaptureOn` | 100 | 0.61486 | 40.00 | 119534.4 |
-| `tooltipsCaptureOff` | 50 | 0.64472 | 0.00 | 138494.1 |
-| `tooltipsCaptureOn` | 50 | 0.68300 | 100.00 | 138494.1 |
-| `gaGenerationCaptureOff` | 200 | 4.26146 | 0.00 | 468126.8 |
-| `gaGenerationCaptureOn` | 200 | 4.27156 | 3.00 | 468126.8 |
+| `equipPlanCaptureOff` | 500 | 1.26255 | 0.00 | 224208.1 |
+| `equipPlanCaptureOn` | 500 | 1.26917 | 3.00 | 224208.1 |
+| `zoneFlipsCaptureOff` | 50 | 0.81528 | 0.00 | 118019.8 |
+| `zoneFlipsCaptureOn` | 50 | 0.87064 | 100.00 | 117934.4 |
+| `triggerFanoutCaptureOff` | 100 | 0.61001 | 0.00 | 104718.4 |
+| `triggerFanoutCaptureOn` | 100 | 0.61856 | 40.00 | 104718.4 |
+| `tooltipsCaptureOff` | 50 | 0.61484 | 0.00 | 138494.1 |
+| `tooltipsCaptureOn` | 50 | 0.64956 | 100.00 | 138494.1 |
+| `gaGenerationCaptureOff` | 200 | 4.51521 | 0.00 | 468126.8 |
+| `gaGenerationCaptureOn` | 200 | 4.27652 | 3.00 | 468126.8 |
+| `dockIdleCaptureOff` | 2000 | 0.00474 | 0.00 | 192.3 |
+| `dockIdleCaptureOn` | 2000 | 0.00517 | 1.00 | 192.3 |
+| `tooltipsAbsent` | 50 | 0.61606 | 0.00 | 138494.1 |
 
 `perf` never fails a run and never blocks a commit — it is recorded, read and compared, not
 thresholded (`performance-§9`). It does gate the **tag** (`automated-tests-§3`).
 
 ## Complexity watch list
 
-Current as of [`20261104-044201`](20261104-044201/) — **this run's measurement, not its diff.** Max CCN **15** across 5040
+Current as of [`20261104-134211`](20261104-134211/) — **this run's measurement, not its diff.** Max CCN **15** across 5091
 functions, **0** of them warned on; 0 file(s) in the 1000–1500 band and 0 over the 1500 cap
 (`layout-§1`).
 
