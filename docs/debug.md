@@ -35,15 +35,11 @@ A tag is one word; a trigger id, an outfit name or a slot goes in the message, n
 | `Skin` | `core/SkinSetup.lua`: the skin choice and the picker |
 | `Perf` | The performance harness |
 | `Diag` | The diagnostics report |
-| `Equip` | `modules/Equip*.lua`: updates, gates, executed changes, a surfaced error |
-| `Stack` | `modules/OutfitStack*.lua`: wear, remove, layers (replaces the fork's "show stack contents" option) |
+| `Equip` | `modules/Equip.lua`: a surfaced bracket error (`update`, `flush`, `batch`, `execute`, or a depth stranded at `PLAYER_ENTERING_WORLD`), with its message |
 | `Trigger` | The trigger binder: bind, unbind, dispatch and the verdict; the catalog (`modules/Triggers.lua`): an event that is neither a pseudo key nor a game event |
 | `States` | `modules/States.lua`: a write to an unknown state |
-| `Zone` | `modules/States_Zone.lua`: the zone producer's ids |
-| `Dock` | `modules/Dock.lua`: attach, the follow fallback, the combat suspend |
-| `Bar` | `modules/Bar*.lua` |
-| `EM` | `modules/EquipmentManager.lua`: the Blizzard equipment-set mirror |
-| `Opt` | `modules/Optimize*.lua` |
+| `Dock` | `modules/Dock.lua`: the follow fallback, when the window's anchor is refused and it sits in the sheet holder |
+| `Opt` | `modules/Optimize.lua` and `modules/Optimize_Genetic.lua` |
 | `Test` | `modules/Preview.lua`: test mode on (and whether it opened the bar) and off (and why) |
 | `Pet` | `modules/Companion.lua`: a blocked pass and its reason, a finished or canceled wish, a give-up at the cap or the deadline |
 

@@ -132,7 +132,7 @@ function that writes it (architecture-§5).
 |---|---|---|
 | `profile.windows.dialogs[key]` | `NS.Dialogs` | `NS.Dialogs.SavePosition(key, point, x, y)` on a dialog's drag stop |
 | `global.minimap.minimapPos` | LibDBIcon (vendored) | LibDBIcon's own drag handler |
-| `char.outfits`, `char.order`, `char.nextID`, `char.bindings`, `char.seeded` | `NS.Outfits` | The `NS.Outfits` writer API (`Create`, `Delete`, `DeleteAll`, `Rename`, `SetItems`, `SetToCurrent`, `Bind`, `Changed`, `LoadPass`), plus the instance-row writes through `NS.ResolveOutfitRoot` |
+| `char.outfits`, `char.order`, `char.nextID`, `char.bindings`, `char.seeded` | `NS.Outfits` | The `NS.Outfits` writer API (`Create`, `CreateFromItem`, `Duplicate`, `Reorder`, `Rename`, `Delete`, `DeleteAll`, `SetItem`, `SetItems`, `ClearSlot`, `SetSlotEnabled`, `SetAllSlotsEnabled`, `AddNewItems`, `SetToCurrent`, `SetFlag`, `SetStat`, `SetBinding`, `Changed`, `LoadPass`), plus the instance-row writes through `NS.ResolveOutfitRoot` |
 | `char.stack`, `char.recent` | `NS.Stack` | `Wear`, `Remove`, the temporary-outfit collapse, and the LoadPass repair. Persisted because restoring the layering after `/reload` is the fork's behavior (recorded data) |
 | `char.emPreserved` | `NS.EM` | The zero-sets protection, while the Equipment Manager reports no sets |
 | `outfits[id].triggerState[TID]` | `NS.TriggerBinder` | A trigger's side effects through `ctx.persist` (Fishing and Stealth CVar restores, `wasPvP`) |

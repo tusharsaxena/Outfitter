@@ -60,7 +60,7 @@ end
 --- The login: stood down (a stored `enabled = false`), nothing registers, nothing resumes. Standing
 --- up, it runs THE latch's stand-up, NS.StandUp (core/LifecycleSetup.lua): the bus replay (a no-op
 --- while never stood down), the host's game events, then every module in NS.LIFECYCLE_MODULES bottom
---- to top, a name whose module has not landed skipped, so PlayerState, Inventory and the stack come up
+--- to top, a name whose NS table is absent or has no Resume skipped, so PlayerState, Inventory and the stack come up
 --- before the binder that wears through them (design §5.12). One function, so the login and a
 --- re-enable build the same set (slash-commands-§7, F-008).
 function NS:OnEnable()
