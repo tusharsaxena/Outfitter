@@ -54,7 +54,7 @@ places in Lua, and the kit's sighted shadow is what the complexity suite measure
   and auras, forms, units, pets, quests, CVars, titles, protected frames, the character sheet's
   frames, the tooltips). Both answer from `tests/fixtures/items.lua` and the named scenarios in
   `tests/fixtures/inventories.lua` (`M.__gear:load("full_bags")`). It also carries `fake`, the
-  recorded stand-in a suite installs for a module that has not landed yet. `tests/run.lua` wraps
+  recorded stand-in a suite installs in place of a real module it isolates the case from. `tests/run.lua` wraps
   every `T.test` case so the fakes it installed are restored when it ends, pass or fail.
 - **The whole login and the unit instance.** `T.load()` logs in as the client does, so since P4.27
   every instance holds the whole graph live (`OnEnable` resumes every module). A suite that pins one
@@ -171,7 +171,7 @@ has no row here, or a row leaves its §9.3 group or order.
 | `test_tooltips` | The "Used by outfits" line on bag, inventory and hyperlink tooltips (never another unit's), its colors and cache; the compare tooltips; the outfit tooltip |
 | `test_skinsetup` | The skin seam: the owner registration, the `of.*` tokens, the choice and the picker |
 | `test_skin` | Only our frames are skinned; the window, bar, dialogs and menus follow a skin switch |
-| `test_perf_harness` | The ten buckets in order with the one nest, each reached on the whole addon (`equipExecute` only inside `E.Update`), the five offline scenarios doing what they are named for, the `perf` verb, the latch's `perf` hold |
+| `test_perf_harness` | The ten buckets in order with the one nest, each reached on the whole addon (`equipExecute` only inside `E.Update`), the six offline scenarios doing what they are named for (the idle docked window's announcing nothing among them), the `perf` verb, the latch's `perf` hold |
 | `test_glyphs` | The display-glyph guard over the addon's own Lua. The zhCN, zhTW, koKR and ruRU overlays are skipped (no western safe set holds them); their faces are left to the H8 client check |
 
 ## Inventory and badge

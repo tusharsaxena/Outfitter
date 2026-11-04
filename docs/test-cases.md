@@ -202,7 +202,7 @@ Total.
 - parity: every LibKa0s major the host leases has its parity row
 - parity: the degraded load resumes every module at login, and stands them down and up
 
-### test_perf_harness.lua (18)
+### test_perf_harness.lua (19)
 
 - perf: the descriptor declares the ten buckets in order, the SavedVariable and the one latch
 - perf: equipExecute is the one bucket declared within another, and within equipUpdate
@@ -212,6 +212,7 @@ Total.
 - perf scenes: the fan-out dispatches each of the 40 bindings once per edge
 - perf scenes: the tooltip pass draws 100 bag items and decorates the used ones
 - perf scenes: one genetic generation breeds 275 children over whole resumes
+- perf scenes: the idle docked window follows once per step and announces nothing
 - perf pairs: the measured figures agree, each off window's one-off inside its allowance
 - perf pairs: capture on allocating one small table per note fails, whatever the window
 - perf pairs: a 56-byte allocation per off-path bracket call fails in every scenario
@@ -1518,7 +1519,7 @@ Total.
 | test_bus.lua | 12 |
 | test_skinsetup.lua | 21 |
 | test_surface_parity.lua | 27 |
-| test_perf_harness.lua | 18 |
+| test_perf_harness.lua | 19 |
 | test_schema.lua | 25 |
 | test_settings.lua | 15 |
 | test_slash.lua | 44 |
@@ -1579,4 +1580,4 @@ Total.
 | test_lizard_sighted.lua | 8 |
 | test_prose.lua | 15 |
 | Skipped | 1 |
-| **Total** | **1285** |
+| **Total** | **1286** |

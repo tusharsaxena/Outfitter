@@ -30,8 +30,10 @@ addon and asserts a non-zero count per bucket, and that `equipExecute` is only e
 
 `equipExecute` only ever runs inside `equipUpdate`, so a report never adds the two.
 
-While idle, out of combat with the window closed, the addon should run nothing but its event
-handlers on the edges it listens to; the window's follow tick exists only while the window is shown.
+While idle, out of combat with the window closed, the addon runs its event handlers on the edges it
+listens to and one 0.5 s States poll (`POLL_PERIOD` in `modules/States.lua`: mounted and swimming);
+the window's follow tick exists only while the window is shown. The poll's cost is under
+[Measured costs](#measured-costs).
 
 ## Taking a capture
 
@@ -90,6 +92,26 @@ noise), and the arm must note nothing with capture on, which proves the strip to
 
 A ceiling is raised only by re-measuring and saying why. The runs are kept in
 [`automated-tests/`](automated-tests/README.md), not in `perf-analysis/`.
+
+## Measured costs
+
+**The idle docked window: about 1256 bytes a step.** Measured 2026-11-04 by `tests/perf.lua`'s
+`dockIdle` scenario (Lua 5.1, the same figure with capture off and on, ceiling 1290). One step is one
+States poll tick (the 0.5 s mounted and swimming repeater) and one follow tick. The poll runs twice
+a second whenever the addon is up, window or not; the follow tick runs only while the window is
+shown. Of the 1256 bytes:
+
+| Share | Where it goes |
+|---|---|
+| About 1064 | The poll's `NS.Equip.Batch` bracket: `run()` in `modules/Equip.lua` packs the vararg into a table and builds two `xpcall` closures (the call and the flush) on every entry |
+| About 96 | The follow tick (`dockFollow`) |
+| About 96 | `Scenes.quiet`, the recorder's own housekeeping, not the addon's |
+
+The idle bracket announces nothing (the C-01 gate), so nothing redraws; with that gate reverted the
+same step costs about 183681 bytes, and the 1290 ceiling is what holds the idle window quiet. The
+remaining cost is the bracket's own allocation, paid on every `Batch` whether or not the stack moves.
+Whether to cut it (for example, a no-argument fast path, or reusing the closures) is the owner's
+call and is not scheduled; it is recorded here as a measured cost, not a defect.
 
 ## Complexity
 

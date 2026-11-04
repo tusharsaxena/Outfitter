@@ -3,7 +3,7 @@
 -- order with the one declared nesting, the descriptor's single teardown path, no dynamic bucket key
 -- anywhere in the shipped source, and the perf hold making the addon inert (P3 C10). P4.31 adds the
 -- reach: every bucket is noted when its path is driven on the whole addon, equipExecute only inside
--- equipUpdate, and each of tests/perf.lua's five scenarios does the work it is named for. The
+-- equipUpdate, and each of tests/perf.lua's six scenarios does the work it is named for. The
 -- drivers are tests/perf_scenes.lua's, the ones the offline runner measures.
 
 local T = _G.OUTFITTERREBORN_TEST
@@ -116,7 +116,7 @@ test("perf: every declared bucket is reached, and equipExecute only within equip
     assertEqual(outside, 0, "equipExecute noted outside equipUpdate")
 end)
 
--- ── the five offline scenarios do what they are named for ─────────────────────────────────────
+-- ── the six offline scenarios do what they are named for ──────────────────────────────────────
 
 test("perf scenes: the full-bag plan is one update with one change and one bag sync per step", function()
     -- red under: an equipPlan step that leaves the throttle in force (no `M.__now` advance: the
@@ -175,6 +175,20 @@ test("perf scenes: one genetic generation breeds 275 children over whole resumes
     -- red under: a step that resumes once (100 children) instead of breeding one generation's worth.
     assertTrue(job.generated >= P.population + 4 * (P.population - P.parents), "fewer than four generations bred")
     assertTrue(seen.counts.optimizeStep >= 4 * 2, "a generation in fewer than two resumes")
+end)
+
+test("perf scenes: the idle docked window follows once per step and announces nothing", function()
+    local step, NS = Scenes.dockIdle()
+    local sent = 0
+    NS.NewBusTarget():RegisterMessage(NS.MSG.STACK_CHANGED, function() sent = sent + 1 end)
+    local seen = watch(NS)
+    local ok, err = pcall(function() for _ = 1, 4 do step() end end)
+    seen.stop()
+    if not ok then error(err, 0) end
+    assertEqual(seen.counts.dockFollow, 4)
+    -- red under: reverting C-01's st.touched gate (the idle poll's bracket announces on every close).
+    assertEqual(sent, 0, "the idle poll announced STACK_CHANGED")
+    assertNil(seen.counts.equipUpdate, "the idle step ran an equipment update")
 end)
 
 -- ── the pair verdict ───────────────────────────────────────────────────────────────────────────
