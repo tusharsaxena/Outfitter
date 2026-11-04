@@ -210,6 +210,11 @@ function Bar.BuildChrome(f)
     f.chrome.title = f.title
     NS.ApplySkin(f.chrome)
     f.close = NS.MakeCloseButton(header, function() NS.SetByPath("bar.shown", false) end)
+    -- Hooked, so Core's own hover tint stays: the bar keeps full alpha under the X as under the lock.
+    if f.close then
+        f.close:HookScript("OnEnter", function() Bar.HoverIn() end)
+        f.close:HookScript("OnLeave", function() Bar.HoverOut() end)
+    end
     f.lock = lockControl(header, artSize(f.close))
     f.drag = dragStrip(f, header)
     placeHeader(f)

@@ -260,6 +260,23 @@ test("bar: changing the grow direction re-saves the place at the corner it impli
     assertEqual(NS.db.profile.windows.bar.x, 60 - 1000)
 end)
 
+test("bar: a place written behind an explicit grow direction is re-saved at its corner on the next draw", function()
+    local NS, M, Bar = scene()
+    complete(NS, "A")
+    settle(M)
+    local f = Bar.Frame()
+    geom(M.UIParent, 0, 1000, 800, 0)
+    geom(f, 10, 60, 790, 740)
+    NS.SetByPath("bar.layout.growH", "left")
+    settle(M)
+    -- Reset position writes the default TOPLEFT under a bar told to grow left.
+    assertTrue(NS.ApplyDefault(NS.FindSchemaRow("bar.position")))
+    settle(M)
+    -- red under: a Refresh that anchors the stored TOPLEFT as it is (the bar grows right)
+    assertEqual(NS.db.profile.windows.bar.point, "TOPRIGHT")
+    assertEqual(point(f)[1], "TOPRIGHT")
+end)
+
 test("bar: the scale follows the Master row and divides the offset", function()
     local NS, M, Bar = scene()
     complete(NS, "A")
@@ -784,6 +801,13 @@ test("bar: leaving the bar fades it to its alpha over 0.5 s", function()
     -- red under: a fade of another length
     assertEqual(b[2], 0.5); assertEqual(b[3], 1); assertEqual(b[4], 0.6)
     assertEqual(#ctl.fades, 1, "one fade: there is no handle to fade")
+    -- The header's close keeps the bar lit as its lock and drag strip do.
+    f:SetAlpha(0.6)
+    f.close:__fire("OnEnter")
+    -- red under: the close X built without the bar's hover hooks (the bar fades under the pointer)
+    assertEqual(f:GetAlpha(), 1, "full while the close is hovered")
+    f.close:__fire("OnLeave")
+    assertEqual(#ctl.fades, 2, "leaving the close fades the bar")
 end)
 
 test("bar: an alpha change stops a hover-out fade still running, so it cannot land on the old alpha", function()

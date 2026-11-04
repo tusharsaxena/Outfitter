@@ -14,7 +14,8 @@ local _, NS = ...
 -- G6): icons per line, padding, spacing, icon size, and the grow direction. "Automatic" grows AWAY
 -- from the saved corner (QUADRANT): a bar saved at a right corner grows left, one saved at a bottom
 -- corner grows up; an explicit direction pins the corner SavePosition saves at, and a write to it
--- re-saves the place there, so the bar neither jumps nor flips. The position is
+-- re-saves the place there, so the bar neither jumps nor flips (a place written at another corner,
+-- by a reset or a profile switch, is re-saved there on the next draw: Bar.CornerDisagrees). The position is
 -- `profile.windows.bar` (design §3.4), the storage of the `bar.position` row (settings/OutfitBar.lua),
 -- and its one writer is that row's set through NS.SetByPath (architecture-§5): SavePosition on a drag
 -- stop (that corner, in screen pixels, divided by the effective scale on the way back, as legacy
@@ -303,7 +304,20 @@ function Bar.Refresh()
     bar:Show()
     Bar.SetLocked(locked())
     Bar.ApplyAlpha()
+    if Bar.CornerDisagrees() then Bar.SavePosition() end
     return true
+end
+
+--- Whether the saved corner is not the one an explicit grow direction implies: a place written while
+--- the bar was hidden, a Reset position or a profile switch. The bar then grows from the wrong edge
+--- until it is re-saved, which Refresh does from where it was just drawn (so it does not move). A
+--- rect the client has not laid yet is left for the next draw.
+--- @return boolean
+function Bar.CornerDisagrees()
+    if not bar or bar:GetLeft() == nil then return false end
+    local q = QUADRANT[position().point]
+    local gx, gy = GROW_X[NS.GetSetting("bar.layout.growH")], GROW_Y[NS.GetSetting("bar.layout.growV")]
+    return (gx ~= nil and gx ~= q[1]) or (gy ~= nil and gy ~= q[2])
 end
 
 local function runScheduled()
