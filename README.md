@@ -61,6 +61,7 @@ Everything else is on the addon's page under Settings → AddOns, and `/of` (or 
 | The outfit bar isn't there | It's off until you tick *Show outfit bar* on the Outfit Bar page. Check *General visibility* on General → Master controls too. If it's off screen, press *Reset position* there. |
 | The checkboxes aren't on the character sheet | They only show while the outfit window is open and an outfit is selected. Click an outfit in the window. |
 | My keys from the old Outfitter do nothing | The bindings have new names, so set them again in Options → Keybindings → Ka0s Outfitter Reborn. |
+| Errors and a broken UI right after an update | Quit the game all the way to the desktop and start it again. The game reads an addon's file list only when it starts, so an update installed with the game running, or over a `/reload`, loads half the new files. |
 | Something looks wrong and I want to report it | Follow [Reporting a bug](#reporting-a-bug) below. |
 
 ## Reporting a bug

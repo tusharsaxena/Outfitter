@@ -2,8 +2,8 @@
 -- help and the landing rows, enable/disable through the seam, the debug and perf verbs, the schema
 -- CLI, resetall, both chat commands, the H25 macro-conditional routing and the library-absent
 -- dispatcher; then (P4.24) the outfit verbs of design §4.3.2 on the real modules: their order, their
--- parity with /of help and the user manual, the README's Usage pointing at /of help instead of
--- carrying a command list (documentation-§1 item 5), the live set on both arms, the
+-- parity with /of help, the README's Usage pointing at /of help instead of carrying a command list
+-- (documentation-§1 item 5), the live set on both arms, the
 -- outfit-argument rules, the lines legacy printed (fixtures/legacy/commands.lua), the old-verb table
 -- and each verb's route. NS.Popups lands with P4.21 (parallel, group J): the deleteall case fakes it
 -- (design §12, the fake rule).
@@ -353,16 +353,14 @@ test("slash: the outfit verbs follow the reserved ones, in design §4.3.2's orde
 end)
 
 test("slash: every verb is in /of help, and the README's Usage points at it rather than listing them", function()
-    -- red under: drop the `/of zone` row from docs/users-manual.md's Slash commands table
+    -- red under: a help printer that stops at the reserved verbs
     local inst = T.load()
     inst.mocks.__resetPrinted()
     inst.NS.Slash:OnSlash("help")
     local help = table.concat(inst.mocks.__printed(), "\n") .. "\n"
-    local manual = section("docs/users-manual.md", "Slash commands")
     for _, row in ipairs(inst.NS.COMMANDS) do
         local want = "/of " .. row[1]
         assertTrue(help:find(want .. "[^%w]") ~= nil, "help lacks " .. want)
-        assertTrue(manual:find("`" .. want .. "[%s`]") ~= nil, "the manual's Slash commands lacks " .. want)
     end
     -- documentation-§1 item 5: Usage closes on the help verb and carries no command list, since
     -- /of help already prints NS.COMMANDS (the authority, slash-commands-§4).

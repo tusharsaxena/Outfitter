@@ -202,9 +202,9 @@ behind them, and `docs/reviews/2026-09-16/` is the fork's last review, kept froz
 
 ### Addon-specific (documentation-§3, Tier 3)
 
-| Doc | Covers |
-|---|---|
-| [`users-manual.md`](users-manual.md) | The player's manual, carried over from the fork; folded into the README in P10 |
+None. The fork's `users-manual.md` was retired in P10: its player content is the README (the one
+player-facing document, documentation-§1), and its slash-command table was a second copy of
+[`slash-dispatch.md`](slash-dispatch.md), which Tier 3 may not duplicate.
 
 ## Documented deviations
 
