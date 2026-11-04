@@ -101,6 +101,7 @@ local function scene(opts)
     local inst = T.load({ libFiles = opts.libFiles, mutate = function(M)
         installPaint(M)
         M.__gear:load("geared")
+        if opts.mutate then opts.mutate(M) end
     end })
     local NS, M = inst.NS, inst.mocks
     M.__now = 100
@@ -721,6 +722,22 @@ test("Disabled (Outfitter): the tooltip, compare, pet, quick-slot and PaperDoll 
     for what, acted in pairs(down) do assertFalse(acted, what .. " acted while down") end
     assertEqual(#M.__svWrites(), 0, "a hook body wrote SavedVariables while down")
     assertEqual(#M.__printed(), 0, "a hook body printed while down")
+end)
+
+test("Disabled (Outfitter): the outward drawer goes back to Blizzard's at stand-down and stays there", function()
+    -- The head slot's popout arrow, a recorder: Blizzard anchors it `LEFT` -> slot `RIGHT` (-8, 0)
+    -- (wow-ui-source@297d7aa:Interface/AddOns/Blizzard_UIPanels_Game/Mainline/PaperDollFrame.lua:1532).
+    local arrow = { pts = {} }
+    function arrow:ClearAllPoints() self.pts = {} end
+    function arrow:SetPoint(...) self.pts[#self.pts + 1] = { ... } end
+    local _, NS, M = scene({ mutate = function(M) M.__slotButtons.HeadSlot.popoutButton = arrow end })
+    assertEqual(arrow.pts[1] and arrow.pts[1][1], "RIGHT", "the open window did not turn the drawer outward")
+    assertTrue(NS.SetByPath("enabled", false))
+    -- red under: drop the QuickSlots.DrawerSync() call from QuickSlots.Suspend.
+    assertEqual(arrow.pts[1] and arrow.pts[1][1], "LEFT", "the stand-down left the arrow outward")
+    M.OutfitterRebornWindow:__fire("OnShow")
+    assertEqual(#arrow.pts, 1)
+    assertEqual(arrow.pts[1][1], "LEFT", "a window show while down turned the drawer outward")
 end)
 
 test("Disabled (Outfitter): the LoadPass timer and the Pawn/WeightsWatcher watch are canceled", function()

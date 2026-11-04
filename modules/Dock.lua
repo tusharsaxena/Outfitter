@@ -44,7 +44,8 @@ local _, NS = ...
 --
 -- CALLS (at call time; design §12): NS.Window, NS.WindowRows.DisarmSecure, NS.SlotEnables.MaybeRestack,
 -- NS.Stack.Select, NS.Dialogs.CloseAll, NS.IconBrowser.Close, NS.CloseMenu, NS.SecureQueue,
--- NS.Sheet.Refresh/Kind/DockRight/Frame/ButtonAnchor.
+-- NS.Sheet.Refresh/Kind/DockRight/Frame/ButtonAnchor, NS.QuickSlots.DrawerSync (the window's show and
+-- hide turn the left column's equipment drawer outward and back; modules/QuickSlots.lua).
 
 local Dock = { wanted = false, suspended = false, followDisabled = false, built = false,
                Y_OFFSET = 0, FOLLOW_INTERVAL = 0.05 }
@@ -149,11 +150,14 @@ local function onWindowShow()
     sinceTick = 0
     driver:Show()
     driver:SetScript("OnUpdate", followTick)
+    NS.QuickSlots.DrawerSync()
 end
 
 local function onWindowHide()
     driver:SetScript("OnUpdate", nil)
     driver:Hide()
+    -- The outward drawer is for the open window only (sheet and window feedback design G8).
+    NS.QuickSlots.DrawerSync()
     -- Escape (UISpecialFrames) hides it behind the dock's back: that is a close, unless combat did it.
     -- A close takes the Name and Rebuild dialogs with it (Outfitter.lua:1491-1504); the combat
     -- suspend keeps them (O30).
