@@ -39,7 +39,7 @@ both repos, and continues from the first row not `done`.
 | CP0 | Design, recon evidence and this plan committed | OR | done |
 | CP1 | LibKa0s v1.87.0: cascading menus (Task 1), released and pushed | LK | todo |
 | CP2a | Tasks 2.1-2.3: default icon + spec rung, host-look sheet button, gear size | OR | done (3a062f8..66914ec; 132724 + SPEC_n rung, host tab/EUI label citing DEV-SKIN-SHEET-BUTTON, gear via S.CloseButton) |
-| CP2b | Task 2.4: slot selectors, flyout arrow, flyout alignment | OR | todo |
+| CP2b | Task 2.4: slot selectors, flyout arrow, flyout alignment | OR | done (25f50ed..79db327; host-strata boxes + accent edge, arrows shown with the window, flyout level with its slot) |
 | CP2c | Task 2.5: outfit bar as a Ka0s HUD window | OR | todo |
 | CP2d | Task 2.6: test mode shows the window | OR | todo |
 | CP3 | Task 3.1: re-vendor v1.87.0, cascading outfit menus (needs CP1) | OR | todo |
@@ -100,13 +100,13 @@ CP1 runs in parallel with CP2a-CP2d (different repo). CP2a-CP2d run in order on 
 **Files:** `core/Constants.lua` (LAYERS strata order, cap), `modules/SlotEnables.lua`,
 `modules/QuickSlots.lua`, `tests/test_slot_enables.lua`, `tests/test_quickslots.lua`.
 
-- [ ] Tests (recon `slots.md` lists them): HIGH slots under a MEDIUM CharacterFrame lift the container
+- [x] Tests (recon `slots.md` lists them): HIGH slots under a MEDIUM CharacterFrame lift the container
   to HIGH above HIGH frames only; a MEDIUM 9000 sibling no longer inflates the level; restack on a
   strata-only change; arrows shown on every slot while the window shows, hidden otherwise unless the
   EM pane is shown, re-shown after HideAll while wanted, none stood down, nothing written in combat;
   right-column flyout's first item level with its slot; left-column outward likewise; a moved frame
   gets Blizzard's point back; vertical and other hosts untouched.
-- [ ] Implement G3, keep every function at CCN <= 15. Commit, ledger CP2b -> done, push.
+- [x] Implement G3, keep every function at CCN <= 15. Commit, ledger CP2b -> done, push.
 
 ## Task 2.5 — The outfit bar as a Ka0s HUD window — CP2c
 
