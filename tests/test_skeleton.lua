@@ -218,6 +218,18 @@ test("skeleton: the login resumes every module bottom to top, and nothing while 
     assertEqual(table.concat(order, ","), table.concat(want, ","))
     assertTrue(#inst.mocks.__timers() > 0, "the login armed nothing")
 
+    -- The login is the latch's stand-up (NS.StandUp, core/LifecycleSetup.lua): a listed name whose
+    -- module has not landed is skipped there, never a load error (F-008).
+    -- red under: an NS:OnEnable in core/OutfitterReborn.lua that walks NS[modules[i]].Resume()
+    -- itself, unguarded (the login raises on the missing module).
+    local gap = T.load({ enable = false })
+    local list = gap.NS.LIFECYCLE_MODULES
+    table.insert(list, 1, "TestMissing")
+    local ok, err = pcall(gap.mocks.LibStub("AceAddon-3.0").EnableAddon, gap.mocks.LibStub("AceAddon-3.0"), gap.NS)
+    table.remove(list, 1)
+    assertTrue(ok, "a missing module raised at login: " .. tostring(err))
+    assertTrue(gap.NS.TriggerBinder ~= nil and #gap.mocks.__timers() > 0, "the login stopped short")
+
     -- Stood down at login (a stored `enabled = false`): OnEnable returns before the walk.
     -- red under: an NS:OnEnable in core/OutfitterReborn.lua without its
     -- `if NS.IsStoodDown() then return end` (a stood-down login resumes every module).

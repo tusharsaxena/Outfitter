@@ -20,10 +20,11 @@ the port lands; the rest is in the tree today.
    bodies) and `NS.Slash:Register()` (`/of`, `/outfitter`).
 3. **`OnEnable`** (`PLAYER_LOGIN`, `core/OutfitterReborn.lua`): the legacy guard first (a loaded
    original Outfitter sets `NS.State.legacyLoaded` and, standing up, prints one warning; warn only, no
-   hold). Stood down, it stops there. Standing up, it runs what the latch's stand-up runs:
+   hold). Stood down, it stops there. Standing up, it calls the latch's own stand-up, `NS.StandUp()`
+   (`core/LifecycleSetup.lua`): the bus replay (a no-op while never stood down),
    `NS.RegisterGameEvents()` (the host owns no game event; every one is a module's), then every
-   module in `NS.LIFECYCLE_MODULES` resumed bottom to top, so PlayerState, Inventory and the stack are
-   up before the binder wears through them. The binder's resume installs its receivers only: it binds
+   module in `NS.LIFECYCLE_MODULES` resumed bottom to top, a name whose module has not landed skipped,
+   so PlayerState, Inventory and the stack are up before the binder wears through them. The binder's resume installs its receivers only: it binds
    nothing until the first LoadPass has run (`/of auto on` before it records the setting and lets the
    LoadPass bind). Last, the first-run skin picker's 2 s AceTimer. Nothing is dispatched on the bus
    before this and the first LoadPass.

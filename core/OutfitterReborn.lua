@@ -58,16 +58,15 @@ function NS:OnInitialize()
 end
 
 --- The login: stood down (a stored `enabled = false`), nothing registers, nothing resumes. Standing
---- up, it runs what the latch's stand-up runs (core/LifecycleSetup.lua): the host's game events, then
---- every module in NS.LIFECYCLE_MODULES bottom to top, so PlayerState, Inventory and the stack come up
---- before the binder that wears through them (design §5.12). A stand-down later and a stand-up after
---- it walk the same list, so the login and a re-enable build the same set.
+--- up, it runs THE latch's stand-up, NS.StandUp (core/LifecycleSetup.lua): the bus replay (a no-op
+--- while never stood down), the host's game events, then every module in NS.LIFECYCLE_MODULES bottom
+--- to top, a name whose module has not landed skipped, so PlayerState, Inventory and the stack come up
+--- before the binder that wears through them (design §5.12). One function, so the login and a
+--- re-enable build the same set (slash-commands-§7, F-008).
 function NS:OnEnable()
     checkLegacy()
     if NS.IsStoodDown() then return end
-    NS.RegisterGameEvents()
-    local modules = NS.LIFECYCLE_MODULES
-    for i = #modules, 1, -1 do NS[modules[i]].Resume() end
+    NS.StandUp()
     -- The first-run skin picker (core/SkinSetup.lua), once per session on a profile that has not
     -- closed it: two seconds in, off the login spike, on an AceTimer the stand-down cancels. In combat
     -- the show holds for PLAYER_REGEN_ENABLED.

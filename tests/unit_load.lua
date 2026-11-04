@@ -26,10 +26,12 @@ return function(T)
         local skin = M.LibStub("LibKa0s-Skin-1.0", true)
         local retry = skin and skin.__euiEventFrame
         if retry and retry.__fire then retry:__fire("OnEvent", "PLAYER_LOGIN") end
-        local walk = NS.LIFECYCLE_MODULES
-        NS.LIFECYCLE_MODULES = {}
+        -- Emptied IN PLACE: the login's NS.StandUp walks the table core/LifecycleSetup.lua holds,
+        -- which NS.LIFECYCLE_MODULES names, so a fresh table there would not empty it.
+        local walk, saved = NS.LIFECYCLE_MODULES, {}
+        for i = #walk, 1, -1 do saved[i], walk[i] = walk[i], nil end
         local ok, err = pcall(M.LibStub("AceAddon-3.0").EnableAddon, M.LibStub("AceAddon-3.0"), NS)
-        NS.LIFECYCLE_MODULES = walk
+        for i = 1, #saved do walk[i] = saved[i] end
         if not ok then error(err, 0) end
         NS.addon:CancelAllTimers()
         if M.__fireTimers then M.__fireTimers() end
