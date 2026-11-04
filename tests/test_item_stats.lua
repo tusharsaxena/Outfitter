@@ -42,9 +42,23 @@ local function loaded(M, set)
     M.C_AddOns.IsAddOnLoaded = function(name) return set[name] == true, set[name] == true end
 end
 
-local function heard(NS, key)
-    local out = {}
-    NS.NewBusTarget():RegisterMessage(NS.MSG[key], function(_, ...) out[#out + 1] = { ... } end)
+-- Every NS.SendBus call from here on, as a list of message names (the catalog keeps no stats key).
+local function sends(NS)
+    local out, was = {}, NS.SendBus
+    NS.SendBus = function(name, ...)
+        out[#out + 1] = name
+        return was(name, ...)
+    end
+    return out
+end
+
+-- Every NS.Stats.RegisterCategory call from here on, as a list of category ids.
+local function registrations(NS)
+    local out, was = {}, NS.Stats.RegisterCategory
+    NS.Stats.RegisterCategory = function(cat)
+        out[#out + 1] = cat and cat.id
+        return was(cat)
+    end
     return out
 end
 
@@ -225,17 +239,17 @@ end)
 
 -- ── registration ──────────────────────────────────────────────────────────────────────────────
 
-test("stats: RegisterCategory adds a category and announces STATS_CHANGED; a built-in is never replaced", function()
-    -- red under: let a category with the built-in's id overwrite it
+test("stats: RegisterCategory adds a category and sends nothing on the bus; a built-in is never replaced", function()
+    -- red under: let a category with the built-in's id overwrite it, or a NS.SendBus put back in
+    -- RegisterCategory (no receiver: the Rebuild dialog reads Categories() when it opens).
     local NS = T.load().NS
-    local got = heard(NS, "STATS_CHANGED")
+    local got = sends(NS)
     local stat = NS.Stats.NewStat("X_ONE", "One", function() return 7 end)
     assertTrue(NS.Stats.RegisterCategory({ id = "X", label = "X", stats = function() return { stat } end }))
-    assertEqual(#got, 1)
     assertEqual(NS.Stats.Get("X_ONE"):Score(info(NS, "head_plate")), 7)
     assertFalse(NS.Stats.RegisterCategory({ id = "Stat", label = "Mine", stats = function() return {} end }))
     assertEqual(category(NS, "Stat").label, NS.L["Base stats"], "the built-in category was replaced")
-    assertEqual(#got, 1, "a refused category announced")
+    assertEqual(table.concat(got, ","), "", "RegisterCategory sent a bus message")
 end)
 
 -- ── Pawn and WeightsWatcher (H16) ─────────────────────────────────────────────────────────────
@@ -293,7 +307,7 @@ test("sources: Pawn loading later is caught by the ADDON_LOADED re-check, once",
     local NS, M = inst.NS, inst.mocks
     loaded(M, {})
     NS.Stats.Resume()
-    local got = heard(NS, "STATS_CHANGED")
+    local got = registrations(NS)
     loaded(M, { Pawn = true })
     installPawn(M, {})
     M.__fire("ADDON_LOADED", "SomethingElse")
@@ -305,7 +319,7 @@ test("sources: Pawn loading later is caught by the ADDON_LOADED re-check, once",
     local n = 0
     for _, c in ipairs(NS.Stats.Categories()) do if c.id == "Pawn" then n = n + 1 end end
     assertEqual(n, 1)
-    assertEqual(#got, 1, "Pawn announced more than once")
+    assertEqual(table.concat(got, ","), "Pawn", "Pawn registered more than once")
 end)
 
 test("sources: WeightsWatcher's active weights for the player's class score from its cache", function()

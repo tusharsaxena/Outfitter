@@ -192,8 +192,9 @@ local function validCategory(cat)
         and type(cat.stats) == "function"
 end
 
---- Add `cat`, or replace the registered category with its id; announces STATS_CHANGED. Refused
---- (false) for a malformed category and for the built-in's id: the built-in is never replaced.
+--- Add `cat`, or replace the registered category with its id. Nothing is announced: the Rebuild
+--- dialog reads Categories() when it opens. Refused (false) for a malformed category and for the
+--- built-in's id: the built-in is never replaced.
 function Stats.RegisterCategory(cat)
     if not validCategory(cat) or cat.id == BUILTIN.id then return false end
     local slot = #categories + 1
@@ -201,7 +202,6 @@ function Stats.RegisterCategory(cat)
         if c.id == cat.id then slot = i end
     end
     categories[slot] = cat
-    NS.SendBus(NS.MSG.STATS_CHANGED)
     return true
 end
 

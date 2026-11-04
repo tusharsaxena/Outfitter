@@ -77,12 +77,12 @@ state): each piece's storage key, its one owner module and every function that w
 
 ## Message Bus
 
-`core/Bus.lua` declares the whole catalog: `NS.MSG`, 25 keys, wire names
+`core/Bus.lua` declares the whole catalog: `NS.MSG`, 23 keys, wire names
 `Ka0s_OutfitterReborn_<Pascal>`, each with its one sending file on a `Sender:` line that
 `tests/test_bus.lua` holds every `NS.SendBus` call site to. Handlers are isolated by LibKa0s-Bus (or
 by the degraded arm's `xpcall`), and nothing is dispatched before `OnEnable` and the first LoadPass.
-Every key has exactly one sending file in the tree (the last, `LEGACY_DETECTED` from
-`core/OutfitterReborn.lua`'s `NS.OnLoadPassDone`, landed in P4.27, and `test_bus` holds the rule).
+Every key has exactly one sending file in the tree, and `test_bus` holds the rule. Every key also
+has a receiver: `STATS_CHANGED` and `LEGACY_DETECTED`, which nothing heard, were dropped.
 Every message with its sender, payload and receivers: [`message-bus.md`](message-bus.md).
 
 ## Slash Commands
@@ -235,7 +235,7 @@ review, kept frozen.
 | [`slash-dispatch.md`](slash-dispatch.md) | Present | `NS.COMMANDS` holds the reserved verbs and the outfit verbs, well past the trigger of eight or more |
 | [`midnight-quirks.md`](midnight-quirks.md) | Present | `core/Compat.lua` carries client-version workarounds of its own (the table-detector ladder, the spec ladder's stub) and the secret-value rules |
 | [`compat-layer.md`](compat-layer.md) | Present | `core/Compat.lua` publishes far more than the trigger's three hand-written shims ([`compat-layer.md`](compat-layer.md) has the counting grep) |
-| [`message-bus.md`](message-bus.md) | Present | 25 messages in `NS.MSG` (the trigger is more than ten) |
+| [`message-bus.md`](message-bus.md) | Present | 23 messages in `NS.MSG` (the trigger is more than ten) |
 | [`profiles.md`](profiles.md) | Present | A Profiles page ships in the options UI (`settings/Profiles.lua`) |
 | [`known-limitations.md`](known-limitations.md) | Present | Known Limitations spilled: the full list passes ~60 lines; the hub keeps a summary |
 | [`taint.md`](taint.md) | Present | Taint Notes spilled: the secure surfaces pass ~60 lines; the hub keeps a summary |

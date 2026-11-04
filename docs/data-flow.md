@@ -29,8 +29,9 @@ The design behind it is `superpowers/specs/2026-11-03-design.md`, §5 and §6.
    before this and the first LoadPass.
 4. **First `PLAYER_ENTERING_WORLD`**: a 1 s AceTimer runs `NS.Outfits.LoadPass()`, which seeds
    the built-in outfits once per character (guarded by `char.seeded`), repairs stale ids, mirrors the
-   Equipment Manager, and ends by binding every trigger. Its finish sends `LEGACY_DETECTED` when the
-   old Outfitter is loaded (warn only, no hold).
+   Equipment Manager, and ends by binding every trigger. The first pass marks
+   `NS.Outfits.FirstPassDone()`, which the public API and the trigger binder read. The old Outfitter
+   being loaded changes nothing here (warn only, no hold).
 
 ## The settings write seam
 

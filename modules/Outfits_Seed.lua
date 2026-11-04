@@ -17,8 +17,8 @@ local _, NS = ...
 -- cancels it; Resume re-arms it only when the first LoadPass has not run (design §5.12) and the
 -- world is entered: that PEW was seen, or a stand-down came first (a login stood down hears no PEW).
 --
--- CALLS (at call time, no nil guard; design §12): NS.EM.Sync, NS.Stack.Init, NS.TriggerBinder.BindAll
--- and NS.OnLoadPassDone (core/OutfitterReborn.lua, after the session's first pass).
+-- CALLS (at call time, no nil guard; design §12): NS.EM.Sync, NS.Stack.Init and
+-- NS.TriggerBinder.BindAll.
 
 local O = NS.Outfits
 local Compat, Secrets = NS.Compat, NS.Secrets
@@ -195,10 +195,7 @@ function O.LoadPass()
     if store().seeded ~= true then seed() end
     NS.Stack.Init()
     NS.TriggerBinder.BindAll()
-    if not firstDone then
-        firstDone = true
-        NS.OnLoadPassDone()
-    end
+    firstDone = true
 end
 
 --- The session's first LoadPass has run (the public API dispatches nothing before it, INV §6.4).

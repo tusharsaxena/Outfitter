@@ -247,22 +247,20 @@ test("outfits: Normal is the worn gear, Naked empties every slot, and their seed
     assertNil(normal.items.HeadSlot.loc, "no live cache object is stored (B15)")
 end)
 
-test("outfits: a second LoadPass seeds nothing and calls no EM.Sync; OnLoadPassDone runs once", function()
+test("outfits: a second LoadPass seeds nothing and calls no EM.Sync; the first marks FirstPassDone", function()
     local _, NS = scene({ class = "DRUID" })
     local fakes = engineFakes(NS)
-    local done = 0
-    local was = NS.OnLoadPassDone
-    NS.OnLoadPassDone = function() done = done + 1 end
+    assertFalse(NS.Outfits.FirstPassDone(), "FirstPassDone before any LoadPass")
     NS.Outfits.LoadPass()
+    -- red under: a LoadPass that never sets firstDone in modules/Outfits_Seed.lua.
+    assertTrue(NS.Outfits.FirstPassDone(), "the first LoadPass did not mark itself done")
     local count = NS.db.char.nextID
     NS.Outfits.LoadPass()
-    NS.OnLoadPassDone = was
     -- red under: LoadPass seeding without the `seeded` check (every built-in outfit twice).
     assertEqual(NS.db.char.nextID, count, "the second pass created an outfit")
     assertEqual(fakes.em.__count("Sync"), 1)
     assertEqual(fakes.stack.__count("Init"), 2, "the Stack restores on every pass")
     assertEqual(fakes.binder.__count("BindAll"), 2)
-    assertEqual(done, 1, "the session's first LoadPass alone calls OnLoadPassDone")
 end)
 
 test("outfits: seeding adopts an outfit that already has the built-in's name instead of duplicating it", function()

@@ -14,8 +14,11 @@ and isolates each handler with `xpcall`.
   owned by the receiving module.
 - **Isolated.** A handler that raises does not stop the others, and a handler's return value is never
   treated as an error.
-- **Nothing before the LoadPass.** No message is dispatched before `OnEnable` and the first LoadPass;
-  `LEGACY_DETECTED` is held until the LoadPass finishes.
+- **Nothing before the LoadPass.** No message is dispatched before `OnEnable` and the first LoadPass.
+- **Every key has a receiver.** A message that nothing registers for and the public API does not
+  relay is dropped, not kept: `STATS_CHANGED` and `LEGACY_DETECTED` went that way. The Rebuild
+  dialog reads `NS.Stats.Categories()` when it opens, and `/of diagnostics` reads
+  `NS.State.legacyLoaded`.
 - **Stand-down.** `NS.BusStandDown()` stops delivery while the addon is stood down;
   `NS.BusStandUp()` resumes it.
 
@@ -40,7 +43,6 @@ reads state when it is drawn (the launcher tooltip, `/of diagnostics`) is not on
 | `INVENTORY_CHANGED` | `modules/Inventory.lua` | `(equippedChanged, bagsChanged)` | Stack watch, Window, slot checkboxes, Tooltips (cache wipe) |
 | `SWAP_COMPLETE` | `modules/OutfitStack_Watch.lua` | none | Equipment Manager mirror (pending save) |
 | `EM_SYNCED` | `modules/EquipmentManager.lua` | none | Window |
-| `STATS_CHANGED` | `modules/ItemStats.lua` | none | None registers today; the Rebuild dialog reads `NS.Stats.Categories()` when it opens |
 | `OPTIMIZE_STARTED` | `modules/Optimize.lua` | `(job)` | Progress dialog |
 | `OPTIMIZE_PROGRESS` | `modules/Optimize.lua` | `(job, noChangeCount, maxNoChange, bestText)` | Progress dialog |
 | `OPTIMIZE_DONE` | `modules/Optimize.lua` | `(job, ok, reason)` | Progress dialog |
@@ -51,7 +53,6 @@ reads state when it is drawn (the launcher tooltip, `/of diagnostics`) is not on
 | `TOOLTIP_HIDDEN` | `modules/States.lua` | none | Trigger binder |
 | `TRIGGERS_REBOUND` | `modules/Triggers_Binder.lua` | `(count)` | Window (row badges) |
 | `PREVIEW_CHANGED` | `modules/Preview.lua` | `(active)` | Bar |
-| `LEGACY_DETECTED` | `core/OutfitterReborn.lua` (from `NS.OnLoadPassDone`, once, when the legacy addon is loaded) | none | None registers today; `/of diagnostics` reads `NS.State.legacyLoaded` |
 
 The four outfit-record messages are per kind on purpose: a receiver needs to know whether an outfit
 was added, deleted, edited or renamed, and `NS.Outfits` stays their only sender.

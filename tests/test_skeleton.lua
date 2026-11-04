@@ -3,8 +3,8 @@
 -- file opens with the NS bootstrap, the bus wire names keep their shape, and the source stays Lua
 -- 5.1, and every literal debug tag the code writes is in docs/debug.md's register. The slash case
 -- is tests/test_slash.lua's (P3 C12). P4.27 adds the login: every module the latch walks has landed
--- and the login resumes each one, and the legacy guard (design §4.7) warns once, flags the state and
--- sends LEGACY_DETECTED when the first LoadPass finishes.
+-- and the login resumes each one, and the legacy guard (design §4.7) warns once and flags the state
+-- for /of diagnostics. It sends nothing on the bus: LEGACY_DETECTED had no receiver and was dropped.
 
 local T = _G.OUTFITTERREBORN_TEST
 local NS = T.NS
@@ -90,7 +90,7 @@ test("skeleton: every NS.MSG wire name is Ka0s_OutfitterReborn_<PascalCase>", fu
         assertEqual(type(wire), "string", key)
         assertTrue(wire:match("^Ka0s_OutfitterReborn_%u%a+$") ~= nil, key .. " = " .. tostring(wire))
     end
-    assertEqual(count, 25, "the full §2.3 catalog")
+    assertEqual(count, 23, "the full §2.3 catalog")
 end)
 
 -- The CLAUDE.md declaration (§1.4), read back from the file the vendoring gate reads.
@@ -255,11 +255,9 @@ local function legacyLogin(opts)
     end })
     local ns, M = inst.NS, inst.mocks
     if opts.disabled then ns.ApplyEnabled(false) end
-    local sent = 0
-    ns.NewBusTarget():RegisterMessage(ns.MSG.LEGACY_DETECTED, function() sent = sent + 1 end)
     M.__resetPrinted()
     M.LibStub("AceAddon-3.0"):EnableAddon(ns)
-    return ns, M, function() return sent end
+    return ns, M
 end
 
 local LEGACY_LINE = "The old Outfitter addon is also loaded. Disable it: both change your gear and both own /outfitter."
@@ -272,17 +270,15 @@ local function legacyLines(M)
     return n
 end
 
-test("skeleton: a loaded legacy Outfitter is warned once, flagged, and LEGACY_DETECTED waits for the LoadPass", function()
-    -- red under: an empty checkLegacy in core/OutfitterReborn.lua (no line, no flag), or a send in
-    -- OnEnable instead of NS.OnLoadPassDone (the message goes out before the LoadPass).
-    local ns, M, sent = legacyLogin()
+test("skeleton: a loaded legacy Outfitter is warned once and flagged, and the LoadPass still runs", function()
+    -- red under: an empty checkLegacy in core/OutfitterReborn.lua (no line, no flag).
+    local ns, M = legacyLogin()
     assertEqual(legacyLines(M), 1, "the warning, once")
     assertTrue(ns.State.legacyLoaded, "the diagnostics flag")
-    assertEqual(sent(), 0, "LEGACY_DETECTED went out before the first LoadPass")
     M.__fire("PLAYER_ENTERING_WORLD")
     for _ = 1, 4 do if M.__fireTimers() == 0 then break end end
     assertTrue(ns.db.char.seeded == true, "the first LoadPass did not run")
-    assertEqual(sent(), 1, "the first LoadPass sends LEGACY_DETECTED once")
+    assertEqual(legacyLines(M), 1, "the LoadPass repeated the warning")
     -- Warn only (owner ruling 2026-11-03): nothing is held.
     assertFalse(ns.IsStoodDown(), "the legacy guard stood the addon down")
     assertTrue(ns.TriggerBinder.IsActive(), "the legacy guard held the trigger binder")
@@ -295,17 +291,14 @@ test("skeleton: a disabled login flags the legacy addon for /of diagnostics and 
     assertEqual(legacyLines(M), 0, "a stood-down login printed the warning")
 end)
 
-test("skeleton: without the legacy addon nothing is said, flagged or sent", function()
+test("skeleton: without the legacy addon nothing is said or flagged", function()
+    -- red under: a checkLegacy that sets the flag before its Compat.IsAddOnLoaded("Outfitter") read.
     local inst = T.load({ enable = false, mutate = function(M) M.__gear:load("geared") end })
     local ns, M = inst.NS, inst.mocks
-    local sent = 0
-    ns.NewBusTarget():RegisterMessage(ns.MSG.LEGACY_DETECTED, function() sent = sent + 1 end)
     M.__resetPrinted()
     M.LibStub("AceAddon-3.0"):EnableAddon(ns)
     M.__fire("PLAYER_ENTERING_WORLD")
     for _ = 1, 4 do if M.__fireTimers() == 0 then break end end
     assertEqual(legacyLines(M), 0)
     assertFalse(ns.State.legacyLoaded == true)
-    -- red under: an NS.OnLoadPassDone that sends LEGACY_DETECTED unconditionally.
-    assertEqual(sent, 0, "LEGACY_DETECTED went out with no legacy addon")
 end)

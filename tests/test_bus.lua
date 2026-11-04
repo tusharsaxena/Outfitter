@@ -2,8 +2,8 @@
 -- with Ka0s_OutfitterReborn_<Pascal of the key> wire names, each unique and strict; the wire literals
 -- live in core/Bus.lua only; exactly one file sends each key, and it is the file §2.3 names; and the
 -- receiver record drops and replays on both arms; and every pseudo event a trigger consumes has a
--- producer, and the reverse (P4.15). "At most one sender" tightened to "exactly one" at P4.27, when
--- the last sender (core/OutfitterReborn.lua's LEGACY_DETECTED) landed.
+-- producer, and the reverse (P4.15). "At most one sender" tightened to "exactly one" at P4.27. The
+-- follow-up dropped STATS_CHANGED and LEGACY_DETECTED: sent, but no module or API subscriber heard them.
 
 local T = _G.OUTFITTERREBORN_TEST
 local NS = T.NS
@@ -25,7 +25,6 @@ local SENDERS = {
     INVENTORY_CHANGED    = "modules/Inventory.lua",
     SWAP_COMPLETE        = "modules/OutfitStack_Watch.lua",
     EM_SYNCED            = "modules/EquipmentManager.lua",
-    STATS_CHANGED        = "modules/ItemStats.lua",
     OPTIMIZE_STARTED     = "modules/Optimize.lua",
     OPTIMIZE_PROGRESS    = "modules/Optimize.lua",
     OPTIMIZE_DONE        = "modules/Optimize.lua",
@@ -36,9 +35,8 @@ local SENDERS = {
     TOOLTIP_HIDDEN       = "modules/States.lua",
     TRIGGERS_REBOUND     = "modules/Triggers_Binder.lua",
     PREVIEW_CHANGED      = "modules/Preview.lua",
-    LEGACY_DETECTED      = "core/OutfitterReborn.lua",
 }
-local KEY_COUNT = 25
+local KEY_COUNT = 23
 
 local PREFIX = "Ka0s_OutfitterReborn_"
 
@@ -166,7 +164,8 @@ test("bus: the Ka0s_OutfitterReborn_ literal appears in core/Bus.lua only", func
 end)
 
 test("bus: exactly one file sends each key, and it is the §2.3 sender", function()
-    -- red under: an empty NS.OnLoadPassDone in core/OutfitterReborn.lua (LEGACY_DETECTED has no sender).
+    -- red under: the NS.SendBus in modules/Equip.lua removed (STACK_CHANGED has no sender), or a
+    -- NS.SendBus(NS.MSG.STATS_CHANGED) put back in modules/ItemStats.lua (an undeclared key).
     local faults = senderFaults(authoredSources(), SENDERS)
     assertEqual(table.concat(faults, "; "), "")
 end)

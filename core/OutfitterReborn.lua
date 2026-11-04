@@ -25,12 +25,6 @@ local function checkLegacy()
     NS.Print(L["The old Outfitter addon is also loaded. Disable it: both change your gear and both own /outfitter."])
 end
 
---- The session's first LoadPass has finished (modules/Outfits_Seed.lua calls this once). The one
---- LEGACY_DETECTED send: held until here so nothing is dispatched before the LoadPass (design §2.3).
-function NS.OnLoadPassDone()
-    if NS.State.legacyLoaded then NS.SendBus(NS.MSG.LEGACY_DETECTED) end
-end
-
 --- Test mode's one line when combat ends it (modules/Preview.lua; as DpsRace's core/DpsRace.lua).
 function NS.SayTestModeEnded()
     NS.Print(L["Test mode ended: you entered combat."])

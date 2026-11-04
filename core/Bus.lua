@@ -35,8 +35,6 @@ local MSG = {
     SWAP_COMPLETE        = "Ka0s_OutfitterReborn_SwapComplete",
     -- Sender: modules/EquipmentManager.lua. Payload: none.
     EM_SYNCED            = "Ka0s_OutfitterReborn_EmSynced",
-    -- Sender: modules/ItemStats.lua. Payload: none.
-    STATS_CHANGED        = "Ka0s_OutfitterReborn_StatsChanged",
     -- Sender: modules/Optimize.lua. Payload: (job).
     OPTIMIZE_STARTED     = "Ka0s_OutfitterReborn_OptimizeStarted",
     -- Sender: modules/Optimize.lua. Payload: (job, noChangeCount, maxNoChange, bestText).
@@ -58,9 +56,6 @@ local MSG = {
     TRIGGERS_REBOUND     = "Ka0s_OutfitterReborn_TriggersRebound",
     -- Sender: modules/Preview.lua. Payload: (active).
     PREVIEW_CHANGED      = "Ka0s_OutfitterReborn_PreviewChanged",
-    -- Sender: core/OutfitterReborn.lua, held until the first LoadPass finishes (design §4.7).
-    -- Payload: none.
-    LEGACY_DETECTED      = "Ka0s_OutfitterReborn_LegacyDetected",
 }
 
 local Bus = LibStub and LibStub("LibKa0s-Bus-1.0", true)

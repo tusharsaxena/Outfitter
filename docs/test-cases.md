@@ -22,9 +22,9 @@ Total.
 - skeleton: every literal debug tag the code writes is in docs/debug.md's tag register
 - skeleton: every module the latch walks has landed, with Suspend and Resume
 - skeleton: the login resumes every module bottom to top, and nothing while stood down
-- skeleton: a loaded legacy Outfitter is warned once, flagged, and LEGACY_DETECTED waits for the LoadPass
+- skeleton: a loaded legacy Outfitter is warned once and flagged, and the LoadPass still runs
 - skeleton: a disabled login flags the legacy addon for /of diagnostics and prints nothing
-- skeleton: without the legacy addon nothing is said, flagged or sent
+- skeleton: without the legacy addon nothing is said or flagged
 
 ### test_toc.lua (5)
 
@@ -624,7 +624,7 @@ Total.
 - outfits: the first LoadPass seeds a WARLOCK as the legacy addon did
 - outfits: the first LoadPass seeds a WARRIOR as the legacy addon did
 - outfits: Normal is the worn gear, Naked empties every slot, and their seed keys are set
-- outfits: a second LoadPass seeds nothing and calls no EM.Sync; OnLoadPassDone runs once
+- outfits: a second LoadPass seeds nothing and calls no EM.Sync; the first marks FirstPassDone
 - outfits: seeding adopts an outfit that already has the built-in's name instead of duplicating it
 - outfits: an adopted spec outfit takes the spec icon, as the legacy SetIcon did (Outfitter.lua:5788-5790)
 - outfits: the repair prunes stale ids and duplicates, re-asserts nextID and rebuilds the orders
@@ -709,7 +709,7 @@ Total.
 - stats: Score is cached per job on a weak table; without a job nothing is kept
 - stats: OutfitScore sums an outfit's items, a dropped item adding nothing; MultiScore per row
 - stats: ConfigName joins the labels, and answers nil when any stat is missing
-- stats: RegisterCategory adds a category and announces STATS_CHANGED; a built-in is never replaced
+- stats: RegisterCategory adds a category and sends nothing on the bus; a built-in is never replaced
 - sources: without Pawn or WeightsWatcher only the built-in category exists (fallback, H16)
 - sources: Pawn loaded at Resume adds one stat per visible scale; a missing value scores 0
 - sources: a raising Pawn scores 0 and breaks nothing (guarded)
