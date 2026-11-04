@@ -5,7 +5,8 @@ local _, NS = ...
 -- THE ONE BRACKET. E.Batch(fn, ...) runs fn with the depth raised and lowers it again however fn
 -- leaves: the legacy Begin/End pair was manual, and a raise between them stranded the count and
 -- stopped every swap for the session (INV §3.3). The last Batch to close flushes: it runs the update
--- now (E.BatchNow) or schedules it, then announces STACK_CHANGED. A raise is surfaced, never
+-- now (E.BatchNow) or schedules it, then announces STACK_CHANGED when the stack moved inside it
+-- (E.Request or E.Touch marked it): a bracket that only grouped producer Sets stays quiet. A raise is surfaced, never
 -- swallowed: the trace goes to the debug console, one line per tag per session goes to chat, and
 -- the client's error handler gets the error AFTER the depth is restored.
 --
@@ -38,10 +39,11 @@ local SFX_CVAR = "Sound_EnableSFX"
 local GENERAL = 0          -- the general bag family
 
 -- The session state (design §5.10). `frames` counts the Batch calls on the stack, so the tripwire can
--- tell a depth that belongs to a running Batch from one nothing will ever lower.
+-- tell a depth that belongs to a running Batch from one nothing will ever lower. `touched`: the
+-- stack moved inside the open bracket, so its close announces STACK_CHANGED.
 local st = { depth = 0, frames = 0, needsUpdate = false, lastUpdate = nil, delayUntil = 0, timer = nil,
              pewTimer = nil, lastError = nil, sfxSaved = nil, pendingNow = false, suspendedForLoad = false,
-             told = {} }
+             touched = false, told = {} }
 E.__state = st   -- test seam only
 
 local target     -- the AceEvent + AceTimer target
@@ -103,7 +105,10 @@ end
 
 local function flush(now)
     if now then E.Update() else scheduleUpdate() end
-    NS.SendBus(NS.MSG.STACK_CHANGED)
+    if st.touched then
+        st.touched = false
+        NS.SendBus(NS.MSG.STACK_CHANGED)
+    end
 end
 
 -- ── the bracket ───────────────────────────────────────────────────────────────────────────────
@@ -136,11 +141,22 @@ function E.Batch(fn, ...) return run(false, fn, ...) end
 --- The same, and the last Batch to close updates NOW (the old EndEquipmentUpdate(nil, true)).
 function E.BatchNow(fn, ...) return run(true, fn, ...) end
 
---- An equipment update is wanted: scheduled at once outside a Batch, at the close inside one.
+--- An equipment update is wanted: scheduled at once outside a Batch, at the close inside one, and
+--- the open bracket marked so its close announces STACK_CHANGED.
 function E.Request()
     if NS.IsStoodDown() then return end
     st.needsUpdate = true
-    if st.depth == 0 then scheduleUpdate() end
+    if st.depth == 0 then scheduleUpdate() else st.touched = true end
+end
+
+--- The stack moved without asking for an update (a layer tag, the temporary outfit, a clear): the
+--- open bracket's close announces it; outside a bracket it is announced at once.
+function E.Touch()
+    if st.depth > 0 then
+        st.touched = true
+    else
+        NS.SendBus(NS.MSG.STACK_CHANGED)
+    end
 end
 
 --- @return boolean  an update is wanted and has not run
@@ -417,7 +433,7 @@ end
 --- the SFX CVar comes back (H26), and nothing stays registered. The load flag goes too: with the
 --- events unregistered, a PLAYER_ENTERING_WORLD missed while stood down could never clear it.
 function E.Suspend()
-    st.depth, st.needsUpdate, st.pendingNow, st.suspendedForLoad = 0, false, false, false
+    st.depth, st.needsUpdate, st.pendingNow, st.suspendedForLoad, st.touched = 0, false, false, false, false
     if target then
         target:UnregisterAllEvents()
         target:CancelAllTimers()

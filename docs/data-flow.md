@@ -64,7 +64,7 @@ outfit's trigger target (NS.TriggerBinder) ◄───────────�
 NS.Equip.Batch(function()  NS.Stack.Wear / Remove (layer, byTrigger)  end) ◄──┘
    └─ on close ─► E.Update(): gates (dead, casting, delay, throttle, combat)
                   ─► St.Compile() ─► Changes.Build(compiled, Inv.Cache()) ─► E.Execute(changes)
-                  ─► STACK_CHANGED ─► window, bar, launcher tooltip
+                  ─► STACK_CHANGED (only when the stack moved) ─► window, bar, launcher tooltip
 ```
 
 - **Triggers are data.** A descriptor in `defaults/Triggers.lua` names its events, its typed

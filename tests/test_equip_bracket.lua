@@ -262,8 +262,10 @@ test("equip bracket: leaving combat flushes the queued update through PlayerStat
     local held = st.timer
     M.__now = 105
     M.__world:setCombat(false)
-    assertEqual(heard.count, 1, "REGEN_ENABLED's empty batch closed")
-    assertTrue(st.timer ~= nil and st.timer ~= held, "and rescheduled the queued update")
+    -- The empty batch closed (it rescheduled the queued update) and, the stack unmoved, announced
+    -- nothing (F-001). red under: flush in modules/Equip.lua sending STACK_CHANGED unconditionally.
+    assertEqual(heard.count, 0, "REGEN_ENABLED's empty batch announced STACK_CHANGED")
+    assertTrue(st.timer ~= nil and st.timer ~= held, "REGEN_ENABLED's empty batch closed and rescheduled the queued update")
     M.__fireTimers()
     assertEqual(stack.__count("Compile"), 1)
     assertFalse(E.Pending())

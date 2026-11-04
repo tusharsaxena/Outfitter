@@ -26,8 +26,10 @@ local statusCache = {}
 local installed = false
 
 -- Every message that can change a row: each marks the list dirty and wipes the status cache.
+-- STACK_CHANGED is not among them: a stack change re-draws the worn marks, and an outfit's missing
+-- or banked status is inventory-driven, so it marks the list dirty and keeps the cache (Win.Install).
 local DIRTY_ON = { "OUTFIT_ADDED", "OUTFIT_DELETED", "OUTFIT_EDITED", "OUTFIT_RENAMED", "OUTFIT_WORN",
-                   "OUTFIT_REMOVED", "STACK_CHANGED", "INVENTORY_CHANGED", "SELECTION_CHANGED", "EM_SYNCED",
+                   "OUTFIT_REMOVED", "INVENTORY_CHANGED", "SELECTION_CHANGED", "EM_SYNCED",
                    "TRIGGERS_REBOUND" }
 
 local function wipe(t) for k in pairs(t) do t[k] = nil end end
@@ -214,6 +216,7 @@ function Win.Install()
     for _, key in ipairs(DIRTY_ON) do
         bus:RegisterMessage(NS.MSG[key], function() Win.MarkDirty(true) end)
     end
+    bus:RegisterMessage(NS.MSG.STACK_CHANGED, function() Win.MarkDirty(false) end)
     bus:RegisterMessage(NS.MSG.SETTINGS_CHANGED, function(_, path)
         if path == "auto.enabled" then Win.MarkDirty(false) end
     end)

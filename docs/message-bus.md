@@ -34,7 +34,7 @@ Senders marked P4 arrive with the port; until then the key is declared and nothi
 | `OUTFIT_WORN` | `modules/OutfitStack.lua` (P4) | `(id, layer, byTrigger)` | Trigger binder (the `OUTFIT_WORN` pseudo-event), Window, Bar, API v1 |
 | `OUTFIT_REMOVED` | `modules/OutfitStack.lua` (P4) | `(id, byTrigger)` | Trigger binder, Window, Bar, API v1 |
 | `SELECTION_CHANGED` | `modules/OutfitStack.lua` (P4) | `(id or nil)` | Window, slot checkboxes |
-| `STACK_CHANGED` | `modules/Equip.lua` (P4, on bracket close) | none | Window, Bar, the launcher tooltip line |
+| `STACK_CHANGED` | `modules/Equip.lua` (P4, on the close of a bracket in which the stack moved: `E.Request` or `E.Touch` marked it; outside a bracket `E.Touch` sends at once) | none | Window (dirty, status cache kept), Bar, the launcher tooltip line |
 | `INVENTORY_CHANGED` | `modules/Inventory.lua` (P4) | `(equippedChanged, bagsChanged)` | Stack watch, Window, the tooltip cache |
 | `SWAP_COMPLETE` | `modules/OutfitStack_Watch.lua` (P4) | none | Equipment Manager mirror (pending save) |
 | `EM_SYNCED` | `modules/EquipmentManager.lua` (P4) | none | Window |

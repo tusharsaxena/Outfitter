@@ -21,7 +21,7 @@ local _, NS = ...
 -- pair's other slot is the same ring.
 --
 -- CALLS (at call time, no nil guard; design §12): NS.Inventory.Cache, NS.ItemInfo, NS.Outfits,
--- NS.Equip.Batch/Pending and NS.Dock.IsShown.
+-- NS.Equip.Batch/Pending/Touch and NS.Dock.IsShown.
 
 local St = NS.Stack
 local L = NS.L
@@ -96,9 +96,11 @@ local function updateTemp(newItems, cache)
         if existing then
             table.remove(s, #s)
             St.__collapseTemps()
+            NS.Equip.Touch()
         end
-    elseif not existing then
-        s[#s + 1] = { temp = temp }
+    else
+        if not existing then s[#s + 1] = { temp = temp } end
+        NS.Equip.Touch()
     end
 end
 

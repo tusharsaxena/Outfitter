@@ -213,6 +213,55 @@ test("dock: the follow runs every 0.05 s on the driver frame, only while shown a
     assertNil(driver.__scripts.OnUpdate, "the follow survived the window's hide")
 end)
 
+-- Wrap NS[mod][name] in a counter that calls straight through.
+local function counted(NS, mod, name)
+    local n, orig = { count = 0 }, NS[mod][name]
+    NS[mod][name] = function(...)
+        n.count = n.count + 1
+        return orig(...)
+    end
+    return n
+end
+
+test("dock: an idle States poll sends no STACK_CHANGED, and a stack change keeps the status cache", function()
+    local NS, M = opened()
+    NS.Outfits.Create("Idle", { HeadSlot = NS.ItemInfo.Snapshot(NS.ItemInfo.FromSlot("HeadSlot")) })
+    local driver = M.OutfitterRebornDockDriver
+    local function followTick() driver:__fire("OnUpdate", 0.06) end
+    for _ = 1, 4 do M.__fireTimers() end
+    followTick()
+    -- The States poll: the one armed 0.5 s repeater (POLL_PERIOD, modules/States.lua). Its ticks are
+    -- counted, so zero announcements after zero ticks cannot pass.
+    local poll
+    for _, h in ipairs(M.__timers()) do
+        if type(h) == "table" and h.looping and h.delay == 0.5 then poll = h end
+    end
+    assertTrue(poll ~= nil, "the fixture needs the States poll armed")
+    local ticks, pollFn = 0, poll.func
+    poll.func = function(...)
+        ticks = ticks + 1
+        return pollFn(...)
+    end
+    local sent = 0
+    NS.NewBusTarget():RegisterMessage(NS.MSG.STACK_CHANGED, function() sent = sent + 1 end)
+    local builds = counted(NS, "WindowListModel", "Build")
+    for _ = 1, 10 do
+        M.__fireTimers()
+        followTick()
+    end
+    assertTrue(ticks >= 10, "the poll ticked " .. ticks .. " times")
+    -- red under: reverting C-01's st.touched gate (flush in modules/Equip.lua sending unconditionally).
+    assertEqual(sent, 0, "an idle bracket announced STACK_CHANGED")
+    assertEqual(builds.count, 0, "the idle window rebuilt its list")
+    -- A real stack change redraws the worn marks but keeps the inventory-driven status.
+    local statuses = counted(NS, "Outfits", "Status")
+    NS.SendBus(NS.MSG.STACK_CHANGED)
+    followTick()
+    assertEqual(builds.count, 1, "a stack change did not redraw the list")
+    -- red under: Win.Install's STACK_CHANGED receiver in modules/Window.lua calling MarkDirty(true).
+    assertEqual(statuses.count, 0, "a stack change wiped the status cache")
+end)
+
 test("dock: a stood-down tick returns before it reads the sheet (the latch first)", function()
     local NS, M = opened()
     local driver = M.OutfitterRebornDockDriver

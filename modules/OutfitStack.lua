@@ -19,7 +19,7 @@ local _, NS = ...
 -- modules/OutfitStack_Watch.lua extends this table with the inventory watch (the temporary outfit,
 -- window-open recording and SWAP_COMPLETE).
 --
--- CALLS (at call time, no nil guard; design §12): NS.Equip.Batch/BatchNow/Request, NS.Outfits,
+-- CALLS (at call time, no nil guard; design §12): NS.Equip.Batch/BatchNow/Request/Touch, NS.Outfits,
 -- NS.Inventory.Cache, NS.ItemInfo, NS.Dock.IsShown and NS.SetByPath.
 
 local St = {}
@@ -145,7 +145,10 @@ end
 --- @param layer string
 function St.TagLayer(id, layer)
     local at = indexOf(id)
-    if at then stack()[at].layer = layer end
+    if at then
+        stack()[at].layer = layer
+        NS.Equip.Touch()
+    end
 end
 
 -- ── the recents ───────────────────────────────────────────────────────────────────────────────
@@ -450,9 +453,11 @@ function St.SetExpected(items) expected = items or {} end
 --- Empty the stack, announcing OUTFIT_REMOVED for each outfit on it.
 function St.Clear()
     local s = stack()
+    if #s == 0 then return end
     for i = #s, 1, -1 do
         announceRemoved(table.remove(s, i))
     end
+    NS.Equip.Touch()
 end
 
 local function restoreStack()

@@ -1124,7 +1124,7 @@ Total.
 - pvp: a disabled spec keeps the outfit off, and the spec change puts it on or takes it off
 - pvp: every zone trigger honors each of the four spec toggles
 
-### test_dock.lua (19)
+### test_dock.lua (20)
 
 - dock: NS.Dock is published with the §7.2 surface
 - dock: the holder fills the sheet, and the sheet button toggles the window
@@ -1136,6 +1136,7 @@ Total.
 - dock: the window takes ONE UIParent-relative SetPoint, and falls back to the holder when refused
 - dock: a sheet that was never laid out parks the window at the UIParent TOPLEFT
 - dock: the follow runs every 0.05 s on the driver frame, only while shown and standing up
+- dock: an idle States poll sends no STACK_CHANGED, and a stack change keeps the status cache
 - dock: a stood-down tick returns before it reads the sheet (the latch first)
 - dock: the window is in UISpecialFrames, by its global name
 - dock: Open shows the sheet first when it is hidden, and Toggle closes the window
@@ -1554,7 +1555,7 @@ Total.
 | test_triggers_quest.lua | 12 |
 | test_triggers_class.lua | 11 |
 | test_triggers_pvp.lua | 7 |
-| test_dock.lua | 19 |
+| test_dock.lua | 20 |
 | test_list_model.lua | 7 |
 | test_rows_secure.lua | 14 |
 | test_slot_enables.lua | 12 |
@@ -1575,4 +1576,4 @@ Total.
 | test_lizard_sighted.lua | 8 |
 | test_prose.lua | 15 |
 | Skipped | 1 |
-| **Total** | **1281** |
+| **Total** | **1282** |
