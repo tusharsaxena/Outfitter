@@ -4,15 +4,20 @@ local _, NS = ...
 -- skinned sheet and ChonkyCharacterSheet. READS ONLY: it creates, anchors, shows and hides nothing;
 -- modules/Dock.lua asks it on every sheet show and from the follow.
 --
--- DETECTION. A sheet addon counts only when it is loaded AND the frame it builds is there and shown,
--- so a sheet addon whose skin is off falls back to the stock anchors instead of anchoring to a frame
--- that is hidden or was never built:
---   eui     EllesmereUIBlizzardSkin loaded and EUI_CharSheet_Equipment shown. With the "blizzard"
---           Character Sheet style it never builds its tabs (EllesmereUIBlizzardSkin_CharacterSheet.lua
---           :13-28), and it hides them off the Character tab (:1044-1047).
+-- DETECTION. A sheet addon counts only when it is loaded AND the frame it builds is there, so a sheet
+-- addon whose skin is off falls back to the stock anchors instead of anchoring to a frame that was
+-- never built:
+--   eui     EllesmereUIBlizzardSkin loaded and EUI_CharSheet_Equipment built. It builds its tabs only
+--           for its own Character Sheet style (EllesmereUIBlizzardSkin_CharacterSheet.lua:3121,
+--           :3171), never for "blizzard", and the style is latched for the session (:13-33). BUILT,
+--           NOT SHOWN: it hides the tabs off the Character tab (:1044-1047) and shows them again from
+--           a PaperDollFrame OnShow hook installed at the first sheet open (:1079-1090, :4907), so
+--           after the dock's hook. Read by visibility, the Reputation and Currency tabs and the
+--           dock's own sheet show all read "stock".
 --   chonky  ChonkyCharacterSheet loaded and CharacterFrameBgbg shown. During combat or M+
 --           (AreSecretsDisabled) it defers its setup (core/events.lua:414-425), so the backdrop that
---           CCS.CreateChonkyCharacterBG builds (core/styles.lua:1072-1107) may not be up.
+--           CCS.CreateChonkyCharacterBG builds (core/styles.lua:1072-1107) may not be up. Once up it
+--           is CharacterFrame's child (:1090-1099) and stays up on every tab.
 --   stock   everything else.
 -- Whether an addon is loaded is read through NS.Compat and kept until the next Refresh (the dock
 -- calls it on every sheet show), so the 0.05 s follow does not ask the client each tick. The frames
@@ -52,18 +57,24 @@ function Sheet.Refresh()
     }
 end
 
--- A named frame that exists and is shown, else nil.
-local function shownFrame(name)
+-- A named frame that exists, else nil.
+local function builtFrame(name)
     local f = _G[name]
     if type(f) ~= "table" or type(f.IsShown) ~= "function" then return nil end
-    if f:IsShown() ~= true then return nil end
+    return f
+end
+
+-- A named frame that exists and is shown, else nil.
+local function shownFrame(name)
+    local f = builtFrame(name)
+    if not f or f:IsShown() ~= true then return nil end
     return f
 end
 
 --- @return string "stock" | "eui" | "chonky"
 function Sheet.Kind()
     if not loaded then Sheet.Refresh() end
-    if loaded.eui and shownFrame(EUI_TAB) then return "eui" end
+    if loaded.eui and builtFrame(EUI_TAB) then return "eui" end
     if loaded.chonky and shownFrame(CHONKY_BACKDROP) then return "chonky" end
     return "stock"
 end

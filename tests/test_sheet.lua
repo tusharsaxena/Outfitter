@@ -2,9 +2,10 @@
 -- ChonkyCharacterSheet) and where on it the outfit button and the window go (sheet and window
 -- feedback design G1-G3, plan Task 3.1).
 --
--- A sheet addon counts only when it is loaded AND its own frame is built and shown: EllesmereUI with
--- its "blizzard" style never builds EUI_CharSheet_Equipment, and Chonky skips its setup in combat or
--- M+ (AreSecretsDisabled), leaving CharacterFrameBgbg hidden. Both fall back to the stock anchors.
+-- A sheet addon counts only when it is loaded AND its own frame is there: EllesmereUI with its
+-- "blizzard" style never builds EUI_CharSheet_Equipment (built is enough: it hides the tab off the
+-- Character tab), and Chonky skips its setup in combat or M+ (AreSecretsDisabled), leaving
+-- CharacterFrameBgbg hidden (shown is needed). Both fall back to the stock anchors.
 -- The sheets are the mock's (tests/wow_mock.lua `M.__sheets`): the stock sidebar tabs on every build,
 -- the EllesmereUI tab and the Chonky backdrop and side panels only when a case asks for them.
 
@@ -63,11 +64,18 @@ test("sheet: EllesmereUI loaded with the blizzard style resolves to stock", func
     assertEqual(rel, M.PaperDollSidebarTab3)
 end)
 
-test("sheet: an EllesmereUI tab built but hidden resolves to stock", function()
+test("sheet: EllesmereUI's tab hidden off the Character tab still reads eui", function()
     local NS, M = fresh()
-    M.__sheets.eui():Hide()
+    -- EllesmereUI hides its three text tabs on the Reputation and Currency tabs and shows them again
+    -- from a PaperDollFrame OnShow hook (EllesmereUIBlizzardSkin_CharacterSheet.lua:1025-1090) that
+    -- runs after the dock's, so a hidden tab is EllesmereUI's tab state, not a different sheet.
+    -- red under: detect the EllesmereUI sheet by the tab being SHOWN (it read "stock" off the doll).
+    local tab = M.__sheets.eui()
+    tab:Hide()
     markLoaded(NS, M, "EllesmereUIBlizzardSkin")
-    assertEqual(NS.Sheet.Kind(), "stock")
+    assertEqual(NS.Sheet.Kind(), "eui")
+    local _, rel = NS.Sheet.ButtonAnchor()
+    assertEqual(rel, tab)
 end)
 
 test("sheet: the EllesmereUI tab without the addon loaded is stock", function()

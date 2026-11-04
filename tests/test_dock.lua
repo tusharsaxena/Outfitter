@@ -524,3 +524,97 @@ test("window: the gear sits left of the close button", function()
     local CLOSE_SIZE = 18
     assertTrue(g[4] < c[4] - CLOSE_SIZE, "the gear overlaps the close button")
 end)
+
+-- ── the paper-doll pane across the sheet's tabs (review follow-up to Tasks 3.1-3.2) ──────────────
+-- The button and the window belong to the paper doll: the Reputation and Currency tabs hide
+-- PaperDollFrame, not CharacterFrame, and the Character tab shows it again.
+
+local function toTab(M, doll)
+    if doll then
+        M.PaperDollFrame:Show(); M.PaperDollFrame:__fire("OnShow")
+    else
+        M.PaperDollFrame:Hide(); M.PaperDollFrame:__fire("OnHide")
+    end
+end
+
+test("dock: switching to the Reputation tab on EllesmereUI does not re-anchor the button to stock", function()
+    local NS, M = scene()
+    local tab = M.__sheets.eui()
+    M.__loadedAddOns.EllesmereUIBlizzardSkin = true
+    -- EllesmereUI's tab dispatcher: its PaperDollFrame OnShow hook shows the text tabs again, and it is
+    -- installed at the first sheet open, after the dock's at login, so it runs second
+    -- (EllesmereUIBlizzardSkin_CharacterSheet.lua:1044-1047, :1079-1090, :4907).
+    M.PaperDollFrame:HookScript("OnShow", function() tab:Show() end)
+    M.__world:openCharacter()
+    NS.Dock.Open()
+    local button = M.OutfitterRebornSheetButton
+    assertEqual(buttonPoint(M)[2], tab)
+    -- The Reputation tab: the doll hides, and EllesmereUI hides its tabs with it.
+    toTab(M, false); tab:Hide()
+    assertFalse(button:IsShown(), "the button stayed up on the Reputation tab")
+    assertFalse(NS.Dock.IsShown(), "the window stayed up on the Reputation tab")
+    -- red under: detect the EllesmereUI sheet by its tab being shown (it read "stock" here).
+    assertEqual(NS.Sheet.Kind(), "eui")
+    -- Back to the Character tab: the dock's hook runs while the EllesmereUI tab is still hidden.
+    toTab(M, true)
+    assertTrue(button:IsShown())
+    local p = buttonPoint(M)
+    assertEqual(p[2], tab, "the button went to the stock Equipment Manager tab")
+    assertEqual(p[4], 2)
+end)
+
+test("dock: a sheet tab built after the paper doll's OnShow is picked up on the next frame", function()
+    local NS, M = scene()
+    M.__loadedAddOns.EllesmereUIBlizzardSkin = true
+    M.__world:openCharacter()
+    assertEqual(buttonPoint(M)[2], M.PaperDollSidebarTab3)
+    -- EllesmereUI builds its tabs from a CharacterFrame OnShow hook on the first open
+    -- (EllesmereUIBlizzardSkin_CharacterSheet.lua:4907, :3171), which may run after the doll's.
+    local tab = M.__sheets.eui()
+    -- red under: resolve the sheet kind only inside the doll's OnShow.
+    M.__fireTimers()
+    assertEqual(buttonPoint(M)[2], tab)
+    -- Nothing changed: the next frame's check does not re-anchor again.
+    local before = #M.OutfitterRebornSheetButton.__pts
+    M.__world:closeCharacter(); M.__world:openCharacter()
+    local after = #M.OutfitterRebornSheetButton.__pts
+    M.__fireTimers()
+    assertEqual(#M.OutfitterRebornSheetButton.__pts, after, "an unchanged kind was re-anchored")
+    assertTrue(after > before)
+    assertTrue(NS.Sheet.Kind() == "eui")
+end)
+
+test("dock: the next frame's sheet check does nothing once the doll is gone or stood down", function()
+    local NS, M = scene()
+    M.__loadedAddOns.EllesmereUIBlizzardSkin = true
+    M.__world:openCharacter()
+    local button = M.OutfitterRebornSheetButton
+    M.__sheets.eui()
+    toTab(M, false)
+    local before = #button.__pts
+    M.__fireTimers()
+    assertEqual(#button.__pts, before, "re-anchored off the paper doll")
+    assertFalse(button:IsShown(), "the check brought the button back off the paper doll")
+    toTab(M, true)
+    NS.SetByPath("enabled", false)
+    before = #button.__pts
+    M.__fireTimers()
+    assertEqual(#button.__pts, before, "re-anchored while stood down")
+    assertFalse(button:IsShown())
+end)
+
+test("dock: on Chonky the Reputation tab takes the button and window down, the Character tab brings them back", function()
+    local NS, M = scene()
+    M.__sheets.place(M.__sheets.chonky(), 400, 520)
+    M.__loadedAddOns.ChonkyCharacterSheet = true
+    M.__world:openCharacter()
+    NS.Dock.Open()
+    local button, win = M.OutfitterRebornSheetButton, M.OutfitterRebornWindow
+    toTab(M, false)
+    assertFalse(button:IsShown()); assertFalse(win:IsShown())
+    -- Chonky's backdrop is CharacterFrame's and stays up on every tab (core/styles.lua:1090-1099).
+    assertEqual(NS.Sheet.Kind(), "chonky")
+    toTab(M, true)
+    assertTrue(button:IsShown())
+    assertEqual(buttonPoint(M)[2], M.PaperDollSidebarTab3)
+end)

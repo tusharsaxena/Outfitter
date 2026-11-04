@@ -17,8 +17,15 @@ local _, NS = ...
 -- re-anchored on every sheet show, since the sheet kind can change with another addon. It is parented
 -- to CharacterFrame and set above the close button's level: in the sheet holder it shared
 -- PaperDollFrame's level (useParentLevel), and the frame's NineSlice (500) and close button (510)
--- drew over it, which hid it on the stock sheet. It is a plain button: no secure frame is touched. It
--- shows with the paper doll and hides with it, since its parent outlives the Character tab.
+-- drew over it, which hid it on the stock sheet. It is a plain button: no secure frame is touched.
+--
+-- THE PAPER-DOLL PANE. The button and the window belong to the Character tab: the Reputation and
+-- Currency tabs hide PaperDollFrame but not CharacterFrame, the button's parent, so the doll's OnHide
+-- hides the button (and the window, which needs the doll shown) and its OnShow re-resolves the sheet
+-- kind and re-anchors. A sheet addon may build its frames after the doll's OnShow (EllesmereUI builds
+-- its tabs from a CharacterFrame OnShow hook on the first open, EllesmereUIBlizzardSkin_
+-- CharacterSheet.lua:4907, :3171), so the sheet show looks again on the next frame and re-anchors
+-- only when the kind moved.
 --
 -- THE ONLY SHOW AND HIDE. Dock.Refresh is the one place this addon shows or hides
 -- `OutfitterRebornWindow`. It never does so in combat lockdown (design §7.0 rule 2): the window hides
@@ -37,7 +44,7 @@ local _, NS = ...
 --
 -- CALLS (at call time; design §12): NS.Window, NS.WindowRows.DisarmSecure, NS.SlotEnables.MaybeRestack,
 -- NS.Stack.Select, NS.Dialogs.CloseAll, NS.IconChooser.Close, NS.CloseMenu, NS.SecureQueue,
--- NS.Sheet.Refresh/DockRight/Frame/ButtonAnchor.
+-- NS.Sheet.Refresh/Kind/DockRight/Frame/ButtonAnchor.
 
 local Dock = { wanted = false, suspended = false, followDisabled = false, built = false,
                Y_OFFSET = 0, FOLLOW_INTERVAL = 0.05 }
@@ -50,6 +57,7 @@ local Perf = NS.Perf
 local WINDOW_NAME = "OutfitterRebornWindow"
 
 local holder, button, driver, win, events
+local placedKind -- the sheet kind the button was last anchored for
 local installed = false
 local sinceTick = 0
 local toldCombat = false
@@ -230,12 +238,20 @@ local function placeButton()
     local base = close and NS.SafeNumber(close:GetFrameLevel(), 0) or NS.SafeNumber(CharacterFrame:GetFrameLevel(), 0)
     button:SetFrameLevel(base + LEVEL.SHEET_BUTTON_OVER_CLOSE)
     button:Show()
+    placedKind = NS.Sheet.Kind()
+end
+
+-- The next frame's look: a sheet addon that built its frames after the doll's OnShow moves the button.
+local function recheckSheet()
+    if NS.IsStoodDown() or PaperDollFrame:IsVisible() ~= true then return end
+    if NS.Sheet.Kind() ~= placedKind then placeButton() end
 end
 
 local function onSheetShow()
     if NS.IsStoodDown() then return end
     NS.Sheet.Refresh()
     placeButton()
+    if events then events:ScheduleTimer(recheckSheet, 0) end
     Dock.Refresh()
 end
 
@@ -309,7 +325,7 @@ local function onEvent(event) EVENTS[event]() end
 --- window closes (queued past lockdown, since it holds secure children).
 function Dock.Suspend()
     Dock.wanted, toldCombat = false, false
-    if events then events:UnregisterAllEvents() end
+    if events then events:UnregisterAllEvents(); events:CancelAllTimers() end
     if driver then driver:SetScript("OnUpdate", nil) end
     if button then button:Hide() end
     if not (win and win:IsShown()) then return end
@@ -323,7 +339,7 @@ end
 --- The stand-up: the hooks (once), the two combat events, the button.
 function Dock.Resume()
     Dock.Install()
-    if not events then events = LibStub("AceEvent-3.0"):Embed({}) end
+    if not events then events = LibStub("AceTimer-3.0"):Embed(LibStub("AceEvent-3.0"):Embed({})) end
     events:UnregisterAllEvents()
     for event in pairs(EVENTS) do NS.SafeRegisterEvent(events, event, onEvent, NS.rejectedEvents) end
     if PaperDollFrame:IsVisible() == true then
