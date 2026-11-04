@@ -48,6 +48,7 @@ local function fakeStack(NS, st)
             return true
         end,
         TagLayer = function(id, layer) st.log[#st.log + 1] = "tag " .. id .. "/" .. tostring(layer) end,
+        Init = true,   -- the LoadPass's stack restore
     })
     return st
 end
@@ -308,7 +309,7 @@ test("binder: auto.enabled off unbinds all and on rebinds, through SETTINGS_CHAN
     local NS = scene()
     local id = NS.Outfits.Create("Swim", {}, { trigger = "SWIMMING" })
     fakeStack(NS)
-    NS.TriggerBinder.BindAll()
+    NS.Outfits.LoadPass()   -- auto on rebinds once the first LoadPass has run (F-002)
     assertTrue(NS.TriggerBinder.IsBound(id))
     assertTrue(NS.SetByPath("auto.enabled", false))
     -- red under: BindAll not reading auto.enabled, or the SETTINGS_CHANGED handler missing.
@@ -420,12 +421,39 @@ test("binder: Perf notes the one static triggerDispatch key; the demands follow 
     assertEqual(NS.States.Demand("STATE:SPIRIT_REGEN"), 0)
 end)
 
+test("binder: the binder holds no binding and dispatches nothing until the first LoadPass", function()
+    local NS, M = scene({ RESTING = function() return "equip" end })
+    local id = NS.Outfits.Create("Inn", {}, { trigger = "RESTING" })
+    local st = fakeStack(NS)
+    fakeEquip(NS)
+    NS.TriggerBinder.Resume()
+    M.__fire("PLAYER_UPDATE_RESTING")
+    M.__fireTimers()
+    assertFalse(NS.Outfits.FirstPassDone(), "the fixture must stand before the first LoadPass")
+    -- red under: an unconditional B.BindAll() in B.Resume (modules/Triggers_Binder.lua).
+    assertFalse(NS.TriggerBinder.IsBound(id), "bound before the first LoadPass")
+    assertEqual(log(st), "", "a verdict was applied before the first LoadPass")
+    -- `/of auto on` before it records the wish (the setting) and lets the LoadPass bind.
+    assertTrue(NS.SetByPath("auto.enabled", false))
+    assertTrue(NS.SetByPath("auto.enabled", true))
+    M.__fireTimers()
+    -- red under: B.SetActive(true) calling BindAll without the first-pass gate.
+    assertFalse(NS.TriggerBinder.IsBound(id), "auto on bound before the first LoadPass")
+    assertEqual(log(st), "", "auto on dispatched before the first LoadPass")
+    NS.Outfits.LoadPass()
+    M.__fireTimers()
+    assertTrue(NS.Outfits.FirstPassDone())
+    assertTrue(NS.TriggerBinder.IsBound(id), "the first LoadPass did not bind")
+    assertTrue(st.worn[id] == true, "the BIND evaluation did not run after the LoadPass")
+end)
+
 test("binder: stand-down unbinds and a stand-up rebinds, an outfit added while down included", function()
     local NS = scene()
     local id = NS.Outfits.Create("Swim", {}, { trigger = "SWIMMING" })
-    T.fake(NS, "Stack", { IsWorn = function() return false end, Suspend = true, Resume = true })
+    T.fake(NS, "Stack", { IsWorn = function() return false end, Suspend = true, Resume = true, Init = true })
     T.fake(NS, "States", { Suspend = true, Resume = true, Demand = function() return 0 end })
-    NS.TriggerBinder.BindAll()
+    NS.Outfits.LoadPass()   -- the stand-up rebinds once the first LoadPass has run (F-002)
+    assertTrue(NS.TriggerBinder.IsBound(id), "the LoadPass did not bind")
     NS.SetByPath("enabled", false)
     assertFalse(NS.TriggerBinder.IsBound(id))
     local late = NS.Outfits.Create("Late", {}, { trigger = "DRUID_PROWL" })

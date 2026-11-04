@@ -4,7 +4,7 @@
 ![CurseForge Version](https://img.shields.io/curseforge/v/1698220)
 ![License](https://img.shields.io/badge/License-MIT-orange)
 ![Standard](https://img.shields.io/badge/Ka0s-WoW_Addon_Standard-yellow)
-![Tests](https://img.shields.io/badge/Tests-1282%2F1282_passing-green)
+![Tests](https://img.shields.io/badge/Tests-1283%2F1283_passing-green)
 
 Equipment management for World of Warcraft. Build named outfits, switch between
 them by hand or automatically, and let the addon put the right gear on for

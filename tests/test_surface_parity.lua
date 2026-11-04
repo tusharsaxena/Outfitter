@@ -533,11 +533,13 @@ test("parity: the degraded load resumes every module at login, and stands them d
     local d = T.load({ libFiles = {}, mutate = function(M) M.__gear:load("geared") end })
     local NS, M = d.NS, d.mocks
     assertFalse(NS.IsStoodDown())
-    assertTrue(NS.TriggerBinder.IsActive(), "the binder did not resume on the degraded login")
+    -- The login resume binds nothing: the first LoadPass does (F-002).
+    assertFalse(NS.TriggerBinder.IsActive(), "the binder bound before the degraded LoadPass")
     assertTrue(NS.Dock.Holder() ~= nil, "the dock did not install on the degraded login")
     M.__fire("PLAYER_ENTERING_WORLD")
     for _ = 1, 4 do if M.__fireTimers() == 0 then break end end
     assertTrue(NS.db.char.seeded == true, "the degraded LoadPass did not run")
+    assertTrue(NS.TriggerBinder.IsActive(), "the binder did not bind at the degraded LoadPass")
     local up = table.concat(regKeys(d), ",")
     assertTrue(#up > 0)
     NS.RunVerb("disable")

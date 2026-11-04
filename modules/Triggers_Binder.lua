@@ -344,7 +344,7 @@ end
 
 --- Bind every outfit with a trigger, then send TRIGGERS_REBOUND(count). Nothing while stood down or
 --- with auto.enabled off; a loaded legacy addon does not hold it (O2). Called at the end of LoadPass,
---- from Resume and through SetActive(true).
+--- and, once the first LoadPass has run, from Resume and through SetActive(true).
 --- @return number bound
 function B.BindAll()
     if NS.IsStoodDown() then return 0 end
@@ -378,11 +378,18 @@ function B.UnbindAll()
     return n
 end
 
---- BindAll or UnbindAll, once per change of state: the one reaction to auto.enabled.
+--- BindAll or UnbindAll, once per change of state: the one reaction to auto.enabled. Before the
+--- first LoadPass an "on" binds nothing: the setting holds the wish and the LoadPass binds.
 function B.SetActive(on)
     on = on and true or false
     if on == active then return false end
-    if on then B.BindAll() else B.UnbindAll() end
+    if not on then
+        B.UnbindAll()
+    elseif NS.Outfits.FirstPassDone() then
+        B.BindAll()
+    else
+        return false
+    end
     return true
 end
 
@@ -391,8 +398,10 @@ function B.Suspend()
     B.UnbindAll()
 end
 
---- The stand-up: the receivers, then every binding from the stored outfits and settings.
+--- The stand-up: the receivers, then every binding from the stored outfits and settings. The first
+--- LoadPass binds (modules/Outfits_Seed.lua); before it the store is unrepaired and the world not
+--- loaded (docs/data-flow.md, "Load and enable"), so the login stand-up binds nothing.
 function B.Resume()
     ensureListeners()
-    B.BindAll()
+    if NS.Outfits.FirstPassDone() then B.BindAll() end
 end

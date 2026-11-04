@@ -994,7 +994,7 @@ Total.
 - triggers: the effects record what they changed and restore exactly that
 - triggers: SavePet and RestorePet put the cook's pet back, or dismiss the one summoned
 
-### test_trigger_binder.lua (16)
+### test_trigger_binder.lua (17)
 
 - binder: one STATE_CHANGED fans out to every binding that names the state
 - binder: a raising condition leaves depth 0 and faults only its own binding, once
@@ -1011,6 +1011,7 @@ Total.
 - binder: a 5-entry SetMany on one outfit rebinds it once; OUTFIT_ADDED binds, OUTFIT_DELETED unbinds
 - binder: an unknown or unwritten trigger prints once and binds nothing; refuseEM; ctx:Disable
 - binder: Perf notes the one static triggerDispatch key; the demands follow the bindings
+- binder: the binder holds no binding and dispatches nothing until the first LoadPass
 - binder: stand-down unbinds and a stand-up rebinds, an outfit added while down included
 
 ### test_no_loadstring.lua (4)
@@ -1547,7 +1548,7 @@ Total.
 | test_bank.lua | 14 |
 | test_optimize.lua | 30 |
 | test_triggers.lua | 21 |
-| test_trigger_binder.lua | 16 |
+| test_trigger_binder.lua | 17 |
 | test_no_loadstring.lua | 4 |
 | test_api.lua | 20 |
 | test_triggers_general.lua | 18 |
@@ -1576,4 +1577,4 @@ Total.
 | test_lizard_sighted.lua | 8 |
 | test_prose.lua | 15 |
 | Skipped | 1 |
-| **Total** | **1282** |
+| **Total** | **1283** |
