@@ -1,9 +1,11 @@
 local _, NS = ...
 -- modules/PlayerState.lua — NS.PlayerState: the combat, dead, cast and spec flags (design §5.2).
 --
--- THE ONE OWNER of the player flags (design C18). The triggers, the bar and test mode read them here
--- and never register these events themselves. Each flag that moves is announced once on the bus as
--- PLAYER_STATE_CHANGED (key, value), key one of combat, dead, casting, spec.
+-- THE ONE OWNER of the player flags (design C18). The triggers, the bar and test mode read the FLAGS
+-- here and never derive them themselves. A trigger that needs the raw cast start (Spellcast) receives
+-- the event through the binder's own player unit-filter frame (modules/Triggers_Binder.lua), not a
+-- flag. Each flag that moves is announced once on the bus as PLAYER_STATE_CHANGED (key, value), key
+-- one of combat, dead, casting, spec.
 --
 -- TWO REGISTRANTS (events-frames-taint-§1). The game events ride this module's own AceEvent target;
 -- the player's casts ride a hidden frame whose only job is RegisterUnitEvent(..., "player"), so no

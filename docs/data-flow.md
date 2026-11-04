@@ -77,7 +77,10 @@ NS.Equip.Batch(function()  NS.Stack.Wear / Remove (layer, byTrigger)  end) ◄�
   migration. (The fork's "preset scripts resolve live" rule, kept by construction.)
 - **Binding.** Each bound outfit owns one AceEvent and AceTimer target (H14). Game events go through
   `NS.SafeRegisterEvent`; pseudo-events (a state changing, a tooltip shown, an outfit worn) arrive as
-  bus messages. Rebinding after an edit is coalesced: one 0 s timer rebinds every edited outfit.
+  bus messages. A `UNIT_*` event of a `unit = "player"` descriptor (Spellcast, the vehicle quests)
+  rides the binder's one player unit-filter frame instead (`RegisterUnitEvent(event, "player")`,
+  events-frames-taint-§1), which fans it out to the bound contexts, so no other unit's event enters
+  Lua; the stand-down empties it. Rebinding after an edit is coalesced: one 0 s timer rebinds every edited outfit.
 - **The verdict** is `(action, delay, layer, interrupt)`: wear, remove or nothing, optionally after a
   delay, into a layer, interrupting a cast. The binder applies it inside `NS.Equip.Batch`.
 - **The stack** (`NS.Stack`) is an array of `{ id, layer }` entries, bottom to top, persisted in

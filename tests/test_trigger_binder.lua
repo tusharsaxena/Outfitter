@@ -248,6 +248,49 @@ test("binder: BIND runs once 0 s after bind, game-event arguments reach the cond
     assertEqual(table.concat(seen, ","), "BIND:0,UNIT_SPELLCAST_START:player:Cast-1:7620,PLAYER_ENTERING_WORLD:2")
 end)
 
+-- The rows of the registration survey for one game event, as "kind|unit", each frame counted once.
+local function regsFor(M, event)
+    local out = {}
+    for _, r in ipairs(M.__registrations()) do
+        if r.event == event then out[#out + 1] = r.kind .. "|" .. tostring(r.unit) end
+    end
+    table.sort(out)
+    return table.concat(out, ",")
+end
+
+test("binder: a Spellcast binding registers UNIT_SPELLCAST_START for player only, and another unit's cast never reaches the condition", function()
+    local seen = {}
+    local NS, M = scene({ SPELLCAST = function(ctx, _, unit)
+        seen[#seen + 1] = ctx.outfit.name .. ":" .. tostring(unit)
+    end, PVP_FLAGGED = function() end })
+    local a = NS.Outfits.Create("A", {}, { trigger = "SPELLCAST" })
+    local b = NS.Outfits.Create("B", {}, { trigger = "SPELLCAST" })
+    fakeStack(NS)
+    NS.TriggerBinder.BindAll()
+    M.__fireTimers()
+    -- red under: registerOne sending a player UNIT_* event through NS.SafeRegisterEvent (two AceEvent
+    -- rows, "event|nil", and every unit's cast entering Lua once per bound outfit).
+    assertEqual(regsFor(M, "UNIT_SPELLCAST_START"), "unit|player", "one player-filtered frame registration")
+    local frame = NS.TriggerBinder.unitFrame
+    M.__fire("UNIT_SPELLCAST_START", "player", "Cast-1", 7620)
+    M.__fire("UNIT_SPELLCAST_START", "party1", "Cast-2", 7620)
+    table.sort(seen)
+    assertEqual(table.concat(seen, ","), "A:player,B:player", "each binding once, the player's cast only")
+    -- PLAYER_FLAGS_CHANGED is no UNIT_* event: it keeps the AceEvent route and the Lua filter.
+    local pvp = NS.Outfits.Create("PvP", {}, { trigger = "PVP_FLAGGED" })
+    assertTrue(NS.TriggerBinder.Bind(pvp))
+    assertEqual(regsFor(M, "PLAYER_FLAGS_CHANGED"), "event|nil")
+    NS.TriggerBinder.Unbind(a)
+    assertEqual(regsFor(M, "UNIT_SPELLCAST_START"), "unit|player", "B still holds it")
+    NS.TriggerBinder.Unbind(b)
+    -- red under: unbind leaving the frame's registration once its last context goes.
+    assertEqual(regsFor(M, "UNIT_SPELLCAST_START"), "", "the last unbind drops the registration")
+    NS.TriggerBinder.Bind(a)
+    assertTrue(NS.TriggerBinder.unitFrame == frame, "the one frame is reused, never a second")
+    NS.TriggerBinder.Suspend()
+    assertEqual(regsFor(M, "UNIT_SPELLCAST_START"), "", "the stand-down empties the frame")
+end)
+
 -- ── the edges and their hooks ─────────────────────────────────────────────────────────────────
 
 test("binder: this outfit's own wear runs its effects, a stand-down restores them, a hook's return is no error", function()

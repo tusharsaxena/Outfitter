@@ -994,7 +994,7 @@ Total.
 - triggers: the effects record what they changed and restore exactly that
 - triggers: SavePet and RestorePet put the cook's pet back, or dismiss the one summoned
 
-### test_trigger_binder.lua (17)
+### test_trigger_binder.lua (18)
 
 - binder: one STATE_CHANGED fans out to every binding that names the state
 - binder: a raising condition leaves depth 0 and faults only its own binding, once
@@ -1004,6 +1004,7 @@ Total.
 - binder: smart unequip never removes a manual wear, and TAG moves a worn outfit's layer
 - binder: combatDisabled gates every event in combat, and trigger.disabled binds nothing
 - binder: BIND runs once 0 s after bind, game-event arguments reach the condition, unit filters
+- binder: a Spellcast binding registers UNIT_SPELLCAST_START for player only, and another unit's cast never reaches the condition
 - binder: this outfit's own wear runs its effects, a stand-down restores them, a hook's return is no error
 - binder: a rebind onto the same trigger keeps a worn outfit's effects; disabling or switching restores them
 - binder: auto.enabled off unbinds all and on rebinds, through SETTINGS_CHANGED alone
@@ -1548,7 +1549,7 @@ Total.
 | test_bank.lua | 14 |
 | test_optimize.lua | 30 |
 | test_triggers.lua | 21 |
-| test_trigger_binder.lua | 17 |
+| test_trigger_binder.lua | 18 |
 | test_no_loadstring.lua | 4 |
 | test_api.lua | 20 |
 | test_triggers_general.lua | 18 |
@@ -1577,4 +1578,4 @@ Total.
 | test_lizard_sighted.lua | 8 |
 | test_prose.lua | 15 |
 | Skipped | 1 |
-| **Total** | **1283** |
+| **Total** | **1284** |

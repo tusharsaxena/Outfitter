@@ -7,6 +7,14 @@ local _, NS = ...
 -- pseudo events arrive as bus messages through Triggers.PSEUDO; TIMER is the binding's ticker and BIND
 -- its one 0 s evaluation. No pseudo key ever reaches RegisterEvent (quirk 8).
 --
+-- ONE PLAYER UNIT-FILTER FRAME (events-frames-taint-§1). A UNIT_* event of a descriptor with
+-- unit = "player" (Spellcast, the vehicle quests) is not on the binding's target: AceEvent has no
+-- RegisterUnitEvent, so every unit's cast would enter Lua once per bound outfit. It rides B.unitFrame,
+-- one hidden frame held on the module and reused across stand-downs, whose only job is
+-- RegisterUnitEvent(event, "player") and one OnEvent that fans out to the contexts bound to it. Its
+-- registrations follow the bindings and the stand-down empties it (AceAddon cannot reach it). A non-UNIT
+-- event with a unit (PLAYER_FLAGS_CHANGED) keeps the target and the Lua filter.
+--
 -- DISPATCH is gate -> call -> apply. The condition runs OUTSIDE any equipment bracket, under xpcall,
 -- so a raising condition cannot strand the bracket's counter: it faults only its own binding, which is
 -- switched off for the session with one line. Its verdict `(action, delay, layer, interrupt)` is
@@ -47,6 +55,7 @@ local active = false      -- BindAll ran and nothing has unbound everything sinc
 local mod                 -- the module's own target: OUTFIT_*, SETTINGS_CHANGED, PROFILE_CHANGED, the rebind timer
 local rebindTimer
 local disabledSaid = {}   -- [outfitId] = true: ctx:Disable printed once
+local unitBound = {}      -- [UNIT_* event] = { [ctx] = true }: the player unit-filter frame's fan-out
 
 -- ── the context ───────────────────────────────────────────────────────────────────────────────
 
@@ -185,6 +194,64 @@ end
 
 local EDGE_HOOK = { OUTFIT_WORN = "onWorn", OUTFIT_REMOVED = "onRemoved" }
 
+-- The client delivers the player's events only; the cheap unit read stays as a guard.
+local function onUnitEvent(_, event, unit, ...)
+    if unit ~= "player" then return end
+    local set = unitBound[event]
+    if not set then return end
+    local list = {}
+    for ctx in pairs(set) do list[#list + 1] = ctx end   -- a dispatch may unbind (a fault, Disable)
+    for _, ctx in ipairs(list) do
+        if not ctx.dead then B.Dispatch(ctx, event, unit, ...) end
+    end
+end
+
+local function ensureUnitFrame()
+    if B.unitFrame then return B.unitFrame end
+    local f = CreateFrame("Frame")
+    f:Hide()
+    f:SetScript("OnEvent", onUnitEvent)
+    B.unitFrame = f
+    return f
+end
+
+local function isPlayerUnitEvent(ctx, e)
+    return ctx.desc.unit == "player" and e:find("^UNIT_") ~= nil
+end
+
+local function bindUnitEvent(ctx, e)
+    local set = unitBound[e]
+    if not set then
+        set = {}
+        unitBound[e] = set
+        NS.SafeRegisterUnitEvent(ensureUnitFrame(), e, B.rejected, "player")
+    end
+    set[ctx] = true
+end
+
+-- Drop ctx from every set; when one empties, the frame is re-registered from the sets that remain
+-- (one UnregisterAllEvents, then one RegisterUnitEvent per live event), so it holds exactly them.
+local function unbindUnitEvents(ctx)
+    local emptied = false
+    for e, set in pairs(unitBound) do
+        if set[ctx] then
+            set[ctx] = nil
+            if not next(set) then
+                unitBound[e] = nil
+                emptied = true
+            end
+        end
+    end
+    if not emptied or not B.unitFrame then return end
+    B.unitFrame:UnregisterAllEvents()
+    for e in pairs(unitBound) do NS.SafeRegisterUnitEvent(B.unitFrame, e, B.rejected, "player") end
+end
+
+local function clearUnitFrame()
+    for e in pairs(unitBound) do unitBound[e] = nil end
+    if B.unitFrame then B.unitFrame:UnregisterAllEvents() end
+end
+
 local function registerOne(ctx, t, e)
     local Tr = NS.Triggers
     if e:find("^STATE:") then
@@ -194,6 +261,8 @@ local function registerOne(ctx, t, e)
     elseif Tr.PSEUDO[e] then
         if e == "TOOLTIP_SHOW" or e == "TOOLTIP_HIDE" then demand(ctx, TOOLTIP_KEY) end
         t:RegisterMessage(NS.MSG[Tr.PSEUDO[e]], function() B.Dispatch(ctx, e) end)
+    elseif Tr.PSEUDO[e] == nil and isPlayerUnitEvent(ctx, e) then
+        bindUnitEvent(ctx, e)
     elseif Tr.PSEUDO[e] == nil then
         NS.SafeRegisterEvent(t, e, function(event, ...)
             if unitPasses(ctx.desc.unit, (...)) then B.Dispatch(ctx, event, ...) end
@@ -252,6 +321,7 @@ local function unbind(id, keepEffects)
     t:UnregisterAllEvents()
     t:UnregisterAllMessages()
     t:CancelAllTimers()
+    unbindUnitEvents(ctx)
     ctx.ticker = nil
     for key in pairs(ctx.demands) do NS.States.Demand(key, -1) end
     if not keepEffects and ctx.desc.onSuspend and NS.Stack.IsWorn(id) then runHook(ctx, ctx.desc.onSuspend) end
@@ -375,6 +445,7 @@ function B.UnbindAll()
     for _, id in ipairs(ids) do
         if unbind(id, false) then n = n + 1 end
     end
+    clearUnitFrame()   -- AceAddon's UnregisterAllEvents cannot reach the frame (events-frames-taint-§1)
     return n
 end
 
