@@ -66,12 +66,20 @@ local function fillBinding(root, id)
 end
 
 -- The title is shown half a second after the pick, as the legacy menu did; the menu click is the
--- hardware event the client wants.
+-- hardware event the client wants. The delay rides NS.addon's AceTimer, so the stand-down's
+-- CancelAllTimers takes it (slash-commands-§7); C_Timer.After only without AceTimer, where the
+-- stood-down gate below keeps it inert.
 local function setTitle(id, titleID)
     NS.Outfits.SetFlag(id, "titleID", titleID)
-    C_Timer.After(TITLE_DELAY, function()
+    local function show()
         if not NS.IsStoodDown() then NS.Stack.UpdateTitle(true) end
-    end)
+    end
+    local addon = NS.addon
+    if addon and addon.ScheduleTimer then
+        addon:ScheduleTimer(show, TITLE_DELAY)
+    else
+        C_Timer.After(TITLE_DELAY, show)
+    end
 end
 
 local function fillTitles(root, id)

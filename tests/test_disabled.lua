@@ -230,6 +230,43 @@ test("Disabled 4: no timer, ticker or OnUpdate is left armed, and none re-arms",
     assertEqual(M.OutfitterRebornDockDriver.__scripts.OnUpdate, nil, "the Dock driver's OnUpdate survived")
 end)
 
+test("Disabled 4 (combat): the skin notice's combat retry is canceled at stand-down and writes nothing", function()
+    -- red under: arm the retry in NS.MaybeShowSkinNotice (core/SkinSetup.lua) with the bare
+    -- `_G.C_Timer.After(NOTICE_RETRY, ...)` (no stand-down can cancel it: it stays armed, then fires
+    -- into the notice's "claimed" branch and writes db.global.skinNotice while disabled)
+    local inst, NS, M = scene()
+    local Options = inst.mocks.LibStub("LibKa0s-Options-1.0")
+    NS.HideSkinPicker()
+    NS.db.global.skinNotice = nil              -- an account that has not seen this notice version
+    Options.__noticeClaimed = nil
+    local locked = true
+    M.InCombatLockdown = function() return locked end
+    local before = #M.__timers()
+    local _, why = NS.MaybeShowSkinNotice()
+    assertEqual(why, "combat", "the fixture needs the notice deferred by combat")
+    assertTrue(#M.__timers() > before, "the combat retry was not armed; nothing below can fail")
+    assertTrue(NS.SetByPath("enabled", false))
+    assertEqual(#M.__timers(), 0, "the notice's combat retry survived the stand-down")
+    -- Combat ends and another addon claims the notice: a surviving retry would record it here.
+    locked = false
+    Options.__noticeClaimed = Options.SKIN_NOTICE_VERSION
+    M.__resetSvWrites()
+    M.__resetPrinted()
+    M.__fireTimers()
+    assertEqual(#M.__svWrites(), 0, "a retry wrote SavedVariables while disabled")
+    assertEqual(#M.__printed(), 0, "a canceled retry printed")
+    -- red under: drop the stood-down `noticeWaiting = false` from NS.HideSkinPicker (the canceled
+    -- retry's flag stays up, so the next stand-up never asks again)
+    assertTrue(NS.SetByPath("enabled", true))
+    NS.db.global.skinNotice = nil
+    Options.__noticeClaimed = nil
+    locked = true
+    before = #M.__timers()
+    _, why = NS.MaybeShowSkinNotice()
+    assertEqual(why, "combat")
+    assertTrue(#M.__timers() > before, "the stand-up's notice in combat armed no retry")
+end)
+
 test("Disabled 5: every display that was shown is hidden, refused at the source", function()
     -- red under: drop NS.HideSkinPicker() from standDown in core/LifecycleSetup.lua (the picker
     -- stays on screen), or the IsStoodDown read from Bar.ShouldShow in modules/Bar.lua (a refresh
@@ -376,6 +413,20 @@ test("Disabled 7: every verb answers while disabled; a feature verb answers one 
     assertTrue(verbsWhileDisabled(NS, M, refusal) >= 2, "skin and the probe were not both exercised")
     assertEqual(probe.calls, 0, "the dispatcher let a feature verb through while disabled")
     assertTrue(opened >= 2, "`config` opened the panel")
+    -- The report's second form (debug-logging-§14) answers while disabled too.
+    -- red under: route the `diagnostics` word of doDebug in settings/Slash.lua through feature() (the
+    -- bare `debug` row still answers, so the walk above passes; the disabled hold's refusal prints
+    -- instead of the report)
+    local ran, run = 0, NS.DebugLog.RunDiagnostics
+    NS.DebugLog.RunDiagnostics = function(...) ran = ran + 1; return run(...) end
+    M.__resetPrinted()
+    NS.Slash:OnSlash("debug diagnostics")
+    NS.DebugLog.RunDiagnostics = run
+    if NS.DebugLog:IsShown() then NS.DebugLog:Hide() end
+    assertEqual(ran, 1, "`debug diagnostics` did not reach RunDiagnostics while disabled")
+    for _, line in ipairs(printedBare(M)) do
+        assertTrue(line ~= refusal, "`debug diagnostics` was refused while disabled")
+    end
     assertTrue(verbsUnderPerfHold(NS, M, refusal) >= 2, "no feature verb was exercised under the perf hold")
     assertEqual(probe.calls, 0, "under the perf hold alone the handler itself refuses")
 end)

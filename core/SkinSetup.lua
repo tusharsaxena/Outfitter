@@ -264,6 +264,7 @@ end
 local PICKER_PATH = "skin.pickerSeen"
 local pickerTarget       -- the one-shot PLAYER_REGEN_ENABLED target, while a start is held
 local quietClose = false -- true while NS.HideSkinPicker takes the picker down
+local noticeWaiting = false -- true while the skin notice's combat retry is armed (below)
 
 --- The eye: test mode on (the outfit bar on sample outfits). Test mode already on leaves it on. A
 --- refused start (combat) prints its own line.
@@ -306,6 +307,9 @@ end
 --- every profile event.
 function NS.HideSkinPicker()
     dropPickerDeferral()
+    -- At a stand-down the latch's CancelAllTimers took the notice's combat retry: forget it, so the
+    -- next stand-up may ask again. Standing up, an armed retry stays armed and stays the one.
+    if NS.IsStoodDown and NS.IsStoodDown() then noticeWaiting = false end
     local O = NS.Helpers
     if not (O and type(O.HideSkinPicker) == "function") then return end
     quietClose = true
@@ -346,7 +350,6 @@ end
 -- defaults' empty table reads as "never recorded"): account-wide, so a profile switch never shows it
 -- twice. In combat nothing is claimed; it asks again every NOTICE_RETRY seconds until combat ends.
 local NOTICE_RETRY = 5   -- seconds between asks while the player is in combat
-local noticeWaiting = false
 
 local function noticeGlobal()
     local d = NS.db or (NS.addon and NS.addon.db)
@@ -368,12 +371,23 @@ function NS.MaybeShowSkinNotice()
     end
     local spec = NS.SkinPickerSpec()
     local frame, why = O.SkinNotice(spec, noticeStore)
-    if why == "combat" and not noticeWaiting and type(_G.C_Timer) == "table" and _G.C_Timer.After then
-        noticeWaiting = true
-        _G.C_Timer.After(NOTICE_RETRY, function()
+    if why == "combat" and not noticeWaiting then
+        local function retry()
             noticeWaiting = false
             NS.MaybeShowSkinNotice()
-        end)
+        end
+        -- On NS.addon's AceTimer, so the stand-down's CancelAllTimers takes it (slash-commands-§7: no
+        -- timer outlives /of disable). C_Timer.After only when NS.addon carries no AceTimer (never in
+        -- the shipped build, which bundles Ace3): nothing can cancel it, but the retry it fires is
+        -- gated on NS.IsStoodDown() and shows nothing while stood down.
+        local addon = NS.addon
+        if addon and addon.ScheduleTimer then
+            noticeWaiting = true
+            addon:ScheduleTimer(retry, NOTICE_RETRY)
+        elseif type(_G.C_Timer) == "table" and _G.C_Timer.After then
+            noticeWaiting = true
+            _G.C_Timer.After(NOTICE_RETRY, retry)
+        end
     end
     return frame, why
 end

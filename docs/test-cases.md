@@ -355,7 +355,7 @@ Total.
 - keybinds: NS.WearBoundOutfit refuses for a direct caller too
 - keybinds: one key per outfit: binding a key to a second outfit takes it off the first
 
-### test_disabled.lua (21)
+### test_disabled.lua (22)
 
 - Disabled 1: enabled, the addon registers something, arms something and shows something
 - Disabled 2+3: disabling through the write seam leaves NO registration behind
@@ -363,6 +363,7 @@ Total.
 - Disabled 2+3 (live): a module's bus receiver goes at stand-down and comes back
 - Disabled 2+3 (degraded): a module's bus receiver goes at stand-down and comes back
 - Disabled 4: no timer, ticker or OnUpdate is left armed, and none re-arms
+- Disabled 4 (combat): the skin notice's combat retry is canceled at stand-down and writes nothing
 - Disabled 5: every display that was shown is hidden, refused at the source
 - Disabled 6: every event fired anyway writes nothing, prints nothing, shows nothing
 - Disabled 7: every verb answers while disabled; a feature verb answers one refusal line
@@ -1019,9 +1020,10 @@ Total.
 - no code from text: no descriptor or catalog row carries a Script or Source field
 - no code from text: no trigger answers to CUSTOM, and nothing can name one
 
-### test_api.lua (19)
+### test_api.lua (20)
 
 - api: _G.OutfitterReborn.API.v1 carries exactly the §5.16 members, each a function
+- api: NS.API.v1 is the table the global publishes, at _G[addonName].API.v1 (public-api)
 - api: no Outfitter global, no Outfitter_* shim and no OutfitterItemList_* function (H3)
 - api: FindOutfitByName is case-insensitive and answers a copy { id, name, category }
 - api: every member answers its empty value before the saved data exists
@@ -1186,7 +1188,7 @@ Total.
 - slot enables: UnknownSlots answers the selected outfit's unknown set
 - slot enables: hidden when stood down, and a selection while down shows nothing
 
-### test_bar.lua (26)
+### test_bar.lua (27)
 
 - bar: NS.Bar is published with the §7.7 surface
 - bar: bar.shown defaults false, so a fresh profile and a repaired one both come up hidden
@@ -1196,6 +1198,7 @@ Total.
 - bar: the buttons grow away from the saved corner, per quadrant, both orientations
 - bar: the size, the scale and the backplate follow the settings
 - bar: the drag stop saves the nearest corner; a locked bar does not move
+- bar: the drag stop writes bar.position through the seam, and its echo leaves the bar where it fell
 - bar: the reset copies the default, so a drag after it never writes the default
 - bar: the icon ladder: own, the trigger's descriptor, the Birthday Suit, a single item, plain
 - bar: a left click wears; a worn accessory is removed; a worn Complete outfit stays on
@@ -1248,13 +1251,14 @@ Total.
 - preview: Diagnose reports the mode, the bar it opened and the sample count
 - preview: every start and stop, from any source, repaints an open settings panel
 
-### test_outfit_menu.lua (10)
+### test_outfit_menu.lua (11)
 
 - menu: NS.OutfitMenu is published
 - menu: the rows per section are legacy's, less Void Storage and the script editor
 - menu: Bank rows are disabled with the bank closed, with a reason, and each asks for its move
 - menu: the key binding rows name each key's holder and bind the outfit
 - menu: the Title submenu lists the known titles, a secret one skipped, 30 a level with More
+- menu: a title pick's delayed show is canceled by the stand-down (slash-commands-§7)
 - menu: the toggles keep the menu open, Turn trigger off writes outfit.trigger.disabled
 - menu: picking a trigger writes outfit.trigger.id and opens its settings when it has params
 - menu: Delete, Update and Rebuild ask through popups carrying the id; the dialogs open
@@ -1516,7 +1520,7 @@ Total.
 | test_slash.lua | 44 |
 | test_launcher.lua | 12 |
 | test_keybinds.lua | 21 |
-| test_disabled.lua | 21 |
+| test_disabled.lua | 22 |
 | test_locale.lua | 18 |
 | test_glyphs.lua | 2 |
 | test_file_budget.lua | 2 |
@@ -1544,7 +1548,7 @@ Total.
 | test_triggers.lua | 21 |
 | test_trigger_binder.lua | 16 |
 | test_no_loadstring.lua | 4 |
-| test_api.lua | 19 |
+| test_api.lua | 20 |
 | test_triggers_general.lua | 18 |
 | test_triggers_trade.lua | 18 |
 | test_triggers_quest.lua | 12 |
@@ -1554,10 +1558,10 @@ Total.
 | test_list_model.lua | 7 |
 | test_rows_secure.lua | 14 |
 | test_slot_enables.lua | 12 |
-| test_bar.lua | 26 |
+| test_bar.lua | 27 |
 | test_triggers_parity.lua | 13 |
 | test_preview.lua | 14 |
-| test_outfit_menu.lua | 10 |
+| test_outfit_menu.lua | 11 |
 | test_dialogs.lua | 20 |
 | test_trigger_dialog.lua | 11 |
 | test_diagnostics.lua | 12 |
@@ -1571,4 +1575,4 @@ Total.
 | test_lizard_sighted.lua | 8 |
 | test_prose.lua | 15 |
 | Skipped | 1 |
-| **Total** | **1277** |
+| **Total** | **1281** |

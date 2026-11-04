@@ -162,6 +162,21 @@ test("menu: the Title submenu lists the known titles, a secret one skipped, 30 a
     assertNil(NS.Outfits.Get(acc).titleID)
 end)
 
+test("menu: a title pick's delayed show is canceled by the stand-down (slash-commands-§7)", function()
+    -- red under: show the title with the bare `C_Timer.After(TITLE_DELAY, ...)` in setTitle
+    -- (modules/OutfitMenu.lua): no stand-down can cancel it, so it stays armed while disabled
+    local NS, M, ctl = scene()
+    local acc = outfits(NS)
+    open(NS, ctl, acc)
+    click(ctl, "Title")
+    local before = #M.__timers()
+    click(ctl, "Private")
+    assertEqual(NS.Outfits.Get(acc).titleID, 1)
+    assertTrue(#M.__timers() > before, "the pick armed no delayed show; nothing below can fail")
+    assertTrue(NS.SetByPath("enabled", false))
+    assertEqual(#M.__timers(), 0, "the title's delayed show survived the stand-down")
+end)
+
 test("menu: the toggles keep the menu open, Turn trigger off writes outfit.trigger.disabled", function()
     local NS, _, ctl = scene()
     local acc, comp = outfits(NS)

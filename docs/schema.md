@@ -85,7 +85,10 @@ value)`; the outfit instance's announce sends no `SETTINGS_CHANGED` and calls
 
 Special rows: `global.minimap.shown` (`NS.MINIMAP_PATH`) reads and writes LibDBIcon's own `hide` key
 and is exempt from every reset; `state.debugConsole` and `state.testMode` are session rows with no
-storage; `writeThrough = { "enabled", "locked", "auto.enabled" }`.
+storage; `writeThrough = { "enabled", "locked", "auto.enabled" }`. `bar.position` is closure-backed:
+its storage is `profile.windows.bar` (`{ point, x, y }`, encoded as `POINT X Y`), so every writer goes
+through the seam: the bar's drag stop (`NS.Bar.SavePosition`), `/of set|reset bar.position` and
+Reset position (`NS.ApplyDefault`), each decoding into a new table, never the default itself.
 
 ## Outfit and item records
 
@@ -128,7 +131,6 @@ nothing writes the key.
 
 | Key | Owner | Writers |
 |---|---|---|
-| `profile.windows.bar` | `NS.Bar` (P4) | `NS.Bar.SavePosition` on drag stop; the `bar.position` row's default and reset copy the default |
 | `profile.windows.dialogs[key]` | `NS.Dialogs` (P4) | `NS.Dialogs.SavePosition(key, point, x, y)` on a dialog's drag stop |
 | `global.minimap.minimapPos` | LibDBIcon (vendored) | LibDBIcon's own drag handler |
 | `char.outfits`, `char.order`, `char.nextID`, `char.bindings`, `char.seeded` | `NS.Outfits` (P4) | The `NS.Outfits` writer API (`Create`, `Delete`, `DeleteAll`, `Rename`, `SetItems`, `SetToCurrent`, `Bind`, `Changed`, `LoadPass`), plus the instance-row writes through `NS.ResolveOutfitRoot` |

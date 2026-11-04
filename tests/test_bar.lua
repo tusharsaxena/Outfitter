@@ -97,10 +97,12 @@ test("bar: NS.Bar is published with the §7.7 surface", function()
     local Bar = T.NS.Bar
     assertEqual(type(Bar), "table")
     for _, k in ipairs({ "Render", "Refresh", "ApplyScale", "ApplyAlpha", "SetLocked", "SavePosition",
-                         "ResetPosition", "OutfitIcon", "Suspend", "Resume", "Buttons", "Frame",
+                         "OutfitIcon", "Suspend", "Resume", "Buttons", "Frame",
                          "NewButton", "SetButton", "Drop", "ShouldShow" }) do
         assertEqual(type(Bar[k]), "function", k)
     end
+    -- The reset is the `bar.position` row's (NS.ApplyDefault), so the bar carries no second writer.
+    assertEqual(Bar.ResetPosition, nil, "Bar.ResetPosition writes profile.windows.bar around the seam")
     assertEqual(type(Bar.LiveSource.Rows), "function")
 end)
 
@@ -246,12 +248,35 @@ test("bar: the drag stop saves the nearest corner; a locked bar does not move", 
     assertEqual(NS.db.profile.windows.bar.point, "TOPLEFT", "a locked bar saved nothing")
 end)
 
-test("bar: the reset copies the default, so a drag after it never writes the default", function()
+test("bar: the drag stop writes bar.position through the seam, and its echo leaves the bar where it fell", function()
+    -- red under: write `NS.db.profile.windows.bar = p` directly in Bar.SavePosition (modules/Bar.lua):
+    -- a row's storage written around NS.SetByPath broadcasts no SETTINGS_CHANGED (architecture-§5)
     local NS, M, Bar = scene()
     complete(NS, "A")
     settle(M)
+    local seen = {}
+    NS.NewBusTarget():RegisterMessage(NS.MSG.SETTINGS_CHANGED, function(_, path) seen[#seen + 1] = path end)
+    local f = Bar.Frame()
+    geom(M.UIParent, 0, 1000, 800, 0)
+    geom(f, 900, 950, 100, 50)
+    f.handle:__fire("OnDragStart")
+    f.handle:__fire("OnDragStop")
+    assertEqual(table.concat(seen, ","), "bar.position", "the drag stop did not write through the seam")
+    assertEqual(NS.GetSetting("bar.position"), "BOTTOMRIGHT -50 50")
+    -- The echo schedules one redraw; it anchors at the corner just saved, not back at the old one.
+    settle(M)
+    local pt = point(Bar.Frame())
+    assertEqual(pt[1], "BOTTOMRIGHT"); assertEqual(pt[4], -50); assertEqual(pt[5], 50)
+    assertEqual(NS.GetSetting("bar.position"), "BOTTOMRIGHT -50 50", "the redraw wrote the position again")
+end)
+
+test("bar: the reset copies the default, so a drag after it never writes the default", function()
+    local NS, M = scene()
+    complete(NS, "A")
+    settle(M)
     NS.db.profile.windows.bar = { point = "BOTTOMRIGHT", x = -5, y = 5 }
-    Bar.ResetPosition()
+    -- The production reset (General > Master controls > Reset position, settings/General.lua).
+    assertTrue(NS.ApplyDefault(NS.FindSchemaRow("bar.position")))
     local p, d = NS.db.profile.windows.bar, NS.defaults.profile.windows.bar
     assertEqual(p.point, d.point); assertEqual(p.x, d.x); assertEqual(p.y, d.y)
     -- red under: `NS.db.profile.windows.bar = d` (the legacy alias, OutfitterBar.lua:107-115)

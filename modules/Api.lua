@@ -1,4 +1,4 @@
-local _, NS = ...
+local addonName, NS = ...
 -- modules/Api.lua — the public API, _G.OutfitterReborn.API.v1 (design §5.16, H3).
 --
 -- THE ONE GLOBAL another addon may call. Every legacy `Outfitter_*` function, the `Outfitter` table,
@@ -163,4 +163,8 @@ function API.UnregisterOutfitEvent(fn)
     return true
 end
 
-OutfitterReborn = { API = { v1 = API } }
+-- public-api: NS.API.v1, published under the folder's name, so the consumer path stays
+-- OutfitterReborn.API.v1 (the design's, §5.16) with no hard-coded global.
+NS.API = NS.API or {}
+NS.API.v1 = API
+rawset(_G, addonName, { API = NS.API })

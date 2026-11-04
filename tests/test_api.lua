@@ -59,6 +59,29 @@ test("api: _G.OutfitterReborn.API.v1 carries exactly the §5.16 members, each a 
     for k in pairs(v1) do assertTrue(want[k], "API.v1." .. tostring(k) .. " is not a §5.16 member") end
 end)
 
+test("api: NS.API.v1 is the table the global publishes, at _G[addonName].API.v1 (public-api)", function()
+    -- red under: drop `NS.API.v1 = API` from modules/Api.lua (NS.API is never set)
+    local NS, M, v1 = scene()
+    assertEqual(type(NS.API), "table", "NS.API")
+    assertTrue(NS.API.v1 == v1, "NS.API.v1 is not the published v1")
+    assertTrue(M._G.OutfitterReborn.API == NS.API, "the global's API is not NS.API")
+    -- The global's name is the folder's, not a literal: the file run under another addon name
+    -- publishes under that name and leaves no OutfitterReborn global behind.
+    -- red under: publish with the literal `OutfitterReborn = { API = { v1 = API } }`
+    -- The chunk runs in the interpreter's own globals, so both names are saved and put back.
+    local chunk = assert(loadfile(T.root .. "/modules/Api.lua"))
+    local saved = rawget(_G, "OutfitterReborn")
+    rawset(_G, "OutfitterReborn", nil)
+    local probe = {}
+    chunk("ApiProbeAddon", probe)
+    local published, leaked = rawget(_G, "ApiProbeAddon"), rawget(_G, "OutfitterReborn")
+    rawset(_G, "ApiProbeAddon", nil)
+    rawset(_G, "OutfitterReborn", saved)
+    assertTrue(type(published) == "table", "nothing was published under the addon's name")
+    assertTrue(published.API.v1 == probe.API.v1, "_G[addonName].API.v1 is not NS.API.v1")
+    assertNil(leaked, "the global name is hard-coded")
+end)
+
 test("api: no Outfitter global, no Outfitter_* shim and no OutfitterItemList_* function (H3)", function()
     local _, M = scene()
     -- red under: alias the legacy names, e.g. `Outfitter_WearOutfit = API.WearOutfit`.

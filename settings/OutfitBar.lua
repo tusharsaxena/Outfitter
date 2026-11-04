@@ -13,10 +13,11 @@ local PAGE = "bar"
 local DISPLAY = L["Display"]
 
 -- ── bar.position ────────────────────────────────────────────────────────────────────────────────
--- A string row over the named non-setting state `profile.windows.bar` (`{ point, x, y }`, design §3.4)
--- so `/of get|set|reset bar.position` reach the bar's place (the old `reset bar`, H5). Its default is
--- the defaults tree's, encoded, and every write decodes into a NEW table, so a reset copies the
--- default and never aliases it (the legacy aliased it: OutfitterBar.lua:107-115).
+-- A string row whose storage is `profile.windows.bar` (`{ point, x, y }`, design §3.4), so the bar's
+-- drag stop and `/of get|set|reset bar.position` reach the bar's place through the one write seam (the
+-- old `reset bar`, H5). Its default is the defaults tree's, encoded, and every write decodes into a
+-- NEW table, so a reset copies the default and never aliases it (the legacy aliased it:
+-- OutfitterBar.lua:107-115).
 local CORNERS = { TOPLEFT = true, TOPRIGHT = true, BOTTOMLEFT = true, BOTTOMRIGHT = true }
 
 --- A coordinate as text: whole numbers bare, anything else to two places without trailing zeros.
@@ -25,8 +26,10 @@ local function coord(n)
     return (("%.2f"):format(n):gsub("0+$", ""):gsub("%.$", ""))
 end
 
---- `{ point, x, y }` as `POINT X Y`.
+--- `{ point, x, y }` as `POINT X Y`. Published for the bar's drag stop (modules/Bar.lua), which
+--- writes the row through NS.SetByPath like every other writer.
 local function encode(p) return p.point .. " " .. coord(p.x) .. " " .. coord(p.y) end
+NS.EncodeBarPosition = encode
 
 --- A real offset: a number that is neither NaN nor infinite. Lua's tonumber parses "nan", "inf" and
 --- "1e400", which no drag can produce and which would anchor the bar off-screen.
