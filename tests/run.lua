@@ -186,6 +186,7 @@ local SUITES = {
 
     { name = "test_bar" },
     { name = "test_outfit_icons" },
+    { name = "test_broker" },
 
     { name = "test_triggers_parity" },
 

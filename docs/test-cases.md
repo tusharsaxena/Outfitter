@@ -358,7 +358,7 @@ Total.
 - keybinds: NS.WearBoundOutfit refuses for a direct caller too
 - keybinds: one key per outfit: binding a key to a second outfit takes it off the first
 
-### test_disabled.lua (22)
+### test_disabled.lua (24)
 
 - Disabled 1: enabled, the addon registers something, arms something and shows something
 - Disabled 2+3: disabling through the write seam leaves NO registration behind
@@ -372,6 +372,7 @@ Total.
 - Disabled 7: every verb answers while disabled; a feature verb answers one refusal line
 - Disabled 7 (degraded): the library-absent dispatcher gates a feature verb the same way
 - Disabled 8: launcher clicks and the key binding write nothing and show nothing
+- disabled: the broker shows the brand and refuses outfit clicks
 - Disabled 9: re-enabling restores the set FROM CURRENT STATE, not a snapshot
 - Disabled 10: releasing ONE hold does not resurrect an addon the other holds down
 - Disabled 10 (degraded): the library-absent latch holds the same order
@@ -380,6 +381,7 @@ Total.
 - Disabled (Outfitter): the Equip bracket is zeroed, nothing is wanted and SFX is back, down and up
 - Disabled (Outfitter): PLAYER_EQUIPMENT_CHANGED while down leaves db.char unchanged
 - Disabled (Outfitter): the tooltip, compare, pet, quick-slot and PaperDoll hook bodies no-op while down
+- Disabled (Outfitter): the outward drawer goes back to Blizzard's at stand-down and stays there
 - Disabled (Outfitter): the LoadPass timer and the Pawn/WeightsWatcher watch are canceled
 - Disabled (Outfitter): the stand-up rebuilds: an outfit added while down binds on resume
 
@@ -791,7 +793,7 @@ Total.
 - secrets states: a secret icon falls through to the spell; a secret spell id matches nothing
 - secrets states: the last mana reading survives a secret sample
 
-### test_quickslots.lua (19)
+### test_quickslots.lua (32)
 
 - quickslots: NS.QuickSlots and its sort are published
 - quickslots: the hooks are post-hooks, built once however often the addon stands up
@@ -812,6 +814,19 @@ Total.
 - quickslots: every hook body stands down with the addon and comes back with it
 - quickslots: quickSlots.enabled off silences every hook body; on brings them back
 - quickslots: the stand-down owns nothing to tear down: no event, no timer, no frame
+- drawer: with the window open a left-column flyout's buttonFrame is anchored TOPRIGHT to the arrow's TOPLEFT
+- drawer: with the window open the left-column arrows sit on the slot's left, mirrored
+- drawer: a right-column flyout is left alone
+- drawer: the weapons' flyout opens down as Blizzard has it
+- drawer: a right-column flyout after a left one drops the left one's anchor
+- drawer: another host's flyout after a left-column one keeps that host's own anchor
+- drawer: SetReversed on a left-column arrow mirrors its coords
+- drawer: with the window closed the flyout keeps Blizzard's anchors
+- drawer: closing the window restores the left-column arrows and an open flyout
+- drawer: stood down nothing is moved
+- drawer: a stand-down with the window open puts Blizzard's drawer back
+- drawer: in combat lockdown nothing is moved
+- drawer: a missing Blizzard function installs nothing and errors nothing
 
 ### test_equip_bracket.lua (32)
 
@@ -1222,10 +1237,14 @@ Total.
 - rows: a profile switch redraws the trigger mark from the new profile's auto.enabled
 - rows: an item with no quality color is drawn muted, never in the previous item's color
 
-### test_slot_enables.lua (12)
+### test_slot_enables.lua (17)
 
 - slot enables: NS.SlotEnables is published with the §7.4 surface
-- slot enables: one 24x24 checkbox per slot, anchored to Character<Slot> (old test_xml:101-112)
+- slot enables: one 14x14 checkbox per slot, anchored to Character<Slot> (old test_xml:101-112)
+- slot enables: boxes are 14 px
+- slot enables: the columns are the sheet's, eighteen slots in three
+- slot enables: Hands is in the right column and its box is top-left
+- slot enables: Head's box is top-right
 - slot enables: the tri-state reads O.SlotState: off, on (worn), unknown (used, not worn)
 - slot enables: a click writes through NS.Outfits only, and the box follows OUTFIT_EDITED
 - slot enables: with an item on the cursor a click drops it into the slot and edits nothing
@@ -1236,6 +1255,7 @@ Total.
 - slot enables: a secret sheet level reads as 0, through SafeNumber, and never raises
 - slot enables: UnknownSlots answers the selected outfit's unknown set
 - slot enables: hidden when stood down, and a selection while down shows nothing
+- drawer: the window's show and hide tell the drawer, with the window's state already set
 
 ### test_bar.lua (28)
 
@@ -1284,6 +1304,18 @@ Total.
 - icons: two mirrors that trade set ids in one sync each keep their own glyph
 - icons: a pruned mirror on the set id another mirror moved to does not take that mirror's glyph
 - icons: deleting a mirror leaves an override another outfit's set id still owns
+
+### test_broker.lua (9)
+
+- broker: a data source named OutfitterRebornOutfits exists and is not on the minimap
+- broker: text and icon follow the worn outfit
+- broker: no outfit shows the brand and the coat hanger
+- broker: left-click lists categories then outfits, worn ones checked, missing in the missing color
+- broker: clicking a worn accessory removes it; clicking a Complete wears it
+- broker: a modifier-click asks to set current
+- broker: right-click toggles the window
+- broker: the tooltip names the brand, the current outfit and both clicks
+- broker: in combat a wear is queued or refused as the window's is
 
 ### test_triggers_parity.lua (13)
 
@@ -1590,7 +1622,7 @@ Total.
 | test_slash.lua | 44 |
 | test_launcher.lua | 12 |
 | test_keybinds.lua | 21 |
-| test_disabled.lua | 22 |
+| test_disabled.lua | 24 |
 | test_locale.lua | 18 |
 | test_glyphs.lua | 2 |
 | test_file_budget.lua | 2 |
@@ -1608,7 +1640,7 @@ Total.
 | test_companion.lua | 25 |
 | test_states.lua | 29 |
 | test_secrets_states.lua | 6 |
-| test_quickslots.lua | 19 |
+| test_quickslots.lua | 32 |
 | test_equip_bracket.lua | 32 |
 | test_tooltips.lua | 18 |
 | test_stack.lua | 27 |
@@ -1628,9 +1660,10 @@ Total.
 | test_dock.lua | 35 |
 | test_list_model.lua | 7 |
 | test_rows_secure.lua | 20 |
-| test_slot_enables.lua | 12 |
+| test_slot_enables.lua | 17 |
 | test_bar.lua | 28 |
 | test_outfit_icons.lua | 14 |
+| test_broker.lua | 9 |
 | test_triggers_parity.lua | 13 |
 | test_preview.lua | 14 |
 | test_outfit_menu.lua | 11 |
@@ -1647,4 +1680,4 @@ Total.
 | test_lizard_sighted.lua | 8 |
 | test_prose.lua | 15 |
 | Skipped | 1 |
-| **Total** | **1345** |
+| **Total** | **1374** |

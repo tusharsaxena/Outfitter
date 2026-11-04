@@ -529,6 +529,47 @@ test("Disabled 8: launcher clicks and the key binding write nothing and show not
     NS.Lifecycle:Release(NS.HOLD_PERF)
 end)
 
+test("disabled: the broker shows the brand and refuses outfit clicks", function()
+    -- The Outfits data source (modules/Broker.lua, plan Task 3.8): the object stays, its text goes
+    -- back to the brand, its menu's outfit rows are grayed and refuse with the one line, and its
+    -- right-click shows nothing. Its menu is drawn through NS.OpenMenu, so W.ContextMenu is recorded.
+    local inst, NS, M, S = scene()
+    local obj = M.LibStub("LibDataBroker-1.1"):GetDataObjectByName("OutfitterRebornOutfits")
+    assertEqual(obj.text, "Dungeon", "the worn outfit is not on the broker; nothing below can fail")
+    assertTrue(NS.SetByPath("enabled", false))
+    -- red under: a Broker.Suspend that leaves the outfit's name up.
+    assertEqual(obj.text, NS.BRAND, "the stood-down broker still names the outfit")
+    assertEqual(obj.icon, NS.Constants.DEFAULT_OUTFIT_ICON)
+
+    local menus = {}
+    M.LibStub("LibKa0s-Widgets-1.0").ContextMenu = function(_, rows) menus[#menus + 1] = rows; return {} end
+    M.__resetSvWrites()
+    M.__resetPrinted()
+    local shownBefore = #M.__shownFrames()
+    obj.OnClick(M.UIParent, "LeftButton")
+    assertEqual(#menus, 1, "left-click opened no menu")
+    local row
+    for _, r in ipairs(menus[1]) do
+        if r.label and r.label:find("Dungeon", 1, true) then row = r end
+    end
+    assertTrue(row ~= nil, "the outfit is not in the menu")
+    assertTrue(row.disabled, "an outfit row is live while disabled")
+    row.onClick()
+    local refusal = refusalLine(inst)
+    assertEqual(table.concat(printedBare(M), "\n"), refusal, "the outfit click did not refuse with the one line")
+    assertTrue(NS.Stack.IsWorn(S.outfit), "a stood-down click changed the stack")
+
+    M.__resetPrinted()
+    obj.OnClick(M.UIParent, "RightButton")
+    assertEqual(table.concat(printedBare(M), "\n"), refusal, "the right-click did not refuse")
+    assertEqual(#M.__svWrites(), 0, "a broker click wrote SavedVariables")
+    assertEqual(#M.__shownFrames(), shownBefore, "a broker click showed a frame")
+
+    assertTrue(NS.SetByPath("enabled", true))
+    settle(M)
+    assertEqual(obj.text, "Dungeon", "the stand-up did not bring the outfit back")
+end)
+
 --- How many registrations `target` holds.
 local function holds(inst, target)
     local n = 0

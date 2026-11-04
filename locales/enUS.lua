@@ -250,3 +250,10 @@ L["Saves what you are wearing into the current Complete outfit, as /or update do
 L["The old Outfitter addon is also loaded. Disable it: both change your gear."] = "The old Outfitter addon is also loaded. Disable it: both change your gear."
 
 -- P4.29 keys (settings/General.lua: the landing credits)
+
+-- Sheet and window feedback plan Task 3.8 keys (modules/Broker.lua: the Outfits data source)
+L["Outfits"] = "Outfits"
+L["Open outfit window"] = "Open outfit window"
+L["Automatic changes"] = "Automatic changes"
+L["Left-click: choose an outfit"] = "Left-click: choose an outfit"
+L["Right-click: outfit window"] = "Right-click: outfit window"

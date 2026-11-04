@@ -19,6 +19,7 @@ local SPEC_EVENT = "ACTIVE_PLAYER_SPECIALIZATION_CHANGED"
 local function fakeStack(NS)
     local st = { worn = {}, did = {}, log = {} }
     T.fake(NS, "Stack", {
+        Top = true,   -- the Outfits broker redraws at stand-up (modules/Broker.lua)
         IsWorn = function(id) return st.worn[id] == true end,
         DidEquip = function(id) return st.did[id] == true end,
         DidUnequip = function() return false end,

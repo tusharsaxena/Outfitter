@@ -143,6 +143,16 @@ function NS.OpenMenu(anchor, fill)
     return true
 end
 
+--- An icon as inline markup for a line of text, cropped by the library's icon rule (W.IconText):
+--- the Outfits broker's menu rows. `size` 0 is the line's height. "" without the library or an icon.
+--- @param icon number|string|nil
+--- @param size number|nil
+--- @return string
+function NS.IconText(icon, size)
+    if not (W and W.IconText) or icon == nil then return "" end
+    return W.IconText(icon, size or 0)
+end
+
 --- Close the shared popup menu behind every dropdown and context menu in the process, if one is
 --- open. Safe when none ever opened, and a no-op on a degraded install.
 function NS.CloseMenu()

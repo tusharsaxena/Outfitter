@@ -198,7 +198,7 @@ end)
 test("skeleton: every module the latch walks has landed, with Suspend and Resume", function()
     -- red under: a name in core/LifecycleSetup.lua's MODULES whose module publishes no NS table (the
     -- login walk itself raises on it, so every instance fails to load).
-    assertEqual(#NS.LIFECYCLE_MODULES, 20, "design §5.12's list")
+    assertEqual(#NS.LIFECYCLE_MODULES, 21, "design §5.12's list, and the broker (plan Task 3.8)")
     for _, name in ipairs(NS.LIFECYCLE_MODULES) do
         local m = NS[name]
         assertEqual(type(m), "table", "NS." .. name)

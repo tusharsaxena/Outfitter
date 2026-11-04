@@ -344,7 +344,7 @@ end)
 -- Design §5.12, in stand-down order: jobs that want to equip cancel before the engine resets, and
 -- States resumes before TriggerBinder binds on the way up (the reverse walk).
 local MODULES = {
-    "Preview", "TriggerBinder", "States", "Optimize", "Companion", "EM", "Equip", "Stack",
+    "Broker", "Preview", "TriggerBinder", "States", "Optimize", "Companion", "EM", "Equip", "Stack",
     "Outfits", "Inventory", "PlayerState", "Stats", "Tooltips", "Compare", "QuickSlots", "Bar",
     "Dock", "SlotEnables", "Dialogs", "IconBrowser",
 }

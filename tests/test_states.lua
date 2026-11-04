@@ -34,7 +34,8 @@ local function scene(opts)
     })
     T.fake(NS, "Triggers", { ForState = function(id) return ctl.forState[id] or {} end })
     -- Suspend and Resume: a case that takes the latch walks every module the lifecycle names.
-    T.fake(NS, "Stack", { IsWorn = function(id) return ctl.worn[id] == true end, Suspend = true, Resume = true })
+    T.fake(NS, "Stack", { IsWorn = function(id) return ctl.worn[id] == true end, Suspend = true, Resume = true,
+                            Top = true })   -- the Outfits broker redraws at stand-up
     local heard = {}
     local bus = NS.NewBusTarget()
     bus:RegisterMessage(NS.MSG.STATE_CHANGED, function(_, id, on) heard[#heard + 1] = id .. "=" .. tostring(on) end)

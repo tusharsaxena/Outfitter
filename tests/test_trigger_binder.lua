@@ -31,6 +31,7 @@ local function fakeStack(NS, st)
     st = st or {}
     st.worn, st.did, st.didUn, st.log = st.worn or {}, {}, {}, {}
     T.fake(NS, "Stack", {
+        Top = true,   -- the Outfits broker redraws at stand-up (modules/Broker.lua)
         IsWorn = function(id) return st.worn[id] == true end,
         DidEquip = function(id) return st.did[id] == true end,
         DidUnequip = function(id) return st.didUn[id] == true end,
@@ -510,7 +511,8 @@ end)
 test("binder: stand-down unbinds and a stand-up rebinds, an outfit added while down included", function()
     local NS = scene()
     local id = NS.Outfits.Create("Swim", {}, { trigger = "SWIMMING" })
-    T.fake(NS, "Stack", { IsWorn = function() return false end, Suspend = true, Resume = true, Init = true })
+    T.fake(NS, "Stack", { IsWorn = function() return false end, Suspend = true, Resume = true, Init = true,
+                            Top = true })   -- the Outfits broker redraws at stand-up
     T.fake(NS, "States", { Suspend = true, Resume = true, Demand = function() return 0 end })
     NS.Outfits.LoadPass()   -- the stand-up rebinds once the first LoadPass has run (F-002)
     assertTrue(NS.TriggerBinder.IsBound(id), "the LoadPass did not bind")

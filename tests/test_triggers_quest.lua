@@ -294,6 +294,7 @@ end)
 local function fakeStack(NS)
     local st = { worn = {}, did = {}, didUn = {}, log = {} }
     T.fake(NS, "Stack", {
+        Top = true,   -- the Outfits broker redraws at stand-up (modules/Broker.lua)
         IsWorn = function(id) return st.worn[id] == true end,
         DidEquip = function(id) return st.did[id] == true end,
         DidUnequip = function(id) return st.didUn[id] == true end,

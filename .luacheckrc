@@ -74,6 +74,9 @@ files["core/SkinSetup.lua"] = { read_globals = { "ITEM_QUALITY_COLORS" } }
 -- The degraded context menu hands its `fill` to the client's own menu (core/WidgetsSetup.lua).
 files["core/WidgetsSetup.lua"] = { read_globals = { "MenuUtil" } }
 
+-- The Outfits broker's modifier-click asks to set the outfit to the worn items (plan Task 3.8).
+files["modules/Broker.lua"] = { read_globals = { "IsShiftKeyDown", "IsControlKeyDown", "IsAltKeyDown" } }
+
 -- A queued protected write that raises goes to the client's error handler, and the next one runs.
 files["core/SecureQueue.lua"] = { read_globals = { "geterrorhandler" } }
 

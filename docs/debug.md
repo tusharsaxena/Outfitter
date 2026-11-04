@@ -42,6 +42,7 @@ A tag is one word; a trigger id, an outfit name or a slot goes in the message, n
 | `Opt` | `modules/Optimize.lua` and `modules/Optimize_Genetic.lua` |
 | `Test` | `modules/Preview.lua`: test mode on (and whether it opened the bar) and off (and why) |
 | `Pet` | `modules/Companion.lua`: a blocked pass and its reason, a finished or canceled wish, a give-up at the cap or the deadline |
+| `Broker` | `modules/Broker.lua`: once at load, when LibDataBroker-1.1 is absent and there is no Outfits broker object |
 
 The library writes the latch's stand-down and stand-up edges with their holds, and the launcher's
 registration lines, through the same sink.
