@@ -25,8 +25,13 @@ local _, NS = ...
 -- THE EDGE. Each box carries a 1 px edge in the skin's accent (`text.accent`, through S.Mark, so a
 -- skin switch repaints it) over the skin's checkbox: the box alone is near-black on dark item icons.
 --
+-- TEST MODE (smoke round 2 design G7): the window shows sample outfits, so no box is shown for any
+-- selection while NS.Preview is on (the dock clears the selection as it starts; a wear's follow could
+-- still select a real outfit behind the samples' back), and they come back with the selection after.
+--
 -- CALLS (at call time; design §12): NS.Dock.Holder, NS.Stack.Selected, NS.Outfits.SlotState/
--- SetSlotEnabled/UnknownSlots, NS.Inventory.Cache, NS.Compat.PickupInventoryItem/InventorySlotID.
+-- SetSlotEnabled/UnknownSlots, NS.Inventory.Cache, NS.Compat.PickupInventoryItem/InventorySlotID,
+-- NS.Preview.IsActive.
 
 local SE = {}
 NS.SlotEnables = SE
@@ -260,7 +265,7 @@ end
 --- Show the boxes for `id` (the selection), stacking them first.
 --- @param id string
 function SE.Show(id)
-    if NS.IsStoodDown() or not id then return end
+    if NS.IsStoodDown() or not id or NS.Preview.IsActive() then return SE.Hide() end
     SE.Build()
     frame:Show()
     SE.Restack()
@@ -282,6 +287,7 @@ function SE.Install()
     local bus = NS.NewBusTarget()
     if not bus then return end
     bus:RegisterMessage(NS.MSG.SELECTION_CHANGED, onSelection)
+    bus:RegisterMessage(NS.MSG.PREVIEW_CHANGED, function() onSelection(nil, NS.Stack.Selected()) end)
     bus:RegisterMessage(NS.MSG.OUTFIT_EDITED, SE.Update)
     bus:RegisterMessage(NS.MSG.INVENTORY_CHANGED, SE.Update)
 end

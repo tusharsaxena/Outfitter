@@ -65,7 +65,7 @@ Added after `version`, with their handlers in `modules/Commands.lua`:
 | `auto [on\|off]` | Automatic outfit changes; no word prints the state | answers |
 | `zone` | Show what the addon knows about where you are | answers (read-only) |
 | `iteminfo link` | Print an item link's fields | answers (read-only) |
-| `test` | Sample outfits on the outfit bar | refused |
+| `test` | Sample outfits on the outfit bar and window | refused |
 | `bar` | Show, hide or toggle the outfit bar (`show`, `hide`, `toggle`; no word toggles), writing `bar.shown` | refused |
 | `lock` / `unlock` | Lock or unlock the outfit bar | refused |
 | `deleteall` | Delete every outfit on this character (asks first) | refused |

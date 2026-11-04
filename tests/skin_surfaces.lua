@@ -6,7 +6,7 @@
 -- THE DESIGN §9.5 BUILDERS (P4.30), one per painted object: the window, a row of each of the three
 -- kinds, a slot checkbox in each of the three states, the footer buttons, the
 -- outfit, trigger, rebuild and progress dialogs, a trigger field of each of the nine types, the icon
--- browser, the bar's window chrome and lock control, a bar button, the test strip and a compare tooltip. Beside
+-- browser, the bar's window chrome and lock control, a bar button, both test strips and a compare tooltip. Beside
 -- them, the controls P4.19 to P4.21 handed this task to check (the sheet button is not one: it
 -- wears the host sheet's look, the accepted deviation DEV-SKIN-SHEET-BUTTON, smoke round 2 G2): the window's scroll bar and settings
 -- button, a row's trigger mark and an item row's name, the dialogs' error line, the progress fill,
@@ -189,6 +189,10 @@ return function(T)
         { name = "a bar button", build = barButton },
         { name = "a bar button's worn mark", build = function() return barButton().worn end },
         { name = "the bar's test strip", build = strip },
+        { name = "the window's test strip", build = function()
+              strip()
+              return assert(named("OutfitterRebornWindow").strip or nil, "test mode drew no window strip")
+          end },
         { name = "a compare tooltip", build = compareTooltip },
     }) do surfaces[#surfaces + 1] = s end
 

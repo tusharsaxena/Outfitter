@@ -148,6 +148,9 @@ for _, f in ipairs({ "modules/Sheet.lua", "modules/Dock.lua", "modules/Window.lu
 end
 -- The sheet adapter reads EllesmereUI's live accent for the sheet button's label (smoke round 2 G2).
 table.insert(files["modules/Sheet.lua"].read_globals, "EllesmereUI")
+-- Where a stock sheet would open, for the test-mode window alone (smoke round 2 G7).
+table.insert(files["modules/Sheet.lua"].read_globals, "GetUIPanelLayoutAttribute")
+table.insert(files["modules/Sheet.lua"].read_globals, "CHARACTERFRAME_EXPANDED_WIDTH")
 
 -- The flyout hooks.
 for _, f in ipairs({ "modules/QuickSlots.lua", "modules/QuickSlots_Sort.lua" }) do

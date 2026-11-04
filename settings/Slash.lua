@@ -84,7 +84,7 @@ NS.COMMANDS = {
                                                                    function(rest) doAuto(rest) end },
     { "zone",        L["Show what Outfitter knows about where you are"], function() NS.Commands.Zone() end },
     { "iteminfo",    L["Print an item link's fields"], function(rest) NS.Commands.ItemInfo(rest) end },
-    { "test",        L["Sample outfits on the outfit bar: /or test"], feature(function() NS.Preview.Toggle() end) },
+    { "test",        L["Sample outfits on the outfit bar and window: /or test"], feature(function() NS.Preview.Toggle() end) },
     -- A feature noun with its own sub-verbs (slash-commands-§2: the top-level `toggle` reservation
     -- binds the top level only). Writes `bar.shown` through the CLI; the key binding runs it too.
     { "bar",         L["Outfit bar: /or bar show, hide or toggle"], feature(function(rest) doBar(rest) end) },

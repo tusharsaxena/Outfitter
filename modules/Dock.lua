@@ -33,6 +33,18 @@ local _, NS = ...
 -- CharacterSheet.lua:4907, :3171), so the sheet show looks again on the next frame and re-anchors
 -- only when the kind moved.
 --
+-- TEST MODE (smoke round 2 design G7, D9, D10). While NS.Preview is on, the window shows its sample
+-- outfits under its own strip (NS.Window.SetTestMode) whether or not the player asked for it: beside
+-- the sheet when the paper doll is up, else ALONE, where a stock sheet would open (NS.Sheet.
+-- AloneCorner, in UIParent's units), through the same one TOPLEFT -> UIParent BOTTOMLEFT point and
+-- the same Refresh, so never in lockdown (test mode is refused in combat and ends at
+-- PLAYER_REGEN_DISABLED, before lockdown). The follow then reads the alone corner, not the hidden
+-- sheet's. X, Escape or the sheet button's close hide it for the rest of that test session
+-- (`testDismissed`) without ending the mode, which still ends only on its own switch, combat or Reset
+-- all (preview-mode). Entering test mode clears the selection, so the sheet's slot boxes and the
+-- footer's Slots buttons never act on a real outfit while the samples show. A window parked in the
+-- holder (followDisabled) cannot stand alone; the bar still shows the samples.
+--
 -- THE ONLY SHOW AND HIDE. Dock.Refresh is the one place this addon shows or hides
 -- `OutfitterRebornWindow`. It never does so in combat lockdown (design §7.0 rule 2): the window hides
 -- inside PLAYER_REGEN_DISABLED, while protected calls are still allowed, and comes back at
@@ -50,10 +62,10 @@ local _, NS = ...
 --
 -- CALLS (at call time; design §12): NS.Window, NS.WindowRows.DisarmSecure, NS.SlotEnables.MaybeRestack,
 -- NS.Stack.Select, NS.Dialogs.CloseAll, NS.IconBrowser.Close, NS.CloseMenu, NS.SecureQueue,
--- NS.Sheet.Refresh/Kind/DockRight/Frame/ButtonAnchor, NS.QuickSlots.DrawerSync (the window's show and
+-- NS.Preview.IsActive, NS.Sheet.Refresh/Kind/DockRight/AloneCorner/Frame/ButtonAnchor, NS.QuickSlots.DrawerSync (the window's show and
 -- hide turn the left column's equipment drawer outward and back; modules/QuickSlots.lua).
 
-local Dock = { wanted = false, suspended = false, followDisabled = false, built = false,
+local Dock = { wanted = false, suspended = false, followDisabled = false, built = false, testDismissed = false,
                Y_OFFSET = 0, FOLLOW_INTERVAL = 0.05 }
 NS.Dock = Dock
 
@@ -87,19 +99,36 @@ function Dock.IsVisible()
     return win ~= nil and win:IsVisible() == true
 end
 
---- Whether the window should be up: wanted, not suspended for combat, standing up, the sheet showing.
+--- Test mode wants the window: on, and not dismissed for this test session.
+--- @return boolean
+function Dock.TestWanted()
+    return NS.Preview.IsActive() == true and not Dock.testDismissed
+end
+
+--- Whether the window should be up: not suspended for combat, standing up, out of lockdown; then
+--- beside the shown sheet when wanted or in test mode, or alone in test mode with the sheet closed.
 function Dock.ShouldShow()
-    return Dock.wanted and not Dock.suspended and not NS.IsStoodDown()
-        and PaperDollFrame:IsVisible() == true and not locked()
+    if Dock.suspended or NS.IsStoodDown() or locked() then return false end
+    if PaperDollFrame:IsVisible() == true then return Dock.wanted or Dock.TestWanted() end
+    return Dock.TestWanted() and not Dock.followDisabled
 end
 
 -- ── position and layers ───────────────────────────────────────────────────────────────────────
 
-local function corner() return NS.Sheet.DockRight() end
+-- The corner and the frame whose units it is in: the sheet's, or, standing alone in test mode with
+-- the sheet closed, where a stock sheet would open, in UIParent's.
+local function corner()
+    if PaperDollFrame:IsVisible() ~= true and Dock.TestWanted() then
+        local x, top = NS.Sheet.AloneCorner()
+        return x, top, UIParent
+    end
+    local x, top = NS.Sheet.DockRight()
+    return x, top, NS.Sheet.Frame()
+end
 
--- The one SetPoint, at the sheet's corner times the anchor-to-own scale ratio.
+-- The one SetPoint, at the corner times the anchor-to-own scale ratio.
 local function positionWindow()
-    local right, top = corner()
+    local right, top, host = corner()
     if not right or not top then
         -- The sheet has never been laid out: park it; it is placed properly when the sheet opens.
         Dock.followRight, Dock.followTop = nil, nil
@@ -107,7 +136,7 @@ local function positionWindow()
         return
     end
     local scale = NS.SafeNumber(win:GetEffectiveScale(), 1)
-    local hostScale = NS.SafeNumber(NS.Sheet.Frame():GetEffectiveScale(), 1)
+    local hostScale = NS.SafeNumber(host:GetEffectiveScale(), 1)
     if scale <= 0 then scale = 1 end
     Dock.followRight, Dock.followTop = right, top
     win:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", right * hostScale / scale, top * hostScale / scale + Dock.Y_OFFSET)
@@ -265,8 +294,11 @@ local function onWindowHide()
     -- Escape (UISpecialFrames) hides it behind the dock's back: that is a close, unless combat did it.
     -- A close takes the Name and Rebuild dialogs with it (Outfitter.lua:1491-1504); the combat
     -- suspend keeps them (O30).
+    -- In test mode the close dismisses the test window for the session (D10): Refresh must not bring
+    -- it straight back.
     if not Dock.suspended then
         Dock.wanted = false
+        if NS.Preview.IsActive() then Dock.testDismissed = true end
         NS.Dialogs.CloseAll("host")
     end
     NS.Stack.Select(nil)
@@ -290,6 +322,7 @@ function Dock.Refresh()
     if locked() then return end
     if Dock.ShouldShow() then
         Dock.build()
+        NS.Window.SetTestMode(NS.Preview.IsActive())
         Dock.Attach()
         Dock.ApplyLayers()
         win:Show()
@@ -319,6 +352,7 @@ end
 
 function Dock.Close()
     Dock.wanted = false
+    if NS.Preview.IsActive() then Dock.testDismissed = true end
     Dock.Refresh()
 end
 
@@ -379,6 +413,17 @@ local function onSheetHide()
     if not wasShown then NS.Dialogs.CloseAll("host") end
 end
 
+-- Test mode on: a fresh session's window (not dismissed), and no selection for the samples to act on.
+-- On or off, Refresh shows, re-docks or hides the window and swaps its chrome (never in lockdown).
+local function onPreviewChanged(_, on)
+    if NS.IsStoodDown() then return end
+    if on then
+        Dock.testDismissed = false
+        NS.Stack.Select(nil)
+    end
+    Dock.Refresh()
+end
+
 local function onRegenDisabled()
     if NS.IsStoodDown() then return end
     if win and win:IsShown() then
@@ -429,6 +474,9 @@ function Dock.Install()
     buildSheet()
     PaperDollFrame:HookScript("OnShow", onSheetShow)
     PaperDollFrame:HookScript("OnHide", onSheetHide)
+    -- The bus record drops and replays this receiver across a stand-down.
+    local bus = NS.NewBusTarget()
+    if bus then bus:RegisterMessage(NS.MSG.PREVIEW_CHANGED, onPreviewChanged) end
     NS.Window.Install()
 end
 

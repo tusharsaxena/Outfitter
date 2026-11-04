@@ -1393,7 +1393,7 @@ Total.
 - parity: the menu sorts as legacy's, and a renamed or refiled row by the same rule
 - parity: a class row is offered to its own class only, as the legacy menu filtered it
 
-### test_preview.lua (16)
+### test_preview.lua (28)
 
 - preview: NS.Preview publishes the §8 surface and starts off
 - preview: the placeholders are five Test Outfits in two rows, each stamped placeholder and preview:<n>
@@ -1411,6 +1411,18 @@ Total.
 - preview: every start and stop, from any source, repaints an open settings panel
 - preview window: the list is the five samples under their headers, no item section, nothing armed
 - preview window: every row handler refuses a sample quietly and nothing is written
+- preview window: with the sheet closed, test mode shows the window alone at the stock sheet's right
+- preview window: the alone corner reads the client's panel layout and the sheet's scale
+- preview window: opening the sheet docks it, closing the sheet puts it back alone
+- preview window: with the sheet open, test mode shows the window docked
+- preview window: X and Escape hide it for the session without ending test mode
+- preview window: combat ends test mode and hides the alone window before lockdown
+- preview window: test mode is refused in combat and never touches the window in lockdown
+- preview window: the stand-down hides it and the stand-up does not bring it back
+- preview window: the strip shows under the title and pushes the list; off puts it back
+- preview window: without the library's strip the title says test mode
+- preview window: New outfit is disabled in test mode and enabled after
+- preview window: entering test mode clears the selection, and no slot box or Slots button acts
 
 ### test_outfit_menu.lua (11)
 
@@ -1516,7 +1528,7 @@ Total.
 - skin values: no typed value outside the kit's categories and the host's rows
 - skin values: the check is falsifiable, a planted value of each shape is reported
 
-### test_skin_switch.lua (82)
+### test_skin_switch.lua (84)
 
 - skin switch: the check is falsifiable, a surface that redraws a literal is reported
 - skin switch: the window's shell changes
@@ -1598,6 +1610,8 @@ Total.
 - skin switch: a bar button's worn mark changes with the Scope ignored
 - skin switch: the bar's test strip changes
 - skin switch: the bar's test strip changes with the Scope ignored
+- skin switch: the window's test strip changes
+- skin switch: the window's test strip changes with the Scope ignored
 - skin switch: a compare tooltip changes
 - skin switch: a compare tooltip changes with the Scope ignored
 
@@ -1726,7 +1740,7 @@ Total.
 | test_outfit_icons.lua | 17 |
 | test_broker.lua | 13 |
 | test_triggers_parity.lua | 13 |
-| test_preview.lua | 16 |
+| test_preview.lua | 28 |
 | test_outfit_menu.lua | 11 |
 | test_dialogs.lua | 24 |
 | test_trigger_dialog.lua | 11 |
@@ -1734,11 +1748,11 @@ Total.
 | test_credits.lua | 8 |
 | test_skin.lua | 14 |
 | test_skin_values.lua | 3 |
-| test_skin_switch.lua | 82 |
+| test_skin_switch.lua | 84 |
 | test_eol.lua | 2 |
 | test_layout_cap.lua | 13 |
 | test_diagnostics_contract.lua | 8 |
 | test_lizard_sighted.lua | 8 |
 | test_prose.lua | 15 |
 | Skipped | 1 |
-| **Total** | **1435** |
+| **Total** | **1449** |
