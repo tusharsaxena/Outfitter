@@ -134,7 +134,7 @@ for _, f in ipairs({ "modules/Tooltips.lua", "modules/Tooltips_Compare.lua", "mo
 end
 
 -- The dock, the window and the slot checkboxes sit on the character sheet and stack with it.
-for _, f in ipairs({ "modules/Dock.lua", "modules/Window.lua", "modules/Window_ListModel.lua",
+for _, f in ipairs({ "modules/Sheet.lua", "modules/Dock.lua", "modules/Window.lua", "modules/Window_ListModel.lua",
                      "modules/Window_Rows.lua", "modules/SlotEnables.lua" }) do
     files[f] = {
         read_globals = {

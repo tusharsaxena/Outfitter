@@ -150,7 +150,7 @@ local PLANNED = {
     "modules/Triggers_CondTrade.lua", "modules/Triggers_CondQuest.lua", "modules/Triggers_Effects.lua",
     "modules/Triggers.lua", "modules/Triggers_Binder.lua", "modules/States.lua", "modules/States_Zone.lua",
     "modules/Commands.lua", "modules/Popups.lua", "modules/Tooltips.lua", "modules/Tooltips_Compare.lua",
-    "modules/OutfitTooltip.lua", "modules/Dock.lua", "modules/Window.lua", "modules/Window_ListModel.lua",
+    "modules/OutfitTooltip.lua", "modules/Sheet.lua", "modules/Dock.lua", "modules/Window.lua", "modules/Window_ListModel.lua",
     "modules/Window_Rows.lua", "modules/SlotEnables.lua", "modules/OutfitMenu.lua", "modules/UIDialogs.lua",
     "modules/Dialog_Outfit.lua", "modules/Dialog_Trigger.lua", "modules/Dialog_TriggerFields.lua",
     "modules/Dialog_Rebuild.lua", "modules/Dialog_Progress.lua", "modules/IconChooser.lua",

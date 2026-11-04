@@ -178,6 +178,7 @@ local SUITES = {
     { name = "test_triggers_class" },
     { name = "test_triggers_pvp" },
 
+    { name = "test_sheet" },
     { name = "test_dock" },
     { name = "test_list_model" },
     { name = "test_rows_secure" },

@@ -1131,6 +1131,24 @@ Total.
 - pvp: a disabled spec keeps the outfit off, and the spec change puts it on or takes it off
 - pvp: every zone trigger honors each of the four spec toggles
 
+### test_sheet.lua (15)
+
+- sheet: NS.Sheet is published with the adapter's surface
+- sheet: stock by default
+- sheet: EllesmereUI with its equipment tab shown is eui
+- sheet: EllesmereUI loaded with the blizzard style resolves to stock
+- sheet: an EllesmereUI tab built but hidden resolves to stock
+- sheet: the EllesmereUI tab without the addon loaded is stock
+- sheet: Chonky with its backdrop shown is chonky
+- sheet: Chonky skipped its setup (backdrop hidden) resolves to stock
+- sheet: the kind is re-read on Refresh, not fixed at the first answer
+- sheet: DockRight is the sheet's right edge and top
+- sheet: DockRight answers nil while the sheet has never been laid out
+- sheet: DockRight takes the rightmost shown Chonky side panel
+- sheet: a scaled Chonky panel's edge is read in the sheet's units
+- sheet: with no Chonky panel shown DockRight is the backdrop's edge
+- sheet: the adapter creates, anchors and shows nothing
+
 ### test_dock.lua (20)
 
 - dock: NS.Dock is published with the §7.2 surface
@@ -1564,6 +1582,7 @@ Total.
 | test_triggers_quest.lua | 12 |
 | test_triggers_class.lua | 11 |
 | test_triggers_pvp.lua | 7 |
+| test_sheet.lua | 15 |
 | test_dock.lua | 20 |
 | test_list_model.lua | 7 |
 | test_rows_secure.lua | 15 |
@@ -1585,4 +1604,4 @@ Total.
 | test_lizard_sighted.lua | 8 |
 | test_prose.lua | 15 |
 | Skipped | 1 |
-| **Total** | **1291** |
+| **Total** | **1306** |

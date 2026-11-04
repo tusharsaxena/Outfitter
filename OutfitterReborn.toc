@@ -124,6 +124,7 @@ modules\Popups.lua
 modules\Tooltips.lua
 modules\Tooltips_Compare.lua
 modules\OutfitTooltip.lua
+modules\Sheet.lua
 modules\Dock.lua
 modules\Window.lua
 modules\Window_ListModel.lua

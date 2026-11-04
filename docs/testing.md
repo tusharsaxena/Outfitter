@@ -164,6 +164,7 @@ has no row here, or a row leaves its §9.3 group or order.
 
 | Suite | What it covers |
 |---|---|
+| `test_sheet` | The sheet adapter: stock, EllesmereUI and Chonky told apart (addon loaded and its frame shown), the fallback to stock when a sheet addon's skin is off, the button anchor per sheet, the dock edge past an open Chonky side panel |
 | `test_dock` | The window dock: strata and level from the host, the secure queue under lockdown, combat hide and restore, the follow driver, Escape |
 | `test_list_model` | The list model: section order, both sorts, nil names last, collapse |
 | `test_rows_secure` | The secure row children: built once, never moved after the build, disarmed in lockdown |
