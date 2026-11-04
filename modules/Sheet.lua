@@ -9,9 +9,10 @@ local _, NS = ...
 -- that is hidden or was never built:
 --   eui     EllesmereUIBlizzardSkin loaded and EUI_CharSheet_Equipment shown. With the "blizzard"
 --           Character Sheet style it never builds its tabs (EllesmereUIBlizzardSkin_CharacterSheet.lua
---           :13-28, :1044).
+--           :13-28), and it hides them off the Character tab (:1044-1047).
 --   chonky  ChonkyCharacterSheet loaded and CharacterFrameBgbg shown. During combat or M+
---           (AreSecretsDisabled) it skips its setup and the backdrop is not up (core/styles.lua:1074-1090).
+--           (AreSecretsDisabled) it defers its setup (core/events.lua:414-425), so the backdrop that
+--           CCS.CreateChonkyCharacterBG builds (core/styles.lua:1072-1107) may not be up.
 --   stock   everything else.
 -- Whether an addon is loaded is read through NS.Compat and kept until the next Refresh (the dock
 -- calls it on every sheet show), so the 0.05 s follow does not ask the client each tick. The frames
