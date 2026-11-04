@@ -192,6 +192,55 @@ test("broker: right-click toggles the window", function()
     assertTrue(toggles[1], "the window toggle closes the sheet as the launcher's does")
 end)
 
+-- G9 lists the menu entry as *Open outfit window*: with the window already up it keeps it (and the
+-- sheet) open, where the right-click is the toggle.
+test("broker: the menu's Open outfit window opens, and never closes, the window", function()
+    local NS, M, ctl = scene()
+    local opens, toggles = 0, 0
+    local realOpen, realToggle = NS.Dock.Open, NS.Dock.Toggle
+    NS.Dock.Open = function() opens = opens + 1 end
+    NS.Dock.Toggle = function() toggles = toggles + 1 end
+    find(open(M, ctl), "Open outfit window").onClick()
+    NS.Dock.Open, NS.Dock.Toggle = realOpen, realToggle
+    -- red under: the entry sharing the right-click's NS.Dock.Toggle(true) (a second pick closes both).
+    assertEqual(toggles, 0, "the menu entry toggled the window")
+    assertEqual(opens, 1, "the menu entry did not open the window")
+end)
+
+-- A Complete outfit's wear takes every other outfit off the stack (modules/OutfitStack.lua), and the
+-- menu stays open after a row's click: every row's tick is read again, not only the clicked one's.
+test("broker: wearing a Complete outfit from the menu clears the ticks of the outfits it took off", function()
+    local NS, M, ctl = scene()
+    local ids = outfits(NS)
+    local other = NS.Outfits.Create("Armor", naked(NS))
+    NS.Stack.Wear(ids.bare, { hw = true })
+    M.__fireTimers()
+    local rows = open(M, ctl)
+    assertTrue(ticked(find(rows, "Bare")), "the worn Complete outfit is not checked")
+    find(rows, "Armor").onClick()
+    M.__fireTimers()
+    assertTrue(NS.Stack.IsWorn(other), "the clicked Complete outfit was not worn")
+    assertFalse(NS.Stack.IsWorn(ids.bare), "the first Complete outfit is still worn")
+    -- red under: a recorder that repaints only the clicked row (Bare keeps its stale tick).
+    assertTrue(ticked(find(rows, "Armor")), "the clicked outfit is not checked")
+    assertFalse(ticked(find(rows, "Bare")), "the outfit taken off is still checked")
+end)
+
+test("broker: a modifier-click closes the menu before the set-current prompt", function()
+    local NS, M, ctl = scene()
+    outfits(NS)
+    local closed = 0
+    local realClose = NS.CloseMenu
+    NS.CloseMenu = function(...) closed = closed + 1; return realClose(...) end
+    local row = find(open(M, ctl), "Ride")
+    M.__modifiers.shift = true
+    row.onClick()
+    M.__modifiers.shift = false
+    NS.CloseMenu = realClose
+    -- red under: the prompt opening under a menu that stays open.
+    assertTrue(closed > 0, "the menu stayed open over the set-current prompt")
+end)
+
 test("broker: the tooltip names the brand, the current outfit and both clicks", function()
     local NS, M = scene()
     local ids = outfits(NS)

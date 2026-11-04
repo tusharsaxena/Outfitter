@@ -96,22 +96,26 @@ local function checkLabel(item)
     return item.label
 end
 
-local function checkRow(item, out)
+--- A toggle row. Its click may change other rows' state too (wearing a Complete outfit takes the
+--- others off), and the library repaints the open menu from the rows' labels, so every toggle row of
+--- the level (`checks`) is read again, as MenuUtil re-reads each checkbox.
+local function checkRow(item, out, checks)
     out.label, out.keepOpen = checkLabel(item), true
+    checks[#checks + 1] = { item = item, out = out }
     out.onClick = function()
         item.setSelected(item.data)
-        out.label = checkLabel(item)
+        for _, c in ipairs(checks) do c.out.label = checkLabel(c.item) end
     end
     return out
 end
 
 --- One W.ContextMenu row: a title, a divider, or a button with its click, a submenu's mark, its
---- disabled state and its tooltip.
-local function menuRow(anchor, item)
+--- disabled state and its tooltip. `checks` collects the level's toggle rows.
+local function menuRow(anchor, item, checks)
     if item.title then return { label = item.label, title = true } end
     if item.divider then return { divider = true } end
     local out = { disabled = item.enabled == false or nil, tooltip = tooltipText(item) }
-    if item.isSelected then return checkRow(item, out) end
+    if item.isSelected then return checkRow(item, out, checks) end
     local isSubmenu = #item.items > 0
     out.label = item.label
     if isSubmenu then out.label = out.label .. " " .. NS.Skin.MarkText(NS.Icon("chevron-right"), 0) end
@@ -122,8 +126,8 @@ end
 --- Open `level` at the cursor. The library hides the menu before a row's click, so a submenu's row
 --- may open the next level from its own callback.
 showLevel = function(anchor, level)
-    local rows = {}
-    for i, item in ipairs(level.items) do rows[i] = menuRow(anchor, item) end
+    local rows, checks = {}, {}
+    for i, item in ipairs(level.items) do rows[i] = menuRow(anchor, item, checks) end
     W.ContextMenu(anchor, rows, { owner = addonName, cursor = true })
 end
 

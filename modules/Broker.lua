@@ -10,14 +10,16 @@ local _, NS = ...
 --
 --   text / icon   the top outfit's name and its icon (NS.OutfitIcon); with none, or stood down, the
 --                 brand and the coat hanger tinted as the sheet button is (`of.sheet.button`)
---   left-click    the outfit menu: the brand, Open outfit window, Automatic changes (the `auto`
---                 verb), then each category in the window's order with one toggle row per visible
---                 outfit (not Disabled, not hidden from the bar: the legacy OutfitIsVisible)
+--   left-click    the outfit menu: the brand, Open outfit window (NS.Dock.Open: an open, never a
+--                 close), Automatic changes (the `auto` verb), then each category in the window's
+--                 order with one toggle row per visible outfit (not Disabled, not hidden from the
+--                 bar: the legacy OutfitIsVisible)
 --   right-click   the outfit window (NS.Dock.Toggle, the launcher's Show window handler's call)
 --   tooltip       the brand, the current outfit and the two click hints
 --
--- An outfit row's click: a modifier asks to set the outfit to the worn items (the legacy
--- AskSetCurrent); a worn outfit that is not Complete comes off; anything else is worn. These are the
+-- An outfit row's click: a modifier closes the menu and asks to set the outfit to the worn items
+-- (the legacy AskSetCurrent); a worn outfit that is not Complete comes off; anything else is worn.
+-- The menu stays open and repaints every row's tick (core/WidgetsSetup.lua). These are the
 -- window's own calls, so a wear in combat is queued exactly as the window's is (modules/Equip.lua).
 -- Stood down, the object stays, its text is the brand, and the outfit rows and Open outfit window
 -- are grayed and refuse with the one line (slash-commands-§7). Automatic changes stays live: `auto`
@@ -25,7 +27,8 @@ local _, NS = ...
 --
 -- CALLS (at call time): NS.Stack.Top/IsWorn/Wear/Remove/CurrentLabel, NS.Outfits.Get/Categories,
 -- NS.WindowListModel.SortedIds/Status/LABEL, NS.WindowRows.STATUS_TOKEN, NS.OutfitIcon,
--- NS.Popups.ShowSetCurrent, NS.OpenMenu, NS.IconText, NS.RunVerb, NS.Dock.Toggle, NS.SkinColor/SkinEscape.
+-- NS.Popups.ShowSetCurrent, NS.OpenMenu/CloseMenu, NS.IconText, NS.RunVerb, NS.Dock.Open/Toggle,
+-- NS.SkinColor/SkinEscape.
 
 local Broker = {}
 NS.Broker = Broker
@@ -98,7 +101,11 @@ end
 local function clickOutfit(id)
     local line = NS.StoodDownRefusal()
     if line then return NS.Print(line) end
-    if modifierDown() then return NS.Popups.ShowSetCurrent(id) end
+    if modifierDown() then
+        -- The prompt is a dialog of its own: the menu, kept open by a toggle row's click, goes first.
+        NS.CloseMenu()
+        return NS.Popups.ShowSetCurrent(id)
+    end
     local rec = NS.Outfits.Get(id)
     if not rec then return end
     if rec.category ~= COMPLETE and NS.Stack.IsWorn(id) then
@@ -115,7 +122,15 @@ local function autoOn() return NS.GetSetting("auto.enabled") ~= false end
 --- The `auto` verb's handler, so the menu and the verb cannot differ.
 local function toggleAuto() NS.RunVerb("auto", autoOn() and "off" or "on") end
 
+-- The menu's Open outfit window: an open, never a close (G9 names it so).
 local function openWindow()
+    local line = NS.StoodDownRefusal()
+    if line then return NS.Print(line) end
+    NS.Dock.Open()
+end
+
+-- The right-click: the launcher's Show window toggle, which closes the sheet with the window.
+local function toggleWindow()
     local line = NS.StoodDownRefusal()
     if line then return NS.Print(line) end
     NS.Dock.Toggle(true)
@@ -164,7 +179,7 @@ end
 -- ── the object's scripts ────────────────────────────────────────────────────────────────────
 
 local function onClick(frame, button)
-    if button == "RightButton" then return openWindow() end
+    if button == "RightButton" then return toggleWindow() end
     NS.OpenMenu(frame, fill)
 end
 
