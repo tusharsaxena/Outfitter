@@ -40,7 +40,7 @@ both repos, and continues from the first row not `done`.
 | CP1 | LibKa0s v1.87.0: cascading menus (Task 1), released and pushed | LK | todo |
 | CP2a | Tasks 2.1-2.3: default icon + spec rung, host-look sheet button, gear size | OR | done (3a062f8..66914ec; 132724 + SPEC_n rung, host tab/EUI label citing DEV-SKIN-SHEET-BUTTON, gear via S.CloseButton) |
 | CP2b | Task 2.4: slot selectors, flyout arrow, flyout alignment | OR | done (25f50ed..79db327; host-strata boxes + accent edge, arrows shown with the window, flyout level with its slot) |
-| CP2c | Task 2.5: outfit bar as a Ka0s HUD window | OR | todo |
+| CP2c | Task 2.5: outfit bar as a Ka0s HUD window | OR | done (68ea99f..e11c4ea; Bar_Layout/Bar_Chrome split, header band with lock+close, labels, icon border + worn highlight, FromSkin on every color, /or bar + binding) |
 | CP2d | Task 2.6: test mode shows the window | OR | todo |
 | CP3 | Task 3.1: re-vendor v1.87.0, cascading outfit menus (needs CP1) | OR | todo |
 | CP4 | Task 4.1: docs, deviation rows, smoke §12, whole-branch review, bundle, push | OR | todo |
@@ -115,12 +115,12 @@ CP1 runs in parallel with CP2a-CP2d (different repo). CP2a-CP2d run in order on 
 `Bindings.xml` + its labels module, `locales/enUS.lua`, tests (`test_bar`, `test_settings`,
 `skin_surfaces`, slash/binding tests), perf `barRender` if it moves (re-pin only with a reason).
 
-- [ ] Study DpsRace's race HUD (`../DpsRace/modules/Style.lua` and its HUD module) and recon `bar.md`.
-- [ ] Tests first for: header band and title, drag by header, lock/close controls writing the same
+- [x] Study DpsRace's race HUD (`../DpsRace/modules/Style.lua` and its HUD module) and recon `bar.md`.
+- [x] Tests first for: header band and title, drag by header, lock/close controls writing the same
   paths, layout (per line wrap, padding, spacing, size, grow direction keeping the saved corner),
   labels on/off and per section, FontGroup/BorderGroup/ColorPair rows with FromSkin companions,
   `/or bar show|hide|toggle`, the binding, test strip under the band, degraded load (no Band).
-- [ ] Implement G6. Every new color has its FromSkin bool (skinning-§6). Commit, ledger CP2c -> done,
+- [x] Implement G6. Every new color has its FromSkin bool (skinning-§6). Commit, ledger CP2c -> done,
   push.
 
 ## Task 2.6 — Test mode shows the window — CP2d
