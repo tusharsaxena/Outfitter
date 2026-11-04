@@ -295,7 +295,7 @@ Total.
 - slash: the live dispatcher's live set is the library's LIVE_VERBS, then auto, zone and iteminfo
 - slash: the stub carries no library string but the refusal format
 - slash: the outfit verbs follow the reserved ones, in design §4.3.2's order
-- slash: every verb is in /of help, the README's Usage and the user manual
+- slash: every verb is in /of help, and the README's Usage points at it rather than listing them
 - slash: auto, zone and iteminfo answer while disabled on both arms; wear is refused
 - slash: an outfit name matches case-insensitively, and every wear passes now and hw
 - slash: an empty argument means the current Complete outfit, or says there is none
