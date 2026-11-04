@@ -111,6 +111,11 @@ The idle bracket announces nothing (the C-01 gate), so nothing redraws; with tha
 same step costs about 180 KB. The 200 ceiling catches that, and it also catches the bracket going
 back to allocating: the old vararg table and its two `xpcall` closures cost 344 bytes a step.
 
+The same change cut the busy paths that run through the bracket on every call. A zone flip and
+each binding's dispatch go through `E.Batch`, so `zoneFlips` fell from 149134 to 118023 bytes a step
+and `triggerFanout` from 119534 to 104748; their ceilings moved down with them (120500 and 107000),
+and the old bracket now fails both.
+
 The figure before this was 1256 bytes. It also counted about 720 bytes the idle client never pays:
 the scene settled on a frozen clock, so the update its setup asked for stayed throttled, and every
 poll's flush canceled and re-armed that update's timer. The scene now moves the clock past the 1.5 s

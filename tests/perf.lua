@@ -27,8 +27,10 @@
 -- the finding.
 --
 -- CEILINGS. Measured 2026-11-04 on Lua 5.1, identical over repeat runs and in both halves of every
--- pair bar an occasional one-off in an off window (Scenes.PAIR_WINDOW_BYTES): equipPlan 224032, zoneFlips 149134, triggerFanout 119534, tooltips 138494, gaGeneration
--- 468127 bytes/iter. Each ceiling is about 2% over its figure. The figures are large because a step
+-- pair bar an occasional one-off in an off window (Scenes.PAIR_WINDOW_BYTES): equipPlan 224208, zoneFlips 118023, triggerFanout 104748, tooltips 138494, gaGeneration
+-- 468127 bytes/iter. Each ceiling is about 2% over its figure. zoneFlips (149134) and triggerFanout
+-- (119534) were re-measured when the Equip bracket stopped allocating: each zone flip and each binding
+-- dispatch runs through E.Batch, so the old vararg table and two xpcall closures were in every call. The figures are large because a step
 -- is a whole path on the real addon (an equipment update builds its change list and moves items
 -- through mock_gear; a generation breeds 275 children) and include the mocks' own recording.
 -- dockIdle is the exception, 192 bytes/iter: 96 the follow tick and 96 Scenes.quiet's own list; the
@@ -62,8 +64,8 @@ local ITERS = { equipPlan = 500, zoneFlips = 50, triggerFanout = 100, tooltips =
 -- Per scenario: the bytes/iter ceiling and the bracket notes/iter it is pinned at.
 local BYTE_CEILING = {
     equipPlanCaptureOff = 229000, equipPlanCaptureOn = 229000,
-    zoneFlipsCaptureOff = 152000, zoneFlipsCaptureOn = 152000,
-    triggerFanoutCaptureOff = 122000, triggerFanoutCaptureOn = 122000,
+    zoneFlipsCaptureOff = 120500, zoneFlipsCaptureOn = 120500,         -- red under: run()'s vararg table and xpcall closures
+    triggerFanoutCaptureOff = 107000, triggerFanoutCaptureOn = 107000, -- red under: the same
     tooltipsCaptureOff = 141000, tooltipsCaptureOn = 141000, tooltipsAbsent = 141000,
     gaGenerationCaptureOff = 478000, gaGenerationCaptureOn = 478000,
     dockIdleCaptureOff = 200, dockIdleCaptureOn = 200,         -- red under: reverting C-01's st.touched gate, or run()'s vararg table
