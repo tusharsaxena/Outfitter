@@ -41,7 +41,7 @@ both repos, and continues from the first row not `done`.
 | CP2a | Tasks 2.1-2.3: default icon + spec rung, host-look sheet button, gear size | OR | done (3a062f8..66914ec; 132724 + SPEC_n rung, host tab/EUI label citing DEV-SKIN-SHEET-BUTTON, gear via S.CloseButton) |
 | CP2b | Task 2.4: slot selectors, flyout arrow, flyout alignment | OR | done (25f50ed..79db327; host-strata boxes + accent edge, arrows shown with the window, flyout level with its slot) |
 | CP2c | Task 2.5: outfit bar as a Ka0s HUD window | OR | done (68ea99f..e11c4ea; Bar_Layout/Bar_Chrome split, header band with lock+close, labels, icon border + worn highlight, FromSkin on every color, /or bar + binding) |
-| CP2d | Task 2.6: test mode shows the window | OR | todo |
+| CP2d | Task 2.6: test mode shows the window | OR | done (94324d3..e4751e6; samples listed with no item rows and every row action refused, alone at the stock sheet spot or docked, X/Escape dismiss for the session, own strip, New outfit off, selection cleared) |
 | CP3 | Task 3.1: re-vendor v1.87.0, cascading outfit menus (needs CP1) | OR | todo |
 | CP4 | Task 4.1: docs, deviation rows, smoke §12, whole-branch review, bundle, push | OR | todo |
 | CP5 | Owner's in-game pass of smoke §12 | all | todo |
@@ -128,12 +128,12 @@ CP1 runs in parallel with CP2a-CP2d (different repo). CP2a-CP2d run in order on 
 **Files:** `modules/Preview.lua`, `modules/Dock.lua`, `modules/Window.lua`, `modules/Window_ListModel.lua`,
 `modules/Window_Rows.lua`, `modules/SlotEnables.lua` (clear selection), `locales/enUS.lua`, tests.
 
-- [ ] Tests (recon `test.md`): `/or test` with the sheet closed shows the window alone at the stock
+- [x] Tests (recon `test.md`): `/or test` with the sheet closed shows the window alone at the stock
   position via the single TOPLEFT point; sheet open docks it; samples listed, no item sections; every
   row handler refuses `preview:` ids quietly; New outfit disabled; selection cleared; X/Escape hides
   for the session without ending test mode; combat ends test mode and hides the alone window before
   lockdown; strip on window and under the bar's band; degraded strip fallback title.
-- [ ] Implement G7. Commit, ledger CP2d -> done, push.
+- [x] Implement G7. Commit, ledger CP2d -> done, push.
 
 ## Task 3.1 — Re-vendor v1.87.0 and cascading outfit menus — CP3 (after CP1)
 
