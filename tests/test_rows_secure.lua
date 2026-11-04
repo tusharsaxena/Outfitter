@@ -290,6 +290,28 @@ test("rows: an outfit row shows worn, icon, EM mark, name in that order", functi
     assertFalse(row.em:IsShown(), "an item row drew the EM mark")
 end)
 
+-- An outfit's icon is a fileID (Blizzard art, edged and zoom-cropped as an item's is) or a catalog
+-- glyph, the coat hanger by default, drawn whole and borderless as the sheet button draws it.
+test("rows: a glyph outfit icon is drawn uncropped; a fileID one edged and cropped", function()
+    local NS = opened()
+    local row = rowOf(NS, "outfit")
+    local id = row.entry.id
+    local glyph = NS.OutfitIcon(NS.Outfits.Get(id))
+    assertEqual(type(glyph), "string", "the default outfit icon is the coat hanger glyph")
+    assertEqual(row.outfitIcon:GetTexture(), glyph)
+    -- red under: the glyph drawn through S.IconBorder (texcoords 0.07..0.93).
+    assertEqual((row.outfitIcon:GetTexCoord()), 0, "the glyph is cropped")
+    assertFalse(row.outfitArt:IsShown(), "a glyph outfit drew the edged art texture")
+    assertTrue(NS.Outfits.SetIcon(id, 132662))
+    NS.Window.MarkDirty(true); NS.Window.Render()
+    for _, r in ipairs(rows(NS)) do if r.entry and r.entry.id == id then row = r end end
+    assertTrue(row.outfitArt:IsShown(), "a fileID outfit icon is not on the edged texture")
+    assertEqual(row.outfitArt:GetTexture(), 132662)
+    assertFalse(row.outfitIcon:IsShown(), "a fileID outfit icon also drew the glyph texture")
+    local l = row.outfitArt:GetTexCoord()
+    assertTrue(math.abs(l - 0.07) < 1e-6, "the fileID icon is not zoom-cropped")
+end)
+
 test("rows: the EM mark is full for an EM outfit and dimmed otherwise", function()
     -- G4: the Equipment Manager tab's own icon, read from PAPERDOLL_SIDEBARS[3] at run time.
     -- red under: one alpha for both kinds, or a texture other than the tab's.

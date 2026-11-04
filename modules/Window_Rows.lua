@@ -220,7 +220,8 @@ end
 
 -- ── render ────────────────────────────────────────────────────────────────────────────────────
 
-local REGIONS = { "chevron", "label", "name", "itemName", "icon", "outfitIcon", "worn", "em", "trig", "menu" }
+local REGIONS = { "chevron", "label", "name", "itemName", "icon", "outfitIcon", "outfitArt", "worn", "em", "trig",
+                  "menu" }
 
 local RENDER = {}
 function RENDER.category(row, e)
@@ -235,10 +236,12 @@ function RENDER.outfit(row, e)
     if not rec then return end
     row.worn:SetChecked(NS.Stack.IsWorn(e.id))
     row.worn:Show()
+    -- A fileID is Blizzard art, drawn edged and cropped; a glyph (the coat hanger by default) whole.
     local tex, r, g, b = outfitIcon(rec)
-    row.outfitIcon:SetTexture(tex)
-    row.outfitIcon:SetVertexColor(r, g, b)
-    row.outfitIcon:Show()
+    local icon = type(tex) == "number" and row.outfitArt or row.outfitIcon
+    icon:SetTexture(tex)
+    icon:SetVertexColor(r, g, b)
+    icon:Show()
     row.em:SetAlpha(O.IsEM(e.id) and 1 or EM_DIM_ALPHA)
     row.em:Show()
     local name = type(rec.name) == "string" and rec.name or ""
@@ -310,11 +313,16 @@ local function regions(row)
     row.icon:SetSize(16, 16)
     row.icon:SetPoint("LEFT", row, "LEFT", 14, 0)
     S.IconBorder(row.icon, { fromSkin = true })
-    -- An outfit's icon is Blizzard art too (a fileID today), so it is edged as the item's is.
+    -- An outfit's icon, in one of two textures at one place: a catalog glyph (the default coat hanger,
+    -- or a browser pick) drawn whole and borderless, as the sheet button draws it; a fileID, Blizzard
+    -- art, edged and zoom-cropped as the item's icon is. RENDER.outfit shows the one that fits.
     row.outfitIcon = row:CreateTexture(nil, "ARTWORK")
     row.outfitIcon:SetSize(16, 16)
     row.outfitIcon:SetPoint("LEFT", row, "LEFT", 32, 0)
-    S.IconBorder(row.outfitIcon, { fromSkin = true })
+    row.outfitArt = row:CreateTexture(nil, "ARTWORK")
+    row.outfitArt:SetSize(16, 16)
+    row.outfitArt:SetPoint("LEFT", row, "LEFT", 32, 0)
+    S.IconBorder(row.outfitArt, { fromSkin = true })
     row.itemName = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     row.itemName:SetPoint("LEFT", row, "LEFT", 34, 0)
     row.itemName:SetPoint("RIGHT", row, "RIGHT", -4, 0)
