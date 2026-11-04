@@ -215,7 +215,11 @@ local function placeFlyout()
     frame:ClearAllPoints()
     flyoutMoved = false
     if not button then return end
-    local settings = PaperDollItemsFrame and PaperDollItemsFrame.flyoutSettings or {}
+    -- The button's own host's settings, as Blizzard reads them (EquipmentFlyout.lua:244): the Item
+    -- Upgrade, Item Interaction and Runeforge frames share this flyout with their own (20, -8).
+    local host = button.GetParent and button:GetParent()
+    local settings = type(host) == "table" and type(host.flyoutSettings) == "table" and host.flyoutSettings
+        or PaperDollItemsFrame and PaperDollItemsFrame.flyoutSettings or {}
     local rel = button.popoutButton or button
     if button.verticalFlyout then
         frame:SetPoint("TOPLEFT", rel, "BOTTOMLEFT", NS.SafeNumber(settings.verticalAnchorX, 0),

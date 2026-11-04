@@ -555,10 +555,11 @@ local function drawerInstance(opts)
         M.EquipmentFlyout_UpdateItems = function()
             local b = flyout.button
             local rel = b.popoutButton or b
+            local hs = b:GetParent().flyoutSettings     -- the button's own host's (EquipmentFlyout.lua:244)
             if b.verticalFlyout then
-                flyout.buttonFrame:SetPoint("TOPLEFT", rel, "BOTTOMLEFT", fs.verticalAnchorX, fs.verticalAnchorY)
+                flyout.buttonFrame:SetPoint("TOPLEFT", rel, "BOTTOMLEFT", hs.verticalAnchorX, hs.verticalAnchorY)
             else
-                flyout.buttonFrame:SetPoint("TOPLEFT", rel, "TOPRIGHT", fs.anchorX, fs.anchorY)
+                flyout.buttonFrame:SetPoint("TOPLEFT", rel, "TOPRIGHT", hs.anchorX, hs.anchorY)
             end
         end
         for _, name in ipairs(opts.drop or {}) do M[name] = nil end
@@ -655,6 +656,26 @@ test("drawer: a right-column flyout after a left one drops the left one's anchor
     -- red under: no restore of a moved buttonFrame (Blizzard's TOPLEFT would join our TOPRIGHT).
     assertEqual(#bf.pts, 1, "two points stretch the flyout")
     assertEqual(bf.pts[1][1], "TOPLEFT"); assertEqual(bf.pts[1][2], M.__slotButtons.HandsSlot.popoutButton)
+end)
+
+test("drawer: another host's flyout after a left-column one keeps that host's own anchor", function()
+    -- The Item Upgrade frame shares EquipmentFlyoutFrame with its own flyoutSettings (20, -8)
+    -- (wow-ui-source@297d7aa:Interface/AddOns/Blizzard_ItemUpgradeUI/Mainline/Blizzard_ItemUpgradeUI.lua:917-922),
+    -- read off the button's parent (Blizzard_FrameXML/EquipmentFlyout.lua:244).
+    local NS, M, state = drawerInstance()
+    setWindow(NS, state, true)
+    openFlyout(M, "HeadSlot")
+    local host = M.CreateFrame("Frame", nil, M.UIParent)
+    host.flyoutSettings = { anchorX = 20, anchorY = -8 }
+    local upgrade = M.CreateFrame("Button", nil, host)
+    local flyout = M.EquipmentFlyoutFrame
+    flyout.button = upgrade
+    M.EquipmentFlyout_UpdateItems()
+    local bf = flyout.buttonFrame
+    -- red under: the restore reading PaperDollItemsFrame.flyoutSettings (0, -3) for every button.
+    assertEqual(#bf.pts, 1, "two points stretch the flyout")
+    assertEqual(bf.pts[1][1], "TOPLEFT"); assertEqual(bf.pts[1][2], upgrade); assertEqual(bf.pts[1][3], "TOPRIGHT")
+    assertEqual(bf.pts[1][4], 20); assertEqual(bf.pts[1][5], -8)
 end)
 
 test("drawer: SetReversed on a left-column arrow mirrors its coords", function()
