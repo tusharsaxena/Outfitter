@@ -1305,12 +1305,13 @@ Total.
 - icons: a pruned mirror on the set id another mirror moved to does not take that mirror's glyph
 - icons: deleting a mirror leaves an override another outfit's set id still owns
 
-### test_broker.lua (9)
+### test_broker.lua (10)
 
 - broker: a data source named OutfitterRebornOutfits exists and is not on the minimap
 - broker: text and icon follow the worn outfit
 - broker: no outfit shows the brand and the coat hanger
 - broker: left-click lists categories then outfits, worn ones checked, missing in the missing color
+- broker: the menu leaves out an outfit whose trigger is off or that is hidden from the bar
 - broker: clicking a worn accessory removes it; clicking a Complete wears it
 - broker: a modifier-click asks to set current
 - broker: right-click toggles the window
@@ -1663,7 +1664,7 @@ Total.
 | test_slot_enables.lua | 17 |
 | test_bar.lua | 28 |
 | test_outfit_icons.lua | 14 |
-| test_broker.lua | 9 |
+| test_broker.lua | 10 |
 | test_triggers_parity.lua | 13 |
 | test_preview.lua | 14 |
 | test_outfit_menu.lua | 11 |
@@ -1680,4 +1681,4 @@ Total.
 | test_lizard_sighted.lua | 8 |
 | test_prose.lua | 15 |
 | Skipped | 1 |
-| **Total** | **1374** |
+| **Total** | **1375** |

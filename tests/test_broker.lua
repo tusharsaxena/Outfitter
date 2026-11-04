@@ -129,6 +129,22 @@ test("broker: left-click lists categories then outfits, worn ones checked, missi
     assertTrue(NS.GetSetting("auto.enabled") ~= false, "Automatic changes did not turn auto back on")
 end)
 
+-- The legacy menu listed only visible outfits (Outfitter.lua:2452 OutfitIsVisible at d396f11): not
+-- Disabled and not hidden from the bar, the rule modules/Bar.lua's LiveSource keeps.
+test("broker: the menu leaves out an outfit whose trigger is off or that is hidden from the bar", function()
+    local NS, M, ctl = scene()
+    local ids = outfits(NS)
+    NS.SetByPath("outfit.bar.hide", true, ids.cloak)
+    NS.SetByPath("outfit.trigger.id", "IN_DUNGEON", ids.ride)
+    NS.SetByPath("outfit.trigger.disabled", true, ids.ride)
+    M.__fireTimers()
+    local order = {}
+    for _, r in ipairs(open(M, ctl)) do order[#order + 1] = r.divider and "-" or plain(r.label) end
+    -- red under: a menu that lists every outfit the window does (and an empty category's title).
+    assertEqual(table.concat(order, "|"), NS.BRAND .. "|Open outfit window|Automatic changes|"
+        .. "Complete outfits|Bare")
+end)
+
 test("broker: clicking a worn accessory removes it; clicking a Complete wears it", function()
     local NS, M, ctl = scene()
     local ids = outfits(NS)

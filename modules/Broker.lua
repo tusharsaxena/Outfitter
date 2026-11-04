@@ -11,7 +11,8 @@ local _, NS = ...
 --   text / icon   the top outfit's name and its icon (NS.OutfitIcon); with none, or stood down, the
 --                 brand and the coat hanger tinted as the sheet button is (`of.sheet.button`)
 --   left-click    the outfit menu: the brand, Open outfit window, Automatic changes (the `auto`
---                 verb), then each category in the window's order with one toggle row per outfit
+--                 verb), then each category in the window's order with one toggle row per visible
+--                 outfit (not Disabled, not hidden from the bar: the legacy OutfitIsVisible)
 --   right-click   the outfit window (NS.Dock.Toggle, the launcher's Show window handler's call)
 --   tooltip       the brand, the current outfit and the two click hints
 --
@@ -120,8 +121,27 @@ local function openWindow()
     NS.Dock.Toggle(true)
 end
 
+--- Whether an outfit is on the menu: the legacy OutfitIsVisible (Outfitter.lua:2452 at d396f11), not
+--- Disabled (its trigger off, design §3.3) and not hidden from the bar, the rule Bar.LiveSource keeps.
+local function listed(id)
+    local rec = NS.Outfits.Get(id)
+    if not rec then return false end
+    local off = rec.trigger and rec.trigger.disabled
+    local hidden = rec.bar and rec.bar.hide
+    return not off and not hidden
+end
+
+--- The listed outfits of a category, in the window's order.
+local function listedIds(cat)
+    local out = {}
+    for _, id in ipairs(NS.WindowListModel.SortedIds(cat)) do
+        if listed(id) then out[#out + 1] = id end
+    end
+    return out
+end
+
 --- The menu, written against MenuUtil's description (core/WidgetsSetup.lua). A category with no
---- outfit has no title here: the menu lists outfits to wear, not the window's headers.
+--- listed outfit has no title here: the menu lists outfits to wear, not the window's headers.
 local function fill(root)
     local down = NS.IsStoodDown()
     root:CreateTitle(NS.BRAND)
@@ -130,7 +150,7 @@ local function fill(root)
     root:CreateCheckbox(L["Automatic changes"], autoOn, toggleAuto)
     local LM, statusCache = NS.WindowListModel, {}
     for _, cat in ipairs(NS.Outfits.Categories()) do
-        local ids = LM.SortedIds(cat)
+        local ids = listedIds(cat)
         if #ids > 0 then
             root:CreateTitle(LM.LABEL[cat] or tostring(cat))
             for _, id in ipairs(ids) do
