@@ -1,7 +1,8 @@
--- tests/test_preview.lua — P4.22 (design §8, H17): test mode. modules/Preview.lua turns the outfit bar
--- over to defaults/PreviewOutfits.lua's five sample outfits under the amber strip; the window keeps
--- real data; nothing is equipped or saved; and the mode ends on its own switch, on combat (with one
--- line), on Reset all and, silently, on the stand-down, but not on re-locking the bar.
+-- tests/test_preview.lua — P4.22 (design §8): test mode. modules/Preview.lua turns the outfit bar
+-- over to defaults/PreviewOutfits.lua's five sample outfits under the amber strip; nothing is equipped
+-- or saved; and the mode ends on its own switch, on combat (with one line), on Reset all and,
+-- silently, on the stand-down, but not on re-locking the bar. The window lists the same samples
+-- (smoke round 2 design G7, which reverses H17): the window section below.
 --
 -- Every module it touches has landed (Bar, PlayerState, Outfits, the window's list model) and runs for
 -- real; only NS.OutfitMenu (P4.21) is absent, and a placeholder's right-click never reaches it.
@@ -10,9 +11,11 @@ local T = _G.OUTFITTERREBORN_TEST
 local test, assertEqual, assertTrue, assertFalse, assertNil =
     T.test, T.assertEqual, T.assertTrue, T.assertFalse, T.assertNil
 
+-- Name and own icon; Test Outfit 3 has none and is keyed as a seeded spec outfit, Test Outfit 5 has
+-- none and draws the default.
 local SAMPLES = {
-    { "Test Outfit 1", 132276 }, { "Test Outfit 2", 1376041 }, { "Test Outfit 3", 136245 },
-    { "Test Outfit 4", 132261 }, { "Test Outfit 5", 134062 },
+    { "Test Outfit 1", 132276 }, { "Test Outfit 2", 1376041 }, { "Test Outfit 3", nil },
+    { "Test Outfit 4", 132261 }, { "Test Outfit 5", nil },
 }
 local STRIP = "Test mode: sample outfits. Nothing is equipped or saved"
 local REFUSED = "Test mode is not available in combat."
@@ -144,24 +147,36 @@ test("preview: Start fills the bar with the five sample outfits, real icons and 
     end
     -- red under: a Source that answers Bar.LiveSource's rows
     assertEqual(table.concat(names, ","), "Test Outfit 1,Test Outfit 2,Test Outfit 3,Test Outfit 4,Test Outfit 5")
-    assertEqual(table.concat(icons, ","), "132276,1376041,136245,132261,134062")
+    local spec = NS.Triggers.Get("SPEC_1").icon
+    assertTrue(type(spec) == "number" and spec ~= NS.Constants.DEFAULT_OUTFIT_ICON, "the mock has a spec icon")
+    -- red under: a Test Outfit 3 that is not keyed SPEC_1 (it would draw the default)
+    assertEqual(table.concat(icons, ","), "132276,1376041," .. spec .. ",132261," .. NS.Constants.DEFAULT_OUTFIT_ICON)
     assertTrue(stripShown(NS), "the strip is up")
     assertEqual(NS.Bar.Frame().strip.text:GetText(), STRIP)
 end)
 
-test("preview: the window keeps real data while the bar shows the samples", function()
+test("preview: the window lists the same samples as the bar, and the real outfits again after", function()
     local NS, M = scene()
     local real = NS.Outfits.Create("Real", naked())
+    local function listed()
+        local found, samples = false, 0
+        for _, e in ipairs(NS.WindowListModel.Build({}, {})) do
+            if e.id == real then found = true end
+            if type(e.id) == "string" and e.id:find("^preview:") then samples = samples + 1 end
+        end
+        return found, samples
+    end
     NS.Preview.Start()
     settle(M)
-    local found, sample = false, false
-    for _, e in ipairs(NS.WindowListModel.Build({}, {})) do
-        local id = e.id or (e.outfit and e.outfit.id)
-        if id == real then found = true end
-        if type(id) == "string" and id:find("^preview:") then sample = true end
-    end
-    assertTrue(found, "the real outfit is in the window's list")
-    assertFalse(sample, "a sample outfit reached the window")
+    local found, samples = listed()
+    -- red under: a list model that ignores test mode (H17's real data)
+    assertFalse(found, "the real outfit is in the test window's list")
+    assertEqual(samples, 5)
+    NS.Preview.Stop()
+    settle(M)
+    found, samples = listed()
+    assertTrue(found, "the real outfit did not come back")
+    assertEqual(samples, 0)
 end)
 
 test("preview: placeholders never equip and a whole session writes nothing to the saved data", function()
@@ -347,4 +362,117 @@ test("preview: every start and stop, from any source, repaints an open settings 
     NS.Preview.Stop()
     -- red under: a Stop that repaints while already off
     assertEqual(paints, 6, "a no-op stop repainted the panel")
+end)
+
+-- ── the window (smoke round 2 design G7, D9, D10) ─────────────────────────────────────────────
+--
+-- While test mode is on the window lists the sample outfits under its own test strip, docked beside
+-- an open sheet or, with the sheet closed, alone where a stock sheet would put it: the same single
+-- TOPLEFT -> UIParent BOTTOMLEFT point the dock always uses, issued only from Dock.Refresh. No item
+-- section is listed, so no secure child arms, and every outfit-row handler refuses a sample quietly.
+-- X or Escape hides it for the rest of that test session; the mode itself still ends only on its own
+-- switch, combat or Reset all. The bar's strip under its header band is test_bar's.
+
+local dockScene = dofile(T.root .. "/tests/dock_scene.lua")(T)
+
+local SAMPLE_TIP = "Sample outfit (test mode). Nothing is equipped."
+
+local SCREEN_TOP = 1080
+
+--- The dock scene with UIParent laid out, so the alone corner has a screen top to hang from.
+local function testScene(opts)
+    local NS, M, fakes = dockScene(opts)
+    M.__sheets.place(M.UIParent, 1920, SCREEN_TOP)
+    return NS, M, fakes
+end
+
+local function outfitRows(NS)
+    local out = {}
+    for _, row in ipairs(NS.WindowRows.rows) do
+        if row.entry and row.entry.kind == "outfit" then out[#out + 1] = row end
+    end
+    return out
+end
+
+local function realOutfit(NS)
+    local items = { HeadSlot = NS.ItemInfo.Snapshot(NS.ItemInfo.FromSlot("HeadSlot")) }
+    return NS.Outfits.Create("Real", items)
+end
+
+-- ── the list ──────────────────────────────────────────────────────────────────────────────────
+
+test("preview window: the list is the five samples under their headers, no item section, nothing armed", function()
+    local NS, M = testScene()
+    local real = realOutfit(NS)
+    M.__sheets.place(M.CharacterFrame, 300, 500)
+    M.__world:openCharacter()
+    NS.Dock.Open()
+    NS.Preview.Start()
+    M.OutfitterRebornDockDriver:__fire("OnUpdate", 1)
+    local shape, outfits = {}, 0
+    for _, e in ipairs(NS.Window.entries) do
+        shape[#shape + 1] = e.kind .. ":" .. tostring(e.id)
+        if e.kind == "outfit" then
+            outfits = outfits + 1
+            assertTrue(e.placeholder == true, "a listed outfit that is not a sample: " .. tostring(e.id))
+        end
+        -- red under: a preview branch that still appends NS.Inventory.ItemSections()
+        assertTrue(e.kind ~= "item", "an item row in test mode")
+        assertTrue(e.id ~= real, "the real outfit is listed in test mode")
+    end
+    assertEqual(table.concat(shape, ","),
+        "category:Complete,outfit:preview:1,outfit:preview:2,outfit:preview:3,category:Accessory,outfit:preview:4,outfit:preview:5")
+    assertEqual(outfits, 5)
+    for _, row in ipairs(NS.WindowRows.rows) do assertFalse(row.secure:IsShown(), "a secure child armed") end
+    local rows = outfitRows(NS)
+    assertEqual(rows[1].name:GetText(), "Test Outfit 1")
+    -- Each sample shows its row feature: 1 worn, 2 triggered, 4 in the Equipment Manager, 5 missing.
+    assertTrue(rows[1].worn:GetChecked(), "sample 1 is drawn worn")
+    assertFalse(rows[2].worn:GetChecked())
+    assertTrue(rows[2].trig:IsShown(), "sample 2 shows the trigger mark")
+    assertFalse(rows[1].trig:IsShown())
+    assertEqual(rows[4].em:GetAlpha(), 1)
+    assertTrue(rows[1].em:GetAlpha() < 1, "sample 1 is not stored in the Equipment Manager")
+    assertEqual(rows[5].outfitArt:GetTexture(), NS.Constants.DEFAULT_OUTFIT_ICON)
+    NS.Preview.Stop()
+    M.OutfitterRebornDockDriver:__fire("OnUpdate", 1)
+    local back = false
+    for _, e in ipairs(NS.Window.entries) do if e.id == real then back = true end end
+    assertTrue(back, "the real outfits came back when test mode ended")
+end)
+
+test("preview window: every row handler refuses a sample quietly and nothing is written", function()
+    local NS, M, fakes = testScene()
+    M.__sheets.place(M.CharacterFrame, 300, 500)
+    M.__world:openCharacter()
+    NS.Dock.Open()
+    NS.Preview.Start()
+    M.OutfitterRebornDockDriver:__fire("OnUpdate", 1)
+    local before, calls = snapshot(NS), #M.__equipCalls
+    M.__resetPrinted()
+    local rows = outfitRows(NS)
+    assertEqual(#rows, 5)
+    for _, row in ipairs(rows) do
+        local was = row.worn:GetChecked()
+        row:__fire("PreClick", "LeftButton")
+        row:__fire("PostClick", "LeftButton")
+        row:__fire("PostClick", "RightButton")
+        row.worn:SetChecked(not was)
+        row.worn:__fire("OnClick")
+        -- red under: an onWornClick that returns without putting the box back
+        assertEqual(row.worn:GetChecked(), was, "the worn box kept the click")
+        row.em:__fire("OnClick", "LeftButton")
+        row.menu:__fire("OnClick", "LeftButton")
+        row:__fire("OnEnter")
+        assertEqual(M.GameTooltip.TextLeft2:GetText(), SAMPLE_TIP)
+        row:__fire("OnLeave")
+    end
+    M.__fireTimers()
+    -- red under: a row click or worn box that reaches NS.Stack.Wear with the sample's id
+    assertEqual(#M.__equipCalls, calls, "a sample reached the equip path")
+    assertEqual(#NS.db.char.stack, 0, "nothing worn")
+    assertEqual(fakes.OutfitMenu.__count("Open"), 0, "a sample opened the outfit menu")
+    assertNil(NS.Stack.Selected(), "a sample was selected")
+    assertEqual(#M.__printed(), 0, "a refusal spoke")
+    assertEqual(snapshot(NS), before)
 end)

@@ -1,22 +1,28 @@
 local _, NS = ...
--- defaults/PreviewOutfits.lua — the test-mode placeholder outfits (design §8, H17): five sample
--- outfits in the bar's two rows, read by modules/Preview.lua's Source and never by the store.
+-- defaults/PreviewOutfits.lua — the test-mode placeholder outfits (design §8; smoke round 2 design
+-- G7): five sample outfits in two rows, read by modules/Preview.lua's Source (the bar) and by
+-- modules/Window_ListModel.lua (the window), never by the store.
 --
--- The icons are the shipped default trigger icons, so the release Currency check covers them. Each
--- record is stamped `placeholder = true` (every write path in modules/Bar_Buttons.lua checks it first)
--- and `id = "preview:<n>"`, which NS.Outfits.Get never resolves (C28), on the first Rows() read.
+-- The icons are shipped default trigger icons, so the release Currency check covers them; two
+-- samples carry none and resolve through NS.OutfitIcon like a real outfit: Test Outfit 3, keyed as
+-- a seeded spec outfit, draws the first specialization's icon, and Test Outfit 5 the default 132724.
+-- The window-only display fields show one row feature each, and the bar ignores them: `worn` (the
+-- worn box), `triggered` (the lightning), `em` (the Equipment Manager mark) and `status` (the name's
+-- color). Each record is stamped `placeholder = true` (every write path in modules/Bar_Buttons.lua
+-- and modules/Window_Rows.lua checks it first) and `id = "preview:<n>"`, which NS.Outfits.Get never
+-- resolves (C28), on the first Rows() read.
 
 local L = NS.L
 
 local rows = {
     { categoryID = "Complete", outfits = {
-        { name = L["Test Outfit 1"], icon = 132276 },
-        { name = L["Test Outfit 2"], icon = 1376041 },
-        { name = L["Test Outfit 3"], icon = 136245 },
+        { name = L["Test Outfit 1"], icon = 132276, worn = true },
+        { name = L["Test Outfit 2"], icon = 1376041, triggered = true },
+        { name = L["Test Outfit 3"], builtin = "SPEC_1" },
     } },
     { categoryID = "Accessory", outfits = {
-        { name = L["Test Outfit 4"], icon = 132261 },
-        { name = L["Test Outfit 5"], icon = 134062 },
+        { name = L["Test Outfit 4"], icon = 132261, em = true },
+        { name = L["Test Outfit 5"], status = "missing" },
     } },
 }
 

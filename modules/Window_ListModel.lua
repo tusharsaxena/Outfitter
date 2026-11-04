@@ -12,7 +12,14 @@ local _, NS = ...
 -- AN ENTRY is { kind, id, depth } plus, per kind: a category's `label`, `desc` and `collapsed`; an
 -- outfit's `status` (read through the status cache); an item's `item` (the info).
 --
--- CALLS (at call time; design §12): NS.Outfits.Categories/Ids/Get/Status, NS.Inventory.ItemSections.
+-- TEST MODE (smoke round 2 design G7). While NS.Preview is on, the list is the sample outfits of
+-- defaults/PreviewOutfits.lua under their category headers, in the file's order, each entry marked
+-- `placeholder` and carrying its record (`rec`; NS.Outfits.Get never resolves a `preview:` id) and the
+-- sample's display `status`. No item section is listed: an item row arms its secure child with a
+-- real bag slot (modules/Window_Rows.lua), which a sample list must never do.
+--
+-- CALLS (at call time; design §12): NS.Outfits.Categories/Ids/Get/Status, NS.Inventory.ItemSections,
+-- NS.Preview.IsActive, NS.PreviewOutfits.Rows.
 
 local LM = {}
 NS.WindowListModel = LM
@@ -92,12 +99,27 @@ local function header(out, id, collapsed, labelKey)
     return collapsed[id] ~= true
 end
 
+-- Test mode's list: the samples under their headers, and nothing else.
+local function sampleEntries(collapsed)
+    local out = {}
+    for _, row in ipairs(NS.PreviewOutfits.Rows()) do
+        if header(out, row.categoryID, collapsed) then
+            for _, rec in ipairs(row.outfits) do
+                out[#out + 1] = { kind = "outfit", id = rec.id, depth = 1, rec = rec, placeholder = true,
+                                  status = rec.status }
+            end
+        end
+    end
+    return out
+end
+
 --- The list's entries, top to bottom.
 --- @param collapsed table|nil  category id -> true (session only)
 --- @param statusCache table|nil  id -> status (LM.Status)
 --- @return table[]
 function LM.Build(collapsed, statusCache)
     collapsed, statusCache = collapsed or {}, statusCache or {}
+    if NS.Preview.IsActive() then return sampleEntries(collapsed) end
     local out = {}
     for _, cat in ipairs(NS.Outfits.Categories()) do
         if header(out, cat, collapsed) then

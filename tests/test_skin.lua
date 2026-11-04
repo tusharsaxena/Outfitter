@@ -351,6 +351,8 @@ test("skin: a switch marks the window, and its next tick recolors an item row's 
     -- red under: modules/Window.lua without its NS.Skin.OnLooksChanged listener (an item's name keeps
     -- the last skin's quality color until something else dirties the list).
     local NS, M, Skin = buildAll()
+    -- Building the bar's strip left test mode on, and the test window lists no item rows.
+    NS.Preview.Stop()
     NS.Window.Render()
     local row
     for _, r in ipairs(NS.WindowRows.rows) do

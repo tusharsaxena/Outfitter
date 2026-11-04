@@ -28,9 +28,10 @@ local installed = false
 -- Every message that can change a row: each marks the list dirty and wipes the status cache.
 -- STACK_CHANGED is not among them: a stack change re-draws the worn marks, and an outfit's missing
 -- or banked status is inventory-driven, so it marks the list dirty and keeps the cache (Win.Install).
+-- PREVIEW_CHANGED swaps the whole list for the sample outfits and back (smoke round 2 design G7).
 local DIRTY_ON = { "OUTFIT_ADDED", "OUTFIT_DELETED", "OUTFIT_EDITED", "OUTFIT_RENAMED", "OUTFIT_WORN",
                    "OUTFIT_REMOVED", "INVENTORY_CHANGED", "SELECTION_CHANGED", "EM_SYNCED",
-                   "TRIGGERS_REBOUND" }
+                   "TRIGGERS_REBOUND", "PREVIEW_CHANGED" }
 
 local function wipe(t) for k in pairs(t) do t[k] = nil end end
 

@@ -126,3 +126,21 @@ test("list model: Status caches O.Status in the table it is handed, until that i
     LM.Build({}, {})
     assertEqual(calls(), 2, "a fresh cache reads again")
 end)
+
+test("list model: in test mode the list is the sample outfits under their headers, no item section", function()
+    -- Smoke round 2 design G7: an item row arms its secure child with a real bag slot, so none is listed.
+    local NS, LM, calls = model({ { id = "o1", name = "Normal" } },
+        { { key = "unused", items = { { name = "Ring" } } } })
+    T.fake(NS, "Preview", { IsActive = function() return true end })
+    local rows = NS.PreviewOutfits.Rows()
+    local entries = LM.Build({ Accessory = true }, {})
+    -- red under: a Build that ignores test mode (the store's o1 and the Ring are listed)
+    assertEqual(shape(entries), "category:Complete,outfit:preview:1,outfit:preview:2,outfit:preview:3,category:Accessory")
+    assertTrue(entries[2].placeholder == true, "a sample entry is marked placeholder")
+    assertTrue(entries[2].rec == rows[1].outfits[1], "a sample entry carries its record")
+    assertNil(entries[2].status)
+    assertEqual(calls(), 0, "test mode read the store's status")
+    local all = LM.Build({}, {})
+    assertEqual(all[#all].id, "preview:5")
+    assertEqual(all[#all].status, "missing", "the missing sample carries its status")
+end)
