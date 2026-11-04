@@ -16,6 +16,8 @@
 --   triggerFanout  one PLAYER_UPDATE_RESTING edge through 40 bindings (triggerDispatch)
 --   tooltips       the "Used by outfits" line on 100 bag items (tooltipUsedBy)
 --   gaGeneration   one genetic generation, 275 children over whole resumes (optimizeStep)
+--   dockIdle       the docked window shown with nothing changing: one States poll tick and one
+--                  follow tick (dockFollow); the idle bracket announces nothing, so nothing redraws
 -- and THE INSTRUMENTATION-ABSENT ARM (performance-§9): tooltipsAbsent, the tooltips step on an
 -- instance whose Tooltips.OnItem has no bracket at all (Scenes.ABSENT), measured with capture off.
 -- tooltipsCaptureOff must allocate no more than it: the off/on pair cannot show "free when off", since
@@ -29,6 +31,10 @@
 -- 468127 bytes/iter. Each ceiling is about 2% over its figure. The figures are large because a step
 -- is a whole path on the real addon (an equipment update builds its change list and moves items
 -- through mock_gear; a generation breeds 275 children) and include the mocks' own recording.
+-- dockIdle is the exception, 1256 bytes/iter: about 1064 of it is the poll's E.Batch bracket (its
+-- vararg table and the two xpcall closures in modules/Equip.lua's run), 96 the follow tick and 96
+-- Scenes.quiet's own list; with the C-01 gate reverted the idle bracket redraws the window and the
+-- step costs 183681 bytes, so its 1290 ceiling is what holds the idle window quiet.
 --
 -- ITERATIONS. ITERS[scene] steps per measured loop (N when absent): a step of the zone, fan-out,
 -- tooltip and genetic scenes is 40 to 275 calls of its path, so they take fewer steps.
@@ -59,6 +65,7 @@ local BYTE_CEILING = {
     triggerFanoutCaptureOff = 122000, triggerFanoutCaptureOn = 122000,
     tooltipsCaptureOff = 141000, tooltipsCaptureOn = 141000, tooltipsAbsent = 141000,
     gaGenerationCaptureOff = 478000, gaGenerationCaptureOn = 478000,
+    dockIdleCaptureOff = 1290, dockIdleCaptureOn = 1290,       -- red under: reverting C-01's st.touched gate
 }
 local NOTES_PER_ITER = {
     equipPlanCaptureOff = 0, equipPlanCaptureOn = 3,            -- equipUpdate, equipExecute, bagSync
@@ -67,13 +74,14 @@ local NOTES_PER_ITER = {
     tooltipsCaptureOff = 0, tooltipsCaptureOn = 100,            -- one tooltipUsedBy per item
     tooltipsAbsent = 0,                                         -- no bracket to note
     gaGenerationCaptureOff = 0, gaGenerationCaptureOn = 3,      -- three 100-child resumes
+    dockIdleCaptureOff = 0, dockIdleCaptureOn = 1,              -- one dockFollow per follow tick
 }
 -- The capture-off/capture-on pairs, judged by Scenes.pairFailures (tests/perf_scenes.lua, where the
 -- slack, the noise and the off-side window allowance live and the harness suite pins them).
 local PAIRS = {
     equipPlanCaptureOff = "equipPlanCaptureOn", zoneFlipsCaptureOff = "zoneFlipsCaptureOn",
     triggerFanoutCaptureOff = "triggerFanoutCaptureOn", tooltipsCaptureOff = "tooltipsCaptureOn",
-    gaGenerationCaptureOff = "gaGenerationCaptureOn",
+    gaGenerationCaptureOff = "gaGenerationCaptureOn", dockIdleCaptureOff = "dockIdleCaptureOn",
 }
 
 local opts = { out = nil, label = "offline" }

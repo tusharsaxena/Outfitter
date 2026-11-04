@@ -8,7 +8,7 @@
 -- instance in a state the next call can repeat. Every module is the real one (no fakes, design §12:
 -- P4.27 has landed), and every item moves for real in tests/mock_gear.lua.
 --
--- THE FIVE PERF SCENARIOS (perf.lua's header):
+-- THE SIX PERF SCENARIOS (perf.lua's header):
 --   equipPlan      full-bag plan: a full-bag Warrior's weapon outfit worn and taken off at once
 --                  (St.Wear/Remove with `now`), so each step is one E.Update with one change
 --                  (equipUpdate, equipExecute), then the moved items' events and Inv.Sync (bagSync)
@@ -23,6 +23,10 @@
 --                  GA_RESTART steps (optimizeStep). The restart is on a fixed step count, never on
 --                  the search ending (it cannot converge in fewer than 100 generations), so every
 --                  window of a multiple of GA_RESTART steps bills the same seeding.
+--   dockIdle       the docked window shown on full_bags with nothing changing: one States poll tick
+--                  (the 0.5 s repeater's own function, the clock moved on by its period) and one
+--                  follow tick of the driver (dockFollow). Idle must stay quiet: no STACK_CHANGED,
+--                  so no list rebuild (F-001, F-006).
 -- THE OTHER THREE BUCKETS (the suite only): auraScan (the player's UNIT_AURA), dockFollow (one
 -- throttled follow tick of the docked window), barRender (Bar.Render of the live source).
 
@@ -96,7 +100,7 @@ return function(env)
         return items
     end
 
-    -- ── the five perf scenarios ─────────────────────────────────────────────────────────────────
+    -- ── the six perf scenarios ──────────────────────────────────────────────────────────────────
 
     -- full_bags with a second one-hander in the bags: the swap the plan makes is in place, so it
     -- succeeds with every bag slot taken (an unbound BoE is no outfit item, Inventory admitBagItem).
@@ -216,7 +220,34 @@ return function(env)
         end, NS, M
     end
 
-    Scenes.PERF = { "equipPlan", "zoneFlips", "triggerFanout", "tooltips", "gaGeneration" }
+    -- The docked window, shown, on a world that does not change. The States poll is the one armed
+    -- 0.5 s repeater (POLL_PERIOD, modules/States.lua); its function is called directly, so a step
+    -- is exactly one poll tick and the timer queue is not rebuilt.
+    Scenes.POLL_PERIOD = 0.5
+    function Scenes.dockIdle()
+        local NS, M = Scenes.world("full_bags")
+        NS.Outfits.Create("Idle", wornItems(NS))
+        M.__world:openCharacter()
+        NS.Dock.Open()
+        M.OutfitterRebornWindow:__fire("OnShow")     -- the Dock's OnShow hook arms the follow
+        local driver = M.OutfitterRebornDockDriver
+        settle(M)
+        driver:__fire("OnUpdate", NS.Dock.FOLLOW_INTERVAL)   -- the first render, done before measuring
+        local poll
+        for _, h in ipairs(M.__timers()) do
+            if type(h) == "table" and h.looping and h.delay == Scenes.POLL_PERIOD then poll = h end
+        end
+        assert(poll, "the States poll is not armed")
+        local tick = poll.func                       -- AceTimer calls it with the schedule's args: none
+        return function()
+            M.__now = M.__now + Scenes.POLL_PERIOD
+            tick()
+            driver:__fire("OnUpdate", NS.Dock.FOLLOW_INTERVAL)
+            quiet(M)
+        end, NS, M
+    end
+
+    Scenes.PERF = { "equipPlan", "zoneFlips", "triggerFanout", "tooltips", "gaGeneration", "dockIdle" }
 
     -- ── the instrumentation-absent arm (performance-§9) ─────────────────────────────────────────
     -- The zero-overhead claim is that capture OFF costs nothing over no instrumentation at all, which

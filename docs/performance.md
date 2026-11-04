@@ -72,6 +72,7 @@ with capture off and on:
 | `triggerFanout` | One `PLAYER_UPDATE_RESTING` edge through 40 outfits on the Resting trigger | 40 `triggerDispatch` |
 | `tooltips` | The "Used by outfits" line on 100 bag items | 100 `tooltipUsedBy` |
 | `gaGeneration` | One genetic generation: 275 children over whole resumes of the ticker, the search restarted every 20 steps | 3 `optimizeStep` |
+| `dockIdle` | The docked window shown on full bags with nothing changing: one States poll tick (0.5 s) and one follow tick. The idle bracket announces nothing, so the list is not rebuilt (about 1.3 KB a step, against 180 KB if it redrew) | 1 `dockFollow` |
 | `tooltipsAbsent` | The `tooltips` step with `Tooltips.OnItem`'s bracket removed from the source, measured with capture off only (the instrumentation-absent arm, below) | 0: there is no bracket |
 
 Each carries a byte ceiling a little above its measured figure and a pinned note count, and each
