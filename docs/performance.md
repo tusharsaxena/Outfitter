@@ -93,6 +93,15 @@ noise), and the arm must note nothing with capture on, which proves the strip to
 A ceiling is raised only by re-measuring and saying why. The runs are kept in
 [`automated-tests/`](automated-tests/README.md), not in `perf-analysis/`.
 
+**Re-pinned 2026-11-05: `equipPlan` 229000 → 234000.** The scenario rose from 224208 to 229584
+bytes a step when the Outfits broker (`modules/Broker.lua`) registered its six bus messages. None of
+those bytes are the addon's. A line-level allocation profile of the step, with and without the six
+registrations, puts the whole 5376 bytes on one line of the vendored recorder. For every game event
+it fires, `M.__fire` (`tests/_kit/mock_record.lua`) builds `M.__registrations()`, one row per live
+registration, so each registration costs 896 bytes a step whether or not its message is ever sent.
+The client's own dispatch has no such cost. `triggerFanout` rose from 104748 to 106104 for the same
+reason and stays under its 107000 ceiling.
+
 ## Measured costs
 
 **The idle docked window: about 192 bytes a step.** Measured 2026-11-04 by `tests/perf.lua`'s
