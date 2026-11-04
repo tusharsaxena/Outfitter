@@ -72,12 +72,22 @@ with capture off and on:
 | `triggerFanout` | One `PLAYER_UPDATE_RESTING` edge through 40 outfits on the Resting trigger | 40 `triggerDispatch` |
 | `tooltips` | The "Used by outfits" line on 100 bag items | 100 `tooltipUsedBy` |
 | `gaGeneration` | One genetic generation: 275 children over whole resumes of the ticker, the search restarted every 20 steps | 3 `optimizeStep` |
+| `tooltipsAbsent` | The `tooltips` step with `Tooltips.OnItem`'s bracket removed from the source, measured with capture off only (the instrumentation-absent arm, below) | 0: there is no bracket |
 
 Each carries a byte ceiling a little above its measured figure and a pinned note count, and each
 pair must agree: capture off allocates nothing over capture on, and on no more than 64 bytes per
 step over off. Capture off alone may carry a one-off of up to 8 KB per measured window, granted only
 while it spreads to under 16 bytes per bracket call, so it can never hide a per-call allocation
-(`Scenes.pairFailures` in `tests/perf_scenes.lua`; `tests/perf.lua`'s header has the figures). A ceiling is raised only by re-measuring and saying why. The runs are kept in
+(`Scenes.pairFailures` in `tests/perf_scenes.lua`; `tests/perf.lua`'s header has the figures).
+
+The pair alone cannot show that capture off is free: a dormant bracket that allocates pays the same
+bytes in both halves. So one more arm, `tooltipsAbsent`, measures the `tooltips` step on an instance
+with no instrumentation at all: its `modules/Tooltips.lua` is the TOC's own file with
+`Tooltips.OnItem`'s two bracket lines blanked before it loads (`Scenes.ABSENT`; the load list stays
+TOC-derived). `tooltipsCaptureOff` must allocate no more than it (within 1 byte per step, the float's
+noise), and the arm must note nothing with capture on, which proves the strip took the bracket.
+
+A ceiling is raised only by re-measuring and saying why. The runs are kept in
 [`automated-tests/`](automated-tests/README.md), not in `perf-analysis/`.
 
 ## Complexity

@@ -62,10 +62,11 @@ return function(env)
     Scenes.quiet = quiet
 
     --- The whole addon up on `scenario` (fixtures/inventories.lua, `overrides` merged over it), at
-    --- t = 100, past its first zone-in.
+    --- t = 100, past its first zone-in. `strip` (the offline runner's only) names source lines taken
+    --- out of one addon file before it loads: an instrumentation-absent instance (Scenes.ABSENT).
     --- @return table NS, table M
-    function Scenes.world(scenario, overrides)
-        local inst = env.load({ mutate = function(M)
+    function Scenes.world(scenario, overrides, strip)
+        local inst = env.load({ strip = strip, mutate = function(M)
             installPaint(M)
             M.__gear:load(scenario, overrides)
         end })
@@ -159,8 +160,8 @@ return function(env)
     end
 
     Scenes.TOOLTIPS = 100
-    function Scenes.tooltips()
-        local NS, M = Scenes.world("full_bags")
+    function Scenes.tooltips(strip)
+        local NS, M = Scenes.world("full_bags", nil, strip)
         NS.Outfits.Create("Herbalist", { MainHandSlot = snap(NS, "greatsword"), LegsSlot = snap(NS, "boe_legs") })
         NS.Outfits.Create("Caster", { MainHandSlot = snap(NS, "staff") })
         local slots = {}
@@ -216,6 +217,23 @@ return function(env)
     end
 
     Scenes.PERF = { "equipPlan", "zoneFlips", "triggerFanout", "tooltips", "gaGeneration" }
+
+    -- ── the instrumentation-absent arm (performance-§9) ─────────────────────────────────────────
+    -- The zero-overhead claim is that capture OFF costs nothing over no instrumentation at all, which
+    -- the off/on pair cannot show: a dormant bracket that allocates pays the same bytes in both its
+    -- halves. Scenes.ABSENT.tooltips is the tooltips step on an instance whose modules/Tooltips.lua is
+    -- the TOC's own file with Tooltips.OnItem's two bracket lines blanked (whole lines, so anything
+    -- built beside the dormant t0 goes with them; line numbers kept), so the same gates and the same
+    -- Tooltips.Decorate call run. Each pattern must match exactly one line, or the runner refuses
+    -- the arm: a stale pattern would measure the bracketed file under the absent arm's name.
+    Scenes.ABSENT = {
+        tooltips = {
+            file = "modules/Tooltips.lua",
+            patterns = { "^%s*local t0 = Perf%.on and debugprofilestop%(%)",
+                         "^%s*if t0 then Perf%.Note%(\"tooltipUsedBy\"" },
+        },
+    }
+    function Scenes.tooltipsAbsent() return Scenes.tooltips(Scenes.ABSENT.tooltips) end
 
     -- ── the other three buckets ─────────────────────────────────────────────────────────────────
 

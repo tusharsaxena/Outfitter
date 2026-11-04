@@ -16,7 +16,11 @@
 --   triggerFanout  one PLAYER_UPDATE_RESTING edge through 40 bindings (triggerDispatch)
 --   tooltips       the "Used by outfits" line on 100 bag items (tooltipUsedBy)
 --   gaGeneration   one genetic generation, 275 children over whole resumes (optimizeStep)
--- with a ceiling per scenario in BYTE_CEILING and a pinned note count in NOTES_PER_ITER. A ceiling
+-- and THE INSTRUMENTATION-ABSENT ARM (performance-§9): tooltipsAbsent, the tooltips step on an
+-- instance whose Tooltips.OnItem has no bracket at all (Scenes.ABSENT), measured with capture off.
+-- tooltipsCaptureOff must allocate no more than it: the off/on pair cannot show "free when off", since
+-- a dormant bracket that allocates pays the same bytes in both halves.
+-- With a ceiling per scenario in BYTE_CEILING and a pinned note count in NOTES_PER_ITER. A ceiling
 -- sits a little above the measured figure; raise one only by re-measuring and saying why: a rise is
 -- the finding.
 --
@@ -53,7 +57,7 @@ local BYTE_CEILING = {
     equipPlanCaptureOff = 229000, equipPlanCaptureOn = 229000,
     zoneFlipsCaptureOff = 152000, zoneFlipsCaptureOn = 152000,
     triggerFanoutCaptureOff = 122000, triggerFanoutCaptureOn = 122000,
-    tooltipsCaptureOff = 141000, tooltipsCaptureOn = 141000,
+    tooltipsCaptureOff = 141000, tooltipsCaptureOn = 141000, tooltipsAbsent = 141000,
     gaGenerationCaptureOff = 478000, gaGenerationCaptureOn = 478000,
 }
 local NOTES_PER_ITER = {
@@ -61,6 +65,7 @@ local NOTES_PER_ITER = {
     zoneFlipsCaptureOff = 0, zoneFlipsCaptureOn = 100,          -- 50 zoneUpdate, 50 triggerDispatch
     triggerFanoutCaptureOff = 0, triggerFanoutCaptureOn = 40,   -- one triggerDispatch per binding
     tooltipsCaptureOff = 0, tooltipsCaptureOn = 100,            -- one tooltipUsedBy per item
+    tooltipsAbsent = 0,                                         -- no bracket to note
     gaGenerationCaptureOff = 0, gaGenerationCaptureOn = 3,      -- three 100-child resumes
 }
 -- The capture-off/capture-on pairs, judged by Scenes.pairFailures (tests/perf_scenes.lua, where the
@@ -91,11 +96,47 @@ end
 -- so this runner measures what the client loads and never a hand-kept list.
 
 local LIB_FILES = Loader.xmlFiles(root .. "/libs/LibKa0s/LibKa0s.xml")
+local ADDON_REL = Loader.tocFiles(root .. "/OutfitterReborn.toc")
 local ADDON_FILES = {}
-for i, rel in ipairs(Loader.tocFiles(root .. "/OutfitterReborn.toc")) do ADDON_FILES[i] = root .. "/" .. rel end
+for i, rel in ipairs(ADDON_REL) do ADDON_FILES[i] = root .. "/" .. rel end
+
+--- `strip.file`'s source with every line matching one of `strip.patterns` blanked (its line ending
+--- kept, so line numbers stay). Each pattern must match exactly one line: one that matches nothing
+--- has gone stale, and the "absent" instance would be the bracketed one.
+local function stripped(strip)
+    local src = Loader.readFile(root .. "/" .. strip.file)
+    local hits = {}
+    src = src:gsub("([^\n]*)(\n?)", function(line, nl)
+        for i, pat in ipairs(strip.patterns) do
+            if line:find(pat) then
+                hits[i] = (hits[i] or 0) + 1
+                return nl
+            end
+        end
+    end)
+    for i, pat in ipairs(strip.patterns) do
+        assert(hits[i] == 1, ("%s: the strip pattern %q matched %d lines, not 1"):format(strip.file, pat, hits[i] or 0))
+    end
+    return src
+end
+
+-- The addon's load, the TOC's files in order, with `strip.file` (when given) loaded stripped.
+local function loadAddon(NS, mocks, strip)
+    local found = false
+    for i, rel in ipairs(ADDON_REL) do
+        if strip and rel == strip.file then
+            found = true
+            Loader.loadSource(stripped(strip), "@" .. ADDON_FILES[i], NS, mocks)
+        else
+            Loader.load(ADDON_FILES[i], NS, mocks)
+        end
+    end
+    assert(found or not strip, "the strip names a file the TOC does not load")
+end
 
 -- The client's load and login, as tests/run.lua's T.load gives it: `o.mutate(mocks)` runs before
--- anything loads, and PLAYER_LOGIN reaches the skin library's retry frame beside OnEnable.
+-- anything loads, and PLAYER_LOGIN reaches the skin library's retry frame beside OnEnable. `o.strip`
+-- is the instrumentation-absent arm's source transform (Scenes.ABSENT).
 local function loadInstance(o)
     o = o or {}
     local mocks = mockmod.build()
@@ -104,7 +145,7 @@ local function loadInstance(o)
     _G.OutfitterRebornDB, _G.OutfitterRebornPerfDB = nil, nil
     local NS = {}
     Loader.loadAll(LIB_FILES, NS, mocks)
-    Loader.loadAll(ADDON_FILES, NS, mocks)
+    loadAddon(NS, mocks, o.strip)
     local AceAddon = mocks.LibStub("AceAddon-3.0")
     AceAddon:InitializeAddon(NS)
     local skin = mocks.LibStub("LibKa0s-Skin-1.0", true)
@@ -209,6 +250,28 @@ for _, name in ipairs(Scenes.PERF) do
     end
 end
 
+-- The instrumentation-absent arm: settled like a pair, measured with capture off. A short pass with
+-- capture on first proves the strip took the bracket (the bracketed file notes 100 times a step).
+do
+    local ok, step, sceneNS = pcall(Scenes.tooltipsAbsent)
+    check(ok, ("the tooltipsAbsent scene did not build: %s"):format(tostring(step)))
+    if ok then
+        local perf = sceneNS.Perf
+        countNotes(perf)
+        local ran, err = pcall(function()
+            settle(perf, ITERS.tooltips, step)
+            notes = 0
+            perf.on = true
+            step()
+            perf.on = false
+            check(notes == 0, ("tooltipsAbsent noted %d times with capture on: the strip left a bracket"):format(notes))
+            measure("tooltipsAbsent", ITERS.tooltips, step)
+        end)
+        perf.on = false
+        check(ran, ("the tooltipsAbsent scene raised: %s"):format(tostring(err)))
+    end
+end
+
 for _, r in ipairs(results) do
     local ceiling = BYTE_CEILING[r.name]
     check(ceiling ~= nil and r.bytesPerIter <= ceiling,
@@ -225,6 +288,18 @@ for offName, onName in pairs(PAIRS) do
     check(off ~= nil and on ~= nil, ("the pair %s / %s was not measured"):format(offName, onName))
     if off and on then
         for _, msg in ipairs(Scenes.pairFailures((offName:gsub("CaptureOff$", "")), off, on)) do check(false, msg) end
+    end
+end
+
+-- Capture off against no instrumentation at all: the zero-overhead evidence (performance-§2, §9).
+-- red under: a table built beside the dormant t0 in Tooltips.OnItem, on its line
+-- (`local t0 = Perf.on and debugprofilestop(); local probe = { link }`).
+do
+    local off, absent = byName.tooltipsCaptureOff, byName.tooltipsAbsent
+    check(off ~= nil and absent ~= nil, "the tooltips capture-off / instrumentation-absent pair was not measured")
+    if off and absent and off.bytesPerIter > absent.bytesPerIter + Scenes.PAIR_NOISE then
+        check(false, ("tooltipsCaptureOff allocated %.1f bytes/iter, more than tooltipsAbsent's %.1f: the dormant bracket is not free")
+            :format(off.bytesPerIter, absent.bytesPerIter))
     end
 end
 
