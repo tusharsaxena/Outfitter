@@ -18,6 +18,8 @@ NS.__migrationSteps = STEPS   -- test seam only
 --- A profile switch, copy or reset replaces the whole profile: re-take the hold and re-decide
 --- (slash-commands-§7: these callbacks are SETUP and stay live while disabled). `db.char` is never
 --- touched here (H7): outfits are per character, not per profile.
+--- Everything else a switch changes is each module's own reaction to PROFILE_CHANGED: the bar redraws,
+--- the trigger binder re-reads auto.enabled, the window redraws its trigger marks.
 function NS.OnProfileChanged(event, _db, key)
     if NS.Debug then
         NS.Debug("Set", "%s '%s'", event or "profile", key or (NS.db and NS.db:GetCurrentProfile()) or "?")
@@ -28,7 +30,6 @@ function NS.OnProfileChanged(event, _db, key)
     -- A reset profile starts from the defaults: its steps run again over it.
     if event == "OnProfileReset" then NS:RunMigrations() end
     if NS.SyncEnabledHold then NS.SyncEnabledHold() end
-    if NS.ApplyProfile then NS.ApplyProfile() end
     if NS.MaybeShowSkinPicker then NS.MaybeShowSkinPicker() end
     -- Announced through core/Bus.lua (§2.3: this file is PROFILE_CHANGED's one sender).
     if NS.SendBus and NS.MSG and NS.MSG.PROFILE_CHANGED then NS.SendBus(NS.MSG.PROFILE_CHANGED, key) end

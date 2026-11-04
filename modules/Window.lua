@@ -220,4 +220,6 @@ function Win.Install()
     bus:RegisterMessage(NS.MSG.SETTINGS_CHANGED, function(_, path)
         if path == "auto.enabled" then Win.MarkDirty(false) end
     end)
+    -- A profile switch writes no row, so the new profile's auto.enabled reaches the trigger marks here.
+    bus:RegisterMessage(NS.MSG.PROFILE_CHANGED, function() Win.MarkDirty(false) end)
 end

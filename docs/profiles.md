@@ -35,11 +35,11 @@ and character.
 2. On a reset only: run the migrations again over the reset profile.
 3. Re-take the enabled hold (`NS.SyncEnabledHold`), so a profile with the addon disabled stands it
    down.
-4. Call `NS.ApplyProfile()` if a module defines one. None does at 1.1.0: the profile's own
-   reactions ride the message in step 6.
-5. Show the skin picker if the profile has never seen it.
-6. Send `PROFILE_CHANGED (key)`. The bar rebuilds and re-anchors from the new profile's
-   `windows.bar`, and the trigger binder re-reads `auto.enabled` and binds or unbinds the triggers.
+4. Show the skin picker if the profile has never seen it.
+5. Send `PROFILE_CHANGED (key)`. Every other reaction rides this message, because a switch writes no
+   row and so sends no `SETTINGS_CHANGED`: the bar rebuilds and re-anchors from the new profile's
+   `windows.bar` at its scale and alpha, the trigger binder re-reads `auto.enabled` and binds or
+   unbinds the triggers, and the outfit window redraws its trigger marks.
 
 The callbacks are setup, not features: they stay live while the addon is disabled
 (slash-commands-§7).

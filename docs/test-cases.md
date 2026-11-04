@@ -1161,7 +1161,7 @@ Total.
 - list model: a collapsed category keeps its header and drops its rows
 - list model: Status caches O.Status in the table it is handed, until that is wiped
 
-### test_rows_secure.lua (14)
+### test_rows_secure.lua (15)
 
 - rows: NS.WindowRows is published with the secure surface
 - rows: fourteen rows and their secure children are created once, each SetAllPoints'd at birth
@@ -1176,6 +1176,7 @@ Total.
 - rows: an item right-click uses it, except on the merchant's buyback tab
 - rows: the EM box selects first, then stores on the server, and a refusal shows the popup
 - rows: an outfit row's name is colored by its status, and a disabled one says so
+- rows: a profile switch redraws the trigger mark from the new profile's auto.enabled
 - rows: an item with no quality color is drawn muted, never in the previous item's color
 
 ### test_slot_enables.lua (12)
@@ -1193,7 +1194,7 @@ Total.
 - slot enables: UnknownSlots answers the selected outfit's unknown set
 - slot enables: hidden when stood down, and a selection while down shows nothing
 
-### test_bar.lua (27)
+### test_bar.lua (28)
 
 - bar: NS.Bar is published with the §7.7 surface
 - bar: bar.shown defaults false, so a fresh profile and a repaired one both come up hidden
@@ -1220,6 +1221,7 @@ Total.
 - bar: the clamp covers the handle above the bar while it shows, and only then
 - bar: hidden during a pet battle, back after it
 - bar: rebuilds are coalesced on one 0 s timer
+- bar: a profile switch redraws the bar from the new profile and rebinds the triggers
 - bar: Suspend hides it and stops the rebuilds; the stand-down keeps it down
 - bar: test mode shows the sample outfits with the strip, even with the bar off, and they do nothing
 
@@ -1561,9 +1563,9 @@ Total.
 | test_triggers_pvp.lua | 7 |
 | test_dock.lua | 20 |
 | test_list_model.lua | 7 |
-| test_rows_secure.lua | 14 |
+| test_rows_secure.lua | 15 |
 | test_slot_enables.lua | 12 |
-| test_bar.lua | 27 |
+| test_bar.lua | 28 |
 | test_triggers_parity.lua | 13 |
 | test_preview.lua | 14 |
 | test_outfit_menu.lua | 11 |
@@ -1580,4 +1582,4 @@ Total.
 | test_lizard_sighted.lua | 8 |
 | test_prose.lua | 15 |
 | Skipped | 1 |
-| **Total** | **1286** |
+| **Total** | **1288** |

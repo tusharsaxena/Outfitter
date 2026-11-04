@@ -574,6 +574,42 @@ test("bar: rebuilds are coalesced on one 0 s timer", function()
     assertEqual(n, 1)
 end)
 
+test("bar: a profile switch redraws the bar from the new profile and rebinds the triggers", function()
+    local NS, M, Bar = scene()
+    complete(NS, "A")
+    local swim = NS.Outfits.Create("Swim", naked(), { trigger = "SWIMMING" })
+    settle(M)
+    -- The login's LoadPass: the binder binds, and from then on follows auto.enabled.
+    NS.Outfits.LoadPass()
+    settle(M)
+    local B = NS.TriggerBinder
+    assertTrue(B.IsBound(swim), "the fixture needs the trigger bound")
+    -- "Alt": a larger bar in another corner, automatic changes off.
+    NS.db:SetProfile("Alt")
+    for _, e in ipairs({ { "bar.shown", true }, { "scale", 1.5 }, { "bar.position", "BOTTOMRIGHT -10 10" },
+                         { "auto.enabled", false } }) do
+        assertTrue(NS.SetByPath(e[1], e[2]), e[1])
+    end
+    NS.db:SetProfile("Default")
+    settle(M)
+    local f = Bar.Frame()
+    assertEqual(f.__scale, 1); assertEqual(point(f)[1], "TOPLEFT")
+    assertTrue(B.IsBound(swim), "back on Default, the trigger was not rebound")
+    -- A switch writes no row, so no SETTINGS_CHANGED: only PROFILE_CHANGED can carry these.
+    NS.db:SetProfile("Alt")
+    settle(M)
+    -- red under: PROFILE_CHANGED dropped from the bar's REBUILD list (modules/Bar.lua).
+    assertEqual(f.__scale, 1.5, "the bar kept the old profile's scale")
+    assertEqual(point(f)[1], "BOTTOMRIGHT", "the bar kept the old profile's corner")
+    assertTrue(f:IsShown())
+    -- red under: the binder's PROFILE_CHANGED registration (onProfile, modules/Triggers_Binder.lua) removed.
+    assertFalse(B.IsBound(swim), "auto.enabled off in Alt, yet the trigger stayed bound")
+    NS.db:SetProfile("Default")
+    settle(M)
+    assertEqual(f.__scale, 1)
+    assertTrue(B.IsBound(swim), "the switch back did not bind the trigger again")
+end)
+
 test("bar: Suspend hides it and stops the rebuilds; the stand-down keeps it down", function()
     local NS, M, Bar = scene()
     complete(NS, "A")

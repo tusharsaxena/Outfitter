@@ -288,6 +288,26 @@ test("rows: an outfit row's name is colored by its status, and a disabled one sa
     NS.Skin.Text = text
 end)
 
+test("rows: a profile switch redraws the trigger mark from the new profile's auto.enabled", function()
+    local NS = opened()
+    local id = rowOf(NS, "outfit").entry.id
+    NS.Outfits.Get(id).trigger = { id = "IN_DUNGEON" }
+    NS.db:SetProfile("Alt")
+    assertTrue(NS.SetByPath("auto.enabled", false))
+    NS.db:SetProfile("Default")
+    NS.Window.MarkDirty(true); NS.Window.Render()
+    assertEqual(rowOf(NS, "outfit", id).trig:GetAlpha(), 1, "Default has automatic changes on")
+    -- A switch writes no row, so no SETTINGS_CHANGED reaches the window: the dock's next follow tick
+    -- draws only what marked the list dirty.
+    NS.db:SetProfile("Alt")
+    NS.Window.RenderIfDirty()
+    -- red under: no PROFILE_CHANGED receiver in Win.Install (modules/Window.lua).
+    assertEqual(rowOf(NS, "outfit", id).trig:GetAlpha(), 0.4, "the mark kept the old profile's auto.enabled")
+    NS.db:SetProfile("Default")
+    NS.Window.RenderIfDirty()
+    assertEqual(rowOf(NS, "outfit", id).trig:GetAlpha(), 1, "the switch back left the mark dimmed")
+end)
+
 test("rows: an item with no quality color is drawn muted, never in the previous item's color", function()
     local NS = opened()
     local row = rows(NS)[1]

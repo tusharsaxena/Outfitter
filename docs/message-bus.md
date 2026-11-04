@@ -28,7 +28,7 @@ reads state when it is drawn (the launcher tooltip, `/of diagnostics`) is not on
 | Key | Sender | Payload | Receivers |
 |---|---|---|---|
 | `SETTINGS_CHANGED` | `settings/Schema.lua` (the announce) | `(path, value)`, settings paths only | Trigger binder (`auto.enabled`), Bar (`bar.*`), Window |
-| `PROFILE_CHANGED` | `core/Database.lua` | `(key)` | Bar (rebuild and re-anchor from the new profile's `windows.bar`), Trigger binder (`SetActive` from the new profile's `auto.enabled`) |
+| `PROFILE_CHANGED` | `core/Database.lua` | `(key)` | Bar (rebuild and re-anchor from the new profile's `windows.bar`), Trigger binder (`SetActive` from the new profile's `auto.enabled`), Window (redraw: the trigger marks dim on `auto.enabled`) |
 | `OUTFIT_ADDED` | `modules/Outfits.lua` | `(id)` | Window, Bar, Tooltips (cache wipe), Trigger binder (`Bind(id)`), API v1 |
 | `OUTFIT_DELETED` | `modules/Outfits.lua` | `(id, name)` | Window, Bar, Tooltips (cache wipe), Trigger binder (unbind), API v1 |
 | `OUTFIT_EDITED` | `modules/Outfits.lua`, also for the instance-row writes the `NS.OutfitSchema` announce makes | `(id, what)` | Window, Bar, Tooltips (cache wipe), slot checkboxes, Trigger binder (coalesced rebind on `what == "trigger"`), API v1 |
