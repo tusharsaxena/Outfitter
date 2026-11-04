@@ -72,7 +72,7 @@ test("icons: a 1.1.0 fileID draws as before", function()
     assertTrue(r == 1 and g == 1 and b == 1, "a fileID ignores a color")
 end)
 
-test("icons: no icon falls through trigger, item, then the coat hanger", function()
+test("icons: no icon falls through trigger, item, then 132724", function()
     local NS, M = scene()
     local O = NS.Outfits
     local solo = O.Create("Solo", {})
@@ -83,10 +83,50 @@ test("icons: no icon falls through trigger, item, then the coat hanger", functio
     assertEqual((NS.OutfitIcon(O.Get(single))), M.C_Item.GetItemIconByID(info.id), "the single item's icon")
     local plain = O.Create("Plain", { ChestSlot = NS.ItemInfo.Snapshot(info), HeadSlot = { id = 0 } })
     local tex, r, g, b = NS.OutfitIcon(O.Get(plain))
-    -- red under: the legacy plain icon (132662) as the last rung.
-    assertEqual(tex, NS.Constants.DEFAULT_OUTFIT_ICON)
-    assertTrue(r == 1 and g == 1 and b == 1, "the coat hanger is plain white on an outfit")
-    assertEqual((NS.OutfitIcon(nil)), NS.Constants.DEFAULT_OUTFIT_ICON, "no record draws the coat hanger")
+    -- Smoke round 2 design G1 (D1): the last rung is the chest-armor fileID 132724, untinted.
+    -- red under: the coat-hanger glyph (or the legacy plain icon, 132662) as the last rung.
+    assertEqual(NS.Constants.DEFAULT_OUTFIT_ICON, 132724)
+    assertEqual(tex, 132724)
+    assertTrue(r == 1 and g == 1 and b == 1, "the default is drawn untinted")
+    assertEqual((NS.OutfitIcon(nil)), 132724, "no record draws the default")
+end)
+
+-- A fresh Rogue instance (the mock answers spec i's icon as 1000 + i), the engine modules faked.
+local function rogueScene()
+    local inst = unitLoad({ mutate = function(M) M.__world:setClass("ROGUE", 1) end })
+    local NS = inst.NS
+    T.fake(NS, "Dock", { IsShown = function() return false end })
+    T.fake(NS, "TriggerBinder", { Unbind = true })
+    return NS, inst.mocks
+end
+
+test("icons: a seeded spec outfit draws its spec's icon with no icon and no trigger", function()
+    -- Smoke round 2 design G1 (D2): the spec rung keys on the seed key, not on the trigger.
+    local NS = rogueScene()
+    local O = NS.Outfits
+    local id = O.Create("Rogue: Outlaw", {}, { builtin = "SPEC_2", trigger = "SPEC_2" })
+    local rec = O.Get(id)
+    assertNil(rec.icon)
+    rec.trigger = nil
+    local tex, r, g, b = NS.OutfitIcon(rec)
+    -- red under: no spec rung (with its trigger gone the outfit falls through to 132724).
+    assertEqual(tex, 1002, "the spec's icon with the trigger removed")
+    assertTrue(r == 1 and g == 1 and b == 1, "a spec icon is drawn untinted")
+    -- The player's pick wins; Outfitter chooses (the wildcard) brings the spec icon back.
+    assertTrue(O.SetIcon(id, 135349))
+    assertEqual((NS.OutfitIcon(O.Get(id))), 135349, "a picked icon wins over the spec rung")
+    assertTrue(O.SetIcon(id, WILDCARD))
+    assertNil(O.Get(id).icon)
+    assertEqual((NS.OutfitIcon(O.Get(id))), 1002, "Outfitter chooses goes back to the spec icon")
+end)
+
+test("icons: only a SPEC_n seed key takes the spec rung", function()
+    local NS = rogueScene()
+    local O = NS.Outfits
+    local class = O.Create("Rogue: Stealth", {}, { builtin = "CLASS_ROGUE_STEALTH" })
+    assertEqual((NS.OutfitIcon(O.Get(class))), 132724, "a class seed key falls through")
+    local gone = O.Create("Rogue: Gone", {}, { builtin = "SPEC_9" })
+    assertEqual((NS.OutfitIcon(O.Get(gone))), 132724, "a spec index the class lacks falls through")
 end)
 
 test("icons: a glyph with a color tints", function()

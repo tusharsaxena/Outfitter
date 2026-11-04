@@ -307,8 +307,8 @@ local function buildSheet()
     button.icon = button:CreateTexture(nil, "ARTWORK")
     button.icon:SetAllPoints(button)
     button.icon:SetTexture(NS.Constants.DEFAULT_OUTFIT_ICON)
-    -- Borderless, like the tab icons beside it; the glyph in the accent token, which follows the skin.
-    NS.Skin.Button(button, { noBg = true, noBorder = true, tokens = { icon = "of.sheet.button" } })
+    -- Borderless, like the tab icons beside it.
+    NS.Skin.Button(button, { noBg = true, noBorder = true })
     button:SetScript("OnClick", function() if not NS.IsStoodDown() then Dock.Toggle() end end)
     button:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")

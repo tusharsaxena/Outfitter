@@ -604,7 +604,7 @@ Total.
 - inventory: OutfitsUsing pairs the rings, the trinkets and the weapons
 - inventory: Suspend drops every registration and the pending sync; Resume rebuilds them
 
-### test_outfits.lua (46)
+### test_outfits.lua (47)
 
 - outfits: NS.Outfits and NS.OutfitSchema are published
 - outfits: Create allocates o<N>, stores the record's shape, appends to the order, announces once
@@ -631,6 +631,7 @@ Total.
 - outfits: a second LoadPass seeds nothing and calls no EM.Sync; the first marks FirstPassDone
 - outfits: seeding adopts an outfit that already has the built-in's name instead of duplicating it
 - outfits: an adopted spec outfit takes the spec icon, as the legacy SetIcon did (Outfitter.lua:5788-5790)
+- outfits: an Equipment Manager mirror adopted by name keeps its set's icon
 - outfits: the repair prunes stale ids and duplicates, re-asserts nextID and rebuilds the orders
 - outfits: the repair points the Argent Lance at the player's faction lance (quirk 23)
 - outfits: the first PLAYER_ENTERING_WORLD arms a 1 s LoadPass; Suspend cancels and Resume re-arms it
@@ -1195,7 +1196,7 @@ Total.
 - dock: on EllesmereUI the button follows the Equipment label
 - dock: the button is parented to CharacterFrame and above the close button's level
 - dock: the button shows with the paper doll and hides with it
-- dock: the button's icon is the coat hanger, tinted, with no border
+- dock: the button's icon is the default outfit icon, the gold tint retired
 - dock: the window's top is flush with the sheet's top
 - dock: an open Chonky side panel pushes the window right
 - dock: stood down, a sheet show neither shows nor re-anchors the button
@@ -1272,7 +1273,7 @@ Total.
 - bar: the drag stop saves the nearest corner; a locked bar does not move
 - bar: the drag stop writes bar.position through the seam, and its echo leaves the bar where it fell
 - bar: the reset copies the default, so a drag after it never writes the default
-- bar: the icon ladder: own, the trigger's descriptor, the Birthday Suit, a single item, the coat hanger
+- bar: the icon ladder: own, the trigger's descriptor, the Birthday Suit, a single item, the default
 - bar: a left click wears; a worn accessory is removed; a worn Complete outfit stays on
 - bar: a right click opens the outfit menu afresh on every open
 - bar: Alt + a dropped spell sets the icon through C_Spell; item and macro too
@@ -1292,11 +1293,13 @@ Total.
 - bar: Suspend hides it and stops the rebuilds; the stand-down keeps it down
 - bar: test mode shows the sample outfits with the strip, even with the bar off, and they do nothing
 
-### test_outfit_icons.lua (15)
+### test_outfit_icons.lua (17)
 
 - icons: NS.OutfitIcon and NS.Outfits.SetIcon are published, and char.emIcons defaults empty
 - icons: a 1.1.0 fileID draws as before
-- icons: no icon falls through trigger, item, then the coat hanger
+- icons: no icon falls through trigger, item, then 132724
+- icons: a seeded spec outfit draws its spec's icon with no icon and no trigger
+- icons: only a SPEC_n seed key takes the spec rung
 - icons: a glyph with a color tints
 - icons: the icon row takes a fileID, a glyph or nil, and refuses any other string or color
 - icons: 134400 stores nil
@@ -1314,7 +1317,7 @@ Total.
 
 - broker: a data source named OutfitterRebornOutfits exists and is not on the minimap
 - broker: text and icon follow the worn outfit
-- broker: no outfit shows the brand and the coat hanger
+- broker: no outfit shows the brand and the default icon, untinted and cropped
 - broker: left-click lists categories then outfits, worn ones checked, missing in the missing color
 - broker: the menu leaves out an outfit whose trigger is off or that is hidden from the bar
 - broker: clicking a worn accessory removes it; clicking a Complete wears it
@@ -1450,7 +1453,7 @@ Total.
 - skin: the window and the dialogs wear NS.ApplySkin's Shell, the bar a Panel
 - skin: Blizzard icon art in a window is cropped and edged from the skin, never as a HUD
 - skin: the bar's icons are HUD icons, cropped and edged from the skin
-- skin: the sheet button is borderless, its glyph in of.sheet.button
+- skin: the sheet button is borderless, its icon untinted by any token
 - window: the header gear has no border
 - skin: no source file writes inline icon markup by hand (W.IconText crops it)
 - skin: a switch recolors a dialog's error line through of.dialog.error
@@ -1642,7 +1645,7 @@ Total.
 | test_itemlink.lua | 42 |
 | test_item_match.lua | 20 |
 | test_inventory.lua | 24 |
-| test_outfits.lua | 46 |
+| test_outfits.lua | 47 |
 | test_reset.lua | 8 |
 | test_equip_plan.lua | 31 |
 | test_item_stats.lua | 23 |
@@ -1671,7 +1674,7 @@ Total.
 | test_rows_secure.lua | 21 |
 | test_slot_enables.lua | 17 |
 | test_bar.lua | 29 |
-| test_outfit_icons.lua | 15 |
+| test_outfit_icons.lua | 17 |
 | test_broker.lua | 13 |
 | test_triggers_parity.lua | 13 |
 | test_preview.lua | 14 |
@@ -1689,4 +1692,4 @@ Total.
 | test_lizard_sighted.lua | 8 |
 | test_prose.lua | 15 |
 | Skipped | 1 |
-| **Total** | **1383** |
+| **Total** | **1386** |

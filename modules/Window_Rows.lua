@@ -236,7 +236,7 @@ function RENDER.outfit(row, e)
     if not rec then return end
     row.worn:SetChecked(NS.Stack.IsWorn(e.id))
     row.worn:Show()
-    -- A fileID is Blizzard art, drawn edged and cropped; a glyph (the coat hanger by default) whole.
+    -- A fileID is Blizzard art (the default, 132724, among them), drawn edged and cropped; a glyph whole.
     local tex, r, g, b = outfitIcon(rec)
     local icon = type(tex) == "number" and row.outfitArt or row.outfitIcon
     icon:SetTexture(tex)
@@ -313,9 +313,9 @@ local function regions(row)
     row.icon:SetSize(16, 16)
     row.icon:SetPoint("LEFT", row, "LEFT", 14, 0)
     S.IconBorder(row.icon, { fromSkin = true })
-    -- An outfit's icon, in one of two textures at one place: a catalog glyph (the default coat hanger,
-    -- or a browser pick) drawn whole and borderless, as the sheet button draws it; a fileID, Blizzard
-    -- art, edged and zoom-cropped as the item's icon is. RENDER.outfit shows the one that fits.
+    -- An outfit's icon, in one of two textures at one place: a catalog glyph (a browser pick) drawn
+    -- whole and borderless; a fileID, Blizzard art (the default 132724 too), edged and zoom-cropped as
+    -- the item's icon is. RENDER.outfit shows the one that fits.
     row.outfitIcon = row:CreateTexture(nil, "ARTWORK")
     row.outfitIcon:SetSize(16, 16)
     row.outfitIcon:SetPoint("LEFT", row, "LEFT", 32, 0)

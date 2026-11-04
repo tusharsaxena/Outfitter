@@ -287,21 +287,22 @@ end)
 
 -- ── the icon ladder ───────────────────────────────────────────────────────────────────────────
 
-test("bar: the icon ladder: own, the trigger's descriptor, the Birthday Suit, a single item, the coat hanger", function()
+test("bar: the icon ladder: own, the trigger's descriptor, the Birthday Suit, a single item, the default", function()
     local NS, M, Bar = scene()
     local O = NS.Outfits
     local own = accessory(NS, "Own")
     NS.SetByPath("outfit.icon", 134400 + 1, own)
     assertEqual(Bar.OutfitIcon(O.Get(own)), 134401)
     local solo = accessory(NS, "Solo")
-    local HANGER = NS.Constants.DEFAULT_OUTFIT_ICON
+    local DEFAULT = 132724   -- smoke round 2 design G1: NS.Constants.DEFAULT_OUTFIT_ICON
+    assertEqual(NS.Constants.DEFAULT_OUTFIT_ICON, DEFAULT)
     -- red under: a name-keyed ladder (the legacy `Solo` key): the name alone draws the default icon
-    assertEqual(Bar.OutfitIcon(O.Get(solo)), HANGER)
+    assertEqual(Bar.OutfitIcon(O.Get(solo)), DEFAULT)
     NS.SetByPath("outfit.trigger.id", "INSTANCE_DIFFICULTY", solo)
     assertEqual(Bar.OutfitIcon(O.Get(solo)), 132132, "INSTANCE_DIFFICULTY's icon replaces Solo")
     local dungeon = accessory(NS, "Dungeon")
     NS.SetByPath("outfit.trigger.id", "IN_DUNGEON", dungeon)
-    assertEqual(Bar.OutfitIcon(O.Get(dungeon)), HANGER, "a descriptor with no icon falls through")
+    assertEqual(Bar.OutfitIcon(O.Get(dungeon)), DEFAULT, "a descriptor with no icon falls through")
     local nakedRec = O.Get(complete(NS, "Birthday"))
     nakedRec.builtin = "NAKED"
     assertEqual(Bar.OutfitIcon(nakedRec), Bar.NAKED_ICON)
@@ -309,8 +310,8 @@ test("bar: the icon ladder: own, the trigger's descriptor, the Birthday Suit, a 
     local single = O.Create("Hero", { ChestSlot = NS.ItemInfo.Snapshot(info) })
     assertEqual(Bar.OutfitIcon(O.Get(single)), M.C_Item.GetItemIconByID(info.id))
     local two = O.Create("Two", { ChestSlot = NS.ItemInfo.Snapshot(info), HeadSlot = { id = 0 } })
-    -- red under: the legacy plain icon (132662) as the last rung (plan Task 3.5: the coat hanger).
-    assertEqual(Bar.OutfitIcon(O.Get(two)), HANGER)
+    -- red under: the legacy plain icon (132662) or the coat hanger as the last rung.
+    assertEqual(Bar.OutfitIcon(O.Get(two)), DEFAULT)
     local glyphed = accessory(NS, "Glyphed")
     O.SetIcon(glyphed, NS.Icon("ph:sword"), "ff0000")
     settle(M)

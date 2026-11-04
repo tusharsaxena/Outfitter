@@ -291,6 +291,20 @@ test("outfits: an adopted spec outfit takes the spec icon, as the legacy SetIcon
     assertEqual(rec.builtin, "SPEC_1"); assertEqual(rec.trigger.id, "SPEC_1")
 end)
 
+test("outfits: an Equipment Manager mirror adopted by name keeps its set's icon", function()
+    -- Smoke round 2 design G1: the set and the glyph override are an EM mirror's only icon homes
+    -- (setEMIcon's invariant), so the seed never writes rec.icon on one.
+    local inst, NS = scene({ class = "ROGUE" })
+    engineFakes(NS)
+    local spec = inst.mocks.__world.specs[1][2]
+    local mine = NS.Outfits.Create("Rogue: " .. spec, {}, { kind = "em", setID = 7 })
+    NS.Outfits.LoadPass()
+    local rec = NS.Outfits.Get(mine)
+    -- red under: seedOne writing the spec icon onto the adopted mirror.
+    assertNil(rec.icon, "the seed wrote an icon onto an EM mirror")
+    assertEqual(rec.kind, "em")
+end)
+
 -- ── LoadPass: repair ──────────────────────────────────────────────────────────────────────────
 
 test("outfits: the repair prunes stale ids and duplicates, re-asserts nextID and rebuilds the orders", function()

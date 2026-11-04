@@ -469,20 +469,14 @@ test("dock: the button shows with the paper doll and hides with it", function()
     assertTrue(button:IsShown())
 end)
 
-test("dock: the button's icon is the coat hanger, tinted, with no border", function()
+test("dock: the button's icon is the default outfit icon, the gold tint retired", function()
     local NS, M = scene()
     M.__world:openCharacter()
     local button = M.OutfitterRebornSheetButton
-    local hanger = NS.Icon("ph:coat-hanger")
-    assertTrue(hanger ~= nil, "ph:coat-hanger is not a shipped icon (the LibKa0s icons: line)")
-    assertEqual(NS.Constants.DEFAULT_OUTFIT_ICON, hanger)
-    -- red under: keep NS.Constants.LOGO_128 on the button.
-    assertEqual(button.icon:GetTexture(), hanger)
-    local tint = NS.Constants.SHEET_BUTTON_TINT
-    local r, g, b = button.icon:GetVertexColor()
-    -- red under: drop the icon token remap from the button's Skin.Button (the icon is drawn btn.icon gray).
-    assertEqual(r, tint[1]); assertEqual(g, tint[2]); assertEqual(b, tint[3])
-    -- No box and no border: tests/test_skin.lua holds the Skin.Button options (noBg, noBorder).
+    -- Smoke round 2 design G1 (D1): 132724, and the gold tint retired with its constant.
+    -- red under: the coat hanger, tinted with SHEET_BUTTON_TINT / of.sheet.button.
+    assertEqual(button.icon:GetTexture(), 132724)
+    assertNil(NS.Constants.SHEET_BUTTON_TINT, "the retired tint constant is still published")
 end)
 
 test("dock: the window's top is flush with the sheet's top", function()

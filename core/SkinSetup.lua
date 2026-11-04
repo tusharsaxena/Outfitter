@@ -124,9 +124,6 @@ NS.SKIN_TOKENS = {
     ["of.slot.unknown"]    = { default = { 1, 0.82, 0, 1 }, follow = "sem.statusWarn" },
     -- The outfit bar's worn mark over a button whose outfit is on.
     ["of.bar.worn"]        = { default = { 1, 0.82, 0, 1 }, follow = "icon.hot" },
-    -- The sheet button's coat hanger (sheet and window feedback design G1): the accent, not the rows'
-    -- white. Ka0s gold under Ka0s Default (NS.Constants.SHEET_BUTTON_TINT), each skin's accent else.
-    ["of.sheet.button"]    = { default = NS.Constants.SHEET_BUTTON_TINT, follow = "text.accent" },
     -- A dialog's error line (a duplicate name, an invalid trigger parameter).
     ["of.dialog.error"]    = { default = { 1, 0.33, 0.33, 1 }, follow = "sem.bad" },
 }

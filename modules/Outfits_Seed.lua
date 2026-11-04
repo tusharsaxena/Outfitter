@@ -126,6 +126,8 @@ end
 --- Seed one outfit unless it exists. An adopted outfit takes the seed key and the trigger when it has
 --- none, and the seed's icon (the spec icon), as the legacy SetIcon did on the outfit
 --- CreateEmptySpecialOccasionOutfit returned, created or found (Outfitter.lua:5736-5745, 5788-5790).
+--- Never onto an Equipment Manager mirror: its set and its glyph override are its icon's only homes
+--- (setEMIcon in modules/Outfits.lua; smoke round 2 design G1).
 local function seedOne(builtin, name, items, opts)
     local id = existing(builtin, name)
     if not id then
@@ -135,7 +137,7 @@ local function seedOne(builtin, name, items, opts)
     local rec = O.Get(id)
     if rec.builtin == nil then rec.builtin = builtin end
     if opts.trigger and not rec.trigger then rec.trigger = { id = opts.trigger } end
-    if opts.icon then rec.icon = opts.icon end
+    if opts.icon and rec.kind ~= "em" then rec.icon = opts.icon end
     return id
 end
 

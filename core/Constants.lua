@@ -46,15 +46,11 @@ C.LAYERS = {
     },
 }
 
--- The default outfit icon (sheet and window feedback design G5): the Phosphor coat hanger, declared
--- on root CLAUDE.md's `LibKa0s icons:` line. Plain white on an outfit row; the sheet button draws it
--- tinted. nil only when the library is absent (NS.Icon).
-C.DEFAULT_OUTFIT_ICON = NS.Icon("ph:coat-hanger")
-
--- The sheet button's tint under Ka0s Default (design G1: the accent, against the rows' plain white):
--- Ka0s gold, the `text.accent` the button's owner token `of.sheet.button` follows under every other
--- skin (core/SkinSetup.lua).
-C.SHEET_BUTTON_TINT = { 1, 0.82, 0, 1 }
+-- The default outfit icon (smoke round 2 design G1, D1): Blizzard's chest-armor art, fileID 132724,
+-- untinted and zoom-cropped like any item icon. The last rung of NS.OutfitIcon (computed, never
+-- stored), the broker's idle icon and the sheet button's icon. Game art, so the library's absence
+-- does not take it away.
+C.DEFAULT_OUTFIT_ICON = 132724
 
 -- The hotkey "equipped / unequipped" line's color on UIErrorsFrame (INV §14): today's value.
 C.OUTFIT_MESSAGE_COLOR = { r = 0.2, g = 0.75, b = 0.3 }

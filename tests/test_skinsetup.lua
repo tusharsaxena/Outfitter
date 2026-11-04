@@ -27,8 +27,8 @@ local TOKENS = {
     ["of.slot.unknown"]    = { { 1, 0.82, 0, 1 }, "sem.statusWarn" },
     ["of.bar.worn"]        = { { 1, 0.82, 0, 1 }, "icon.hot" },
     ["of.dialog.error"]    = { { 1, 0.33, 0.33, 1 }, "sem.bad" },
-    -- Sheet and window feedback design G1: the sheet button's coat hanger, in the accent.
-    ["of.sheet.button"]    = { { 1, 0.82, 0, 1 }, "text.accent" },
+    -- Smoke round 2 design G1 retired `of.sheet.button`: the sheet button wears the host's tab and
+    -- the broker draws the default icon untinted, so nothing reads it.
 }
 
 local function near(a, b) return math.abs((a or 1) - (b or 1)) < 1e-6 end

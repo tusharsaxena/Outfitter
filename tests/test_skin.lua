@@ -240,17 +240,16 @@ test("skin: the bar's icons are HUD icons, cropped and edged from the skin", fun
     assertCropped(btn.icon, "a bar button's icon")
 end)
 
-test("skin: the sheet button is borderless, its glyph in of.sheet.button", function()
-    -- Sheet and window feedback design G1: borderless like the tab icons beside it, the coat hanger in
-    -- the accent. red under: modules/Dock.lua's NS.Skin.Button(button) without noBg / noBorder, or
-    -- without the icon remap (the glyph is drawn in btn.icon gray), or the old SquareIcon outline.
+test("skin: the sheet button is borderless, its icon untinted by any token", function()
+    -- Sheet and window feedback design G1: borderless like the tab icons beside it. Smoke round 2
+    -- design G1 retired the gold accent: red under the icon token remap to of.sheet.button.
     local _, _, Skin, built = buildAll()
     local btn = built["the sheet button"]
     local calls = Skin.painted[btn].calls
     local opts = calls.Button and calls.Button[1]
     assertTrue(type(opts) == "table" and opts.noBg == true and opts.noBorder == true, "S.Button(btn, { noBg, noBorder })")
-    assertTrue(type(opts.tokens) == "table" and opts.tokens.icon == "of.sheet.button", "the icon token remap")
-    assertTrue(calls.SquareIcon == nil, "S.SquareIcon outlines the glyph")
+    assertTrue(opts.tokens == nil, "the retired icon token remap")
+    assertTrue(calls.SquareIcon == nil, "S.SquareIcon outlines the icon")
 end)
 
 test("window: the header gear has no border", function()
