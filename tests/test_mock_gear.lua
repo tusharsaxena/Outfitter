@@ -31,9 +31,12 @@ local function bagKey(G, bag, slot)
     return i and i.key
 end
 
--- A raw frame registered for `events`, counting what reaches it.
+-- A raw frame registered for `events`, counting what reaches it. The returned list holds the frame:
+-- the kit tracks frames and their registrations in weak-keyed tables, so a frame nothing else holds
+-- is collected at the next GC cycle and stops hearing its events (the client never collects one).
 local function listener(M, events)
     local f, got = M.CreateFrame("Frame"), {}
+    got.frame = f
     for _, e in ipairs(events) do f:RegisterEvent(e) end
     f:SetScript("OnEvent", function(_, event, ...) got[#got + 1] = { event, ... } end)
     return got
@@ -72,6 +75,10 @@ end)
 test("mock gear: pickup and equip swap for real, recorded in order, events only when delivered", function()
     local M, G = mock("geared")
     local got = listener(M, { "PLAYER_EQUIPMENT_CHANGED", "BAG_UPDATE", "BAG_UPDATE_DELAYED" })
+    -- A full collection here is the cycle that used to land at random between listener() and
+    -- deliver() (about 1 run in 6): the frame must survive it, as a client frame always does.
+    -- red under: drop `got.frame = f` from listener() above.
+    collectgarbage("collect")
     M.C_Container.PickupContainerItem(0, 2)
     assertTrue(M.CursorHasItem())
     assertEqual(select(2, M.GetCursorInfo()), Items.ring_unique_a.id)

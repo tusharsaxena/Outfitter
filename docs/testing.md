@@ -68,6 +68,12 @@ places in Lua, and the kit's sighted shadow is what the complexity suite measure
   `tools/legacy_capture.lua` and never hand-edited (its README says how to regenerate it). The new
   suites assert against it: a *keep* pin asserts the legacy value, a *fix* pin the corrected one with
   a `-- legacy:` note.
+- **A suite holds every frame it makes.** The kit tracks frames and their event registrations in
+  weak-keyed tables, so a frame only those tables reach is collected at the next GC cycle and stops
+  hearing its events; a client frame never is. When the cycle lands depends on the heap the earlier
+  suites left, so a dropped frame fails at random and only in the full run. `listener()` in
+  `test_mock_gear` keeps its frame on the list it returns, and its swap case forces a collection
+  between registering and delivering to pin that.
 - Every negative assertion was proven able to fail by mutating the code under test (testing-§12).
 
 ## The suites
