@@ -32,6 +32,7 @@ archaeology, for the same reason a skip is never a pass (`automated-tests-§4`).
 
 | Run | Commit | Tree | Version | Lint w/e | Files | Tests | Perf | NLOC | Funcs | Avg NLOC | Avg CCN | Max CCN | CCN warn | Verdict |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| [`20261104-233516`](20261104-233516/) | `b71bc61` | clean | 1.1.0 | 0/0 | 193 | 1383/1/1384 | fail | 42369 | 5302 | 7.0 | 2.3 | 18 | 1 | **amber** |
 | [`20261104-225824`](20261104-225824/) | `73d6770` | clean | 1.1.0 | 0/0 | 193 | 1383/1/1384 | fail | 42369 | 5302 | 7.0 | 2.3 | 18 | 1 | **amber** |
 | [`20261104-134211`](20261104-134211/) | `ff19950` | clean | 1.1.0 | 0/0 | 188 | 1291/1/1292 | pass | 40505 | 5091 | 6.9 | 2.3 | 15 | 0 | **green** |
 | [`20261104-044201`](20261104-044201/) | `9a27eb7` | clean | 1.1.0 | 0/0 | 188 | 1277/1/1278 | pass | 40002 | 5040 | 6.9 | 2.3 | 15 | 0 | **green** |
@@ -41,10 +42,10 @@ archaeology, for the same reason a skip is never a pass (`automated-tests-§4`).
 ## Test suite
 
 **1384 cases** — 1383 passed, 0 failed, 1 skipped. The generated inventory
-[`20261104-225824/test-cases.md`](20261104-225824/test-cases.md) is the authority on which cases existed at this run;
+[`20261104-233516/test-cases.md`](20261104-233516/test-cases.md) is the authority on which cases existed at this run;
 `docs/test-cases.md` is that same list at HEAD.
 
-Moved **1292 → 1384** since the previous run.
+Unchanged from the previous run at 1384 cases.
 
 **1 case(s) reported a `skip`.** A skip is counted in the total and never in `passed`, and at
 the release gate it is NOT EVALUATED rather than passed (`automated-tests-§3`).
@@ -61,30 +62,30 @@ to whoever thinks to open `.luacheckrc`.
 ## Perf
 
 **13 scenarios** from `tests/perf.lua`; the measurements are in
-[`20261104-225824/perf.json`](20261104-225824/perf.json).
+[`20261104-233516/perf.json`](20261104-233516/perf.json).
 
 | `scenario` | `iters` | `ms/iter` | `notes/iter` | `bytes/iter` |
 |---|---|---|---|---|
-| `equipPlanCaptureOff` | 500 | 1.56020 | 0.00 | 229584.1 |
-| `equipPlanCaptureOn` | 500 | 1.56769 | 3.00 | 229584.1 |
-| `zoneFlipsCaptureOff` | 50 | 1.06218 | 0.00 | 118022.7 |
-| `zoneFlipsCaptureOn` | 50 | 1.14762 | 100.00 | 117934.4 |
-| `triggerFanoutCaptureOff` | 100 | 0.84155 | 0.00 | 106103.7 |
-| `triggerFanoutCaptureOn` | 100 | 0.90511 | 40.00 | 106106.6 |
-| `tooltipsCaptureOff` | 50 | 0.66798 | 0.00 | 138494.1 |
-| `tooltipsCaptureOn` | 50 | 0.72392 | 100.00 | 138494.1 |
-| `gaGenerationCaptureOff` | 200 | 4.89679 | 0.00 | 468126.8 |
-| `gaGenerationCaptureOn` | 200 | 4.93191 | 3.00 | 468126.8 |
-| `dockIdleCaptureOff` | 2000 | 0.00492 | 0.00 | 192.3 |
-| `dockIdleCaptureOn` | 2000 | 0.00728 | 1.00 | 192.3 |
-| `tooltipsAbsent` | 50 | 0.65774 | 0.00 | 138494.1 |
+| `equipPlanCaptureOff` | 500 | 1.52548 | 0.00 | 229584.1 |
+| `equipPlanCaptureOn` | 500 | 1.85351 | 3.00 | 229584.1 |
+| `zoneFlipsCaptureOff` | 50 | 2.08716 | 0.00 | 118022.7 |
+| `zoneFlipsCaptureOn` | 50 | 1.83258 | 100.00 | 117934.4 |
+| `triggerFanoutCaptureOff` | 100 | 1.23977 | 0.00 | 106103.7 |
+| `triggerFanoutCaptureOn` | 100 | 1.10278 | 40.00 | 106106.6 |
+| `tooltipsCaptureOff` | 50 | 1.19658 | 0.00 | 138494.1 |
+| `tooltipsCaptureOn` | 50 | 0.99950 | 100.00 | 138494.1 |
+| `gaGenerationCaptureOff` | 200 | 9.36673 | 0.00 | 468126.8 |
+| `gaGenerationCaptureOn` | 200 | 9.31487 | 3.00 | 468126.8 |
+| `dockIdleCaptureOff` | 2000 | 0.00969 | 0.00 | 192.3 |
+| `dockIdleCaptureOn` | 2000 | 0.01225 | 1.00 | 192.3 |
+| `tooltipsAbsent` | 50 | 1.34338 | 0.00 | 138494.1 |
 
 `perf` never fails a run and never blocks a commit — it is recorded, read and compared, not
 thresholded (`performance-§9`). It does gate the **tag** (`automated-tests-§3`).
 
 ## Complexity watch list
 
-Current as of [`20261104-225824`](20261104-225824/) — **this run's measurement, not its diff.** Max CCN **18** across 5302
+Current as of [`20261104-233516`](20261104-233516/) — **this run's measurement, not its diff.** Max CCN **18** across 5302
 functions, **1** of them warned on; 0 file(s) in the 1000–1500 band and 0 over the 1500 cap
 (`layout-§1`).
 
