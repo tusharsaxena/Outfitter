@@ -47,6 +47,14 @@ local function emIcons()
     return c.emIcons
 end
 
+-- Whether an Equipment Manager outfit other than `exceptId` holds set id `setID`.
+local function setIDHeld(setID, exceptId)
+    for id, rec in pairs(store().outfits) do
+        if id ~= exceptId and rec.kind == "em" and rec.setID == setID then return true end
+    end
+    return false
+end
+
 local function copy(v)
     if type(v) ~= "table" then return v end
     local out = {}
@@ -348,8 +356,9 @@ function O.Delete(id)
     if rec.kind == "em" then
         NS.EM.DeleteSet(rec)
         -- The set is gone (deleted here, or in the Blizzard UI before the sync that prunes this
-        -- mirror), and the client may hand its id to a new set: the glyph override goes with it.
-        if rec.setID then emIcons()[rec.setID] = nil end
+        -- mirror), and the client may hand its id to a new set: the glyph override goes with it,
+        -- unless another mirror holds that id now (a sync matched it there before pruning this one).
+        if rec.setID and not setIDHeld(rec.setID, id) then emIcons()[rec.setID] = nil end
     end
     store().outfits[id] = nil
     NS.SendBus(NS.MSG.OUTFIT_DELETED, id, rec.name)
@@ -628,11 +637,17 @@ function O.EMGlyph(rec)
     return o.icon, o.color
 end
 
---- Move a mirror's override when a sync matches it to a new set id (modules/EquipmentManager.lua).
-function O.MoveEMGlyph(from, to)
-    if from == nil or to == nil or from == to then return end
-    local icons = emIcons()
-    icons[to], icons[from] = icons[from], nil
+--- Re-key the overrides of the mirrors one sync matched to new set ids (modules/EquipmentManager.lua),
+--- all at once: every move's override is lifted before any is put down, so two mirrors that trade ids
+--- keep their own, and a mirror with none clears what a pruned one left at its new id.
+--- @param moves table  array of { from = setID, to = setID }
+function O.MoveEMGlyphs(moves)
+    local icons, held = emIcons(), {}
+    for i, m in ipairs(moves) do
+        held[i] = icons[m.from]
+        icons[m.from] = nil
+    end
+    for i, m in ipairs(moves) do icons[m.to] = held[i] end
 end
 
 -- The one item of a single-item outfit, or nil.

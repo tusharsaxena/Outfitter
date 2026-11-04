@@ -1266,7 +1266,7 @@ Total.
 - bar: Suspend hides it and stops the rebuilds; the stand-down keeps it down
 - bar: test mode shows the sample outfits with the strip, even with the bar off, and they do nothing
 
-### test_outfit_icons.lua (11)
+### test_outfit_icons.lua (14)
 
 - icons: NS.OutfitIcon and NS.Outfits.SetIcon are published, and char.emIcons defaults empty
 - icons: a 1.1.0 fileID draws as before
@@ -1279,6 +1279,9 @@ Total.
 - icons: deleting an EM set clears its override
 - icons: storing a glyph outfit on the server keeps the glyph as the set's override, and back
 - icons: a mirror matched to a new set id keeps its glyph override under that id
+- icons: two mirrors that trade set ids in one sync each keep their own glyph
+- icons: a pruned mirror on the set id another mirror moved to does not take that mirror's glyph
+- icons: deleting a mirror leaves an override another outfit's set id still owns
 
 ### test_triggers_parity.lua (13)
 
@@ -1623,7 +1626,7 @@ Total.
 | test_rows_secure.lua | 20 |
 | test_slot_enables.lua | 12 |
 | test_bar.lua | 28 |
-| test_outfit_icons.lua | 11 |
+| test_outfit_icons.lua | 14 |
 | test_triggers_parity.lua | 13 |
 | test_preview.lua | 14 |
 | test_outfit_menu.lua | 11 |
@@ -1640,4 +1643,4 @@ Total.
 | test_lizard_sighted.lua | 8 |
 | test_prose.lua | 15 |
 | Skipped | 1 |
-| **Total** | **1338** |
+| **Total** | **1341** |

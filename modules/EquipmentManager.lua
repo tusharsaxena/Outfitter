@@ -27,7 +27,7 @@ local _, NS = ...
 -- slot edit to the outfit, and by a stand-down.
 --
 -- CALLS (at call time, no nil guard; design §12): NS.Outfits.Get/Create/Delete/Changed/Items/BindingOf/
--- SetBinding/SetIcon/EMGlyph/MoveEMGlyph, NS.Stack.Wear/Select, NS.Inventory.IsBankBag and NS.ItemInfo.
+-- SetBinding/SetIcon/EMGlyph/MoveEMGlyphs, NS.Stack.Wear/Select, NS.Inventory.IsBankBag and NS.ItemInfo.
 
 local EM = {}
 NS.EM = EM
@@ -331,8 +331,9 @@ local function restoreOrStub(setID, name)
     return NS.Outfits.Create(name, saved and saved.items or {}, opts)
 end
 
--- Match one set; false when the set cannot be read (its name is not plain).
-local function adoptSet(setID, unused)
+-- Match one set; false when the set cannot be read (its name is not plain). A mirror matched to a
+-- new set id is listed in `moves`, its glyph override re-keyed once the sync is done.
+local function adoptSet(setID, unused, moves)
     local info = Compat.EMSetInfo(setID)
     if not info then return false end
     local id, rec = findByName(unused, info.name:lower())
@@ -342,7 +343,7 @@ local function adoptSet(setID, unused)
     end
     unused[id] = nil
     -- A glyph override is keyed by the set id, so it follows the mirror to its new set.
-    if rec.setID ~= setID then NS.Outfits.MoveEMGlyph(rec.setID, setID) end
+    if rec.setID ~= setID then moves[#moves + 1] = { from = rec.setID, to = setID } end
     rec.setID = setID
     NS.Outfits.Changed(id, "items")
     return true
@@ -360,10 +361,10 @@ local function pruneUnused(unused)
     end
 end
 
-local function adoptAll(ids, unused)
+local function adoptAll(ids, unused, moves)
     local readable = true
     for _, setID in ipairs(ids) do
-        if not adoptSet(setID, unused) then readable = false end
+        if not adoptSet(setID, unused, moves) then readable = false end
     end
     return readable
 end
@@ -375,13 +376,16 @@ end
 function EM.Sync()
     if st.saving > 0 or Compat.GetTime() < st.ignoreUntil then return false end
     synced = true
-    local unused, ids = mirrors(), Compat.EMSetIDs()
+    local unused, ids, moves = mirrors(), Compat.EMSetIDs(), {}
     if #ids == 0 then
         preserveAll(unused)
-    elseif adoptAll(ids, unused) then
+    elseif adoptAll(ids, unused, moves) then
         pruneUnused(unused)
         store().emPreserved = nil
     end
+    -- After the prune, all at once: two mirrors that traded ids keep their own glyphs, and a pruned
+    -- mirror's Delete cannot clear the id a matched one just moved to.
+    if #moves > 0 then NS.Outfits.MoveEMGlyphs(moves) end
     NS.SendBus(NS.MSG.EM_SYNCED)
     return true
 end

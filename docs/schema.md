@@ -135,7 +135,7 @@ function that writes it (architecture-§5).
 | `char.outfits`, `char.order`, `char.nextID`, `char.bindings`, `char.seeded` | `NS.Outfits` | The `NS.Outfits` writer API (`Create`, `CreateFromItem`, `Duplicate`, `Reorder`, `Rename`, `Delete`, `DeleteAll`, `SetItem`, `SetItems`, `ClearSlot`, `SetSlotEnabled`, `SetAllSlotsEnabled`, `AddNewItems`, `SetToCurrent`, `SetFlag`, `SetStat`, `SetBinding`, `SetIcon`, `Changed`, `LoadPass`), plus the instance-row writes through `NS.ResolveOutfitRoot` |
 | `char.stack`, `char.recent` | `NS.Stack` | `Wear`, `Remove`, the temporary-outfit collapse, and the LoadPass repair. Persisted because restoring the layering after `/reload` is the fork's behavior (recorded data) |
 | `char.emPreserved` | `NS.EM` | The zero-sets protection, while the Equipment Manager reports no sets |
-| `char.emIcons[setID]` | `NS.Outfits` | An Equipment Manager outfit's glyph icon, `{ icon, color }`, since the set takes a fileID only: `SetIcon` writes it (a fileID clears it), `Delete` and `DeleteAll` clear it, `MoveEMGlyph` re-keys it when a sync matches the mirror to a new set id |
+| `char.emIcons[setID]` | `NS.Outfits` | An Equipment Manager outfit's glyph icon, `{ icon, color }`, since the set takes a fileID only: `SetIcon` writes it (a fileID clears it), `Delete` and `DeleteAll` clear it, `MoveEMGlyphs` re-keys them all at once, after the prune, when a sync matches mirrors to new set ids; `Delete` keeps an id another mirror still holds |
 | `outfits[id].triggerState[TID]` | `NS.TriggerBinder` | A trigger's side effects through `ctx.persist` (Fishing and Stealth CVar restores, `wasPvP`) |
 | `global.skinNotice` | LibKa0s-Skin (vendored) | The library's one-time skin notice |
 

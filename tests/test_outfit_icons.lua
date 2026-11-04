@@ -236,3 +236,55 @@ test("icons: a mirror matched to a new set id keeps its glyph override under tha
     assertEqual(NS.db.char.emIcons[setID].color, "abcdef")
     assertEqual((NS.OutfitIcon(NS.Outfits.Get(id))), glyph(NS))
 end)
+
+test("icons: two mirrors that trade set ids in one sync each keep their own glyph", function()
+    local NS, M = scene()
+    local tankId, tank = emOutfit(NS, "Tank")
+    local swordId, sword = emOutfit(NS, "Big Sword")
+    local tankSet, swordSet = tank.setID, sword.setID
+    -- A stored session in which the client numbered the two sets the other way round.
+    local icons = NS.db.char.emIcons
+    tank.setID, sword.setID = swordSet, tankSet
+    icons[swordSet] = { icon = glyph(NS), color = "00ff00" }
+    icons[tankSet] = { icon = glyph(NS, "settings"), color = "0000ff" }
+    M.__now = M.__now + 5
+    NS.EM.Sync()
+    assertEqual(NS.Outfits.Get(tankId).setID, tankSet)
+    assertEqual(NS.Outfits.Get(swordId).setID, swordSet)
+    -- red under: re-keying one mirror at a time (the first move overwrites the second's glyph).
+    assertEqual(icons[tankSet] and icons[tankSet].color, "00ff00", "Tank keeps its glyph")
+    assertEqual(icons[swordSet] and icons[swordSet].color, "0000ff", "Big Sword keeps its glyph")
+end)
+
+test("icons: a pruned mirror on the set id another mirror moved to does not take that mirror's glyph", function()
+    local NS, M = scene()
+    local tankId, tank = emOutfit(NS, "Tank")
+    local tankSet = tank.setID
+    local icons = NS.db.char.emIcons
+    -- Tank was stored under a stale id; a mirror whose set is gone holds Tank's real id.
+    tank.setID = 77
+    icons[77] = { icon = glyph(NS), color = "00ff00" }
+    local ghost = NS.Outfits.Create("Ghost", {}, { kind = "em", setID = tankSet })
+    icons[tankSet] = { icon = glyph(NS, "settings"), color = "0000ff" }
+    M.__now = M.__now + 5
+    NS.EM.Sync()
+    assertNil(NS.Outfits.Get(ghost), "the ghost mirror is pruned")
+    assertEqual(NS.Outfits.Get(tankId).setID, tankSet)
+    -- red under: the prune's Delete clearing the id Tank's glyph just moved to.
+    assertEqual(icons[tankSet] and icons[tankSet].color, "00ff00", "Tank keeps its glyph")
+    assertNil(icons[77])
+end)
+
+test("icons: deleting a mirror leaves an override another outfit's set id still owns", function()
+    local NS = scene(true)
+    local O = NS.Outfits
+    -- A partial sync (a set unreadable) can leave a stale mirror on an id a matched mirror now holds.
+    local a = O.Create("A", {}, { kind = "em", setID = 55 })
+    local b = O.Create("B", {}, { kind = "em", setID = 55 })
+    assertTrue(O.SetIcon(a, glyph(NS), "00ff00"))
+    O.Delete(b)
+    -- red under: a Delete that clears the id without asking who else holds it.
+    assertEqual(NS.db.char.emIcons[55] and NS.db.char.emIcons[55].color, "00ff00")
+    O.Delete(a)
+    assertNil(NS.db.char.emIcons[55], "the last holder takes the override with it")
+end)
