@@ -16,7 +16,13 @@ NS.defaults = {
         -- direction "auto" follows the saved corner.
         bar        = { shown = false, vertical = false, showBackground = true, combatAlpha = 1.0,
                        layout = { perLine = 0, padding = 4, spacing = 5, growH = "auto", growV = "auto" },
-                       icons  = { size = 32 } },
+                       icons  = { size = 32 },
+                       -- The window's colors: each follows the skin until its companion is off.
+                       bgColor = { r = 0.06, g = 0.06, b = 0.08, a = 0.9 }, useClassColorBg = false,
+                       bgFromSkin = true,
+                       frame  = { borderShow = true, borderStyle = "Solid", borderSize = 1,
+                                  borderColor = { r = 0, g = 0, b = 0, a = 1 }, useClassColorBorder = false,
+                                  borderStyleFromSkin = true, borderColorFromSkin = true } },
         -- Named non-setting state (architecture-§5): the bar's dragged place, each dialog's.
         windows    = { bar = { point = "TOPLEFT", x = 200, y = -200 }, dialogs = {} },
         skin       = { source = "ka0s", skin = "ka0s", ignorePanel = true, ignoreFonts = false,

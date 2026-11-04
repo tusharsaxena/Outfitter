@@ -352,32 +352,122 @@ test("bar: the scale follows the Master row and divides the offset", function()
     assertEqual(p[4], 200 / 1.5, "the offset is divided by the effective scale")
 end)
 
-test("bar: the backplate follows bar.showBackground", function()
+test("bar: the window look: the skin's Shell while it follows the skin, the player's plate when not", function()
     local NS, M, Bar = scene()
     complete(NS, "A")
     settle(M)
     local f = Bar.Frame()
-    assertTrue(f.bg:IsShown())
+    assertTrue(f.chrome:IsShown(), "the chrome shows")
+    assertFalse(f.plate:IsShown(), "the plate waits")
+    NS.SetByPath("bar.bgFromSkin", false)
+    NS.SetByPath("bar.bgColor", { r = 0.2, g = 0.3, b = 0.4, a = 0.5 })
+    NS.SetByPath("bar.frame.borderColorFromSkin", false)
+    NS.SetByPath("bar.frame.borderColor", { r = 1, g = 0, b = 0, a = 1 })
+    NS.SetByPath("bar.frame.borderSize", 3)
+    settle(M)
+    -- red under: a single layer repainted (the Shell would replay the skin's colors over the player's)
+    assertFalse(f.chrome:IsShown(), "the chrome hides")
+    assertTrue(f.plate:IsShown(), "the plate shows")
+    local r, g, b, a = f.plate:GetBackdropColor()
+    assertTrue(r == 0.2 and g == 0.3 and b == 0.4 and a == 0.5, "the background swatch")
+    local bd = f.plate:GetBackdrop()
+    assertEqual(bd.edgeSize, 3, "the border thickness")
+    r, g, b = f.plate:GetBackdropBorderColor()
+    assertTrue(r == 1 and g == 0 and b == 0, "the border swatch")
+    NS.SetByPath("bar.frame.borderShow", false)
+    settle(M)
+    assertNil(f.plate:GetBackdrop().edgeFile, "Show border off draws no edge")
     NS.SetByPath("bar.showBackground", false)
     settle(M)
-    -- red under: Render's bg:SetShown ignoring bar.showBackground (always true).
-    assertFalse(f.bg:IsShown())
+    -- red under: PaintChrome ignoring bar.showBackground
+    assertFalse(f.plate:IsShown()); assertFalse(f.chrome:IsShown())
 end)
 
--- ── position ──────────────────────────────────────────────────────────────────────────────────
+test("bar: the header band is titled Outfits, carries close and lock, and the icons sit under it", function()
+    local NS, M, Bar = scene()
+    complete(NS, "A")
+    settle(M)
+    local f = Bar.Frame()
+    -- red under: the retired drag handle still built above the bar
+    assertNil(f.handle, "the separate drag handle is retired")
+    assertEqual(f.title:GetText(), "Outfits")
+    assertTrue(f.close ~= nil and f.lock ~= nil and f.drag ~= nil, "close, lock and the drag strip")
+    local inset, h = Bar.BandGeometry()
+    assertEqual(Bar.HeaderHeight(), inset + h)
+    assertTrue(Bar.HeaderHeight() >= 20, "a real band")
+    local _, y = at(Bar.Buttons()[1])
+    assertEqual(y, Bar.HeaderHeight() + NS.GetSetting("bar.layout.padding"), "the icons start under the band")
+    assertTrue(f.__w >= Bar.Layout.MIN_WIDTH, "wide enough for the header")
+    -- The drag strip stands on the band, left of the controls.
+    local dp = point(f.drag)
+    assertTrue(dp[2] == Bar.Band(), "the drag strip is anchored to the band")
+end)
 
-test("bar: the drag stop saves the nearest corner; a locked bar does not move", function()
+test("bar: the header's lock writes the Master lock and its close writes bar.shown off", function()
+    local NS, M, Bar = scene()
+    complete(NS, "A")
+    settle(M)
+    local f = Bar.Frame()
+    local seen = {}
+    NS.NewBusTarget():RegisterMessage(NS.MSG.SETTINGS_CHANGED, function(_, path) seen[#seen + 1] = path end)
+    f.lock:__fire("OnClick")
+    -- red under: a lock control that keeps a lock of its own (options-ui-§15's second switch)
+    assertEqual(NS.db.profile.locked, true)
+    assertEqual(table.concat(seen, ","), "locked", "through the seam")
+    assertEqual(f.lock.icon:GetTexture(), NS.Icon("lock"))
+    f.lock:__fire("OnClick")
+    assertEqual(NS.db.profile.locked, false)
+    assertEqual(f.lock.icon:GetTexture(), NS.Icon("unlock"))
+    f.close:__fire("OnClick")
+    settle(M)
+    assertEqual(NS.db.profile.bar.shown, false, "close writes bar.shown")
+    assertFalse(f:IsShown())
+end)
+
+test("bar: the header's right click opens the bar's settings page", function()
+    local NS, M, Bar = scene()
+    complete(NS, "A")
+    settle(M)
+    local opened = {}
+    local real = NS.OpenOptionsPanel
+    NS.OpenOptionsPanel = function(page) opened[#opened + 1] = page end
+    Bar.Frame().drag:__fire("OnMouseUp", "RightButton")
+    Bar.Frame().drag:__fire("OnMouseUp", "LeftButton")
+    NS.OpenOptionsPanel = real
+    assertEqual(table.concat(opened, ","), "bar")
+end)
+
+test("bar: without the library the header stands on a host band, title and lock included", function()
+    local inst = T.load({ libFiles = {} })
+    local NS, M = inst.NS, inst.mocks
+    dofile(T.root .. "/tests/_kit/mock_paint.lua")(M)
+    NS.db.profile.bar.shown = true
+    NS.Outfits.Create("A", naked())
+    NS.Bar.Resume()
+    M.__fireTimers()
+    local f = NS.Bar.Frame()
+    assertTrue(f ~= nil and f:IsShown(), "the bar shows")
+    -- red under: a header anchored to S.Band alone (nil without the library: nothing laid)
+    local band = NS.Bar.Band()
+    assertTrue(band ~= nil and band == f.hostBand, "the host's band")
+    assertEqual(f.title:GetText(), "Outfits")
+    assertTrue(f.lock ~= nil, "the lock control")
+    assertEqual(NS.Bar.HeaderHeight(), 1 + 30)
+end)
+
+-- ── position ─-- ── position ──────────────────────────────────────────────────────────────────────────────────
+
+test("bar: the header's drag stop saves the nearest corner; a locked bar does not move", function()
     local NS, M, Bar = scene()
     complete(NS, "A")
     settle(M)
     local f = Bar.Frame()
     geom(M.UIParent, 0, 1000, 800, 0)
     geom(f, 900, 950, 100, 50)
-    local handle = f.handle
-    assertTrue(handle ~= nil, "a drag handle was built")
-    assertTrue(handle:IsShown(), "shown while unlocked")
-    handle:__fire("OnDragStart")
-    handle:__fire("OnDragStop")
+    local drag = f.drag
+    assertTrue(drag ~= nil, "the header's drag strip was built")
+    drag:__fire("OnDragStart")
+    drag:__fire("OnDragStop")
     local p = NS.db.profile.windows.bar
     assertEqual(p.point, "BOTTOMRIGHT"); assertEqual(p.x, -50); assertEqual(p.y, 50)
     geom(f, 10, 60, 790, 740)
@@ -385,12 +475,12 @@ test("bar: the drag stop saves the nearest corner; a locked bar does not move", 
     assertEqual(NS.db.profile.windows.bar.y, -10)
     NS.SetByPath("locked", true)
     settle(M)
-    assertFalse(handle:IsShown(), "hidden while locked")
     geom(f, 900, 950, 100, 50)
-    handle:__fire("OnDragStart")
-    handle:__fire("OnDragStop")
-    -- red under: a canDrag that ignores the lock
-    assertEqual(NS.db.profile.windows.bar.point, "TOPLEFT", "a locked bar saved nothing")
+    local moved = 0
+    rawset(f, "StartMoving", function() moved = moved + 1 end)
+    drag:__fire("OnDragStart")
+    -- red under: an OnDragStart that ignores the lock
+    assertEqual(moved, 0, "a locked bar does not start moving")
 end)
 
 test("bar: the drag stop writes bar.position through the seam, and its echo leaves the bar where it fell", function()
@@ -404,8 +494,8 @@ test("bar: the drag stop writes bar.position through the seam, and its echo leav
     local f = Bar.Frame()
     geom(M.UIParent, 0, 1000, 800, 0)
     geom(f, 900, 950, 100, 50)
-    f.handle:__fire("OnDragStart")
-    f.handle:__fire("OnDragStop")
+    f.drag:__fire("OnDragStart")
+    f.drag:__fire("OnDragStop")
     assertEqual(table.concat(seen, ","), "bar.position", "the drag stop did not write through the seam")
     assertEqual(NS.GetSetting("bar.position"), "BOTTOMRIGHT -50 50")
     -- The echo schedules one redraw; it anchors at the corner just saved, not back at the old one.
@@ -650,7 +740,7 @@ test("bar: in combat the alpha is Master alpha times bar.combatAlpha, from PLAYE
     assertFalse(Bar.Frame():IsShown(), "the visibility rule hides it in combat")
 end)
 
-test("bar: leaving the bar fades the handle over 0.3 s and the bar to its alpha over 0.5 s", function()
+test("bar: leaving the bar fades it to its alpha over 0.5 s", function()
     local NS, M, Bar, ctl = scene()
     complete(NS, "A")
     NS.SetByPath("alpha", 0.6)
@@ -659,35 +749,11 @@ test("bar: leaving the bar fades the handle over 0.3 s and the bar to its alpha 
     f:__fire("OnEnter")
     assertEqual(f:GetAlpha(), 1, "full while hovered")
     f:__fire("OnLeave")
-    local byFrame = {}
-    for _, fade in ipairs(ctl.fades) do byFrame[fade[1]] = fade end
-    local h, b = byFrame[f.handle], byFrame[f]
-    -- red under: swapped durations
-    assertEqual(h[2], 0.3); assertEqual(h[3], 1); assertEqual(h[4], 0)
+    local b
+    for _, fade in ipairs(ctl.fades) do if fade[1] == f then b = fade end end
+    -- red under: a fade of another length
     assertEqual(b[2], 0.5); assertEqual(b[3], 1); assertEqual(b[4], 0.6)
-    ctl.fades = {}
-    NS.SetByPath("locked", true)
-    settle(M)
-    f:__fire("OnEnter"); f:__fire("OnLeave")
-    for _, fade in ipairs(ctl.fades) do assertFalse(fade[1] == f.handle, "no handle fade while locked") end
-end)
-
-test("bar: a rebuild leaves a faded handle faded; an unlock shows it again", function()
-    local NS, M, Bar = scene()
-    complete(NS, "A")
-    settle(M)
-    local f = Bar.Frame()
-    assertEqual(f.handle:GetAlpha(), 1, "unlocked: the handle shows")
-    f:__fire("OnEnter"); f:__fire("OnLeave")
-    f.handle:SetAlpha(0)                                 -- where UIFrameFadeOut leaves it
-    NS.SendBus(NS.MSG.OUTFIT_EDITED, NS.Outfits.FindByName("A"), "name")
-    settle(M)
-    assertTrue(f.handle:IsShown())
-    -- red under: SetLocked's SetAlpha(1) on every refresh (any rebuild brought the handle back).
-    assertEqual(f.handle:GetAlpha(), 0, "the rebuild left the faded handle alone")
-    NS.SetByPath("locked", true); settle(M)
-    NS.SetByPath("locked", false); settle(M)
-    assertEqual(f.handle:GetAlpha(), 1, "an unlock shows it at full alpha")
+    assertEqual(#ctl.fades, 1, "one fade: there is no handle to fade")
 end)
 
 test("bar: an alpha change stops a hover-out fade still running, so it cannot land on the old alpha", function()
@@ -707,22 +773,6 @@ test("bar: an alpha change stops a hover-out fade still running, so it cannot la
     -- red under: ApplyAlpha without its fadeStop(bar) (the fade ends at 0.6 over combatAlpha 0).
     assertTrue(hit, "the running fade was not stopped")
     assertEqual(f:GetAlpha(), 0)
-end)
-
-test("bar: the clamp covers the handle above the bar while it shows, and only then", function()
-    local NS, M, Bar = scene()
-    local insets
-    complete(NS, "A")
-    settle(M)
-    local f = Bar.Frame()
-    rawset(f, "SetClampRectInsets", function(_, l, r, t, b) insets = { l, r, t, b } end)
-    NS.SendBus(NS.MSG.SETTINGS_CHANGED, "bar.vertical", false)
-    settle(M)
-    -- red under: no SetClampRectInsets (a drag to the top edge pushes the handle off screen).
-    assertTrue(insets ~= nil and insets[3] >= 18 + 2, "the top inset reaches over the handle")
-    assertEqual(insets[1], 0); assertEqual(insets[2], 0); assertEqual(insets[4], 0)
-    NS.SetByPath("locked", true); settle(M)
-    assertEqual(insets[3], 0, "locked: no handle, no inset")
 end)
 
 -- ── the show decision and the lifecycle ───────────────────────────────────────────────────────
@@ -826,6 +876,9 @@ test("bar: test mode shows the sample outfits with the strip, even with the bar 
     assertTrue(f:IsShown(), "test mode shows the bar")
     assertEqual(ids(Bar), "preview:1,preview:2")
     assertTrue(f.strip ~= nil and f.strip:IsShown(), "the strip is up")
+    local sp = point(f.strip)
+    -- red under: the strip anchored at the container's top, over the header band
+    assertTrue(sp[2] == Bar.Band() and sp[3] == "BOTTOMLEFT", "the strip hangs under the band")
     local first = point(Bar.Buttons()[1]:GetParent())
     assertEqual(first[5], -(Bar.HeaderHeight(true) + NS.GetSetting("bar.layout.padding")), "the rows sit below the strip")
     assertTrue(Bar.HeaderHeight(true) >= Bar.HeaderHeight() + NS.TEST_STRIP_HEIGHT, "the strip adds its height")

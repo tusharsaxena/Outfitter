@@ -182,11 +182,11 @@ local SHELLS = {
     { "the trigger dialog's shell", "Shell" },
     { "the rebuild dialog's shell", "Shell" },
     { "the progress dialog's shell", "Shell" },
-    { "the bar's backplate", "Panel" },
+    { "the bar's window chrome", "Shell" },
     { "a compare tooltip", "Tooltip" },
 }
 
-test("skin: the window and the dialogs wear NS.ApplySkin's Shell, the bar a Panel", function()
+test("skin: the window, the dialogs and the bar wear NS.ApplySkin's Shell", function()
     -- red under: NS.ApplySkin dropped from modules/UIDialogs.lua's chrome (a dialog keeps Core's
     -- fixed edge), S.Tooltip from a compare tooltip.
     local _, _, Skin, built = buildAll()

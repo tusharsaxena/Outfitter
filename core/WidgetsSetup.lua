@@ -1,5 +1,5 @@
 local addonName, NS = ...
--- core/WidgetsSetup.lua — NS.MakeDropdown / NS.OpenMenu / NS.CloseMenu / NS.MakeTestStrip / NS.MakeDragHandle from LibKa0s-Widgets-1.0 (BP §6.13).
+-- core/WidgetsSetup.lua — NS.MakeDropdown / NS.OpenMenu / NS.CloseMenu / NS.MakeTestStrip from LibKa0s-Widgets-1.0 (BP §6.13).
 --
 -- A seam, nothing else (library-stack-§7): one file leases the major, so the art the controls draw
 -- is resolved once, here, and every control is handed this addon's skin owner. The library is
@@ -188,21 +188,4 @@ function NS.MakeTestStrip(parent, label, opts)
         for k, v in pairs(opts) do o[k] = v end
     end
     return W.TestStrip(parent, o)
-end
-
--- ── the drag handle ──────────────────────────────────────────────────────────────────────────────
-
---- The unlocked drag strip over a movable frame (the library's W.DragHandle, born hidden and
---- unanchored), or nil when the library is absent: the frame then simply has no strip. Its help mark
---- is the catalog's help icon and its colors follow this addon's skin owner. The outfit bar's (§7.7).
---- @param parent table the frame to parent it to
---- @param spec table W.DragHandle's spec (`label` and `moveFrame` required); its own fields win
---- @return table|nil
-function NS.MakeDragHandle(parent, spec)
-    if not (W and W.DragHandle) then return nil end
-    local o = { helpIcon = NS.Icon("help"), owner = addonName }
-    if type(spec) == "table" then
-        for k, v in pairs(spec) do o[k] = v end
-    end
-    return W.DragHandle(parent, o)
 end

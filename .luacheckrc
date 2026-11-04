@@ -162,8 +162,9 @@ for _, f in ipairs({ "modules/QuickSlots.lua", "modules/QuickSlots_Sort.lua" }) 
     }
 end
 
--- The bar takes a dropped spell, item or macro as an icon.
-for _, f in ipairs({ "modules/Bar.lua", "modules/Bar_Buttons.lua" }) do
+-- The bar takes a dropped spell, item or macro as an icon, fades, and its buttons and header controls
+-- show a tooltip.
+for _, f in ipairs({ "modules/Bar.lua", "modules/Bar_Chrome.lua", "modules/Bar_Buttons.lua" }) do
     files[f] = {
         read_globals = {
             "GetCursorInfo", "C_Spell", "C_Item", "GetMacroInfo", "IsAltKeyDown",

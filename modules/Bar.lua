@@ -2,12 +2,13 @@ local _, NS = ...
 -- modules/Bar.lua — NS.Bar: the outfit bar (design §7.7, INV §7.6; OutfitterBar.lua at 7ea3dc3).
 --
 -- A HUD (skinning-§6) and a free-floating display: a persisted position, the Master Lock and the
--- position Reset (BP §11). It stores no colors, so it owes no FromSkin rows. ONE container,
--- `OutfitterRebornBar` (strata HUD, movable, clamped, toplevel), holds a backplate, one row frame per
--- category with shown outfits (`OutfitterRebornBarRow1..2`), the drag handle above it and, in test
--- mode, the test strip along its top. The buttons are pooled per row (modules/Bar_Buttons.lua builds
--- them): each render releases every row and acquires exactly one button per outfit, which fixes the
--- legacy `_ButtonBar`'s extra button.
+-- position Reset (BP §11). ONE container, `OutfitterRebornBar` (strata HUD, movable, clamped,
+-- toplevel), wears a Ka0s window's look with a header (modules/Bar_Chrome.lua: the Shell chrome or the
+-- player's plate, the title band with its title, lock and close, the drag strip and, in test mode,
+-- the test strip under the band), and holds one row frame per category with shown outfits
+-- (`OutfitterRebornBarRow1..2`). The buttons are pooled per row (modules/Bar_Buttons.lua builds them):
+-- each render releases every row and acquires exactly one button per outfit, which fixes the legacy
+-- `_ButtonBar`'s extra button. Its colors each carry a FromSkin companion (skinning-§6).
 --
 -- LAYOUT is modules/Bar_Layout.lua's arithmetic over the Layout and Icons rows (smoke round 2 design
 -- G6): icons per line, padding, spacing, icon size, and the grow direction. "Automatic" grows AWAY
@@ -24,12 +25,13 @@ local _, NS = ...
 -- SHOWN = (bar.shown or test mode) and the Master visibility rule and not in a pet battle and not
 -- stood down. The decision is made here and nowhere else, so a stood-down bar cannot be re-shown.
 -- ALPHA is the Master alpha, times `bar.combatAlpha` in combat (PLAYER_STATE_CHANGED "combat"); at 0
--- the buttons take no mouse (frame-layering-§4: insecure frames, so legal in combat). The legacy fades
--- are kept: off the bar, the handle fades out over 0.3 s and the bar down to its alpha over 0.5 s.
+-- the buttons take no mouse (frame-layering-§4: insecure frames, so legal in combat). The legacy fade
+-- is kept: off the bar, it fades down to its alpha over 0.5 s.
 --
 -- REBUILDS are coalesced on one 0 s AceTimer flag: OUTFIT_WORN/REMOVED/ADDED/DELETED/EDITED/RENAMED,
--- SETTINGS_CHANGED for a `bar.*` or Master row, PREVIEW_CHANGED and PROFILE_CHANGED (which is also
--- the re-anchor a profile switch needs: a new profile carries its own `windows.bar`).
+-- SETTINGS_CHANGED for a `bar.*` or Master row, PREVIEW_CHANGED, PROFILE_CHANGED (which is also the
+-- re-anchor a profile switch needs: a new profile carries its own `windows.bar`) and a skin change
+-- (NS.Skin.OnLooksChanged: the band's height and the skin's colors move with it).
 --
 -- CALLS (at call time, no nil guard; design §12): NS.Outfits, NS.Preview.IsActive/Source,
 -- NS.PlayerState.InCombat; the buttons call NS.Stack, NS.OutfitMenu, NS.OutfitTooltip, NS.Triggers.
@@ -37,17 +39,14 @@ local _, NS = ...
 local Bar = {}
 NS.Bar = Bar
 
-local L = NS.L
 local Secrets = NS.Secrets
 local LAYERS = NS.Constants.LAYERS
 local Perf = NS.Perf
 
 local MAX_ROWS = 2                      -- one per category
-local HANDLE_FADE, BAR_FADE = 0.3, 0.5  -- StartFrameFades (OutfitterBar.lua:236-248)
-local HANDLE_GAP = 2
-local HANDLE_HEIGHT = 18                -- W.DragHandle's strip, when the frame cannot say
+local BAR_FADE = 0.5                    -- StartFrameFades (OutfitterBar.lua:236-248)
 
-Bar.HANDLE_FADE, Bar.BAR_FADE = HANDLE_FADE, BAR_FADE
+Bar.BAR_FADE = BAR_FADE
 
 --- The direction a bar saved at each corner grows in: the sign of x, then of y.
 local QUADRANT = {
@@ -62,10 +61,7 @@ local GROW = { ["bar.layout.growH"] = true, ["bar.layout.growV"] = true }
 local GROW_X = { right = 1, left = -1 }
 local GROW_Y = { down = -1, up = 1 }
 
--- handleFaded: the pointer left since the bar was last locked, so the handle rests faded out until
--- the next hover; a rebuild must not bring it back (the legacy handle showed only on hover).
-local st = { active = false, inCombat = false, inPetBattle = false, hovered = false, handleFaded = false,
-             timer = nil }
+local st = { active = false, inCombat = false, inPetBattle = false, hovered = false, timer = nil }
 local bar, rows = nil, {}
 local mod   -- the module's own bus target, with AceTimer and the pet-battle events on it
 
@@ -111,14 +107,6 @@ function Bar.Growth(p)
     return GROW_X[NS.GetSetting("bar.layout.growH")] or q[1], GROW_Y[NS.GetSetting("bar.layout.growV")] or q[2]
 end
 
---- The height above the icons: the test strip while it shows.
---- @param strip boolean|nil
---- @return number
-function Bar.HeaderHeight(strip)
-    if strip then return NS.TEST_STRIP_HEIGHT end
-    return 0
-end
-
 --- Bar_Layout's spec from the settings, for categories of `counts` icons.
 --- @param counts number[]
 --- @param strip boolean|nil
@@ -129,7 +117,7 @@ function Bar.LayoutSpec(counts, strip)
         size = num(NS.GetSetting("bar.icons.size"), 32), spacing = num(NS.GetSetting("bar.layout.spacing"), 5),
         padding = num(NS.GetSetting("bar.layout.padding"), 4), perLine = num(NS.GetSetting("bar.layout.perLine"), 0),
         vertical = NS.GetSetting("bar.vertical") == true, labelH = 0, top = Bar.HeaderHeight(strip),
-        minWidth = 0, gx = gx, gy = gy, counts = counts,
+        minWidth = Bar.Layout.MIN_WIDTH, gx = gx, gy = gy, counts = counts,
     }
 end
 
@@ -169,25 +157,6 @@ local function fadeStop(frame)
     if frame and type(UIFrameFadeRemoveFrame) == "function" then UIFrameFadeRemoveFrame(frame) end
 end
 
-local function newHandle(f)
-    local handle = NS.MakeDragHandle(f, {
-        label             = L["Outfit bar"],
-        moveFrame         = f,
-        canDrag           = function() return not locked() end,
-        onDragStop        = function() Bar.SavePosition() end,
-        onRightClick      = function() NS.OpenOptionsPanel("bar") end,
-        tooltip           = { title = L["Outfit bar"], body = { L["Drag to move. Right-click for bar settings."] } },
-        ignoreParentAlpha = true,
-        level             = LAYERS.LEVEL.HANDLE,
-    })
-    if not handle then return nil end
-    handle:SetPoint("BOTTOMLEFT", f, "TOPLEFT", 0, HANDLE_GAP)
-    handle:HookScript("OnEnter", function() Bar.HoverIn() end)
-    handle:HookScript("OnLeave", function() Bar.HoverOut() end)
-    handle:ApplyWidth(32)
-    return handle
-end
-
 --- The container, built on the first render and kept: hidden at birth, so nothing shows before the
 --- show decision says so.
 local function ensureFrame()
@@ -200,32 +169,15 @@ local function ensureFrame()
     f:SetToplevel(true)
     f:SetScript("OnEnter", function() Bar.HoverIn() end)
     f:SetScript("OnLeave", function() Bar.HoverOut() end)
-    f.bg = CreateFrame("Frame", nil, f, "BackdropTemplate")
-    f.bg:SetAllPoints(f)
-    NS.Skin.Panel(f.bg)
+    bar = f
+    Bar.BuildChrome(f)
     for i = 1, MAX_ROWS do
         local row = CreateFrame("Frame", "OutfitterRebornBarRow" .. i, f)
         row:SetFrameLevel(level(f) + LAYERS.LEVEL.BAR_ROW)
         row:Hide()
         rows[i] = { frame = row, pool = NS.Pool.New() }
     end
-    f.handle = newHandle(f)
-    bar = f
     return f
-end
-
---- The test strip, built the first time test mode shows the bar.
-local function ensureStrip()
-    if bar.strip == nil then
-        local strip = NS.MakeTestStrip(bar, L["Test mode: sample outfits. Nothing is equipped or saved"])
-        bar.strip = strip or false
-        if strip then
-            strip:SetFrameLevel(level(bar) + LAYERS.LEVEL.MARKER)
-            strip:SetPoint("TOPLEFT", bar, "TOPLEFT", 0, 0)
-            strip:SetPoint("TOPRIGHT", bar, "TOPRIGHT", 0, 0)
-        end
-    end
-    return bar.strip or nil
 end
 
 --- The container, or nil before the first render (for the suites and the skin survey).
@@ -299,16 +251,14 @@ function Bar.Render(source, strip)
     bar:SetSize(g.width, g.height)
     bar:SetScale(scale())
     anchor(position())
-    bar.bg:SetShown(NS.GetSetting("bar.showBackground") ~= false)
+    Bar.PaintChrome(bar)
     if t0 then Perf.Note("barRender", debugprofilestop() - t0) end
 end
 
 local function hideFrames()
     if not bar then return end
     fadeStop(bar)
-    fadeStop(bar.handle)
     bar:Hide()
-    if bar.handle then bar.handle:Hide() end
     if bar.strip then bar.strip:Hide() end
 end
 
@@ -323,7 +273,7 @@ function Bar.Refresh()
     end
     local preview = NS.Preview.IsActive() == true
     Bar.Render(preview and NS.Preview.Source or Bar.LiveSource, preview)
-    local strip = preview and ensureStrip()
+    local strip = preview and Bar.EnsureStrip()
     if strip then strip:Show() elseif bar.strip then bar.strip:Hide() end
     bar:Show()
     Bar.SetLocked(locked())
@@ -372,54 +322,25 @@ function Bar.ApplyAlpha()
     for _, btn in ipairs(Bar.Buttons()) do btn:EnableMouse(mouse) end
 end
 
--- The container's clamp covers the handle above it while it shows, so a drag to the top edge can
--- never push the handle off screen (the legacy moved the drag bar itself, which kept it on).
-local function clampHandle(shown)
-    local top = 0
-    if shown then
-        local h = num(bar.handle:GetHeight(), 0)
-        top = (h > 0 and h or HANDLE_HEIGHT) + HANDLE_GAP
-    end
-    bar:SetClampRectInsets(0, 0, top, 0)
-end
-
---- Show the drag handle while unlocked and the bar is up; hide it while locked. Shown, it is at full
---- alpha until the pointer first leaves after an unlock, then faded until the next hover.
+--- The lock as the header's control draws it (the drag strip reads the setting itself).
 --- @param on boolean|nil  the lock; nil reads the setting
 function Bar.SetLocked(on)
     if on == nil then on = locked() end
-    local handle = bar and bar.handle
-    if not handle then return end
-    if on then st.handleFaded = false end
-    local shown = not on and bar:IsShown() == true
-    clampHandle(shown)
-    if not shown then
-        fadeStop(handle)
-        handle:Hide()
-        return
-    end
-    if not st.handleFaded then handle:SetAlpha(1) end
-    handle:Show()
+    Bar.SetLockIcon(on)
 end
 
---- The pointer is over the bar, a button or the handle: everything at full alpha, the fades stopped.
+--- The pointer is over the bar, a button or a header control: full alpha, the fade stopped.
 function Bar.HoverIn()
     if not bar then return end
-    st.hovered, st.handleFaded = true, false
+    st.hovered = true
     fadeStop(bar)
-    fadeStop(bar.handle)
-    if bar.handle and not locked() then bar.handle:SetAlpha(1) end
     Bar.ApplyAlpha()
 end
 
---- The pointer left: the handle fades out over 0.3 s, the bar down to its alpha over 0.5 s.
+--- The pointer left: the bar fades down to its alpha over 0.5 s.
 function Bar.HoverOut()
     if not bar then return end
     st.hovered = false
-    if bar.handle and not locked() then
-        st.handleFaded = true
-        fadeOut(bar.handle, HANDLE_FADE, 1, 0)
-    end
     local a = Bar.EffectiveAlpha()
     if a ~= 1 and a > 0 then
         fadeOut(bar, BAR_FADE, 1, a)
@@ -487,6 +408,7 @@ local function ensureListeners()
     for _, key in ipairs(REBUILD) do mod:RegisterMessage(NS.MSG[key], schedule) end
     mod:RegisterMessage(NS.MSG.SETTINGS_CHANGED, onSettings)
     mod:RegisterMessage(NS.MSG.PLAYER_STATE_CHANGED, onPlayerState)
+    NS.Skin.OnLooksChanged(schedule)
 end
 
 -- ── lifecycle ─────────────────────────────────────────────────────────────────────────────────
