@@ -100,6 +100,11 @@ local function declaredIcons()
     f:close()
     local line = assert(text:match("LibKa0s icons: ([^\r\n]+)"), "CLAUDE.md has no `LibKa0s icons:` line")
     local names = {}
+    -- `all (icon browser).` declares the whole catalog: every name LibKa0s-Media enumerates.
+    if line:match("^all[%s%(]") then
+        for _, name in ipairs(T.mocks.LibStub("LibKa0s-Media-1.0").ICONS) do names[#names + 1] = name end
+        return names
+    end
     for name in line:gsub("%.%s*$", ""):gmatch("[^,%s]+") do names[#names + 1] = name end
     return names
 end

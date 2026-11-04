@@ -116,13 +116,28 @@ local function onDisk(rel)
     return file ~= nil
 end
 
--- The names of root CLAUDE.md's `LibKa0s icons:` line, read by the kit's own parser.
-local function declaredIcons()
+-- Root CLAUDE.md's `LibKa0s icons:` line, read by the kit's own parser.
+local function declaration()
     local VendorSync = dofile(T.root .. "/tests/_kit/vendor_sync.lua")
     local f = assert(io.open(T.root .. "/CLAUDE.md", "rb"))
     local doc = f:read("*a")
     f:close()
-    local decl = assert(VendorSync.iconDeclaration(doc), "CLAUDE.md declares its icons")
+    return assert(VendorSync.iconDeclaration(doc), "CLAUDE.md declares its icons")
+end
+
+-- The explicit list `all (icon browser).` replaced at the v1.86.0 re-vendor (plan Task 3.5): every
+-- icon the addon or the library drew for it then. Under `all` these stay covered by name, so the
+-- catalog can never lose one of them while the line says "all".
+local FORMER_LIST = {
+    "add", "cancel", "chevron-down", "chevron-right", "chevron-up", "clear", "close", "confirm", "copy",
+    "help", "info", "move", "ph:coat-hanger", "ph:gear-six", "ph:lightning", "reset", "settings",
+    "volume-high",
+}
+
+-- The names the declaration answers for, by name: a list's names, or under `all` the former list.
+local function declaredIcons()
+    local decl = declaration()
+    if decl.mode == "all" then return FORMER_LIST end
     return decl.names or {}
 end
 
@@ -161,9 +176,9 @@ local function readFile(rel)
     return src
 end
 
-test("packaging: the icon declaration is exactly what is drawn (design §1.4, P4.31)", function()
-    -- red under: a declared name nothing draws (`edit` back on the CLAUDE.md line), or a new
-    -- `NS.Icon("search")` with the line left alone (the pruned payload lacks the file).
+-- Every icon name drawn for this addon: its own NS.Icon literals, the marks every host owes (the kit's
+-- list) and the debug console's title-bar buttons (NS.DebugLog), read out of the vendored window.
+local function drawnIcons()
     local drawn = {}
     -- The scanner itself first, or an empty scan proves nothing.
     local probe = iconCalls('x(NS.Icon(a and "b" or "c")) -- NS.Icon("d")', {})
@@ -179,6 +194,27 @@ test("packaging: the icon declaration is exactly what is drawn (design §1.4, P4
         drawn[name], buttons = true, buttons + 1
     end
     assertEqual(buttons, 2, "the debug console's clear and copy buttons were not found")
+    return drawn
+end
+
+test("packaging: the icon declaration is exactly what is drawn (design §1.4, P4.31)", function()
+    -- red under: a declared name nothing draws (`edit` back on a list line), or a new
+    -- `NS.Icon("search")` with a list line left alone (the pruned payload lacks the file).
+    local drawn, decl = drawnIcons(), declaration()
+    if decl.mode == "all" then
+        -- `all` is only for a player-facing chooser (library-stack-§7): this addon's is the icon browser.
+        assertEqual(decl.reason, "icon browser")
+        -- Everything drawn still resolves to a shipped file, by name (the catalog is whole, so a drawn
+        -- name the catalog lacks is the one way to draw blank).
+        -- red under: a new `NS.Icon("no-such-glyph")`.
+        local _, list = pkgmeta()
+        for name in pairs(drawn) do
+            local rel = packaged(NS.Icon(name), ".tga")
+            assertTrue(rel ~= nil and onDisk(rel), name .. " is drawn but no shipped file answers it")
+            if rel then assertFalse(ignored(rel, list) ~= nil, rel .. " is drawn but not shipped") end
+        end
+        return
+    end
     local declared = {}
     for _, name in ipairs(declaredIcons()) do declared[name] = true end
     for name in pairs(drawn) do assertTrue(declared[name] == true, name .. " is drawn but not declared") end
@@ -193,6 +229,8 @@ test("packaging: each shipped icon set ships its license file beside it", functi
         gi   = "libs/LibKa0s/media/icons/game-icons/LICENSE-game-icons.txt",
     }
     local sets = {}
+    -- `all` ships every set, and every set's license with it.
+    if declaration().mode == "all" then sets = { [""] = true, ph = true, gi = true } end
     for _, name in ipairs(declaredIcons()) do sets[name:match("^(%a+):") or ""] = true end
     for prefix in pairs(sets) do
         local rel = assert(LICENSES[prefix], "a license is known for the `" .. prefix .. "` set")

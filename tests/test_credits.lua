@@ -120,6 +120,10 @@ end)
 test("credits: the README credits exactly the icon sets this build ships", function()
     local decl = assert(VendorSync.iconDeclaration(read("CLAUDE.md")), "CLAUDE.md declares its icons")
     local shipped = {}
+    if decl.mode == "all" then
+        -- `all (icon browser)` ships every set, so every set is credited (releasing.md: Attribution).
+        shipped = { [""] = true, ph = true, gi = true }
+    end
     for _, name in ipairs(decl.names or {}) do
         local prefix = name:match("^(%a+):") or ""
         shipped[prefix] = true
@@ -137,6 +141,25 @@ test("credits: the README credits exactly the icon sets this build ships", funct
     -- item 12: each MIT set is named with its author).
     if shipped[""] then assertTrue(has(body, "Waybury"), "Open Iconic is credited to Waybury") end
     if shipped.ph then assertTrue(has(body, "Phosphor Icons"), "Phosphor is credited to Phosphor Icons") end
+    -- Game-icons.net is CC BY 3.0: a MUST to credit with its license, its link, the authors of the
+    -- shipped marks and that they were modified (documentation-§1 item 12).
+    -- red under: drop "Zeromancer" (or any author the shipped AUTHORS.txt names) from the Credits.
+    if shipped.gi then
+        assertTrue(has(body, "CC BY 3.0"), "Game-icons is credited under CC BY 3.0")
+        assertTrue(has(body, "https://game-icons.net"), "Game-icons is linked")
+        assertTrue(has(body, "AUTHORS.txt"), "the Credits point at the per-mark authors file")
+        assertTrue(has(body, "recolored"), "the Credits say the marks were modified")
+        local flat = body:gsub("%s+", " ")
+        local authors = read("libs/LibKa0s/media/icons/game-icons/AUTHORS.txt")
+        local seen, count = {}, 0
+        for author in authors:gmatch("\ngi:[^\t\n]+\t([^\n]+)") do
+            if not seen[author] then
+                seen[author], count = true, count + 1
+                assertTrue(has(flat, author), "README Credits names Game-icons author " .. author)
+            end
+        end
+        assertTrue(count > 0, "AUTHORS.txt lists no mark; nothing above can fail")
+    end
     -- red under: name LibKa0s anywhere in the Credits (item 12: credit names the set, never LibKa0s).
     assertFalse(has(body, "LibKa0s"), "README Credits names LibKa0s")
 end)

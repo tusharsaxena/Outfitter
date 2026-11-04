@@ -112,8 +112,18 @@ The old About panel thanked these people, and they're still thanked here:
 - Supporters: Asgeirr, Blam, Blessmie, Blitzi, Burnaron, Calind, Chirily, Ciev, Colina, Dankris, Dhaktar, Droodwrmycar, Emmerald, Extropianus, Faizal, Feliany, Fusyion, Haguen, Hellrush, Jiminimonka, Klaxon, Kristi H., Lawrence C., Leara, Maelmoor, Matt R., Maumau, Mythris, Nagem, Nounchok, Richard F., Steikfrit, Teldra, Tharca, Thoresen, Thorgils, Valerya, Xentric, Y C, Zanoroy, Zendex and Zetac
 - Friends in the Thorium Brotherhood: Airmid, Fizzlebang, Pistachio, Pitchifus, Tiae and the guild Bloodforged
 
-The settings, the outfit window and the outfit bar draw their icons from
-[Open Iconic](https://github.com/iconic/open-iconic) by Waybury (MIT), and the
-mark on an outfit that has a trigger, the outfit menu's gear and the character-sheet button's coat hanger are from
-[Phosphor](https://github.com/phosphor-icons/core) by Phosphor Icons (MIT). Only the
-icons this addon draws are included, and each set's license file ships beside them.
+The addon's icons, and the glyphs an outfit can take in the icon browser, come from three icon sets,
+each shipped with its license beside its art:
+
+- **Open Iconic**, by Waybury, MIT license (<https://github.com/iconic/open-iconic>): the settings,
+  the outfit window and the outfit bar.
+- **Phosphor** (the Fill weight), by Phosphor Icons, MIT license (<https://phosphoricons.com>): the
+  mark on an outfit that has a trigger, the outfit menu's gear and the coat hanger, the default
+  outfit icon.
+- **Game-icons.net**, CC BY 3.0 (<https://game-icons.net>), by Andy Meneely, Aussiesim, Carl Olsen,
+  Caro Asercion, Cathelineau, Catsu, DarkZaitzev, Delapouite, Faithtoken, Felbrigg, GeneralAce135,
+  Guard13007, HeavenlyDog, Irongamer, John Colburn, John Redman, Kier Heyl, Lorc, Lord Berandas,
+  Lucas, Pepijn Poolman, Pierre Leducq, PriorBlue, Quoting, Rihlsul, Sbed, SeregaCthtuf, Skoll,
+  Sparker, SpencerDub, Starseeker, Viscious Speed, Willdabeast, Zajkonur and Zeromancer. The marks
+  were rasterized to 64×64, their background square removed and recolored white so the game can tint
+  them; `AUTHORS.txt` names each mark's author.
