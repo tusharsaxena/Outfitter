@@ -21,35 +21,37 @@ and isolates each handler with `xpcall`.
 
 ## Catalog
 
-Senders marked P4 arrive with the port; until then the key is declared and nothing sends it.
+Each key's sender is its `Sender:` line in `core/Bus.lua`, which `tests/test_bus.lua` holds every call
+site to. A receiver is a module that registers for the key on its own bus target; a surface that only
+reads state when it is drawn (the launcher tooltip, `/of diagnostics`) is not one.
 
 | Key | Sender | Payload | Receivers |
 |---|---|---|---|
 | `SETTINGS_CHANGED` | `settings/Schema.lua` (the announce) | `(path, value)`, settings paths only | Trigger binder (`auto.enabled`), Bar (`bar.*`), Window |
-| `PROFILE_CHANGED` | `core/Database.lua` | `(key)` | Everything that re-applies a profile; the Trigger binder calls `SetActive` from the new profile's `auto.enabled` itself, so `NS.ApplyProfile` must not |
-| `OUTFIT_ADDED` | `modules/Outfits.lua` (P4) | `(id)` | Window, Bar, Trigger binder (`Bind(id)`), API v1 |
-| `OUTFIT_DELETED` | `modules/Outfits.lua` (P4) | `(id, name)` | Window, Bar, Trigger binder (unbind), API v1 |
-| `OUTFIT_EDITED` | `modules/Outfits.lua` (P4), also for the instance-row writes the `NS.OutfitSchema` announce makes | `(id, what)` | Window, Bar, Tooltips, Trigger binder (coalesced rebind on `what == "trigger"`), API v1 |
-| `OUTFIT_RENAMED` | `modules/Outfits.lua` (P4) | `(id, oldName, newName)` | Window, Bar, API v1 |
-| `OUTFIT_WORN` | `modules/OutfitStack.lua` (P4) | `(id, layer, byTrigger)` | Trigger binder (the `OUTFIT_WORN` pseudo-event), Window, Bar, API v1 |
-| `OUTFIT_REMOVED` | `modules/OutfitStack.lua` (P4) | `(id, byTrigger)` | Trigger binder, Window, Bar, API v1 |
-| `SELECTION_CHANGED` | `modules/OutfitStack.lua` (P4) | `(id or nil)` | Window, slot checkboxes |
-| `STACK_CHANGED` | `modules/Equip.lua` (P4, on the close of a bracket in which the stack moved: `E.Request` or `E.Touch` marked it; outside a bracket `E.Touch` sends at once) | none | Window (dirty, status cache kept), Bar, the launcher tooltip line |
-| `INVENTORY_CHANGED` | `modules/Inventory.lua` (P4) | `(equippedChanged, bagsChanged)` | Stack watch, Window, the tooltip cache |
-| `SWAP_COMPLETE` | `modules/OutfitStack_Watch.lua` (P4) | none | Equipment Manager mirror (pending save) |
-| `EM_SYNCED` | `modules/EquipmentManager.lua` (P4) | none | Window |
-| `STATS_CHANGED` | `modules/ItemStats.lua` (P4) | none | The Rebuild dialog's stat menus |
-| `OPTIMIZE_STARTED` | `modules/Optimize.lua` (P4) | `(job)` | Progress dialog |
-| `OPTIMIZE_PROGRESS` | `modules/Optimize.lua` (P4) | `(job, noChangeCount, maxNoChange, bestText)` | Progress dialog |
-| `OPTIMIZE_DONE` | `modules/Optimize.lua` (P4) | `(job, ok, reason)` | Progress dialog |
-| `PLAYER_STATE_CHANGED` | `modules/PlayerState.lua` (P4) | `(key, value)`, key one of `combat`, `dead`, `casting`, `spec` | Bar (combat opacity), test mode. Spec triggers use `ACTIVE_PLAYER_SPECIALIZATION_CHANGED`, not this |
-| `STATE_CHANGED` | `modules/States.lua` (P4; `NS.States.Set`, shared by `States.lua` and `States_Zone.lua`) | `(stateId, isActive)` | Trigger binder |
-| `AURAS_SCANNED` | `modules/States.lua` (P4) | none | Trigger binder (HAS_BUFF) |
-| `TOOLTIP_SHOWN` | `modules/States.lua` (P4) | none | Trigger binder |
-| `TOOLTIP_HIDDEN` | `modules/States.lua` (P4) | none | Trigger binder |
-| `TRIGGERS_REBOUND` | `modules/Triggers_Binder.lua` (P4) | `(count)` | Window (row badges), Diagnostics |
-| `PREVIEW_CHANGED` | `modules/Preview.lua` (P4) | `(active)` | Bar |
-| `LEGACY_DETECTED` | `core/OutfitterReborn.lua` (from `NS.OnLoadPassDone`, once, when the legacy addon is loaded) | none | Diagnostics |
+| `PROFILE_CHANGED` | `core/Database.lua` | `(key)` | Bar (rebuild and re-anchor from the new profile's `windows.bar`), Trigger binder (`SetActive` from the new profile's `auto.enabled`) |
+| `OUTFIT_ADDED` | `modules/Outfits.lua` | `(id)` | Window, Bar, Tooltips (cache wipe), Trigger binder (`Bind(id)`), API v1 |
+| `OUTFIT_DELETED` | `modules/Outfits.lua` | `(id, name)` | Window, Bar, Tooltips (cache wipe), Trigger binder (unbind), API v1 |
+| `OUTFIT_EDITED` | `modules/Outfits.lua`, also for the instance-row writes the `NS.OutfitSchema` announce makes | `(id, what)` | Window, Bar, Tooltips (cache wipe), slot checkboxes, Trigger binder (coalesced rebind on `what == "trigger"`), API v1 |
+| `OUTFIT_RENAMED` | `modules/Outfits.lua` | `(id, oldName, newName)` | Window, Bar, Tooltips (cache wipe), API v1 |
+| `OUTFIT_WORN` | `modules/OutfitStack.lua` | `(id, layer, byTrigger)` | Trigger binder (the `OUTFIT_WORN` pseudo-event), Window, Bar, API v1 |
+| `OUTFIT_REMOVED` | `modules/OutfitStack.lua` | `(id, byTrigger)` | Trigger binder, Window, Bar, API v1 |
+| `SELECTION_CHANGED` | `modules/OutfitStack.lua` | `(id or nil)` | Window, slot checkboxes |
+| `STACK_CHANGED` | `modules/Equip.lua` (on the close of a bracket in which the stack moved: `E.Request` or `E.Touch` marked it; outside a bracket `E.Touch` sends at once) | none | Window (dirty, status cache kept) |
+| `INVENTORY_CHANGED` | `modules/Inventory.lua` | `(equippedChanged, bagsChanged)` | Stack watch, Window, slot checkboxes, Tooltips (cache wipe) |
+| `SWAP_COMPLETE` | `modules/OutfitStack_Watch.lua` | none | Equipment Manager mirror (pending save) |
+| `EM_SYNCED` | `modules/EquipmentManager.lua` | none | Window |
+| `STATS_CHANGED` | `modules/ItemStats.lua` | none | None registers today; the Rebuild dialog reads `NS.Stats.Categories()` when it opens |
+| `OPTIMIZE_STARTED` | `modules/Optimize.lua` | `(job)` | Progress dialog |
+| `OPTIMIZE_PROGRESS` | `modules/Optimize.lua` | `(job, noChangeCount, maxNoChange, bestText)` | Progress dialog |
+| `OPTIMIZE_DONE` | `modules/Optimize.lua` | `(job, ok, reason)` | Progress dialog |
+| `PLAYER_STATE_CHANGED` | `modules/PlayerState.lua` | `(key, value)`, key one of `combat`, `dead`, `casting`, `spec` | Bar (combat opacity), test mode. Spec triggers use `ACTIVE_PLAYER_SPECIALIZATION_CHANGED`, not this |
+| `STATE_CHANGED` | `modules/States.lua` (`NS.States.Set`, shared by `States.lua` and `States_Zone.lua`) | `(stateId, isActive)` | Trigger binder |
+| `AURAS_SCANNED` | `modules/States.lua` | none | Trigger binder (HAS_BUFF) |
+| `TOOLTIP_SHOWN` | `modules/States.lua` | none | Trigger binder |
+| `TOOLTIP_HIDDEN` | `modules/States.lua` | none | Trigger binder |
+| `TRIGGERS_REBOUND` | `modules/Triggers_Binder.lua` | `(count)` | Window (row badges) |
+| `PREVIEW_CHANGED` | `modules/Preview.lua` | `(active)` | Bar |
+| `LEGACY_DETECTED` | `core/OutfitterReborn.lua` (from `NS.OnLoadPassDone`, once, when the legacy addon is loaded) | none | None registers today; `/of diagnostics` reads `NS.State.legacyLoaded` |
 
 The four outfit-record messages are per kind on purpose: a receiver needs to know whether an outfit
 was added, deleted, edited or renamed, and `NS.Outfits` stays their only sender.

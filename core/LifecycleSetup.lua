@@ -20,8 +20,8 @@ local L = NS.L
 
 -- Stand-down runs top to bottom; stand-up runs bottom to top. Jobs that want to equip cancel before
 -- the engine resets; States.Resume runs before TriggerBinder.BindAll on the way up (design §5.12).
--- Declared whole in P4.0: a name whose module has not landed is skipped (the P4.0 stubs publish no NS
--- table), so the list names every module before it exists.
+-- Every name is a module that ships; a name whose NS table is absent, or has no Suspend/Resume, is
+-- skipped by the walks below rather than raised on.
 local MODULES = { "Preview", "TriggerBinder", "States", "Optimize", "Companion", "EM", "Equip", "Stack",
                   "Outfits", "Inventory", "PlayerState", "Stats", "Tooltips", "Compare", "QuickSlots", "Bar",
                   "Dock", "SlotEnables", "Dialogs", "IconChooser" }

@@ -2,9 +2,8 @@
 
 Every authored file in the addon, its one job, and the load order (documentation-§3, Tier 1). The
 TOC, `OutfitterReborn.toc`, is the load order and the authority on it; this page says why it is that
-order. Files the design plans but the port has not written yet are listed under
-[Arriving with the port](#arriving-with-the-port), so this page never claims a file that is not on
-disk.
+order. Every file the TOC loads has a row below, and so does every authored file that does not ship
+([Not shipped](#not-shipped)).
 
 ## Load order
 
@@ -73,35 +72,110 @@ The libraries load first, each in its own folder under `libs/`, and are vendored
 | `core/OutfitterReborn.lua` | `NewAddon`, the `NS.Print` reclaim, `OnInitialize` (DB, migrations, the profile's skin, the enabled hold, launcher, options, slash) |
 | `core/Database.lua` | AceDB, the profile callbacks, the migration runner, both `resolveRoot` functions ([schema.md](schema.md)) |
 
-## defaults/, modules/, settings/, locales/
+## defaults/
 
 | File | Job |
 |---|---|
-| `defaults/Profile.lua` | `NS.defaults`, the only place a default is hardcoded |
+| `defaults/Profile.lua` | `NS.defaults`, the AceDB defaults tree: the only place a default is hardcoded |
+| `defaults/Items.lua` | `NS.ItemData`: slots, inventory types, alternates, aliases, ignored items, phantoms |
+| `defaults/Zones.lua` | `NS.Zones.rows` and `BRAWL_MAP_IDS`: the single zone source, one row per battleground and arena |
+| `defaults/TriggerData.lua` | The aura, form, NPC, difficulty, map, skill-line and pet ID tables the triggers and their state producers read; pure data, every key an ID |
+| `defaults/Triggers.lua` | `NS.TriggerCatalog`: one data row per non-zone trigger, and `CATEGORY_ORDER` |
+| `defaults/PreviewOutfits.lua` | The test-mode placeholder outfits, read by `modules/Preview.lua` and never by the store |
+
+## modules/
+
+In TOC order: the engine, then the triggers and their state producers, then the UI, the API and
+the diagnostics sections.
+
+**Engine**
+
+| File | Job |
+|---|---|
+| `modules/PlayerState.lua` | `NS.PlayerState`: the combat, dead, cast and spec flags |
+| `modules/ItemInfo.lua` | `NS.ItemInfo`: link parse, item identity and comparison |
+| `modules/Inventory.lua` | `NS.Inventory`: the bag and equipment scan, its cache and the bank-open rules |
+| `modules/Inventory_Lists.lua` | The missing, unused, BoE, warbound, in-use and cooldown lists and their sections (extends `NS.Inventory`) |
+| `modules/Outfits.lua` | `NS.Outfits`: the outfit store and its one writer API |
+| `modules/Outfits_Seed.lua` | The LoadPass: store repair, the built-in outfits' seed and the 1 s timer that runs the first one (extends `NS.Outfits`) |
+| `modules/Outfits_Schema.lua` | `NS.OutfitSchema`: the per-outfit instance rows, `outfit.*` and `trigger.<TID>.*` |
+| `modules/OutfitStack.lua` | `NS.Stack`: wear, remove, toggle, layers, recents, selection and title |
+| `modules/OutfitStack_Watch.lua` | The inventory watch: the temporary outfit, window-open recording and `SWAP_COMPLETE` (extends `NS.Stack`) |
+| `modules/Equip.lua` | `NS.Equip`: the bracket that cannot strand, its gates, execution and the muted SFX |
+| `modules/Equip_Changes.lua` | `NS.Changes`: the pure change-list builder, unique-equip order and the optimize rules |
+| `modules/Equip_Moves.lua` | `NS.Moves`: pickup, a move to an empty bag slot, the empty-slot lists and `/of unequip` |
+| `modules/EquipmentManager.lua` | `NS.EM`: the Blizzard Equipment Manager mirror |
+| `modules/Bank.lua` | `NS.Bank`: deposit, withdraw and the missing-items report |
+| `modules/ItemStats.lua` | `NS.Stats`: the stats the optimizer scores items by |
+| `modules/ItemStats_Sources.lua` | `NS.StatSources`: Pawn and WeightsWatcher as optional stat sources |
+| `modules/Optimize.lua` | `NS.Optimize`: the smart-outfit driver, the simple search, Trial and Rebuild |
+| `modules/Optimize_Genetic.lua` | `NS.OptimizeGA`: the genetic search behind a complex smart outfit |
+| `modules/Companion.lua` | `NS.Companion`: the battle-pet reconciler |
+
+**Triggers**
+
+| File | Job |
+|---|---|
+| `modules/Triggers_Params.lua` | `NS.TriggerParams`: typed trigger parameters, validate, normalize, display and capture |
+| `modules/Triggers_Families.lua` | `NS.TriggerFamilies`: the condition factories, guards and `TooltipHasLine` |
+| `modules/Triggers_CondGeneral.lua` | The bespoke GENERAL (and PvP-flag) trigger conditions |
+| `modules/Triggers_CondTrade.lua` | The bespoke TRADE trigger conditions |
+| `modules/Triggers_CondQuest.lua` | The bespoke QUEST and ENTERTAIN trigger conditions |
+| `modules/Triggers_Effects.lua` | The triggers' save-and-restore side effects: auto-loot, tracking, click-to-move, bar page, pets |
+| `modules/Triggers.lua` | `NS.Triggers`: the trigger registry, the `PSEUDO` table and the schema rows |
+| `modules/Triggers_Binder.lua` | `NS.TriggerBinder`: bind, unbind, dispatch and apply |
+| `modules/States.lua` | `NS.States`: auras, forms, the 0.5 s mounted and swimming poll, Dining, Spirit and the tooltip hooks |
+| `modules/States_Zone.lua` | The zone producer, its derived tables and `/of zone`'s zone half |
+
+**UI, API and diagnostics**
+
+| File | Job |
+|---|---|
+| `modules/Commands.lua` | `NS.Commands`: the slash outfit verbs' handlers (the verb table is `settings/Slash.lua`'s) |
+| `modules/Popups.lua` | `NS.Popups`: this addon's `StaticPopupDialogs` |
+| `modules/Tooltips.lua` | `NS.Tooltips`: the "Used by outfits" line on item tooltips |
+| `modules/Tooltips_Compare.lua` | `NS.Compare`: up to five comparison tooltips with the items your outfits use in the hovered slot |
+| `modules/OutfitTooltip.lua` | `NS.OutfitTooltip`: an outfit's tooltip, for the window's rows and the bar's buttons |
+| `modules/Dock.lua` | `NS.Dock`: the sheet holder and button, the window's show model, its follow and its layer sync |
+| `modules/Window.lua` | `NS.Window`: the outfit window's chrome, list body, scroll bar, footer and render |
+| `modules/Window_ListModel.lua` | `NS.WindowListModel`: what the outfit list shows, in order |
+| `modules/Window_Rows.lua` | `NS.WindowRows`: the list's 14 rows and the secure child each one owns |
+| `modules/SlotEnables.lua` | `NS.SlotEnables`: the 18 slot checkboxes over the character sheet while an outfit is selected |
+| `modules/OutfitMenu.lua` | `NS.OutfitMenu`: the outfit context menu |
+| `modules/UIDialogs.lua` | `NS.Dialogs`: the dialogs' shared chrome and controls |
+| `modules/Dialog_Outfit.lua` | `NS.OutfitDialog`: the new-outfit and rename dialog |
+| `modules/Dialog_Trigger.lua` | `NS.TriggerDialog`: the trigger chooser and its settings |
+| `modules/Dialog_TriggerFields.lua` | `NS.TriggerFields`: the trigger parameter editors, nine field types |
+| `modules/Dialog_Rebuild.lua` | `NS.RebuildDialog`: the multi-stat rebuild dialog |
+| `modules/Dialog_Progress.lua` | `NS.ProgressDialog`: the optimizer's progress window |
+| `modules/IconChooser.lua` | `NS.IconChooser`: the outfit icon picker |
+| `modules/Bar.lua` | `NS.Bar`: the outfit bar |
+| `modules/Bar_Buttons.lua` | The outfit bar's pooled buttons |
+| `modules/QuickSlots.lua` | `NS.QuickSlots`: the equipment flyout hooks |
+| `modules/QuickSlots_Sort.lua` | The flyout's upgrade-track sort (extends `NS.QuickSlots`) |
+| `modules/Preview.lua` | `NS.Preview`: test mode |
+| `modules/Api.lua` | The public API, `NS.API.v1`, published as `OutfitterReborn.API.v1` ([ARCHITECTURE.md](ARCHITECTURE.md#public-api)) |
 | `modules/Diagnostics.lua` | This addon's sections of `/of diagnostics` (debug-logging-§14) |
+
+## settings/
+
+| File | Job |
+|---|---|
 | `settings/Schema.lua` | The settings rows, the one write seam, the page filter and the forward to `NS.OutfitSchema` (LibKa0s-Schema) |
 | `settings/Slash.lua` | `NS.COMMANDS`, the LibKa0s-Slash descriptor and the macro-conditional wrapper ([slash-dispatch.md](slash-dispatch.md)) |
 | `settings/OptionsSetup.lua` | The LibKa0s-Options descriptor (`NS.Helpers`), the tabbed-page helper and the global reset popup |
-| `settings/General.lua` | The General page (Master controls, Skin, Keybindings) and the landing page spec, `NS.LANDING` |
+| `settings/General.lua` | The General page (Master controls, Behavior, Tooltips, Skin, Keybindings) and the landing page spec, `NS.LANDING` |
+| `settings/OutfitBar.lua` | The Outfit Bar page, `bar`, registered between General and Profiles |
 | `settings/Profiles.lua` | The Profiles sub-page, registered last, under a line saying outfits are per character |
+
+## locales/
+
+| File | Job |
+|---|---|
 | `locales/enUS.lua` | `NS.L`, the canonical locale with the key-is-the-string fallback |
 | `locales/enUS_Triggers.lua` | enUS topic file: the native triggers' strings, filling `NS.L` |
 | `locales/enUS_Window.lua` | enUS topic file: the window, menus, dialogs, bar, tooltips and test mode, filling `NS.L` |
-| `locales/deDE.lua`, `frFR.lua`, `zhCN.lua`, `zhTW.lua`, `koKR.lua`, `ruRU.lua` | The six overlays, each gated on its own `GetLocale()` first; the gate line only until the re-key (P4.28) |
-
-## Arriving with the port
-
-The design's §1.1 tree is the plan; the P4 sub-ledger (design §12) names the task that writes each
-file. In outline:
-
-| Folder | Files |
-|---|---|
-| `defaults/` | `Items.lua` (`NS.ItemData`), `Zones.lua` (the single zone source), `TriggerData.lua`, `Triggers.lua` (`NS.TriggerCatalog`), `PreviewOutfits.lua` |
-| `modules/` engine | `PlayerState`, `ItemInfo`, `Inventory`, `Inventory_Lists`, `Outfits`, `Outfits_Seed`, `Outfits_Schema`, `OutfitStack`, `OutfitStack_Watch`, `Equip`, `Equip_Changes`, `Equip_Moves`, `EquipmentManager`, `Bank`, `ItemStats`, `ItemStats_Sources`, `Optimize`, `Optimize_Genetic`, `Companion` |
-| `modules/` triggers | `Triggers_Params`, `Triggers_Families`, `Triggers_CondGeneral`, `Triggers_CondTrade`, `Triggers_CondQuest`, `Triggers_Effects`, `Triggers`, `Triggers_Binder`, `States`, `States_Zone` |
-| `modules/` UI | `Commands`, `Popups`, `Tooltips`, `Tooltips_Compare`, `OutfitTooltip`, `Dock`, `Window`, `Window_ListModel`, `Window_Rows`, `SlotEnables`, `OutfitMenu`, `UIDialogs`, `Dialog_Outfit`, `Dialog_Trigger`, `Dialog_TriggerFields`, `Dialog_Rebuild`, `Dialog_Progress`, `IconChooser`, `Bar`, `Bar_Buttons`, `QuickSlots`, `QuickSlots_Sort`, `Preview`, `Api` |
-| `settings/` | `OutfitBar.lua` (page `bar`) |
-| `tools/` | `gen-zones.lua`, `rekey-locales.lua` |
+| `locales/deDE.lua`, `frFR.lua`, `zhCN.lua`, `zhTW.lua`, `koKR.lua`, `ruRU.lua` | The six overlays, each gated on its own `GetLocale()` first and generated by `tools/rekey-locales.lua` from the fork's translations |
 
 ## Not shipped
 

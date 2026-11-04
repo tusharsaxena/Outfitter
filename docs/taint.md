@@ -1,8 +1,8 @@
 # Taint
 
 Every place Ka0s Outfitter Reborn meets the secure environment (documentation-§3, Tier 2: spilled from
-`ARCHITECTURE.md`; events-frames-taint). Today only the queue exists; the surfaces it protects arrive
-with the port, and each is listed here so the rules are fixed before the code.
+`ARCHITECTURE.md`; events-frames-taint): the queue, the rules every hook keeps, and each secure
+surface with what it costs in combat.
 
 ## The queue
 
@@ -13,7 +13,7 @@ with the port, and each is listed here so the rules are fixed before the code.
 - `Flush()` runs every stored write on `PLAYER_REGEN_ENABLED` (or when called) and drops the event
   once the queue is empty. `Clear()` drops everything without running it (stand-down).
 
-Every protected write the port makes goes through it: secure attributes on the list rows, strata,
+Every protected write the addon makes goes through it: secure attributes on the list rows, strata,
 level and parent on the outfit window (events-frames-taint-§2).
 
 ## Rules
@@ -28,7 +28,7 @@ level and parent on the outfit window (events-frames-taint-§2).
 - **Key bindings are insecure.** The 14 binding buttons are plain hidden buttons with `CLICK`
   bindings; a press refuses through `NS.StoodDownRefusal()` before anything else.
 
-## The secure surfaces (P4)
+## The secure surfaces
 
 ### The outfit list's secure buttons
 

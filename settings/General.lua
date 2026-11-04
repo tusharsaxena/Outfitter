@@ -51,8 +51,8 @@ local masterRows, masterTail = H.MasterControls({
         locked = L["Locks the outfit bar."],
     },
     resetPositionTooltip = L["Moves the outfit bar back to its starting place."],
-    -- The bar's place is the `bar.position` row (settings/OutfitBar.lua, P4.23); with no row yet the
-    -- reset answers false and moves nothing.
+    -- The bar's place is the `bar.position` row (settings/OutfitBar.lua); the reset applies that row's
+    -- default through the one write seam.
     onResetPosition      = function() NS.ApplyDefault(NS.FindSchemaRow("bar.position")) end,
     onResetAll           = function() NS.ShowResetAll() end,
 })

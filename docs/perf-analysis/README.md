@@ -55,8 +55,8 @@ its children.
 
 ## Captures
 
-No capture has been taken yet. The bracketed paths land with the port (P4), and the first capture is
-a later, separate run of `/dev-copilot:wow-perf-analysis` from a real client paste; none will be
+No capture has been taken yet. All ten bracketed paths ship in 1.1.0, and the first capture is a
+later, separate run of `/dev-copilot:wow-perf-analysis` from a real client paste; none will be
 assembled from offline scenarios or the source.
 
 | Bundle | Addon version | Label | Context | Headline |

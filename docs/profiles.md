@@ -23,7 +23,8 @@ and character.
 - **The minimap button is global.** Its show/hide state is LibDBIcon's own key under `global`, so it
   is the same on every profile, and no reset touches it.
 - **Reset Profile** is Reset all settings: the active profile only, after the confirmation popup.
-  It leaves every outfit alone. Deleting outfits is the separate Delete all outfits… act (P4).
+  It leaves every outfit alone. Deleting outfits is the separate Delete all outfits… act
+  (`/of deleteall`, General › Behavior).
 
 ## What happens on a change
 
@@ -34,10 +35,11 @@ and character.
 2. On a reset only: run the migrations again over the reset profile.
 3. Re-take the enabled hold (`NS.SyncEnabledHold`), so a profile with the addon disabled stands it
    down.
-4. `NS.ApplyProfile()` (P4): re-anchor, scale and fade the bar; bind or unbind the triggers from
-   `auto.enabled`.
+4. Call `NS.ApplyProfile()` if a module defines one. None does at 1.1.0: the profile's own
+   reactions ride the message in step 6.
 5. Show the skin picker if the profile has never seen it.
-6. Send `PROFILE_CHANGED (key)`.
+6. Send `PROFILE_CHANGED (key)`. The bar rebuilds and re-anchors from the new profile's
+   `windows.bar`, and the trigger binder re-reads `auto.enabled` and binds or unbinds the triggers.
 
 The callbacks are setup, not features: they stay live while the addon is disabled
 (slash-commands-§7).

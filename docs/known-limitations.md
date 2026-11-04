@@ -4,13 +4,11 @@ What Ka0s Outfitter Reborn does not do yet, does differently from the fork, or h
 client (documentation-§3, Tier 2: spilled from `ARCHITECTURE.md`). The O-numbers are the design's
 open issues (§14); a row here leaves when its check passes or its owner rules.
 
-## The build today
+## Translations
 
-- **The scaffold cannot wear an outfit.** P3 lands the seams, the store, the settings skeleton, the
-  slash surface and the first key binding; the engine, the triggers and the UI are P4. Until P4.19 the
-  launcher's Show window entry and the Show window key open the settings panel.
-- **Translations are not wired yet.** The six overlays carry only their locale gate until the re-key
-  (P4.28), so every client sees English.
+- **The six overlays carry only what the fork translated.** deDE, frFR, zhCN, zhTW, koKR and ruRU are
+  generated from the fork's string tables by `tools/rekey-locales.lua`; a string the port rewrote or
+  added has no line there and shows in English on those clients.
 
 ## Behavior changes from the fork
 
@@ -49,8 +47,9 @@ open issues (§14); a row here leaves when its check passes or its owner rules.
 - **Icon search** covers named icon sets only (O33).
 - **Trinket Queue's skip-while-active rule is inactive on frFR and koKR** (F-004). Their `Use:`
   duration patterns are inherited from the fork and cannot match a real tooltip, so an active trinket
-  reads as not active there. The fix waits on the client's real tooltip lines (smoke S-04); the
-  patterns are not written from memory.
+  reads as not active there. The fix waits on the client's real tooltip lines, captured by
+  smoke S-04 of the 2026-11-04 review ([`reviews/2026-11-04/03_SMOKE_TESTS.md`](reviews/2026-11-04/03_SMOKE_TESTS.md));
+  the patterns are not written from memory.
 - **Pet trigger picker.** The trigger dialog's pet field offers None, the stored pet and the summoned
   pet, not the owned-pet list: that needs a journal walk Compat does not publish yet
   (`Compat.OwnedPets()`, due when `core/Compat.lua` splits; it is at its line budget).

@@ -7,7 +7,7 @@ publishing `NS.Compat`. The trigger counts its hand-written shims:
 cat core/Compat*.lua | grep -cE '^\s*function\s+[A-Za-z_][A-Za-z0-9_]*\.'
 ```
 
-which answers **73** today (three or more fires the trigger). The members LibKa0s-Compat-1.0
+which answers **77** at 1.1.0 (three or more fires the trigger). The members LibKa0s-Compat-1.0
 supplies are documented by the library and are not repeated here beyond naming which ones this addon
 routes.
 
@@ -22,7 +22,7 @@ routes.
   scope, so Compat loads first, and a file-scope capture of `NS.Secrets` here would read nil
   (`test_loadorder` pins it).
 - **One file.** The family stays one file until `cat core/Compat*.lua | wc -l` would pass 1000
-  (compat; design C39). With the P4.2 accessors it is about 950 lines. A split by size alone,
+  (compat; design C39). With the engine's accessors it is 993 lines at 1.1.0, at the edge of that budget. A split by size alone,
   or an underscore name such as `Compat_Items`, is outside the family pattern.
 
 ## Routed from LibKa0s-Compat-1.0
@@ -58,7 +58,7 @@ a comparison mid-swap, on exactly the degraded path the stub exists to survive.
 | `Compat.GetTime()` | The client clock, 0 without one |
 | `Compat.IsAddOnLoaded(name)` | `true`/`false` (`C_AddOns` first) |
 
-## The P4.2 accessors
+## The engine's accessors
 
 The engine's whole view of the client (design §5.13). Reads answer plain-or-nil; writes answer `true`
 when the client call was made and `false` when the API is absent. A **location** is the addon's own

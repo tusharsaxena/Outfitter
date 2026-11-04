@@ -2,8 +2,7 @@
 
 The in-game checks no headless run can reach: real rendering, layering, taint, and client behavior
 the design could not measure ahead of time (audit-review-history). The owner runs them end to end
-before a release. Each row has a pass criterion. A row marked **P4** checks a surface the port
-landed, and every row can run now; section 10 maps what the headless gate leaves unverified to the
+before a release. Each row has a pass criterion, and every row can run on the 1.1.0 build; section 10 maps what the headless gate leaves unverified to the
 rows that verify it.
 
 ## Sign-off
@@ -35,12 +34,12 @@ rows that verify it.
 | # | Check | Pass when |
 |---|---|---|
 | S1 | Settings → AddOns → Ka0s Outfitter Reborn | The landing page shows the logo, the notes, the command list and the credits line |
-| S2 | General | Tabs in order: Master controls, (P4: Behavior, Tooltips,) Skin, Keybindings |
+| S2 | General | Tabs in order: Master controls, Behavior, Tooltips, Skin, Keybindings |
 | S3 | Master controls | Every row reads and writes; Reset all asks first, and resets the profile only |
 | S4 | Skin | Choosing a skin repaints the panel; the choice survives `/reload` |
 | S5 | Keybindings | The Show window binding is listed under the addon's own header |
 | S6 | Profiles | The note above AceDBOptions says outfits are per character; switching profiles applies the new profile's skin |
-| S7 | Outfit Bar (P4) | Every row reacts at once on the bar |
+| S7 | Outfit Bar | Every row reacts at once on the bar |
 
 ## 3. Launcher, key bindings and slash
 
@@ -48,22 +47,22 @@ rows that verify it.
 |---|---|---|
 | K1 | Minimap button left-click | Opens the settings panel |
 | K2 | Minimap button right-click | The library menu: Enabled, Locked, Test mode, Show window, Open settings, Open skin selector |
-| K3 | Minimap button tooltip | The brand and (P4) "Current outfit: …" |
+| K3 | Minimap button tooltip | The brand and "Current outfit: …" |
 | K4 | `/of` and `/of help` | The command list, with the alias line |
 | K5 | `/of disable`, then a feature verb | The one disabled line; `/of enable` restores |
 | K6 | Show window key, out of combat and in combat | Toggles the window, and from combat prints that it opens when combat ends (O8) |
-| K7 | `/of wear [combat] A; B` (P4) | Wears B out of combat and A in combat |
+| K7 | `/of wear [combat] A; B` | Wears B out of combat and A in combat |
 
 ## 4. Debug, diagnostics and performance
 
 | # | Check | Pass when |
 |---|---|---|
 | D1 | `/of debug on`, `/of debug` | The console opens with one Init line (brand, version, schema, profile, outfit counts) |
-| D2 | `/of diagnostics` | The report is appended, with the brand in both markers, the four sections, and no error |
+| D2 | `/of diagnostics` | The report is appended, with the brand in both markers, the addon's seven sections (identity, settings, state, zone, equip, bindings, rejected), and no error |
 | D3 | `/of diagnostics` while disabled | Still runs |
 | D4 | `/of perf start`, `measure a`, a fight, `measure b`, a fight, `finish`, `/reload`, `report` | A report and one JSON line |
 
-## 5. The outfit window and the sheet (P4)
+## 5. The outfit window and the sheet
 
 | # | Check | Pass when |
 |---|---|---|
@@ -77,7 +76,7 @@ rows that verify it.
 | W8 | In combat with the window gone: change an outfit from the bar, press a wear key, rebind a key on the Keybindings tab | The wear follows the client's combat rules; the window's secure rows are not rebuilt until combat ends; a binding change in combat is refused or waits, never half-applied; no `ADDON_ACTION_BLOCKED` appears (O11) |
 | W9 | The icon chooser's search; the Title submenu on a character with 200+ titles | Search finds icons from named sets (O33); the submenu opens in 30-row chunks with "More" and stays usable (O38) |
 
-## 6. Wearing and triggers (P4)
+## 6. Wearing and triggers
 
 | # | Check | Pass when |
 |---|---|---|
@@ -95,7 +94,7 @@ rows that verify it.
 | T12 | A boss encounter (a raid or dungeon boss) with triggers on and `/of debug on` | No Lua error while health, power, auras or item links read as secret values; a trigger that needs one holds its outfit instead of flapping; `/of diagnostics` after the fight shows no stuck bracket |
 | T13 | A potion or trinket with a use duration | The duration the addon reads matches the tooltip; record the item and the client build when it does not (O15) |
 
-## 7. Bar, bank, tooltips and quick slots (P4)
+## 7. Bar, bank, tooltips and quick slots
 
 | # | Check | Pass when |
 |---|---|---|
@@ -115,7 +114,7 @@ rows that verify it.
 | X3 | Common addons that register slash commands (e.g. a bag addon, a raid tool) | `/of` reaches this addon; record any collision (O3) |
 | X4 | `/of diagnostics` after login | The O17 client APIs (uniqueness, warbound, usability, item stats, Azerite, bank container) answer, or their tooltip or ladder fallback is the one in use |
 
-## 9. The skin switch (P4)
+## 9. The skin switch
 
 The same surfaces `tests/skin_surfaces.lua` declares for the headless skin-switch suite (design §9.5),
 checked by eye in the client.

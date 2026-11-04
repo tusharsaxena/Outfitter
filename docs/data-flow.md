@@ -5,8 +5,7 @@ the write seam, the stand-down latch, and the core mechanic, a trigger or a clic
 item out. It is the engineer counterpart of the README's "How outfit changes work"; the two describe one
 pipeline and must not contradict each other.
 
-Sections marked **P4** describe the design (`superpowers/specs/2026-11-03-design.md`, §5 and §6) that
-the port lands; the rest is in the tree today.
+The design behind it is `superpowers/specs/2026-11-03-design.md`, §5 and §6.
 
 ## Load and enable
 
@@ -23,12 +22,12 @@ the port lands; the rest is in the tree today.
    hold). Stood down, it stops there. Standing up, it calls the latch's own stand-up, `NS.StandUp()`
    (`core/LifecycleSetup.lua`): the bus replay (a no-op while never stood down),
    `NS.RegisterGameEvents()` (the host owns no game event; every one is a module's), then every
-   module in `NS.LIFECYCLE_MODULES` resumed bottom to top, a name whose module has not landed skipped,
-   so PlayerState, Inventory and the stack are up before the binder wears through them. The binder's resume installs its receivers only: it binds
-   nothing until the first LoadPass has run (`/of auto on` before it records the setting and lets the
+   module in `NS.LIFECYCLE_MODULES` resumed bottom to top (a name with no module table, or one
+   without `Resume`, is skipped), so PlayerState, Inventory and the stack are up before the binder
+   wears through them. The binder's resume installs its receivers only: it binds nothing until the first LoadPass has run (`/of auto on` before it records the setting and lets the
    LoadPass bind). Last, the first-run skin picker's 2 s AceTimer. Nothing is dispatched on the bus
    before this and the first LoadPass.
-4. **First `PLAYER_ENTERING_WORLD`** (P4): a 1 s AceTimer runs `NS.Outfits.LoadPass()`, which seeds
+4. **First `PLAYER_ENTERING_WORLD`**: a 1 s AceTimer runs `NS.Outfits.LoadPass()`, which seeds
    the built-in outfits once per character (guarded by `char.seeded`), repairs stale ids, mirrors the
    Equipment Manager, and ends by binding every trigger. Its finish sends `LEGACY_DETECTED` when the
    old Outfitter is loaded (warn only, no hold).
@@ -43,7 +42,8 @@ so sends `OUTFIT_EDITED` instead ([schema.md](schema.md)).
 
 A profile switch, copy or reset runs `NS.OnProfileChanged` (`core/Database.lua`): hide the skin
 picker, apply the profile's skin, re-run the migrations over a reset profile, re-take the enabled hold,
-`NS.ApplyProfile()` (bar, automatic changes), maybe show the skin picker, then `PROFILE_CHANGED`.
+maybe show the skin picker, then `PROFILE_CHANGED`, on which the bar re-anchors and the trigger
+binder re-reads `auto.enabled` ([profiles.md](profiles.md)).
 `db.char` is never touched.
 
 ## The stand-down latch
@@ -56,7 +56,7 @@ settings). Hooks that cannot be unhooked check `NS.IsStoodDown()` first in their
 a stand-down: both chat commands, the dispatcher, the settings categories, AceDB with its callbacks and
 the launcher (slash-commands-§7). Every refusal goes through `NS.StoodDownRefusal()`.
 
-## The core mechanic (P4)
+## The core mechanic
 
 ```
 game event ─► NS.States / NS.PlayerState / zone producer ─► STATE_CHANGED (bus)
@@ -98,7 +98,7 @@ NS.Equip.Batch(function()  NS.Stack.Wear / Remove (layer, byTrigger)  end) ◄�
   items by itemID, NPCs by creatureID, professions by skillLine. The documented exceptions are rows
   D3, D4, D8 and D10 in `ARCHITECTURE.md`.
 
-## Zones (P4)
+## Zones
 
 The fork kept five tables in step by hand (instance map IDs, the special-ID order, the event table,
 the built-in events and the preset scripts), and missing one left a battleground outfit silently dead.
@@ -111,19 +111,25 @@ through `tools/gen-zones.lua`, never from memory.
 
 ## Event subscriptions
 
-Today: `PLAYER_REGEN_ENABLED`, on `core/SecureQueue.lua`'s own target while a protected write
-waits, and on `core/SkinSetup.lua`'s while the first-run skin picker's start waits out combat. Both are
-dropped when their wait ends.
-
-From the port, each on its module's own target, unregistered by its `Suspend()`:
+Every game event is registered through `NS.SafeRegisterEvent` (or `NS.SafeRegisterUnitEvent` for a
+player-only unit event), on the owning module's own target, in its `Resume()`, and dropped by its
+`Suspend()`. A name the client rejects lands in `NS.rejectedEvents` and `/of diagnostics`.
 
 | Module | Events |
 |---|---|
-| `PlayerState` | `PLAYER_REGEN_DISABLED`/`ENABLED`, `PLAYER_DEAD`, `PLAYER_ALIVE`, `PLAYER_UNGHOST`, the player's `UNIT_SPELLCAST_*`, `ACTIVE_PLAYER_SPECIALIZATION_CHANGED` |
-| `Inventory` | `BAG_UPDATE_DELAYED`, `PLAYER_EQUIPMENT_CHANGED`, `BANKFRAME_OPENED`/`CLOSED` |
+| `PlayerState` | `PLAYER_REGEN_DISABLED`/`ENABLED`, `PLAYER_DEAD`, `PLAYER_ALIVE`, `PLAYER_UNGHOST`, `PLAYER_TALENT_UPDATE`, `ACTIVE_PLAYER_SPECIALIZATION_CHANGED`, `PLAYER_ENTERING_WORLD`; the player's `UNIT_SPELLCAST_*` on a unit-filtered frame |
+| `Inventory` | `BAG_UPDATE`, `BAG_UPDATE_DELAYED`, `PLAYERBANKSLOTS_CHANGED`, `PLAYER_ENTERING_WORLD`, `GET_ITEM_INFO_RECEIVED`, `BANKFRAME_OPENED`/`CLOSED`, `PLAYER_INTERACTION_MANAGER_FRAME_SHOW`/`HIDE`; the player's `UNIT_INVENTORY_CHANGED` |
 | `Equip` | `PLAYER_ENTERING_WORLD`, `PLAYER_LEAVING_WORLD` |
-| `EquipmentManager` | `EQUIPMENT_SETS_CHANGED`, `EQUIPMENT_SWAP_FINISHED` |
-| `States` | the player's `UNIT_AURA`, `UPDATE_SHAPESHIFT_FORM(S)`, mount, swim and fall polling on a ticker |
+| `Outfits_Seed` | `PLAYER_ENTERING_WORLD` (arms the first LoadPass) |
+| `EquipmentManager` | `EQUIPMENT_SETS_CHANGED` |
+| `ItemStats_Sources` | `ADDON_LOADED` (Pawn or WeightsWatcher arriving late) |
+| `States` | `PLAYER_REGEN_ENABLED`, `PLAYER_ALIVE`, `PLAYER_UNGHOST`, `PLAYER_ENTERING_WORLD`; the player's `UNIT_AURA`; while Dining is watched, the player's `UNIT_HEALTH` and `UNIT_POWER_UPDATE`; while Spirit is watched, the player's `UNIT_SPELLCAST_SENT` and `UNIT_POWER_UPDATE`; a 0.5 s mounted and swimming poll on an AceTimer |
 | `States_Zone` | `ZONE_CHANGED_NEW_AREA`, `ZONE_CHANGED`, `ZONE_CHANGED_INDOORS`, `PLAYER_ENTERING_WORLD` |
 | `Dock` | `PLAYER_REGEN_DISABLED`/`ENABLED` (the window hides for combat) |
-| each bound trigger | the events its descriptor names |
+| `Bar` | `PET_BATTLE_OPENING_START`, `PET_BATTLE_OVER` |
+| `Triggers_Binder` | Each bound trigger's descriptor events, on the outfit's own target; a `unit = "player"` descriptor's `UNIT_*` events on the binder's one unit-filtered frame |
+| `core/SecureQueue.lua` | `PLAYER_REGEN_ENABLED`, only while a protected write waits out lockdown |
+| `core/SkinSetup.lua` | `PLAYER_REGEN_ENABLED`, only while the first-run skin picker's start waits out combat |
+
+The icon chooser's frame also registers `GLOBAL_MOUSE_DOWN` while it is shown, to close on an outside
+click.

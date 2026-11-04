@@ -13,9 +13,9 @@ the build order is
 Ka0s Outfitter Reborn is an equipment manager for Retail (Midnight, 12.x). A player builds named
 outfits, wears them by hand from a window docked to the character sheet, from an outfit bar, from key
 bindings or from `/of`, and lets **native triggers** wear and remove them automatically: fishing,
-gathering, a battleground or arena by map, a druid form, a spec, a mount, and about sixty more. It is
-a rewrite of the community fork of Outfitter by John Stephen (mundocani), MIT licensed, as an Ace3
-addon in the standard's modular layout, on the vendored `LibKa0s` v1.85.0.
+gathering, a battleground or arena by map, a druid form, a spec, a mount, and about seventy more
+(77 in all). It is a rewrite of the community fork of Outfitter by John Stephen (mundocani), MIT
+licensed, as an Ace3 addon in the standard's modular layout, on the vendored `LibKa0s` v1.85.0.
 
 Three ideas carry the design:
 
@@ -29,13 +29,14 @@ Three ideas carry the design:
   from a family factory). An outfit stores only the trigger's id, its flags and its parameters, so
   behavior always comes from the code that ships. There is no `loadstring` and no script editor (R3).
 
-**Where the build stands.** P3 (the scaffold) is complete: the namespace, media, constants, session
-state, environment, core printer, every seam (Compat, Secrets, Bus, Skin, Pool, Item, Widgets,
-SecureQueue, Lifecycle, Perf, DebugLog, Launcher), the AceAddon object, the AceDB store with its
-migration runner, the settings skeleton (General with Master controls, Skin and Keybindings; Profiles),
-the slash dispatcher with the reserved verbs, the first key binding, the locale scaffold and this doc
-set. The engine, the triggers and the UI are P4 (the design's §12); each topic doc says which parts
-exist today and which arrive with the port.
+**What ships in 1.1.0.** The whole port is in the tree: the seams over `LibKa0s`, the AceDB store
+with its migration runner, the equipment engine (inventory scan, outfit store, stack, the equip
+bracket, the Equipment Manager mirror, the bank verbs, the stat optimizer, the battle-pet companion),
+the native trigger catalog with its binder and state producers, the docked outfit window and its
+slot checkboxes, the outfit bar, the dialogs and menus, the tooltips and quick slots, test mode, the
+public API, three settings pages (General, Outfit Bar, Profiles), 35 slash verbs, 14 key bindings
+and six translation overlays. What it does not do yet, and what a client has still to confirm, is
+under Known Limitations.
 
 ## Module Map
 
@@ -44,10 +45,13 @@ defaults → modules → settings`. The full table, every file with its one job 
 `LOAD-BEARING` line, is [`module-map.md`](module-map.md).
 
 In outline: `core/` holds the seams, each a lease on one `LibKa0s` major with a degrade stub
-(`core/Compat.lua` and `core/Secrets.lua` are the addon's own); `defaults/` holds pure data
-(`defaults/Profile.lua`, the only place a default is hardcoded); `modules/` holds the engine, the
-triggers and the UI (today only `modules/Diagnostics.lua`); `settings/` holds the schema, the slash
-dispatcher and the pages, last.
+(`core/Compat.lua` and `core/Secrets.lua` are the addon's own); `defaults/` holds pure data (the
+profile defaults, the item and zone tables, the trigger catalog and its ID tables, the test-mode
+outfits; `defaults/Profile.lua` is the only place a default is hardcoded); `modules/` holds, in load
+order, the engine (`PlayerState` through `Companion`), the triggers and their state producers
+(`Triggers_*`, `States`, `States_Zone`), then the UI (`Commands` through `Preview`), the public API
+(`Api`) and the diagnostics sections; `settings/` holds the schema, the slash dispatcher and the
+pages, last.
 
 ## Settings Schema
 
@@ -59,7 +63,7 @@ stored profile (`scope = "profile"`) or every stored character (`scope = "char"`
 
 There are two Schema instances (design §3.5). `NS.Schema` (`settings/Schema.lua`) holds every settings
 row and is the only one Options, the slash CLI and Reset all read; `NS.OutfitSchema`
-(`modules/Outfits_Schema.lua`, P4.6) holds the per-outfit instance rows (`outfit.*`,
+(`modules/Outfits_Schema.lua`) holds the per-outfit instance rows (`outfit.*`,
 `trigger.<TID>.*`). `NS.SetByPath(path, value, instanceId)` is the one write seam for both: a non-nil
 `instanceId` forwards to the outfit instance. Their roots are `NS.ResolveSettingsRoot` and
 `NS.ResolveOutfitRoot` in `core/Database.lua`.
@@ -85,7 +89,7 @@ Every message with its sender, payload and receivers: [`message-bus.md`](message
 
 `/of` is the command and `/outfitter` its alias; both reach one dispatcher (`settings/Slash.lua`, on
 LibKa0s-Slash), behind a host routing wrapper that runs macro conditionals through
-`SecureCmdOptionParse` (H25). `NS.COMMANDS` today:
+`SecureCmdOptionParse` (H25). `NS.COMMANDS` opens with the reserved verbs:
 
 | Verb | What it does |
 |---|---|
@@ -109,16 +113,61 @@ The outfit verbs (`show`, `hide`, `wear`, `unwear`, `toggle`, `update`, the bank
 handlers in `modules/Commands.lua`. The live-while-disabled rules, the macro-conditional routing and
 the full verb set are in [`slash-dispatch.md`](slash-dispatch.md).
 
+## Public API
+
+`modules/Api.lua` builds the one surface another addon may call, `NS.API.v1`, and publishes
+`NS.API` under the folder's name (public-api), so a consumer reads `OutfitterReborn.API.v1`. Only the
+API table is global, never `NS`. **v1 is semver-stable**: a member is never removed or changed in
+meaning inside v1, and a breaking change arrives as a sibling `v2`.
+
+| Member | Answers |
+|---|---|
+| `FindOutfitByName(name)` | A copy `{ id, name, category }` of the outfit with that name (case-insensitive), or nil |
+| `WearOutfit(name)` | `true` when the outfit was worn; `false` for an unknown name or while the addon is stood down |
+| `RemoveOutfit(name)` | `true` when the outfit was taken off; `false` for an unknown name, an outfit not worn, or while stood down |
+| `GetCurrentOutfitInfo()` | `name, id` of the top outfit; `""` when nothing is worn, the localized "Custom" for a temporary outfit |
+| `GetOutfitsUsingItem(link)` | An array of copies `{ id, name }`; empty for a secret or unparsable link |
+| `RegisterOutfitEvent(fn)` | `true` once `fn` is subscribed (a second call with the same `fn` is the same subscription); `false` for a non-function or with no event bus |
+| `UnregisterOutfitEvent(fn)` | `true` when `fn` was subscribed |
+
+The contract:
+
+- **No member raises.** Called before the saved data exists (at the caller's own load), each answers
+  its empty value.
+- **Answers are fresh copies**, so nothing a caller writes into one can reach the store.
+- **Stood down, the two wear calls refuse** (disabled means not running); the reads still answer.
+  An addon's wear is not a hardware event, so it never changes the player's title.
+- **Events.** A subscriber is called as `fn(event, id, ...)` for the six outfit messages
+  (`OUTFIT_ADDED`, `OUTFIT_DELETED`, `OUTFIT_RENAMED`, `OUTFIT_WORN`, `OUTFIT_REMOVED`,
+  `OUTFIT_EDITED`). `event` is the catalog key, never the wire name, and `...` is the rest of the
+  bus payload ([`message-bus.md`](message-bus.md)). Each call is isolated with `xpcall` and a raise
+  goes to the client's error handler; a return value is ignored. Nothing is delivered before the
+  session's first LoadPass, and nothing while the addon is stood down.
+
+The legacy `Outfitter_*` globals are gone and are not shimmed (H3, deviation row D1 below);
+`tests/test_api.lua` pins the members and the global allow-list.
+
 ## Event Subscriptions
 
-Game events are registered on module-local AceEvent targets through `NS.SafeRegisterEvent`, so a
-name the client rejects lands in `NS.rejectedEvents` and `/of diagnostics` instead of raising. Today
-the tree registers one game event: `PLAYER_REGEN_ENABLED`, on `core/SecureQueue.lua`'s own target,
-held only while a protected write waits out lockdown, and on a target of `core/SkinSetup.lua`'s own
-while the first-run skin picker's start is held over combat. Each engine module brings its own
-events in P4 (`PLAYER_EQUIPMENT_CHANGED`, `BAG_UPDATE_DELAYED`, `UNIT_AURA`, the zone events,
-`PLAYER_REGEN_DISABLED`/`ENABLED` and the rest); the pipeline from event to equipped item is
-[`data-flow.md`](data-flow.md).
+Game events are registered on module-local AceEvent targets through `NS.SafeRegisterEvent` (and a
+player-only unit event through `NS.SafeRegisterUnitEvent` on a unit-filtered frame), so a name the
+client rejects lands in `NS.rejectedEvents` and `/of diagnostics` instead of raising. The addon
+object registers none: each module registers its own in its `Resume()` and drops them in its
+`Suspend()`. In outline:
+
+- **PlayerState**: combat, death, the player's casts and the spec.
+- **Inventory**: the bag, bank and item-info events, and the player's `UNIT_INVENTORY_CHANGED`.
+- **Equip** and **Outfits_Seed**: the loading-screen edges and the first LoadPass.
+- **States** and **States_Zone**: the player's `UNIT_AURA`, the Dining and Spirit watches while a
+  trigger needs them, the zone events, and a 0.5 s mounted and swimming poll.
+- **Dock**: `PLAYER_REGEN_DISABLED`/`ENABLED`, to hide the window for combat. **Bar**: pet battles.
+  **EquipmentManager**: `EQUIPMENT_SETS_CHANGED`. **ItemStats_Sources**: `ADDON_LOADED`, for a stat
+  addon that loads late.
+- **Triggers_Binder**: each bound trigger's descriptor events, on the outfit's own target.
+- **core/SecureQueue.lua** and **core/SkinSetup.lua**: `PLAYER_REGEN_ENABLED`, only while something
+  waits out combat.
+
+The full table and the pipeline from event to equipped item are in [`data-flow.md`](data-flow.md).
 
 ## Frame layering
 
@@ -144,13 +193,13 @@ still owed: [`taint.md`](taint.md).
 
 ## Known Limitations
 
-- The scaffold loads, stores settings and answers its slash and settings surfaces; no outfit can be
-  worn until the engine lands in P4.
 - The window is hidden for the length of combat (a behavior change from the fork, O4).
 - Old saved variables are not migrated: 1.1.0 starts from a fresh store (R4), and old key
   assignments are lost (H11).
 - Both the old Outfitter and this addon may change gear if both are loaded; the addon warns once and
   does not hold its triggers (O2).
+- The six translations carry only what the fork translated; a string the port rewrote or added shows
+  in English on those clients.
 
 The full list, with the client checks still owed: [`known-limitations.md`](known-limitations.md).
 
@@ -159,9 +208,10 @@ The full list, with the client checks still owed: [`known-limitations.md`](known
 Frozen and generated stores are named once each and not enumerated: `docs/audits/`,
 `docs/reviews/`, `docs/automated-tests/<run>/`, `docs/perf-analysis/<run>/`,
 `docs/revendor/<date>-v<tag>/`, `docs/superpowers/` and `docs/investigations/` (documentation-§3).
-Of those, `docs/reviews/`, `docs/automated-tests/<run>/`, `docs/revendor/<date>-v<tag>/` and
-`docs/superpowers/` exist today; `docs/superpowers/` holds the design, the plan and the research
-behind them, and `docs/reviews/2026-09-16/` is the fork's last review, kept frozen.
+Of those, `docs/audits/`, `docs/reviews/`, `docs/automated-tests/<run>/`,
+`docs/revendor/<date>-v<tag>/` and `docs/superpowers/` exist today; `docs/superpowers/` holds the
+design, the plan and the research behind them, and `docs/reviews/2026-09-16/` is the fork's last
+review, kept frozen.
 
 ### Required (documentation-§3, Tier 1)
 
@@ -180,13 +230,13 @@ behind them, and `docs/reviews/2026-09-16/` is the fork's last review, kept froz
 | Doc | Status | Trigger |
 |---|---|---|
 | [`perf-analysis/README.md`](perf-analysis/README.md) | Present | The performance harness is wired (`core/PerfSetup.lua`) |
-| [`slash-dispatch.md`](slash-dispatch.md) | Present | 14 commands in `NS.COMMANDS` today (eight or more) |
+| [`slash-dispatch.md`](slash-dispatch.md) | Present | `NS.COMMANDS` holds the reserved verbs and the outfit verbs, well past the trigger of eight or more |
 | [`midnight-quirks.md`](midnight-quirks.md) | Present | `core/Compat.lua` carries client-version workarounds of its own (the table-detector ladder, the spec ladder's stub) and the secret-value rules |
-| [`compat-layer.md`](compat-layer.md) | Present | `core/Compat.lua` publishes 73 hand-written shims (the trigger is three or more) |
+| [`compat-layer.md`](compat-layer.md) | Present | `core/Compat.lua` publishes far more than the trigger's three hand-written shims ([`compat-layer.md`](compat-layer.md) has the counting grep) |
 | [`message-bus.md`](message-bus.md) | Present | 25 messages in `NS.MSG` (the trigger is more than ten) |
 | [`profiles.md`](profiles.md) | Present | A Profiles page ships in the options UI (`settings/Profiles.lua`) |
 | [`known-limitations.md`](known-limitations.md) | Present | Known Limitations spilled: the full list passes ~60 lines; the hub keeps a summary |
-| [`taint.md`](taint.md) | Present | Taint Notes spilled: the secure surfaces the port lands pass ~60 lines; the hub keeps a summary |
+| [`taint.md`](taint.md) | Present | Taint Notes spilled: the secure surfaces pass ~60 lines; the hub keeps a summary |
 | [`debug.md`](debug.md) | Present | The diagnostics report ships (always fired) |
 
 ### Verification and record (documentation-§3)

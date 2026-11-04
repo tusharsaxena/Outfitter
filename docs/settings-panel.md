@@ -41,7 +41,7 @@ Composed by `H.MasterControls` from one declaration, the canonical rows in canon
 | Master opacity | `alpha` | `NS.Bar.ApplyAlpha()` |
 | Lock frame | `locked` | `NS.Bar.SetLocked(v)` |
 | Debug console | `state.debugConsole` | `NS.DebugLog:ConsoleCheckbox()` (session; Reset all turns it off) |
-| Minimap button | `global.minimap.shown` | `NS.Launcher:IsShown()`/`SetShown()`; exempt from reset |
+| Minimap button | `global.minimap.shown` | `NS.Launcher:IsShown()`/`SetShown()`; exempt from reset. The launcher's Show window entry has a key binding of its own, **Toggle outfit window** (`CLICK OutfitterRebornToggleWindow:LeftButton`, first in `Bindings.xml`), set on the Keybindings tab below or in Options → Keybindings |
 | Test mode | `state.testMode` | `NS.Preview.Start`/`Stop` (session; Reset all ends it) |
 | Reset position | button | Resets `bar.position` |
 | Reset all settings | button | `NS.ShowResetAll` |

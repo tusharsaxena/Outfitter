@@ -69,8 +69,8 @@ anything reads `NS.db.profile`, and again over a reset profile:
 
 | Instance | File | Rows | Root (`resolveRoot`, `core/Database.lua`) |
 |---|---|---|---|
-| `NS.Schema` | `settings/Schema.lua` | Every settings row: the Master controls, the Skin rows, the Behavior, Tooltips and Outfit Bar rows (P4.23) | `NS.ResolveSettingsRoot`: `global.*` under `db.global`, everything else under `db.profile` |
-| `NS.OutfitSchema` | `modules/Outfits_Schema.lua` (P4.6) | The instance rows: `outfit.trigger.id`, `outfit.trigger.disabled`, `outfit.trigger.combatDisabled`, `outfit.icon`, `outfit.bar.hide`, and one `trigger.<TID>.<key>` row per trigger parameter (about 250) | `NS.ResolveOutfitRoot`: `outfit.*` under `db.char.outfits[id]`, `trigger.*` under its `triggerParams`; a nil or unknown id is refused |
+| `NS.Schema` | `settings/Schema.lua` | Every settings row: the Master controls, the Skin rows, the Behavior, Tooltips and Outfit Bar rows | `NS.ResolveSettingsRoot`: `global.*` under `db.global`, everything else under `db.profile` |
+| `NS.OutfitSchema` | `modules/Outfits_Schema.lua` | The instance rows: `outfit.trigger.id`, `outfit.trigger.disabled`, `outfit.trigger.combatDisabled`, `outfit.icon`, `outfit.bar.hide`, and one `trigger.<TID>.<key>` row per trigger parameter (about 250) | `NS.ResolveOutfitRoot`: `outfit.*` under `db.char.outfits[id]`, `trigger.*` under its `triggerParams`; a nil or unknown id is refused |
 
 The settings instance has no outfit arm and the outfit instance refuses a nil id, so a profile reset
 can never reach an outfit (H7). Options, the slash CLI (`/of list|get|set`) and Reset all read only
@@ -126,17 +126,16 @@ Reset position (`NS.ApplyDefault`), each decoding into a new table, never the de
 ## Named non-setting state
 
 Not settings, so no row and no reset reaches them; each has one owner module, and these are every
-function that writes it (architecture-§5). Owners marked P4 arrive with the port, and until then
-nothing writes the key.
+function that writes it (architecture-§5).
 
 | Key | Owner | Writers |
 |---|---|---|
-| `profile.windows.dialogs[key]` | `NS.Dialogs` (P4) | `NS.Dialogs.SavePosition(key, point, x, y)` on a dialog's drag stop |
+| `profile.windows.dialogs[key]` | `NS.Dialogs` | `NS.Dialogs.SavePosition(key, point, x, y)` on a dialog's drag stop |
 | `global.minimap.minimapPos` | LibDBIcon (vendored) | LibDBIcon's own drag handler |
-| `char.outfits`, `char.order`, `char.nextID`, `char.bindings`, `char.seeded` | `NS.Outfits` (P4) | The `NS.Outfits` writer API (`Create`, `Delete`, `DeleteAll`, `Rename`, `SetItems`, `SetToCurrent`, `Bind`, `Changed`, `LoadPass`), plus the instance-row writes through `NS.ResolveOutfitRoot` |
-| `char.stack`, `char.recent` | `NS.Stack` (P4) | `Wear`, `Remove`, the temporary-outfit collapse, and the LoadPass repair. Persisted because restoring the layering after `/reload` is the fork's behavior (recorded data) |
-| `char.emPreserved` | `NS.EM` (P4) | The zero-sets protection, while the Equipment Manager reports no sets |
-| `outfits[id].triggerState[TID]` | `NS.TriggerBinder` (P4) | A trigger's side effects through `ctx.persist` (Fishing and Stealth CVar restores, `wasPvP`) |
+| `char.outfits`, `char.order`, `char.nextID`, `char.bindings`, `char.seeded` | `NS.Outfits` | The `NS.Outfits` writer API (`Create`, `Delete`, `DeleteAll`, `Rename`, `SetItems`, `SetToCurrent`, `Bind`, `Changed`, `LoadPass`), plus the instance-row writes through `NS.ResolveOutfitRoot` |
+| `char.stack`, `char.recent` | `NS.Stack` | `Wear`, `Remove`, the temporary-outfit collapse, and the LoadPass repair. Persisted because restoring the layering after `/reload` is the fork's behavior (recorded data) |
+| `char.emPreserved` | `NS.EM` | The zero-sets protection, while the Equipment Manager reports no sets |
+| `outfits[id].triggerState[TID]` | `NS.TriggerBinder` | A trigger's side effects through `ctx.persist` (Fishing and Stealth CVar restores, `wasPvP`) |
 | `global.skinNotice` | LibKa0s-Skin (vendored) | The library's one-time skin notice |
 
 ## Reset semantics
@@ -144,7 +143,7 @@ nothing writes the key.
 - **Reset all settings** (General Defaults, `/of resetall`, Profiles "Reset Profile") resets the
   **active profile only**, after the `OUTFITTERREBORN_RESET_ALL` confirmation. `db.char` and
   `db.global` survive; the minimap row is exempt.
-- **Delete all outfits…** (P4: `/of deleteall`, General › Behavior) is a separate confirmed act: it
+- **Delete all outfits…** (`/of deleteall`, General › Behavior) is a separate confirmed act: it
   wipes this character's outfits, stack and bindings, re-seeds the built-in outfits and re-reads the
   Equipment Manager. The profile is untouched.
 - A page's Defaults restores that page's rows only; `/of reset path` resets one row.

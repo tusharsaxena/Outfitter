@@ -151,13 +151,13 @@ NS.Launcher = Launcher:New({
     setEnabled     = function(on) NS.RunVerb(on and "enable" or "disable") end,
     isLocked       = function() return NS.GetSetting("locked") == true end,
     toggleLock     = toggleLock,
-    -- Test mode lands in P4.22; until then it answers off and does nothing. Show window toggles the
-    -- outfit window (toggleWindow above).
+    -- Test mode is NS.Preview's (modules/Preview.lua); without it the entry answers off and does
+    -- nothing. Show window toggles the outfit window (toggleWindow above).
     isTestMode     = function() return NS.Preview ~= nil and NS.Preview.IsActive() end,
     toggleTestMode = function() if NS.Preview then NS.Preview.Toggle() end end,
     isWindowShown  = function() return NS.Dock ~= nil and NS.Dock.IsShown() end,
     toggleWindow   = toggleWindow,
-    -- The one host line: the outfit on top of the stack. The stack lands in P4.9; until then the
+    -- The one host line: the outfit on top of the stack (NS.Stack.CurrentLabel); without NS.Stack the
     -- tooltip carries the library's status block only.
     onTooltipShow  = function(tt)
         if NS.Stack then tt:AddLine(L["Current outfit: %s"]:format(NS.Stack.CurrentLabel())) end

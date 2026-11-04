@@ -7,7 +7,7 @@ change is test-first and ends with the green gate ([testing.md](testing.md)). Ev
 ## Add a setting
 
 1. Add the default to `defaults/Profile.lua`, the only place a default is hardcoded.
-2. Add the row to its page file (`settings/General.lua`, or `settings/OutfitBar.lua` once it lands):
+2. Add the row to its page file (`settings/General.lua` or `settings/OutfitBar.lua`):
    `{ path, page, group, type, label = L["…"], tooltip = L["…"], default = D.<key>, onChange }`. The
    `group` is the tab; a page's tabs appear in `group` declaration order.
 3. If something must react, put it in `onChange` or in a module's `SETTINGS_CHANGED` handler, never
@@ -37,7 +37,7 @@ change is test-first and ends with the green gate ([testing.md](testing.md)). Ev
 3. Receive it on a `NS.NewBusTarget()` target owned by the receiving module.
 4. Add the row to [message-bus.md](message-bus.md).
 
-## Add a trigger (P4)
+## Add a trigger
 
 1. Add a descriptor row to `defaults/Triggers.lua`: `id` (SCREAMING_SNAKE), `category`, the name and
    description keys, `events`, typed `params`, `icon`, and a `family` with its args, or a bespoke
@@ -48,7 +48,7 @@ change is test-first and ends with the green gate ([testing.md](testing.md)). Ev
 4. Pin the condition's verdicts in the trigger suites, against the legacy fixture where the fork had
    the preset.
 
-## Add a battleground or arena (P4)
+## Add a battleground or arena
 
 One row in `defaults/Zones.lua`, `{ id = "BG_<NAME>", kind = "bg" | "arena", mapIDs = { … } }`, at its
 place in wear order, and nothing else: the map lookup, the order, the state events and the trigger
@@ -65,7 +65,7 @@ never from memory. The display name comes from `GetRealZoneText(mapID)`, so no l
 3. US English everywhere (localization-§5); `test_prose` fails a British spelling in any tracked
    authored file.
 
-## Add a module (P4)
+## Add a module
 
 1. Create `modules/<Name>.lua` opening with `local addonName, NS = ...` and a `-- modules/<Name>.lua —
    purpose` line 2, publishing `NS.<Name>`.

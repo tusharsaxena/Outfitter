@@ -19,7 +19,7 @@ equipment update for the session. The rewrite closes it twice:
   `PlainEquals`, `UnsecretNumber`, `SafeIterate`) before it leaves, and the risky reads happen before
   any engine state moves. `tests/test_secrets.lua`'s seam scan fails a securable API named anywhere
   else.
-- **The equipment bracket cannot strand** (`NS.Equip.Batch`, P4): an `xpcall` that always restores
+- **The equipment bracket cannot strand** (`NS.Equip.Batch`): an `xpcall` that always restores
   its depth, so even a raise inside a batch leaves updates running.
 
 A secret value never matches and never counts as full: a trigger reading one sees "unknown", not a
@@ -43,7 +43,7 @@ before nil.
 
 Zone names changed with every expansion and differ per locale, and the fork's battleground outfits
 matched names through an API that is gone. Zones now match on uiMapID or instance mapID only, from one
-table (`defaults/Zones.lua`, P4) regenerated from `Map.db2`, never from memory. Two quirks survive:
+table (`defaults/Zones.lua`) regenerated from `Map.db2`, never from memory. Two quirks survive:
 
 - Blizzard re-issues some battlegrounds under a second map ID (Alterac Valley's `30` and `2197`), so a
   row may list several.

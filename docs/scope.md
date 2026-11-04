@@ -14,7 +14,7 @@ each line is `superpowers/specs/2026-11-03-outfitter-feature-inventory.md` (INV)
 - **Wearing.** By hand from the outfit window docked to the character sheet, from the outfit bar,
   from ten "Wear outfit N" key bindings, and from `/of wear`, `unwear`, `toggle` and `update`, each
   of which also accepts macro conditionals (`/of wear [spec:1] Tank; DPS`).
-- **Native triggers.** About sixty shipped triggers wear and remove an outfit automatically: the
+- **Native triggers.** 77 shipped triggers wear and remove an outfit automatically: the
   gathering professions, fishing, cooking, lockpicking, riding, swimming, falling, resting, dining,
   druid forms, rogue stealth, ghost wolf, a spec, a dungeon or a difficulty, a buff, a target, PvP
   flagging, a battleground or arena by map (every one in the game, by instance map ID), a list of
