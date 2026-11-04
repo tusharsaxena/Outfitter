@@ -2,7 +2,7 @@
 
 How Ka0s Outfitter Reborn actually works, as a pipeline (documentation-§3, Tier 1): load and enable,
 the write seam, the stand-down latch, and the core mechanic, a trigger or a click in and an equipped
-item out. It is the engineer counterpart of the README's "How it works"; the two describe one
+item out. It is the engineer counterpart of the README's "How outfit changes work"; the two describe one
 pipeline and must not contradict each other.
 
 Sections marked **P4** describe the design (`superpowers/specs/2026-11-03-design.md`, §5 and §6) that

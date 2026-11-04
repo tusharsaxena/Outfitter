@@ -21,8 +21,8 @@ each line is `superpowers/specs/2026-11-03-outfitter-feature-inventory.md` (INV)
   zones, quest phases, pet battles and more. Each takes typed parameters the player sets in a dialog.
   `/of auto on|off` and two key bindings turn automatic changes on and off.
 - **The stack.** Worn outfits form a stack, so removing an Accessory or leaving a battleground puts
-  back what was worn before, including across `/reload`. Zone and shapeshift outfits sit in layers of
-  their own.
+  back what was worn before, including across `/reload`. Shapeshift outfits sit in a layer of their
+  own.
 - **Blizzard equipment sets.** Every equipment set shows up as an outfit and stays in step with the
   game's Equipment Manager; an outfit can be saved as one.
 - **Bank.** Deposit an outfit, withdraw it, deposit only what no other outfit uses, deposit or withdraw

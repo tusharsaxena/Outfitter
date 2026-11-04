@@ -205,7 +205,7 @@ Each old case is kept by a new home or dropped for a reason:
 | deprecated (11) | `test_removed_apis` (1 kept by intent) | 10 cases on the deleted layer (H16, INV §18) |
 | secrets (20) | `test_secrets`, `test_secrets_states`, `test_equip_bracket` | none |
 | outfits (17) | `test_outfits`, `test_slots`, `test_stack` | none |
-| commands (11) | `test_slash`, `test_diagnostics` | the manual's image references moved to `test_slash`'s parity case on `docs/users-manual.md`, which checks `/of help` alone since the manual was retired in P10 |
+| commands (11) | `test_slash`, `test_diagnostics` | the manual's image references are gone with the manual, retired into the README in P10; `test_slash`'s parity case now checks `/of help` and that the README's Usage points at it |
 
 ## In game
 
