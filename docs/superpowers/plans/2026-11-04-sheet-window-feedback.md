@@ -42,8 +42,8 @@ Update the row and commit the plan at every checkpoint. A resumed run reads this
 | CP3a | M3 Tasks 3.1–3.4 (sheet adapter, dock, chrome, rows) | OR | done (b70853e..4793a91, pushed) |
 | CP3b | M3 Tasks 3.5–3.6 (re-vendor, icon model, browser) | OR | done (c6c8d53..0f7a2da, pushed) |
 | CP3c | M3 Tasks 3.7–3.9 (slots/drawers, broker, docs), pushed | OR | done (8e21b14..1058dc8; whole-branch review: 13 OR + 6 QC defects confirmed and fixed; pushed) |
-| CP3d | Clear the two amber release gates from bundle 20261104-233516 | OR | **in progress — resume here** (see *Resume notes*) |
-| CP4 | Owner's in-game smoke pass; fixes on the branches | all | todo |
+| CP3d | Clear the two amber release gates from bundle 20261104-233516 | OR | done (729d23a placeFlyout split, f5420fb equipPlan re-pinned: the rise is the test recorder's registration survey; 5/5 test runs green; bundle 20261105-004501 **green**; pushed; stash dropped) |
+| CP4 | Owner's in-game smoke pass; fixes on the branches | all | **next — handed to the owner** |
 | CP5 | Owner go-ahead → merge all three, push, delete run branches/stashes/worktrees | all | todo |
 
 M1 and Tasks 3.1–3.4 are independent and run in parallel. M2 and Tasks 3.5–3.6 wait for CP1.
@@ -77,7 +77,7 @@ Chonky) and the three branch names. Then **CP5** on the owner's go-ahead only.
 
 Cleanup inventory for CP5 (everything this run created): branches `feat/2026-11-04-icon-browser` (LK),
 `feat/2026-11-04-icon-browser-revendor` (QC), `feat/2026-11-04-sheet-window-feedback` (OR), locally and on
-origin; the CP3d stash above if still present. No worktrees remain (the scratch ones were removed). The
+origin; the CP3d stash was dropped at CP3d (2026-11-05). No worktrees remain (the scratch ones were removed). The
 `v1.86.0` tag stays. The wow-ui-source clone lived in the session scratchpad and is gone after a restart:
 re-clone `https://github.com/Gethe/wow-ui-source` (`live`, was `297d7aa`) if a Blizzard symbol needs checking.
 
