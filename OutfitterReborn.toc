@@ -92,6 +92,7 @@ modules\PlayerState.lua
 modules\ItemInfo.lua
 modules\Inventory.lua
 modules\Inventory_Lists.lua
+modules\IconBrowserSetup.lua
 modules\Outfits.lua
 modules\Outfits_Seed.lua
 modules\Outfits_Schema.lua

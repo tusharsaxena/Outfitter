@@ -275,8 +275,12 @@ test("rows: an outfit row shows worn, icon, EM mark, name in that order", functi
     assertEqual(select(4, row.name:GetPoint(2)), -38, "the name ends clear of the lightning")
     assertEqual(row.outfitIcon:GetWidth(), 16)
     assertTrue(row.outfitIcon:IsShown(), "an outfit row shows its icon")
-    -- The interim resolver (plan Task 3.5 swaps it for NS.OutfitIcon): the bar's.
-    assertEqual(row.outfitIcon:GetTexture(), NS.Bar.OutfitIcon(NS.Outfits.Get(row.entry.id)))
+    -- The one resolver the bar and the broker draw too (plan Task 3.5), its tint included.
+    -- red under: the row keeping the bar's interim, untinted answer.
+    local tex, r, g, b = NS.OutfitIcon(NS.Outfits.Get(row.entry.id))
+    assertEqual(row.outfitIcon:GetTexture(), tex)
+    local vr, vg, vb = row.outfitIcon:GetVertexColor()
+    assertTrue(vr == r and vg == g and vb == b, "the row draws the resolver's tint")
     -- tests/dock_scene.lua gives a CheckButton, and only a CheckButton, its own SetChecked.
     assertTrue(row.em.icon ~= nil and rawget(row.em, "SetChecked") == nil, "the EM mark is a button, not a box")
     -- An item row keeps its own icon where it was, and draws no outfit icon.

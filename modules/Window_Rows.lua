@@ -25,7 +25,7 @@ local _, NS = ...
 --
 -- CALLS (at call time; design §12): NS.Window.MarkDirty/ToggleCollapsed, NS.Stack.Wear/Remove/IsWorn/
 -- Select/Selected, NS.Outfits.Get/IsEM, NS.EM.StoreOnServer/StoreLocally, NS.OutfitMenu.Open,
--- NS.OutfitTooltip.Show, NS.Bar.OutfitIcon (the interim icon resolver), NS.Compat (pickup, use, sell
+-- NS.OutfitTooltip.Show, NS.OutfitIcon (the one icon resolver), NS.Compat (pickup, use, sell
 -- cursor, item icon).
 
 local Rows = { rows = {}, built = false, COUNT = 14, ROW_H = 18, ROW_W = 228 }
@@ -49,10 +49,9 @@ local EM_DIM_ALPHA = 0.35
 -- PaperDollFrame.lua:79, :97-100). Read when the rows are built, so the client's art is the art drawn.
 local EM_SIDEBAR_TAB = 3
 
--- An outfit's icon -> texture, r, g, b. Interim: the bar's resolver, untinted, until the icon model
--- lands (plan Task 3.5 swaps this one local for NS.OutfitIcon, which answers the tint too).
+-- An outfit's icon -> texture, r, g, b: the one resolver the bar and the broker draw too (plan Task 3.5).
 local function outfitIcon(rec)
-    return NS.Bar.OutfitIcon(rec), 1, 1, 1
+    return NS.OutfitIcon(rec)
 end
 
 local function locked() return NS.Compat.InCombatLockdown() end

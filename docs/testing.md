@@ -173,6 +173,7 @@ has no row here, or a row leaves its §9.3 group or order.
 | `test_dialogs` | The new-outfit and rename dialogs, the popups' data, the icon chooser, the row's Equipment Manager checkbox |
 | `test_trigger_dialog` | The trigger dialog: the draft, validation, Done writes through `SetMany` only, X and Escape discard, the nine field types |
 | `test_bar` | The outfit bar: defaults, buttons, stacking, the icon ladder, drag, alpha and fades, pet battles, the menu, disabled-trigger outfits |
+| `test_outfit_icons` | The outfit icon model: one resolver for row, bar and broker (a 1.1.0 fileID as before, a tinted glyph, the trigger, item and coat-hanger fall-through), `NS.Outfits.SetIcon`, the wildcard as nil, an Equipment Manager outfit's per-character glyph override and its clearing |
 | `test_preview` | Test mode: the placeholder outfits, nothing worn and nothing saved, refused and ended in combat, the ends |
 | `test_quickslots` | The flyout quick slots: the sort against the legacy capture, the upgrade fallback, the specials, the guards and the latch |
 | `test_tooltips` | The "Used by outfits" line on bag, inventory and hyperlink tooltips (never another unit's), its colors and cache; the compare tooltips; the outfit tooltip |

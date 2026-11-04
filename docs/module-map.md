@@ -96,7 +96,8 @@ the diagnostics sections.
 | `modules/ItemInfo.lua` | `NS.ItemInfo`: link parse, item identity and comparison |
 | `modules/Inventory.lua` | `NS.Inventory`: the bag and equipment scan, its cache and the bank-open rules |
 | `modules/Inventory_Lists.lua` | The missing, unused, BoE, warbound, in-use and cooldown lists and their sections (extends `NS.Inventory`) |
-| `modules/Outfits.lua` | `NS.Outfits`: the outfit store and its one writer API |
+| `modules/IconBrowserSetup.lua` | `NS.Glyph`: the glyph helpers (`IsGlyph`, `ValidColor`, `Tint`) from LibKa0s-IconBrowser, with a library-absent stub |
+| `modules/Outfits.lua` | `NS.Outfits`: the outfit store and its one writer API; `NS.OutfitIcon`, the one outfit icon resolver, and `NS.Outfits.SetIcon` |
 | `modules/Outfits_Seed.lua` | The LoadPass: store repair, the built-in outfits' seed and the 1 s timer that runs the first one (extends `NS.Outfits`) |
 | `modules/Outfits_Schema.lua` | `NS.OutfitSchema`: the per-outfit instance rows, `outfit.*` and `trigger.<TID>.*` |
 | `modules/OutfitStack.lua` | `NS.Stack`: wear, remove, toggle, layers, recents, selection and title |

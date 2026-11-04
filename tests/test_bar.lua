@@ -287,20 +287,21 @@ end)
 
 -- ── the icon ladder ───────────────────────────────────────────────────────────────────────────
 
-test("bar: the icon ladder: own, the trigger's descriptor, the Birthday Suit, a single item, plain", function()
+test("bar: the icon ladder: own, the trigger's descriptor, the Birthday Suit, a single item, the coat hanger", function()
     local NS, M, Bar = scene()
     local O = NS.Outfits
     local own = accessory(NS, "Own")
     NS.SetByPath("outfit.icon", 134400 + 1, own)
     assertEqual(Bar.OutfitIcon(O.Get(own)), 134401)
     local solo = accessory(NS, "Solo")
-    -- red under: a name-keyed ladder (the legacy `Solo` key): the name alone draws the plain icon
-    assertEqual(Bar.OutfitIcon(O.Get(solo)), Bar.PLAIN_ICON)
+    local HANGER = NS.Constants.DEFAULT_OUTFIT_ICON
+    -- red under: a name-keyed ladder (the legacy `Solo` key): the name alone draws the default icon
+    assertEqual(Bar.OutfitIcon(O.Get(solo)), HANGER)
     NS.SetByPath("outfit.trigger.id", "INSTANCE_DIFFICULTY", solo)
     assertEqual(Bar.OutfitIcon(O.Get(solo)), 132132, "INSTANCE_DIFFICULTY's icon replaces Solo")
     local dungeon = accessory(NS, "Dungeon")
     NS.SetByPath("outfit.trigger.id", "IN_DUNGEON", dungeon)
-    assertEqual(Bar.OutfitIcon(O.Get(dungeon)), Bar.PLAIN_ICON, "a descriptor with no icon falls through")
+    assertEqual(Bar.OutfitIcon(O.Get(dungeon)), HANGER, "a descriptor with no icon falls through")
     local nakedRec = O.Get(complete(NS, "Birthday"))
     nakedRec.builtin = "NAKED"
     assertEqual(Bar.OutfitIcon(nakedRec), Bar.NAKED_ICON)
@@ -308,11 +309,24 @@ test("bar: the icon ladder: own, the trigger's descriptor, the Birthday Suit, a 
     local single = O.Create("Hero", { ChestSlot = NS.ItemInfo.Snapshot(info) })
     assertEqual(Bar.OutfitIcon(O.Get(single)), M.C_Item.GetItemIconByID(info.id))
     local two = O.Create("Two", { ChestSlot = NS.ItemInfo.Snapshot(info), HeadSlot = { id = 0 } })
-    assertEqual(Bar.OutfitIcon(O.Get(two)), Bar.PLAIN_ICON)
+    -- red under: the legacy plain icon (132662) as the last rung (plan Task 3.5: the coat hanger).
+    assertEqual(Bar.OutfitIcon(O.Get(two)), HANGER)
+    local glyphed = accessory(NS, "Glyphed")
+    O.SetIcon(glyphed, NS.Icon("ph:sword"), "ff0000")
     settle(M)
     local drawn = {}
     for _, btn in ipairs(Bar.Buttons()) do drawn[btn.outfit.id] = btn.icon:GetTexture() end
     assertEqual(drawn[own], 134401, "the button draws the ladder's answer")
+    -- The button takes the resolver's tint, and a pooled button handed a fileID next is white again.
+    local btn
+    for _, b in ipairs(Bar.Buttons()) do if b.outfit.id == glyphed then btn = b end end
+    assertEqual(btn.icon:GetTexture(), NS.Icon("ph:sword"))
+    local r, g, b = btn.icon:GetVertexColor()
+    assertTrue(r == 1 and g == 0 and b == 0, "the glyph's color")
+    Bar.SetButton(btn, O.Get(own))
+    r, g, b = btn.icon:GetVertexColor()
+    -- red under: SetButton drawing the texture without resetting the tint.
+    assertTrue(r == 1 and g == 1 and b == 1, "a fileID is drawn white")
 end)
 
 -- ── clicks, drops, the menu, the tooltip ──────────────────────────────────────────────────────

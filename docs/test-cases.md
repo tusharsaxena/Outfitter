@@ -172,7 +172,7 @@ Total.
 - skin seam: the degraded HudFont draws the face, a picked flag and no shadow
 - skin seam: each host-copy skin token is the live library's Ka0s Default value
 
-### test_surface_parity.lua (27)
+### test_surface_parity.lua (28)
 
 - parity: the degraded load still initializes, enables and answers /or version
 - parity: the Options stub carries every public member of the live Helpers surface
@@ -185,6 +185,7 @@ Total.
 - parity: the Perf stub carries every member this addon reads, on both arms
 - parity: the Core seam carries every member this addon reads, on both arms
 - parity: the Media seam answers on both arms, nil being a real answer
+- parity: the IconBrowser seam's glyph helpers answer on both arms, the stub drawing no glyph
 - parity: the Env seam answers the TOC's version on both arms
 - parity: the Compat and Secrets seams carry the same surface on both arms
 - parity: the Pool stub carries every public member of the library
@@ -244,7 +245,7 @@ Total.
 - schema: a non-nil instance id forwards Set, Get and SetMany to NS.OutfitSchema
 - schema: SetMany with no instance id is the settings instance's, all or nothing
 - schema: library absent, the seam still stores, forwards and refuses alike
-- schema: the outfit instance holds the five outfit rows, each on page outfit in group outfit
+- schema: the outfit instance holds the six outfit rows, each on page outfit in group outfit
 - schema: the outfit instance's shape check is clean against { outfit = true } and the instance types
 - schema: an outfit write lands in the record and announces OUTFIT_EDITED, never SETTINGS_CHANGED
 - schema: the outfit rows refuse an unknown trigger, a bad icon, a nil id and an unknown id
@@ -1137,7 +1138,7 @@ Total.
 - sheet: stock by default
 - sheet: EllesmereUI with its equipment tab shown is eui
 - sheet: EllesmereUI loaded with the blizzard style resolves to stock
-- sheet: an EllesmereUI tab built but hidden resolves to stock
+- sheet: EllesmereUI's tab hidden off the Character tab still reads eui
 - sheet: the EllesmereUI tab without the addon loaded is stock
 - sheet: Chonky with its backdrop shown is chonky
 - sheet: Chonky skipped its setup (backdrop hidden) resolves to stock
@@ -1149,7 +1150,7 @@ Total.
 - sheet: with no Chonky panel shown DockRight is the backdrop's edge
 - sheet: the adapter creates, anchors and shows nothing
 
-### test_dock.lua (20)
+### test_dock.lua (34)
 
 - dock: NS.Dock is published with the §7.2 surface
 - dock: the holder fills the sheet, and the sheet button toggles the window
@@ -1171,6 +1172,20 @@ Total.
 - dock: a stand-down hides the window and the sheet button; a stand-up shows the button
 - dock: the footer's New outfit opens the outfit dialog, the title-strip button the settings
 - dock: no file in modules/ names a strata literal (frame-layering-§5)
+- dock: the sheet button sits right of the Equipment Manager tab
+- dock: on EllesmereUI the button follows the Equipment label
+- dock: the button is parented to CharacterFrame and above the close button's level
+- dock: the button shows with the paper doll and hides with it
+- dock: the button's icon is the coat hanger, tinted, with no border
+- dock: the window's top is flush with the sheet's top
+- dock: an open Chonky side panel pushes the window right
+- dock: stood down, a sheet show neither shows nor re-anchors the button
+- window: the close button is anchored at the header's top right
+- window: the gear sits left of the close button
+- dock: switching to the Reputation tab on EllesmereUI does not re-anchor the button to stock
+- dock: a sheet tab built after the paper doll's OnShow is picked up on the next frame
+- dock: the next frame's sheet check does nothing once the doll is gone or stood down
+- dock: on Chonky the Reputation tab takes the button and window down, the Character tab brings them back
 
 ### test_list_model.lua (7)
 
@@ -1182,7 +1197,7 @@ Total.
 - list model: a collapsed category keeps its header and drops its rows
 - list model: Status caches O.Status in the table it is handed, until that is wiped
 
-### test_rows_secure.lua (15)
+### test_rows_secure.lua (20)
 
 - rows: NS.WindowRows is published with the secure surface
 - rows: fourteen rows and their secure children are created once, each SetAllPoints'd at birth
@@ -1195,7 +1210,12 @@ Total.
 - rows: outfit clicks wear, open the menu, and the worn box wears and removes
 - rows: a category click collapses it for the session
 - rows: an item right-click uses it, except on the merchant's buyback tab
-- rows: the EM box selects first, then stores on the server, and a refusal shows the popup
+- rows: an outfit row shows worn, icon, EM mark, name in that order
+- rows: the EM mark is full for an EM outfit and dimmed otherwise
+- rows: clicking the dimmed EM mark stores the outfit on the server, as the checkbox did
+- rows: clicking the EM mark in combat refuses and changes nothing
+- rows: the menu control is a borderless gear that opens the outfit menu
+- rows: the lightning has no border
 - rows: an outfit row's name is colored by its status, and a disabled one says so
 - rows: a profile switch redraws the trigger mark from the new profile's auto.enabled
 - rows: an item with no quality color is drawn muted, never in the previous item's color
@@ -1227,7 +1247,7 @@ Total.
 - bar: the drag stop saves the nearest corner; a locked bar does not move
 - bar: the drag stop writes bar.position through the seam, and its echo leaves the bar where it fell
 - bar: the reset copies the default, so a drag after it never writes the default
-- bar: the icon ladder: own, the trigger's descriptor, the Birthday Suit, a single item, plain
+- bar: the icon ladder: own, the trigger's descriptor, the Birthday Suit, a single item, the coat hanger
 - bar: a left click wears; a worn accessory is removed; a worn Complete outfit stays on
 - bar: a right click opens the outfit menu afresh on every open
 - bar: Alt + a dropped spell sets the icon through C_Spell; item and macro too
@@ -1245,6 +1265,20 @@ Total.
 - bar: a profile switch redraws the bar from the new profile and rebinds the triggers
 - bar: Suspend hides it and stops the rebuilds; the stand-down keeps it down
 - bar: test mode shows the sample outfits with the strip, even with the bar off, and they do nothing
+
+### test_outfit_icons.lua (11)
+
+- icons: NS.OutfitIcon and NS.Outfits.SetIcon are published, and char.emIcons defaults empty
+- icons: a 1.1.0 fileID draws as before
+- icons: no icon falls through trigger, item, then the coat hanger
+- icons: a glyph with a color tints
+- icons: the icon row takes a fileID, a glyph or nil, and refuses any other string or color
+- icons: 134400 stores nil
+- icons: a glyph on an EM outfit is kept per character and the set is not modified
+- icons: an EM outfit draws its set's icon, and a fileID on it goes to the set and clears the override
+- icons: deleting an EM set clears its override
+- icons: storing a glyph outfit on the server keeps the glyph as the set's override, and back
+- icons: a mirror matched to a new set id keeps its glyph override under that id
 
 ### test_triggers_parity.lua (13)
 
@@ -1304,7 +1338,7 @@ Total.
 - new outfit: a trigger fills an empty or auto-filled name, and one with params opens its settings
 - rename: the name field only, 140 px shorter, and Done renames
 - popups: every popup times out never, works dead, hides on Escape, and carries its id in data
-- popups: the row EM box selects first, stores on the second check, says the EM is full, and unstores
+- popups: the row EM mark selects first, stores on the second click, says the EM is full, and unstores
 - rebuild: the rows give the §5.14 cfg, and Done keeps it on the outfit and rebuilds
 - progress: OPTIMIZE_* drive it, High speed sets the job's, and Cancel cancels that job
 - icons: the wildcard saves nil, a pick writes outfit.icon, Cancel discards, an EM outfit sets its set
@@ -1356,7 +1390,7 @@ Total.
 - credits: the README credits exactly the icon sets this build ships
 - credits: LICENSE keeps John Stephen's copyright with the Ka0s line directly under it
 
-### test_skin.lua (13)
+### test_skin.lua (14)
 
 - skin: every owner token a source file names is registered
 - skin: every skin primitive a source file calls is in the library's VOCAB
@@ -1366,7 +1400,8 @@ Total.
 - skin: the window and the dialogs wear NS.ApplySkin's Shell, the chooser and bar a Panel
 - skin: Blizzard icon art in a window is cropped and edged from the skin, never as a HUD
 - skin: the bar's icons are HUD icons, cropped and edged from the skin
-- skin: the sheet button's logo is a cropped square icon
+- skin: the sheet button is borderless, its glyph in of.sheet.button
+- window: the header gear has no border
 - skin: no source file writes inline icon markup by hand (W.IconText crops it)
 - skin: a switch recolors a dialog's error line through of.dialog.error
 - skin: without the library a dialog's error line still draws of.dialog.error's red
@@ -1541,7 +1576,7 @@ Total.
 | test_secrets.lua | 42 |
 | test_bus.lua | 12 |
 | test_skinsetup.lua | 21 |
-| test_surface_parity.lua | 27 |
+| test_surface_parity.lua | 28 |
 | test_perf_harness.lua | 19 |
 | test_schema.lua | 25 |
 | test_settings.lua | 15 |
@@ -1583,11 +1618,12 @@ Total.
 | test_triggers_class.lua | 11 |
 | test_triggers_pvp.lua | 7 |
 | test_sheet.lua | 15 |
-| test_dock.lua | 20 |
+| test_dock.lua | 34 |
 | test_list_model.lua | 7 |
-| test_rows_secure.lua | 15 |
+| test_rows_secure.lua | 20 |
 | test_slot_enables.lua | 12 |
 | test_bar.lua | 28 |
+| test_outfit_icons.lua | 11 |
 | test_triggers_parity.lua | 13 |
 | test_preview.lua | 14 |
 | test_outfit_menu.lua | 11 |
@@ -1595,7 +1631,7 @@ Total.
 | test_trigger_dialog.lua | 11 |
 | test_diagnostics.lua | 12 |
 | test_credits.lua | 8 |
-| test_skin.lua | 13 |
+| test_skin.lua | 14 |
 | test_skin_values.lua | 3 |
 | test_skin_switch.lua | 85 |
 | test_eol.lua | 2 |
@@ -1604,4 +1640,4 @@ Total.
 | test_lizard_sighted.lua | 8 |
 | test_prose.lua | 15 |
 | Skipped | 1 |
-| **Total** | **1306** |
+| **Total** | **1338** |

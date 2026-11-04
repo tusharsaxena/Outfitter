@@ -15,9 +15,14 @@ local _, NS = ...
 -- set whose items the EM module resolves. The KIND table below is the one dispatch, replacing the
 -- legacy pair of method metatables.
 --
+-- THE ICON. NS.OutfitIcon (at the end) is the one resolver the row, the bar and the broker draw, and
+-- O.SetIcon the one writer the icon browser calls; this file also owns char.emIcons, an Equipment
+-- Manager outfit's glyph override keyed by its set id (plan Task 3.5).
+--
 -- CALLS (at call time, no nil guard; design §12): NS.Stack.Remove/Select/Clear/Wear, NS.TriggerBinder
--- .Unbind/UnbindAll, NS.EM.Items/SetItem/ClearSlot/Rename/DeleteSet, NS.Inventory.Cache/Missing/
--- OutfitsUsing, and NS.PlayerState.InCombat.
+-- .Unbind/UnbindAll, NS.EM.Items/SetItem/ClearSlot/Rename/DeleteSet/Icon/SetIcon, NS.Inventory.Cache/
+-- Missing/OutfitsUsing, NS.PlayerState.InCombat, NS.Glyph, NS.Triggers.Get, NS.Compat.ItemIcon,
+-- NS.Secrets.PlainNumber and NS.Schema.SetMany.
 
 local O = {}
 NS.Outfits = O
@@ -33,6 +38,14 @@ local TWO_HANDER = "INVTYPE_2HWEAPON"
 local FLAGS = { unequipOthers = "bool", ignoreComparisons = "bool", titleID = "number" }
 
 local function store() return NS.db.char end
+
+-- The per-character glyph overrides of Equipment Manager outfits, by set id (this file is their
+-- one writer): the set itself takes a fileID only, so a glyph is kept here and the set keeps its own.
+local function emIcons()
+    local c = store()
+    c.emIcons = c.emIcons or {}
+    return c.emIcons
+end
 
 local function copy(v)
     if type(v) ~= "table" then return v end
@@ -332,7 +345,12 @@ function O.Delete(id)
     NS.TriggerBinder.Unbind(id)
     unlinkOrder(id)
     unbindKeys(id)
-    if rec.kind == "em" then NS.EM.DeleteSet(rec) end
+    if rec.kind == "em" then
+        NS.EM.DeleteSet(rec)
+        -- The set is gone (deleted here, or in the Blizzard UI before the sync that prunes this
+        -- mirror), and the client may hand its id to a new set: the glyph override goes with it.
+        if rec.setID then emIcons()[rec.setID] = nil end
+    end
     store().outfits[id] = nil
     NS.SendBus(NS.MSG.OUTFIT_DELETED, id, rec.name)
     return true
@@ -355,6 +373,7 @@ function O.DeleteAll()
     for id, rec in pairs(c.outfits) do gone[#gone + 1] = { id = id, name = rec.name } end
     table.sort(gone, function(a, b) return a.id < b.id end)
     wipe(c.outfits); wipe(c.bindings); wipe(c.stack); wipe(c.recent)
+    if c.emIcons then wipe(c.emIcons) end
     c.order = { Complete = {}, Accessory = {} }
     c.emPreserved = nil
     c.seeded = false
@@ -573,4 +592,133 @@ function O.SetBinding(id, n)
     if previous and previous ~= id then O.Changed(previous, "binding") end
     O.Changed(id, "binding")
     return true
+end
+
+-- ── the icon (sheet and window feedback design G5, G6; plan Task 3.5) ─────────────────────────────
+
+local NAKED_ICON = 237360      -- cDefaultScriptIcons[cNakedOutfit] (OutfitterBar.lua:51)
+local PLAIN_ICON = 132662      -- the legacy plain icon: the last rung only when the coat hanger is absent
+local WILDCARD_ICON = 134400   -- "Outfitter chooses": stored as no icon (INV §7.6)
+O.NAKED_ICON, O.PLAIN_ICON = NAKED_ICON, PLAIN_ICON
+
+local function plainIcon(v)
+    local n = NS.Secrets.PlainNumber(v)
+    if n and n > 0 then return n end
+    return nil
+end
+
+-- A stored icon as texture, r, g, b, or nil: a fileID drawn white, a glyph in its color (white for
+-- none). A string that is not a glyph (or any glyph while the library is absent) draws nothing.
+local function drawn(icon, color)
+    if type(icon) == "string" then
+        if NS.Glyph.IsGlyph(icon) then return icon, NS.Glyph.Tint(color) end
+        return nil
+    end
+    local n = plainIcon(icon)
+    if n then return n, 1, 1, 1 end
+    return nil
+end
+
+--- An Equipment Manager outfit's glyph override: its path and color, or nil.
+--- @param rec table
+--- @return string|nil icon, string|nil color
+function O.EMGlyph(rec)
+    local o = type(rec) == "table" and rec.setID and emIcons()[rec.setID]
+    if type(o) ~= "table" then return nil end
+    return o.icon, o.color
+end
+
+--- Move a mirror's override when a sync matches it to a new set id (modules/EquipmentManager.lua).
+function O.MoveEMGlyph(from, to)
+    if from == nil or to == nil or from == to then return end
+    local icons = emIcons()
+    icons[to], icons[from] = icons[from], nil
+end
+
+-- The one item of a single-item outfit, or nil.
+local function singleItem(rec)
+    if rec.placeholder then return nil end
+    local only
+    for _, item in pairs(O.Items(rec)) do
+        if only then return nil end
+        only = item
+    end
+    return only
+end
+
+-- The outfit's own icon: its stored one; for an Equipment Manager outfit, its glyph override, then
+-- its set's icon.
+local function ownIcon(rec)
+    local tex, r, g, b = drawn(rec.icon, rec.iconColor)
+    if tex or rec.kind ~= "em" then return tex, r, g, b end
+    tex, r, g, b = drawn(O.EMGlyph(rec))
+    if tex then return tex, r, g, b end
+    return drawn(NS.EM.Icon(rec))
+end
+
+-- What Outfitter chooses for an outfit with none: its trigger's descriptor icon (INSTANCE_DIFFICULTY's
+-- replaces the legacy `Solo` key, which never matched), the Birthday Suit's, its single item's.
+local function chosenIcon(rec)
+    local tid = rec.trigger and rec.trigger.id
+    local desc = type(tid) == "string" and tid ~= "" and NS.Triggers.Get(tid)
+    local icon = desc and plainIcon(desc.icon)
+    if icon then return icon end
+    if rec.builtin == "NAKED" then return NAKED_ICON end
+    local item = singleItem(rec)
+    return item and item.id and item.id ~= 0 and plainIcon(NS.Compat.ItemIcon(item.id)) or nil
+end
+
+--- An outfit's icon, the one resolver the row, the bar and the broker draw: its own (a glyph in its
+--- color), then what Outfitter chooses, else the default outfit icon, the coat hanger, in white
+--- (GetOutfitTexture, OutfitterBar.lua:363-404, whose last rung was the plain icon).
+--- @param rec table|nil
+--- @return number|string texture, number r, number g, number b
+function NS.OutfitIcon(rec)
+    if type(rec) == "table" then
+        local tex, r, g, b = ownIcon(rec)
+        if tex then return tex, r, g, b end
+        tex = chosenIcon(rec)
+        if tex then return tex, 1, 1, 1 end
+    end
+    return NS.Constants.DEFAULT_OUTFIT_ICON or PLAIN_ICON, 1, 1, 1
+end
+
+local function validIcon(icon)
+    if icon == nil or NS.Glyph.IsGlyph(icon) then return true end
+    return type(icon) == "number" and icon > 0 and icon == math.floor(icon)
+end
+
+-- An Equipment Manager outfit: a glyph is kept here and the set is untouched; anything else is the
+-- set's icon (nil writes the wildcard) and drops the override.
+local function setEMIcon(rec, icon, color, glyph)
+    if not rec.setID then return false end
+    if glyph then
+        emIcons()[rec.setID] = { icon = icon, color = color }
+    else
+        emIcons()[rec.setID] = nil
+        NS.EM.SetIcon(rec, icon)
+    end
+    O.Changed(rec.id, "icon")
+    return true
+end
+
+--- Set an outfit's icon: a game icon's fileID, a glyph path with its color ("rrggbb", or nil or false
+--- for white), or nil (134400 too) for Outfitter chooses. The icon browser's onChoose (Task 3.6). A
+--- native outfit writes the `outfit.icon` and `outfit.iconColor` rows as one batch; an Equipment
+--- Manager outfit see setEMIcon.
+--- @param id string
+--- @param icon number|string|nil
+--- @param color string|false|nil
+--- @return boolean
+function O.SetIcon(id, icon, color)
+    local rec = O.Get(id)
+    if not rec then return false end
+    if icon == WILDCARD_ICON then icon = nil end
+    local glyph = NS.Glyph.IsGlyph(icon) ~= nil
+    if not glyph or color == false then color = nil end
+    if not validIcon(icon) or not NS.Glyph.ValidColor(color) then return false end
+    if rec.kind == "em" then return setEMIcon(rec, icon, color, glyph) end
+    local ok = NS.Schema.SetMany({ { path = "outfit.icon", value = icon },
+                                   { path = "outfit.iconColor", value = color } }, { instanceId = id })
+    return ok and true or false
 end

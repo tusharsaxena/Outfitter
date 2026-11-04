@@ -31,7 +31,7 @@ profile = {
 },
 char = {
   seeded = false, nextID = 1, outfits = {}, order = { Complete = {}, Accessory = {} },
-  bindings = {}, stack = {}, recent = {}, emPreserved = nil,
+  bindings = {}, stack = {}, recent = {}, emPreserved = nil, emIcons = {},
 },
 global = { schemaVersion = 0, minimap = { hide = false }, skinNotice = {} },
 ```
@@ -70,7 +70,7 @@ anything reads `NS.db.profile`, and again over a reset profile:
 | Instance | File | Rows | Root (`resolveRoot`, `core/Database.lua`) |
 |---|---|---|---|
 | `NS.Schema` | `settings/Schema.lua` | Every settings row: the Master controls, the Skin rows, the Behavior, Tooltips and Outfit Bar rows | `NS.ResolveSettingsRoot`: `global.*` under `db.global`, everything else under `db.profile` |
-| `NS.OutfitSchema` | `modules/Outfits_Schema.lua` | The instance rows: `outfit.trigger.id`, `outfit.trigger.disabled`, `outfit.trigger.combatDisabled`, `outfit.icon`, `outfit.bar.hide`, and one `trigger.<TID>.<key>` row per trigger parameter (about 250) | `NS.ResolveOutfitRoot`: `outfit.*` under `db.char.outfits[id]`, `trigger.*` under its `triggerParams`; a nil or unknown id is refused |
+| `NS.OutfitSchema` | `modules/Outfits_Schema.lua` | The instance rows: `outfit.trigger.id`, `outfit.trigger.disabled`, `outfit.trigger.combatDisabled`, `outfit.icon` (a fileID, a LibKa0s glyph path or nil), `outfit.iconColor` (a glyph's `"rrggbb"`, or nil for white), `outfit.bar.hide`, and one `trigger.<TID>.<key>` row per trigger parameter (about 250) | `NS.ResolveOutfitRoot`: `outfit.*` under `db.char.outfits[id]`, `trigger.*` under its `triggerParams`; a nil or unknown id is refused |
 
 The settings instance has no outfit arm and the outfit instance refuses a nil id, so a profile reset
 can never reach an outfit (H7). Options, the slash CLI (`/or list|get|set`) and Reset all read only
@@ -132,9 +132,10 @@ function that writes it (architecture-§5).
 |---|---|---|
 | `profile.windows.dialogs[key]` | `NS.Dialogs` | `NS.Dialogs.SavePosition(key, point, x, y)` on a dialog's drag stop |
 | `global.minimap.minimapPos` | LibDBIcon (vendored) | LibDBIcon's own drag handler |
-| `char.outfits`, `char.order`, `char.nextID`, `char.bindings`, `char.seeded` | `NS.Outfits` | The `NS.Outfits` writer API (`Create`, `CreateFromItem`, `Duplicate`, `Reorder`, `Rename`, `Delete`, `DeleteAll`, `SetItem`, `SetItems`, `ClearSlot`, `SetSlotEnabled`, `SetAllSlotsEnabled`, `AddNewItems`, `SetToCurrent`, `SetFlag`, `SetStat`, `SetBinding`, `Changed`, `LoadPass`), plus the instance-row writes through `NS.ResolveOutfitRoot` |
+| `char.outfits`, `char.order`, `char.nextID`, `char.bindings`, `char.seeded` | `NS.Outfits` | The `NS.Outfits` writer API (`Create`, `CreateFromItem`, `Duplicate`, `Reorder`, `Rename`, `Delete`, `DeleteAll`, `SetItem`, `SetItems`, `ClearSlot`, `SetSlotEnabled`, `SetAllSlotsEnabled`, `AddNewItems`, `SetToCurrent`, `SetFlag`, `SetStat`, `SetBinding`, `SetIcon`, `Changed`, `LoadPass`), plus the instance-row writes through `NS.ResolveOutfitRoot` |
 | `char.stack`, `char.recent` | `NS.Stack` | `Wear`, `Remove`, the temporary-outfit collapse, and the LoadPass repair. Persisted because restoring the layering after `/reload` is the fork's behavior (recorded data) |
 | `char.emPreserved` | `NS.EM` | The zero-sets protection, while the Equipment Manager reports no sets |
+| `char.emIcons[setID]` | `NS.Outfits` | An Equipment Manager outfit's glyph icon, `{ icon, color }`, since the set takes a fileID only: `SetIcon` writes it (a fileID clears it), `Delete` and `DeleteAll` clear it, `MoveEMGlyph` re-keys it when a sync matches the mirror to a new set id |
 | `outfits[id].triggerState[TID]` | `NS.TriggerBinder` | A trigger's side effects through `ctx.persist` (Fishing and Stealth CVar restores, `wasPvP`) |
 | `global.skinNotice` | LibKa0s-Skin (vendored) | The library's one-time skin notice |
 

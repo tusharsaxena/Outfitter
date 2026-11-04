@@ -2,6 +2,9 @@ local _, NS = ...
 -- modules/Bar_Buttons.lua — the outfit bar's pooled buttons (design §7.7, INV §7.6; OutfitterBar.lua
 -- :330-861 at 7ea3dc3). Extends NS.Bar (modules/Bar.lua) with OutfitIcon, NewButton and SetButton.
 --
+-- THE ICON is NS.OutfitIcon (modules/Outfits.lua), the one resolver the window's rows and the broker
+-- draw too, its tint included (plan Task 3.5); Bar.OutfitIcon stays as its name on the bar.
+--
 -- A BUTTON is 32 x 32: its icon (`btn.icon`, square-cropped and edged as a HUD icon), its worn mark
 -- (`btn.worn`, in `of.bar.worn`) and the outfit record it stands for (`btn.outfit`). No Masque (INV
 -- §7.6 Decide: LibButtonFacade is dead and nothing replaces it).
@@ -19,18 +22,17 @@ local _, NS = ...
 -- and its tooltip says so (H17): no write path below runs for one.
 --
 -- CALLS (at call time, no nil guard; design §12): NS.Stack, NS.Outfits, NS.OutfitMenu.Open,
--- NS.OutfitTooltip.Show, NS.Triggers.Get, NS.SetByPath, NS.ItemInfo.FromLink.
+-- NS.OutfitTooltip.Show, NS.OutfitIcon, NS.SetByPath, NS.ItemInfo.FromLink.
 
 local Bar = NS.Bar
 
 local L = NS.L
 local Compat, Secrets = NS.Compat, NS.Secrets
 
-local PLAIN_ICON = 132662     -- the legacy plain icon
-local NAKED_ICON = 237360     -- cDefaultScriptIcons[cNakedOutfit] (OutfitterBar.lua:51)
 local COMPLETE = "Complete"
 
-Bar.PLAIN_ICON, Bar.NAKED_ICON = PLAIN_ICON, NAKED_ICON
+-- The legacy plain icon and the Birthday Suit's, now the resolver's (modules/Outfits.lua).
+Bar.PLAIN_ICON, Bar.NAKED_ICON = NS.Outfits.PLAIN_ICON, NS.Outfits.NAKED_ICON
 
 local function plainIcon(v)
     local n = Secrets.PlainNumber(v)
@@ -38,34 +40,11 @@ local function plainIcon(v)
     return nil
 end
 
--- The one item of a single-item outfit, or nil.
-local function singleItem(rec)
-    if rec.placeholder then return nil end
-    local only
-    for _, item in pairs(NS.Outfits.Items(rec)) do
-        if only then return nil end
-        only = item
-    end
-    return only
-end
-
---- An outfit's icon: its own; else its trigger's descriptor icon (INSTANCE_DIFFICULTY's replaces the
---- legacy `Solo` key, which never matched); else the Birthday Suit's; else its single item's; else
---- the plain icon (GetOutfitTexture, OutfitterBar.lua:363-404).
+--- An outfit's icon: NS.OutfitIcon's answer, texture then r, g, b.
 --- @param rec table
---- @return number fileID
+--- @return number|string texture, number r, number g, number b
 function Bar.OutfitIcon(rec)
-    if type(rec) ~= "table" then return PLAIN_ICON end
-    local own = plainIcon(rec.icon)
-    if own then return own end
-    local tid = rec.trigger and rec.trigger.id
-    local desc = type(tid) == "string" and tid ~= "" and NS.Triggers.Get(tid)
-    local icon = desc and plainIcon(desc.icon)
-    if icon then return icon end
-    if rec.builtin == "NAKED" then return NAKED_ICON end
-    local item = singleItem(rec)
-    icon = item and item.id and item.id ~= 0 and plainIcon(Compat.ItemIcon(item.id))
-    return icon or PLAIN_ICON
+    return NS.OutfitIcon(rec)
 end
 
 -- ── the cursor ────────────────────────────────────────────────────────────────────────────────
@@ -205,6 +184,9 @@ end
 --- @param rec table
 function Bar.SetButton(btn, rec)
     btn.outfit = rec
-    btn.icon:SetTexture(Bar.OutfitIcon(rec))
+    local tex, r, g, b = Bar.OutfitIcon(rec)
+    btn.icon:SetTexture(tex)
+    -- Every time, white included: a pooled button keeps the last tint it drew.
+    btn.icon:SetVertexColor(r, g, b)
     btn.worn:SetShown(not rec.placeholder and NS.Stack.IsWorn(rec.id))
 end

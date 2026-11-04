@@ -159,6 +159,30 @@ test("parity: the Media seam answers on both arms, nil being a real answer", fun
     assertNil(d.NS.MediaFont("any"), "the stub invented a font path")
 end)
 
+test("parity: the IconBrowser seam's glyph helpers answer on both arms, the stub drawing no glyph", function()
+    -- members from: grep -rhoE "NS\.Glyph\.[A-Za-z]+" modules/ settings/ core/
+    bothArms("NS.Glyph", function(NS) return NS.Glyph end,
+        { IsGlyph = "function", ValidColor = "function", Tint = "function" })
+    local l, d = pair()
+    local lib = l.mocks.LibStub("LibKa0s-IconBrowser-1.0")
+    local path = l.NS.Icon("ph:sword")
+    assertEqual(l.NS.Glyph.IsGlyph(path), lib.IsGlyph(path))
+    assertEqual(l.NS.Glyph.IsGlyph(path), "ph:sword")
+    assertNil(l.NS.Glyph.IsGlyph(135349), "a fileID is not a glyph")
+    -- red under: a stub that reads any string as a glyph (a stored glyph would draw blank).
+    assertNil(d.NS.Glyph.IsGlyph(path), "the stub read a glyph with no library")
+    for arm, NS in pairs({ live = l.NS, degraded = d.NS }) do
+        assertTrue(NS.Glyph.ValidColor(nil), arm .. ": none is a color")
+        assertFalse(NS.Glyph.ValidColor(false), arm .. ": false is not stored")
+        assertFalse(NS.Glyph.ValidColor("red"), arm)
+        local r, g, b = NS.Glyph.Tint(nil)
+        assertTrue(r == 1 and g == 1 and b == 1, arm .. ": no color is white")
+    end
+    assertTrue(l.NS.Glyph.ValidColor("ff8000"))
+    local r, g, b = d.NS.Glyph.Tint("ff0000")
+    assertTrue(r == 1 and g == 1 and b == 1, "the stub tints nothing")
+end)
+
 test("parity: the Env seam answers the TOC's version on both arms", function()
     -- members from: grep -rhoE "NS\.(Meta|Version)\b" core/ modules/ settings/
     bothArms("NS", function(NS) return NS end, { Meta = "function", Version = "function" })

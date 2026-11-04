@@ -152,8 +152,12 @@ test("em: a set deleted in the Blizzard UI removes its outfit here, and the set 
     EM.Sync()
     local by = mirrors(NS)
     local deleted = hear(NS, "OUTFIT_DELETED")
-    M.C_EquipmentSet.DeleteEquipmentSet(M.C_EquipmentSet.GetEquipmentSetID("Tank"))
+    local tankSet = M.C_EquipmentSet.GetEquipmentSetID("Tank")
+    NS.db.char.emIcons[tankSet] = { icon = NS.Icon("ph:sword"), color = "00ff00" }
+    M.C_EquipmentSet.DeleteEquipmentSet(tankSet)
     EM.Sync()
+    -- red under: a glyph override outliving its set (plan Task 3.5; a reused set id would draw it).
+    assertNil(NS.db.char.emIcons[tankSet], "the set's glyph override goes with it")
     local after, n = mirrors(NS)
     assertEqual(n, 1)
     assertNil(after.Tank)

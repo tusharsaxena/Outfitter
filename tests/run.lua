@@ -185,6 +185,7 @@ local SUITES = {
     { name = "test_slot_enables" },
 
     { name = "test_bar" },
+    { name = "test_outfit_icons" },
 
     { name = "test_triggers_parity" },
 

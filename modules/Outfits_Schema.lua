@@ -34,9 +34,16 @@ local function validTrigger(v)
     return v == "" or NS.Triggers.Get(v) ~= nil
 end
 
+-- An outfit's icon (sheet and window feedback plan Task 3.5): none, a game icon's fileID, or a glyph
+-- path NS.Glyph (the LibKa0s-IconBrowser seam) reads back to a catalog name. 1.1.0 stored numbers only.
 local function validIcon(v)
-    return v == nil or (type(v) == "number" and v > 0 and v == math.floor(v))
+    if v == nil then return true end
+    if type(v) == "number" then return v > 0 and v == math.floor(v) end
+    return NS.Glyph.IsGlyph(v) ~= nil
 end
+
+-- A glyph's color: none (white), or six lowercase hex digits.
+local function validColor(v) return NS.Glyph.ValidColor(v) end
 
 local function record(id) return NS.Outfits.Get(id) end
 
@@ -49,8 +56,9 @@ local function dropIdlessTrigger(_, id)
     if rec and type(rec.trigger) == "table" and not rec.trigger.id then rec.trigger = nil end
 end
 
--- The five outfit rows (design §3.5). Every row carries page "outfit" and group "outfit"
--- (anti-patterns #69); a trigger's params arrive with group = <TID> from NS.Triggers.Finalize.
+-- The six outfit rows (design §3.5; `outfit.iconColor` from the sheet and window feedback round).
+-- Every row carries page "outfit" and group "outfit" (anti-patterns #69); a trigger's params arrive
+-- with group = <TID> from NS.Triggers.Finalize.
 local ROWS = {
     { path = "outfit.trigger.id", type = "string", default = "", page = "outfit", group = "outfit",
       validate = validTrigger,
@@ -65,19 +73,27 @@ local ROWS = {
       validate = isBool, onChange = dropIdlessTrigger },
     { path = "outfit.icon", type = "number", page = "outfit", group = "outfit",
       validate = validIcon,
+      -- 134400 is "Outfitter chooses": stored as none. Only a glyph takes a color, so any other icon
+      -- drops the one a glyph left (after every store of a batch, so a glyph and its color together keep it).
       onChange = function(v, id)
           local rec = record(id)
-          if v == WILDCARD_ICON and rec then rec.icon = nil end
+          if not rec then return end
+          if v == WILDCARD_ICON then rec.icon = nil end
+          if not NS.Glyph.IsGlyph(rec.icon) then rec.iconColor = nil end
       end },
+    { path = "outfit.iconColor", type = "string", page = "outfit", group = "outfit",
+      validate = validColor },
     { path = "outfit.bar.hide", type = "bool", default = false, page = "outfit", group = "outfit",
       validate = isBool },
 }
 
 --- What an instance-row write changed, for OUTFIT_EDITED: "trigger" for a trigger param, else the
---- outfit field (`outfit.icon` -> "icon", `outfit.trigger.id` -> "trigger", `outfit.bar.hide` -> "bar").
+--- outfit field (`outfit.icon` and `outfit.iconColor` -> "icon", `outfit.trigger.id` -> "trigger",
+--- `outfit.bar.hide` -> "bar").
 local function whatOf(path)
     local first, second = path:match("^([^%.]+)%.([^%.]+)")
     if first == "trigger" then return "trigger" end
+    if second == "iconColor" then return "icon" end
     return second
 end
 

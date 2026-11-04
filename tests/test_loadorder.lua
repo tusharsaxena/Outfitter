@@ -141,7 +141,7 @@ local PLANNED = {
     "defaults/Profile.lua", "defaults/Items.lua", "defaults/Zones.lua", "defaults/TriggerData.lua",
     "defaults/Triggers.lua", "defaults/PreviewOutfits.lua",
     "modules/PlayerState.lua", "modules/ItemInfo.lua", "modules/Inventory.lua", "modules/Inventory_Lists.lua",
-    "modules/Outfits.lua", "modules/Outfits_Seed.lua", "modules/Outfits_Schema.lua",
+    "modules/IconBrowserSetup.lua", "modules/Outfits.lua", "modules/Outfits_Seed.lua", "modules/Outfits_Schema.lua",
     "modules/OutfitStack.lua", "modules/OutfitStack_Watch.lua",
     "modules/Equip.lua", "modules/Equip_Changes.lua", "modules/Equip_Moves.lua",
     "modules/EquipmentManager.lua", "modules/Bank.lua", "modules/ItemStats.lua", "modules/ItemStats_Sources.lua",
