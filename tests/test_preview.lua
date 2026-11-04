@@ -625,6 +625,25 @@ test("preview window: the stand-down hides it and the stand-up does not bring it
     assertFalse(w:IsShown())
 end)
 
+test("preview window: a window parked in the sheet holder docks again when the sheet reopens", function()
+    -- A refused anchor parks the window in the holder (Dock.Attach): it cannot stand alone, so the
+    -- sheet's close takes it down. That is not the player dismissing the test window.
+    local NS, M = testScene()
+    local w = NS.Window.Build()
+    rawset(w, "SetPoint", function() error("refused") end)
+    M.__sheets.place(M.CharacterFrame, 300, 500)
+    M.__world:openCharacter()
+    NS.Preview.Start()
+    assertTrue(NS.Dock.followDisabled, "the anchor was not refused")
+    assertTrue(w:IsShown(), "the parked test window did not show beside the sheet")
+    M.__world:closeCharacter()
+    assertFalse(w:IsShown(), "a parked window stood alone")
+    assertTrue(NS.Preview.IsActive())
+    M.__world:openCharacter()
+    -- red under: an onWindowHide that reads the sheet's close as the player's dismissal
+    assertTrue(w:IsShown(), "the sheet's close dismissed the parked test window")
+end)
+
 -- ── the chrome ────────────────────────────────────────────────────────────────────────────────
 
 test("preview window: the strip shows under the title and pushes the list; off puts it back", function()

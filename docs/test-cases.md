@@ -1393,7 +1393,7 @@ Total.
 - parity: the menu sorts as legacy's, and a renamed or refiled row by the same rule
 - parity: a class row is offered to its own class only, as the legacy menu filtered it
 
-### test_preview.lua (28)
+### test_preview.lua (29)
 
 - preview: NS.Preview publishes the §8 surface and starts off
 - preview: the placeholders are five Test Outfits in two rows, each stamped placeholder and preview:<n>
@@ -1419,6 +1419,7 @@ Total.
 - preview window: combat ends test mode and hides the alone window before lockdown
 - preview window: test mode is refused in combat and never touches the window in lockdown
 - preview window: the stand-down hides it and the stand-up does not bring it back
+- preview window: a window parked in the sheet holder docks again when the sheet reopens
 - preview window: the strip shows under the title and pushes the list; off puts it back
 - preview window: without the library's strip the title says test mode
 - preview window: New outfit is disabled in test mode and enabled after
@@ -1740,7 +1741,7 @@ Total.
 | test_outfit_icons.lua | 17 |
 | test_broker.lua | 13 |
 | test_triggers_parity.lua | 13 |
-| test_preview.lua | 28 |
+| test_preview.lua | 29 |
 | test_outfit_menu.lua | 11 |
 | test_dialogs.lua | 24 |
 | test_trigger_dialog.lua | 11 |
@@ -1755,4 +1756,4 @@ Total.
 | test_lizard_sighted.lua | 8 |
 | test_prose.lua | 15 |
 | Skipped | 1 |
-| **Total** | **1449** |
+| **Total** | **1450** |

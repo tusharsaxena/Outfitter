@@ -295,10 +295,12 @@ local function onWindowHide()
     -- A close takes the Name and Rebuild dialogs with it (Outfitter.lua:1491-1504); the combat
     -- suspend keeps them (O30).
     -- In test mode the close dismisses the test window for the session (D10): Refresh must not bring
-    -- it straight back.
+    -- it straight back. Not the sheet's close taking a window parked in its holder down with it: that
+    -- window cannot stand alone, and the sheet's next open docks it again.
     if not Dock.suspended then
         Dock.wanted = false
-        if NS.Preview.IsActive() then Dock.testDismissed = true end
+        local sheetTookIt = Dock.followDisabled and PaperDollFrame:IsVisible() ~= true
+        if NS.Preview.IsActive() and not sheetTookIt then Dock.testDismissed = true end
         NS.Dialogs.CloseAll("host")
     end
     NS.Stack.Select(nil)
