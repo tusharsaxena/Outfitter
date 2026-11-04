@@ -490,15 +490,14 @@ function O.SetToCurrent(id)
 end
 
 --- For the row, the tooltip and the bar: "disabled" (the trigger's one Disabled flag), "missing",
---- "banked" or "normal".
+--- "banked" or "normal". Uncached: the window caches the answer per id (Window_ListModel LM.Status).
 --- @param id string
---- @param cache table|nil
 --- @return string|nil
-function O.Status(id, cache)
+function O.Status(id)
     local rec = O.Get(id)
     if not rec then return nil end
     if rec.trigger and rec.trigger.disabled then return "disabled" end
-    local missing, banked = NS.Inventory.Missing(rec, cache)
+    local missing, banked = NS.Inventory.Missing(rec)
     if missing and #missing > 0 then return "missing" end
     if banked and #banked > 0 then return "banked" end
     return "normal"

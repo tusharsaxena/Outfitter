@@ -68,15 +68,16 @@ function LM.SortedIds(category)
     return out
 end
 
---- O.Status through `cache` (id -> status, false for none); the window wipes it on MarkDirty(true).
+--- O.Status through `statusCache` (id -> status, false for none; not the inventory cache); the
+--- window wipes it on MarkDirty(true).
 --- @param id string
---- @param cache table
+--- @param statusCache table
 --- @return string|nil
-function LM.Status(id, cache)
-    local s = cache[id]
+function LM.Status(id, statusCache)
+    local s = statusCache[id]
     if s == nil then
         s = NS.Outfits.Status(id) or false
-        cache[id] = s
+        statusCache[id] = s
     end
     return s or nil
 end
@@ -93,15 +94,15 @@ end
 
 --- The list's entries, top to bottom.
 --- @param collapsed table|nil  category id -> true (session only)
---- @param cache table|nil  the status cache (LM.Status)
+--- @param statusCache table|nil  id -> status (LM.Status)
 --- @return table[]
-function LM.Build(collapsed, cache)
-    collapsed, cache = collapsed or {}, cache or {}
+function LM.Build(collapsed, statusCache)
+    collapsed, statusCache = collapsed or {}, statusCache or {}
     local out = {}
     for _, cat in ipairs(NS.Outfits.Categories()) do
         if header(out, cat, collapsed) then
             for _, id in ipairs(LM.SortedIds(cat)) do
-                out[#out + 1] = { kind = "outfit", id = id, depth = 1, status = LM.Status(id, cache) }
+                out[#out + 1] = { kind = "outfit", id = id, depth = 1, status = LM.Status(id, statusCache) }
             end
         end
     end

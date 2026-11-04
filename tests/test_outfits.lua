@@ -515,9 +515,12 @@ test("outfits: Status reads the trigger's disabled flag first, then the inventor
     local _, NS = scene()
     local O = NS.Outfits
     local id = O.Create("Mine", { HeadSlot = { id = 1 } }, { trigger = "FISHING" })
-    local missing, banked = {}, {}
-    T.fake(NS, "Inventory", { Missing = function() return missing, banked end })
+    local missing, banked, argc = {}, {}, nil
+    T.fake(NS, "Inventory", { Missing = function(...) argc = select("#", ...); return missing, banked end })
     assertEqual(O.Status(id), "normal")
+    -- red under: O.Status passing a second argument to NS.Inventory.Missing, which takes the record
+    -- alone (F-010: the window's status cache was handed on and silently dropped).
+    assertEqual(argc, 1, "Inventory.Missing takes the record alone")
     banked[1] = "HeadSlot"
     assertEqual(O.Status(id), "banked")
     missing[1] = "HeadSlot"
