@@ -219,28 +219,28 @@ local function rowFor(NS, id)
     return nil
 end
 
-test("popups: the row EM box selects first, stores on the second check, says the EM is full, and unstores", function()
+test("popups: the row EM mark selects first, stores on the second click, says the EM is full, and unstores", function()
     local NS, M = scene({ dock = true })
     local id = NS.Outfits.Create("Spare", { HeadSlot = { id = 0 } })
     local row = rowFor(NS, id)
     assertTrue(row ~= nil, "no row for the outfit")
     NS.Stack.Select(nil)
-    row.em:SetChecked(true); row.em:__fire("OnClick")
-    assertEqual(NS.Stack.Selected(), id, "the first check did not select")
-    assertTrue(NS.Stack.IsWorn(id), "the first check did not wear")
+    row.em:__fire("OnClick")
+    assertEqual(NS.Stack.Selected(), id, "the first click did not select")
+    assertTrue(NS.Stack.IsWorn(id), "the first click did not wear")
     assertEqual(NS.Outfits.Get(id).kind, "native")
     local cap = M.MAX_EQUIPMENT_SETS_PER_PLAYER
     M.MAX_EQUIPMENT_SETS_PER_PLAYER = 0
-    row.em:SetChecked(true); row.em:__fire("OnClick")
+    row.em:__fire("OnClick")
     assertEqual(M.__popups[#M.__popups].which, "OUTFITTERREBORN_EM_FULL")
     assertTrue(M.StaticPopupDialogs.OUTFITTERREBORN_EM_FULL.text ~= nil)
     M.MAX_EQUIPMENT_SETS_PER_PLAYER = cap
-    row.em:SetChecked(true); row.em:__fire("OnClick")
+    row.em:__fire("OnClick")
     local emId = NS.Stack.Selected()
-    assertEqual(NS.Outfits.Get(emId).kind, "em", "the second check did not store on the server")
+    assertEqual(NS.Outfits.Get(emId).kind, "em", "the second click did not store on the server")
     row = rowFor(NS, emId)
-    row.em:SetChecked(false); row.em:__fire("OnClick")
-    assertEqual(NS.Outfits.Get(NS.Outfits.FindByName("Spare")).kind, "native", "the uncheck did not store locally")
+    row.em:__fire("OnClick")
+    assertEqual(NS.Outfits.Get(NS.Outfits.FindByName("Spare")).kind, "native", "the click on the full mark did not store locally")
 end)
 
 -- ── the rebuild and progress dialogs ──────────────────────────────────────────────────────────

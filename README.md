@@ -114,6 +114,6 @@ The old About panel thanked these people, and they're still thanked here:
 
 The settings, the outfit window and the outfit bar draw their icons from
 [Open Iconic](https://github.com/iconic/open-iconic) by Waybury (MIT), and the
-mark on an outfit that has a trigger and the character-sheet button's coat hanger are from
+mark on an outfit that has a trigger, the outfit menu's gear and the character-sheet button's coat hanger are from
 [Phosphor](https://github.com/phosphor-icons/core) by Phosphor Icons (MIT). Only the
 icons this addon draws are included, and each set's license file ships beside them.

@@ -245,29 +245,142 @@ test("rows: an item right-click uses it, except on the merchant's buyback tab", 
     NS.Compat.UseContainerItem = use
 end)
 
-test("rows: the EM box selects first, then stores on the server, and a refusal shows the popup", function()
+-- ── the outfit row's layout (sheet and window feedback design G4, plan Task 3.4) ──────────────────
+
+-- The last point a frame (recorded `__pts`) or a texture (GetPoint) was given.
+local function lastPoint(obj)
+    local pts = rawget(obj, "__pts")
+    if pts then return pts[#pts] or {} end
+    return { obj:GetPoint(1) }
+end
+
+local function assertLeftAt(row, obj, x, what)
+    local p = lastPoint(obj)
+    assertEqual(p[1], "LEFT", what); assertEqual(p[2], row, what); assertEqual(p[3], "LEFT", what)
+    assertEqual(p[4], x, what)
+end
+
+-- Click a row's Equipment Manager mark.
+local function clickEM(row) row.em:__fire("OnClick", "LeftButton") end
+
+test("rows: an outfit row shows worn, icon, EM mark, name in that order", function()
+    -- G4: [worn] [outfit icon] [Equipment Manager icon] [name] ... [automation] [gear].
+    -- red under: the outfit icon left unbuilt, or the EM mark and the name still at 32 and 50.
+    local NS = opened()
+    local row = rowOf(NS, "outfit")
+    assertLeftAt(row, row.worn, 14, "the worn box")
+    assertLeftAt(row, row.outfitIcon, 32, "the outfit icon")
+    assertLeftAt(row, row.em, 50, "the EM mark")
+    assertLeftAt(row, row.name, 68, "the name")
+    assertEqual(select(4, row.name:GetPoint(2)), -38, "the name ends clear of the lightning")
+    assertEqual(row.outfitIcon:GetWidth(), 16)
+    assertTrue(row.outfitIcon:IsShown(), "an outfit row shows its icon")
+    -- The interim resolver (plan Task 3.5 swaps it for NS.OutfitIcon): the bar's.
+    assertEqual(row.outfitIcon:GetTexture(), NS.Bar.OutfitIcon(NS.Outfits.Get(row.entry.id)))
+    -- tests/dock_scene.lua gives a CheckButton, and only a CheckButton, its own SetChecked.
+    assertTrue(row.em.icon ~= nil and rawget(row.em, "SetChecked") == nil, "the EM mark is a button, not a box")
+    -- An item row keeps its own icon where it was, and draws no outfit icon.
+    NS.WindowRows.Bind(row, { kind = "item", item = { id = 1, name = "Hat", loc = {} } }, 1)
+    assertLeftAt(row, row.icon, 14, "an item row's icon")
+    assertTrue(row.icon:IsShown()); assertFalse(row.outfitIcon:IsShown(), "an item row drew the outfit icon")
+    assertFalse(row.em:IsShown(), "an item row drew the EM mark")
+end)
+
+test("rows: the EM mark is full for an EM outfit and dimmed otherwise", function()
+    -- G4: the Equipment Manager tab's own icon, read from PAPERDOLL_SIDEBARS[3] at run time.
+    -- red under: one alpha for both kinds, or a texture other than the tab's.
     local NS, M = opened()
     local row = rowOf(NS, "outfit")
     local id = row.entry.id
-    local stored = {}
+    local tab = M.PAPERDOLL_SIDEBARS[3]
+    assertEqual(row.em.icon:GetTexture(), tab.icon)
+    assertEqual(table.concat({ row.em.icon:GetTexCoord() }, ","), table.concat({
+        tab.texCoords[1], tab.texCoords[3], tab.texCoords[1], tab.texCoords[4],
+        tab.texCoords[2], tab.texCoords[3], tab.texCoords[2], tab.texCoords[4] }, ","), "the tab's crop")
+    assertTrue(row.em:IsShown())
+    assertEqual(row.em:GetAlpha(), 0.35, "a native outfit's mark is dimmed")
+    local isEM = NS.Outfits.IsEM
+    NS.Outfits.IsEM = function(i) return i == id or isEM(i) end
+    NS.Window.MarkDirty(true); NS.Window.Render()
+    assertEqual(rowOf(NS, "outfit", id).em:GetAlpha(), 1, "an EM outfit's mark is full")
+    NS.Outfits.IsEM = isEM
+end)
+
+test("rows: clicking the dimmed EM mark stores the outfit on the server, as the checkbox did", function()
+    -- INV §3.5 OutfitServerButton: the first click on an outfit that is not selected only selects it;
+    -- a click on the selected one stores it on the server, and a refusal shows the popup.
+    local NS, M = opened()
+    local row = rowOf(NS, "outfit")
+    local id = row.entry.id
+    local stored, local_ = {}, {}
     local store, keep = NS.EM.StoreOnServer, NS.EM.StoreLocally
     NS.EM.StoreOnServer = function(i) stored[#stored + 1] = i; return false, "OUTFITTERREBORN_EM_FULL" end
+    NS.EM.StoreLocally = function(i) local_[#local_ + 1] = i end
     NS.Stack.Select(nil)
-    row.em:SetChecked(true); row.em:__fire("OnClick")
-    assertEqual(#stored, 0, "the first check only selects")
+    clickEM(row)
+    assertEqual(#stored, 0, "the first click only selects")
     assertEqual(NS.Stack.Selected(), id)
-    assertFalse(row.em:GetChecked(), "the box is put back")
-    row.em:SetChecked(true); row.em:__fire("OnClick")
-    assertEqual(#stored, 1)
+    clickEM(row)
+    assertEqual(#stored, 1); assertEqual(stored[1], id)
     assertEqual(M.__popups[#M.__popups].which, "OUTFITTERREBORN_EM_FULL")
-    assertFalse(row.em:GetChecked())
+    assertEqual(#local_, 0, "a native outfit's click stored it locally")
+    -- The full mark on an EM outfit stores it locally (the old uncheck).
+    local isEM = NS.Outfits.IsEM
+    NS.Outfits.IsEM = function(i) return i == id or isEM(i) end
+    clickEM(row)
+    assertEqual(#local_, 1); assertEqual(#stored, 1)
+    NS.Outfits.IsEM = isEM
+    NS.EM.StoreOnServer, NS.EM.StoreLocally = store, keep
+end)
+
+test("rows: clicking the EM mark in combat refuses and changes nothing", function()
+    local NS, M = opened()
+    local row = rowOf(NS, "outfit")
+    local id = row.entry.id
+    local calls = 0
+    local store, keep = NS.EM.StoreOnServer, NS.EM.StoreLocally
+    NS.EM.StoreOnServer = function() calls = calls + 1; return true end
+    NS.EM.StoreLocally = function() calls = calls + 1 end
+    NS.Stack.Select(id)
+    local alpha = row.em:GetAlpha()
     M.__lockdown = true
     M.__resetPrinted()
-    row.em:SetChecked(true); row.em:__fire("OnClick")
-    assertEqual(#stored, 1, "an EM save ran in combat")
-    assertTrue(table.concat(M.__printed(), "\n"):find("Outfits can't be changed in combat.", 1, true) ~= nil)
+    clickEM(row)
     M.__lockdown = false
+    -- red under: drop the `locked()` refusal from the EM click.
+    assertEqual(calls, 0, "an EM store ran in combat")
+    assertEqual(row.em:GetAlpha(), alpha, "the mark changed in combat")
+    assertTrue(table.concat(M.__printed(), "\n"):find("Outfits can't be changed in combat.", 1, true) ~= nil)
     NS.EM.StoreOnServer, NS.EM.StoreLocally = store, keep
+end)
+
+test("rows: the menu control is a borderless gear that opens the outfit menu", function()
+    -- G4: the gear replaces the ... button. red under: NS.Icon("ellipses"), or S.Button(menu) boxed.
+    local NS, M, fakes = opened()
+    local row = rowOf(NS, "outfit")
+    local menu = row.menu
+    assertEqual(menu.icon:GetTexture(), NS.Icon("ph:gear-six"))
+    local p = lastPoint(menu)
+    assertEqual(p[1], "RIGHT"); assertEqual(p[2], row); assertEqual(p[3], "RIGHT"); assertEqual(p[4], -4)
+    local rec = M.LibStub("LibKa0s-Skin-1.0").painted[menu]
+    local opts = rec and rec.calls.Button and rec.calls.Button[1]
+    assertTrue(type(opts) == "table" and opts.noBg == true and opts.noBorder == true, "S.Button(menu, { noBg, noBorder })")
+    menu:__fire("OnClick", "LeftButton")
+    assertEqual(fakes.OutfitMenu.__count("Open"), 1)
+    assertEqual(fakes.OutfitMenu.__calls[1][2], menu); assertEqual(fakes.OutfitMenu.__calls[1][3], row.entry.id)
+end)
+
+test("rows: the lightning has no border", function()
+    -- G4/G10: the automation mark is a tinted glyph, never boxed or edged. red under:
+    -- S.IconBorder(row.trig) or a Button in its place.
+    local NS, M = opened()
+    local row = rowOf(NS, "outfit")
+    assertEqual(row.trig:GetObjectType(), "Texture")
+    local calls = M.LibStub("LibKa0s-Skin-1.0").painted[row.trig].calls
+    assertTrue(calls.Mark ~= nil, "the lightning is an S.Mark")
+    assertTrue(calls.IconBorder == nil, "the lightning is edged")
+    local p = { row.trig:GetPoint(1) }
+    assertEqual(p[1], "RIGHT"); assertEqual(p[4], -22); assertEqual(row.trig:GetWidth(), 12)
 end)
 
 test("rows: an outfit row's name is colored by its status, and a disabled one says so", function()

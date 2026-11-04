@@ -41,4 +41,4 @@ Green gate before every commit: `lua tests/run.lua` and
 auto-stage/commit/push and never bump the version without an explicit instruction.
 
 Bundles [LibKa0s](https://github.com/tusharsaxena/LibKa0s) v1.85.0 (MIT).
-LibKa0s icons: add, cancel, chevron-down, chevron-right, chevron-up, clear, close, confirm, copy, ellipses, help, info, move, ph:coat-hanger, ph:lightning, reset, settings, volume-high.
+LibKa0s icons: add, cancel, chevron-down, chevron-right, chevron-up, clear, close, confirm, copy, help, info, move, ph:coat-hanger, ph:gear-six, ph:lightning, reset, settings, volume-high.

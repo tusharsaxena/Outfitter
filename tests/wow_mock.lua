@@ -57,6 +57,15 @@ local function installSheets(M)
     rawset(tab3, "GetSize", function() return 33, 35 end)
     local close = M.CreateFrame("Button", "CharacterFrameCloseButton", M.CharacterFrame)
     close:SetFrameLevel(CLOSE_BUTTON_LEVEL)
+    -- The sheet's sidebar tabs, as PaperDollFrame.lua declares them: the third is the Equipment
+    -- Manager's, whose icon an outfit row draws (wow-ui-source@297d7aa:Interface/AddOns/
+    -- Blizzard_UIPanels_Game/Mainline/PaperDollFrame.lua:79, :97-100).
+    local SIDEBAR_TABS = "Interface\\PaperDollInfoFrame\\PaperDollSidebarTabs"
+    M.PAPERDOLL_SIDEBARS = {
+        { icon = nil, texCoords = { 0.109375, 0.890625, 0.09375, 0.90625 } },
+        { icon = SIDEBAR_TABS, texCoords = { 0.01562500, 0.53125000, 0.32421875, 0.46093750 } },
+        { icon = SIDEBAR_TABS, texCoords = { 0.01562500, 0.53125000, 0.46875000, 0.60546875 } },
+    }
     M.__sheets = {
         place  = place,
         eui    = function() return M.CreateFrame("Frame", "EUI_CharSheet_Equipment", M.CharacterFrame) end,
