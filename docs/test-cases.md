@@ -1169,7 +1169,7 @@ Total.
 - sheet: with no Chonky panel shown DockRight is the backdrop's edge
 - sheet: the adapter creates, anchors and shows nothing
 
-### test_dock.lua (44)
+### test_dock.lua (45)
 
 - dock: NS.Dock is published with the §7.2 surface
 - dock: the holder fills the sheet, and the sheet button toggles the window
@@ -1202,6 +1202,7 @@ Total.
 - dock: on Chonky the button is the same sidebar tab
 - dock: on EllesmereUI the button is a text label in EUI's tab style
 - dock: without EllesmereUI's accent the active label takes EUI's own fallback
+- dock: the sheet button's label has a face before its text is set
 - dock: a sheet kind that changes after the show re-places and re-looks the button
 - dock: the button is placed and shown in combat: it is a plain, insecure button
 - dock: the window's top is flush with the sheet's top
@@ -1250,7 +1251,7 @@ Total.
 - rows: a profile switch redraws the trigger mark from the new profile's auto.enabled
 - rows: an item with no quality color is drawn muted, never in the previous item's color
 
-### test_slot_enables.lua (17)
+### test_slot_enables.lua (24)
 
 - slot enables: NS.SlotEnables is published with the §7.4 surface
 - slot enables: one 14x14 checkbox per slot, anchored to Character<Slot> (old test_xml:101-112)
@@ -1269,6 +1270,13 @@ Total.
 - slot enables: UnknownSlots answers the selected outfit's unknown set
 - slot enables: hidden when stood down, and a selection while down shows nothing
 - drawer: the window's show and hide tell the drawer, with the window's state already set
+- slot enables: the layers carry the client's strata order, low to high, and a level cap
+- slot enables: HostStrata is the highest of CharacterFrame's and the slot buttons'
+- slot enables: HIGH slots under a MEDIUM sheet lift the boxes to HIGH, over the HIGH frames only
+- slot enables: a MEDIUM 9000 model scene no longer inflates the boxes' level
+- slot enables: the level is capped under the client's ceiling
+- slot enables: MaybeRestack restacks on a strata-only change, and once
+- slot enables: each box carries an edge in the skin's accent
 
 ### test_bar.lua (29)
 
@@ -1676,10 +1684,10 @@ Total.
 | test_triggers_class.lua | 11 |
 | test_triggers_pvp.lua | 7 |
 | test_sheet.lua | 16 |
-| test_dock.lua | 44 |
+| test_dock.lua | 45 |
 | test_list_model.lua | 7 |
 | test_rows_secure.lua | 21 |
-| test_slot_enables.lua | 17 |
+| test_slot_enables.lua | 24 |
 | test_bar.lua | 29 |
 | test_outfit_icons.lua | 17 |
 | test_broker.lua | 13 |
@@ -1699,4 +1707,4 @@ Total.
 | test_lizard_sighted.lua | 8 |
 | test_prose.lua | 15 |
 | Skipped | 1 |
-| **Total** | **1393** |
+| **Total** | **1401** |

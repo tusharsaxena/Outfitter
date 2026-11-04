@@ -22,7 +22,9 @@ C.LOGO = ("Interface\\AddOns\\%s\\media\\logos\\%s.logo.tga"):format(addonName, 
 --
 --   Host-matched       CharacterFrame is the host of the two docked surfaces: the outfit window
 --                      (the sheet holder's strata, its level + DOCK_OVER_HOST) and the slot
---                      checkboxes (the sheet's strata, the highest descendant + SLOT_ENABLES_OVER_HOST)
+--                      checkboxes (the highest strata among the sheet and its 18 slot buttons, ranked
+--                      by STRATA_ORDER; the highest descendant OF THAT STRATA + SLOT_ENABLES_OVER_HOST,
+--                      capped at LEVEL.MAX under the client's level ceiling)
 --   MEDIUM             HUD       the outfit bar: movable, clamped, toplevel
 --   DIALOG             MODAL     the outfit, trigger, rebuild and progress dialogs; the LibKa0s icon
 --                                browser (modules/IconBrowserSetup.lua), a modal over them in a band
@@ -38,13 +40,20 @@ C.LOGO = ("Interface\\AddOns\\%s\\media\\logos\\%s.logo.tga"):format(addonName, 
 -- child row + ROW_SECURE, a cover W+30, the test strip W+40, the drag handle W+50 (its grip +10).
 C.LAYERS = {
     STRATA = { HUD = "MEDIUM", MODAL = "DIALOG", POPUP = "FULLSCREEN_DIALOG", CURSOR = "TOOLTIP" },
+    -- The client's eight strata, low to high: a host's strata is compared, never written from here.
+    STRATA_ORDER = { "BACKGROUND", "LOW", "MEDIUM", "HIGH", "DIALOG", "FULLSCREEN", "FULLSCREEN_DIALOG",
+                     "TOOLTIP" },
     LEVEL  = {
         DOCK_OVER_HOST = 1, SLOT_ENABLES_OVER_HOST = 1, SLOT_CHECKBOX = 1, SHEET_BUTTON_OVER_CLOSE = 1,
         CHROME = 1, CONTENT = 2, ROW_CONTROLS = 1, ROW_SECURE = 2, SCROLL = 3,
         BAR_ROW = 1, BAR_BUTTON = 2, COVER = 30, MARKER = 40, HANDLE = 50,
         ICON_BROWSER = 1200,
+        MAX = 9990,     -- a host-derived level's cap, under the client's 10000 ceiling
     },
 }
+-- A strata's rank in STRATA_ORDER (1 = BACKGROUND), nil for a name the client does not have.
+C.LAYERS.STRATA_RANK = {}
+for i, s in ipairs(C.LAYERS.STRATA_ORDER) do C.LAYERS.STRATA_RANK[s] = i end
 
 -- The default outfit icon (smoke round 2 design G1, D1): Blizzard's chest-armor art, fileID 132724,
 -- untinted and zoom-cropped like any item icon. The last rung of NS.OutfitIcon (computed, never
