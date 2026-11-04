@@ -1261,7 +1261,7 @@ Total.
 - rows: a profile switch redraws the trigger mark from the new profile's auto.enabled
 - rows: an item with no quality color is drawn muted, never in the previous item's color
 
-### test_slot_enables.lua (24)
+### test_slot_enables.lua (25)
 
 - slot enables: NS.SlotEnables is published with the §7.4 surface
 - slot enables: one 14x14 checkbox per slot, anchored to Character<Slot> (old test_xml:101-112)
@@ -1282,6 +1282,7 @@ Total.
 - drawer: the window's show and hide tell the drawer, with the window's state already set
 - slot enables: the layers carry the client's strata order, low to high, and a level cap
 - slot enables: HostStrata is the highest of CharacterFrame's and the slot buttons'
+- slot enables: a host that answers no strata gets none restated as a literal
 - slot enables: HIGH slots under a MEDIUM sheet lift the boxes to HIGH, over the HIGH frames only
 - slot enables: a MEDIUM 9000 model scene no longer inflates the boxes' level
 - slot enables: the level is capped under the client's ceiling
@@ -1697,7 +1698,7 @@ Total.
 | test_dock.lua | 45 |
 | test_list_model.lua | 7 |
 | test_rows_secure.lua | 21 |
-| test_slot_enables.lua | 24 |
+| test_slot_enables.lua | 25 |
 | test_bar.lua | 29 |
 | test_outfit_icons.lua | 17 |
 | test_broker.lua | 13 |
@@ -1717,4 +1718,4 @@ Total.
 | test_lizard_sighted.lua | 8 |
 | test_prose.lua | 15 |
 | Skipped | 1 |
-| **Total** | **1411** |
+| **Total** | **1412** |

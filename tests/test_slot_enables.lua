@@ -311,6 +311,30 @@ test("slot enables: HostStrata is the highest of CharacterFrame's and the slot b
     assertEqual(NS.SlotEnables.HostStrata(), RAISED_HOST_STRATA, "EllesmereUI's HIGH sheet")
 end)
 
+test("slot enables: a host that answers no strata gets none restated as a literal", function()
+    -- frame-layering-§1: a host-matched surface reads the host's strata, never restates it.
+    local NS, M = selected()
+    local frame = M.OutfitterRebornSlotEnables
+    local function raise() error("forbidden") end
+    local saved = { CharacterFrame = M.CharacterFrame.GetFrameStrata }
+    rawset(M.CharacterFrame, "GetFrameStrata", raise)
+    for _, slot in ipairs(NS.ItemData.SLOT_NAMES) do
+        local b = M["Character" .. slot]
+        saved[slot] = b.GetFrameStrata
+        rawset(b, "GetFrameStrata", raise)
+    end
+    -- red under: `strataOf(CharacterFrame) or "MEDIUM"` (a strata literal standing in for the host's).
+    assertEqual(NS.SlotEnables.HostStrata(), nil)
+    local writes = 0
+    local setStrata = frame.SetFrameStrata
+    frame.SetFrameStrata = function(...) writes = writes + 1; return setStrata(...) end
+    NS.SlotEnables.Restack()
+    assertEqual(writes, 0, "a strata was written with none read")
+    frame.SetFrameStrata = setStrata
+    M.CharacterFrame.GetFrameStrata = saved.CharacterFrame
+    for _, slot in ipairs(NS.ItemData.SLOT_NAMES) do M["Character" .. slot].GetFrameStrata = saved[slot] end
+end)
+
 test("slot enables: HIGH slots under a MEDIUM sheet lift the boxes to HIGH, over the HIGH frames only", function()
     local NS, M = selected()
     chonkySlots(NS, M, 15, 20)

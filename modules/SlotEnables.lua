@@ -117,13 +117,14 @@ function SE.Relevel()
 end
 
 --- The host's strata: the highest-ranked of CharacterFrame's and the 18 slot buttons' (a read that
---- raises, or answers no strata, counts for nothing); MEDIUM, the client's default, when none answers.
---- @return string
+--- raises, or answers no strata, counts for nothing); nil when none answers, never a literal stand-in
+--- (frame-layering-§1: a host-matched surface reads its host's strata).
+--- @return string|nil
 function SE.HostStrata()
-    local best = strataOf(CharacterFrame) or "MEDIUM"
+    local best = strataOf(CharacterFrame)
     for _, slot in ipairs(NS.ItemData.SLOT_NAMES) do
         local s = strataOf(_G["Character" .. slot])
-        if s and STRATA_RANK[s] > STRATA_RANK[best] then best = s end
+        if s and (best == nil or STRATA_RANK[s] > STRATA_RANK[best]) then best = s end
     end
     return best
 end
@@ -134,13 +135,14 @@ local function strataProbe()
     return (strataOf(CharacterFrame) or "") .. "/" .. (strataOf(_G.CharacterHeadSlot) or "")
 end
 
---- Take the host's strata and one level above its highest descendant of that strata, capped.
+--- Take the host's strata and one level above its highest descendant of that strata, capped. A host
+--- that answers no strata leaves the boxes the one they inherit, over every descendant's level.
 function SE.Restack()
     if not frame then return end
     hostLevel = NS.SafeNumber(CharacterFrame:GetFrameLevel(), 0)
     hostProbe = strataProbe()
     local strata = SE.HostStrata()
-    frame:SetFrameStrata(strata)
+    if strata then frame:SetFrameStrata(strata) end
     local level = SE.HighestLevel(CharacterFrame, NS.Dock.Holder(), strata) + LEVEL.SLOT_ENABLES_OVER_HOST
     frame:SetFrameLevel(math.min(level, LEVEL.MAX))
     SE.Relevel()
