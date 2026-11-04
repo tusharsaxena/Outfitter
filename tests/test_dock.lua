@@ -609,6 +609,37 @@ test("dock: without EllesmereUI's accent the active label takes EUI's own fallba
     assertEqual(textColor(button), "0.510 0.784 1.000 1.00")
 end)
 
+test("dock: the sheet button's label has a face before its text is set", function()
+    -- The client raises "Font not set" on SetText for a FontString made with no template and no
+    -- font yet; the mock stores the text regardless, so this scene models the client's refusal on
+    -- the sheet button's own font strings. red under: buildLooks setting the label's text with its
+    -- face left to applyLook (which only runs on EllesmereUI's text look, after the build).
+    local refused = {}
+    local _, M = scene({ mutate = function(Mk)
+        local prev = Mk.CreateFrame
+        Mk.CreateFrame = function(kind, name, parent, template)
+            local f = prev(kind, name, parent, template)
+            if name ~= "OutfitterRebornSheetButton" or type(f) ~= "table" then return f end
+            local make = f.CreateFontString
+            rawset(f, "CreateFontString", function(self, n, layer, tpl)
+                local fs = make(self, n, layer, tpl)
+                local setText = fs.SetText
+                rawset(fs, "SetText", function(s, v)
+                    if tpl == nil and s:GetFont() == nil and s:GetFontObject() == nil then
+                        refused[#refused + 1] = v
+                    end
+                    return setText(s, v)
+                end)
+                return fs
+            end)
+            return f
+        end
+    end })
+    M.__world:openCharacter()
+    assertTrue(M.OutfitterRebornSheetButton ~= nil, "no sheet button")
+    assertEqual(#refused, 0, "SetText on a font string with no font (the client's \"Font not set\")")
+end)
+
 test("dock: a sheet kind that changes after the show re-places and re-looks the button", function()
     local _, M = scene()
     M.__loadedAddOns.EllesmereUIBlizzardSkin = true

@@ -199,6 +199,9 @@ local function buildLooks()
     button.Highlight = tabTexture("HIGHLIGHT", 31, 31, TAB_HIGHLIGHT)
     button.Highlight:SetPoint("TOPLEFT", button, "TOPLEFT", 2, -3)
     button.label = button:CreateFontString(nil, "OVERLAY")
+    -- A face before the text: the client refuses SetText on a template-less string with no font
+    -- ("Font not set"). applyLook swaps in EllesmereUI's own face on each text placing.
+    button.label:SetFont(STANDARD_TEXT_FONT, EUI_FONT_SIZE, "")
     button.label:SetPoint("TOP", button, "TOP", 0, 0)
     button.label:SetText(L["Outfits"])
 end
