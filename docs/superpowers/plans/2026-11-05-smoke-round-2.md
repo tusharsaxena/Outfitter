@@ -38,7 +38,7 @@ both repos, and continues from the first row not `done`.
 |---|---|---|---|
 | CP0 | Design, recon evidence and this plan committed | OR | done |
 | CP1 | LibKa0s v1.87.0: cascading menus (Task 1), released and pushed | LK | todo |
-| CP2a | Tasks 2.1-2.3: default icon + spec rung, host-look sheet button, gear size | OR | todo |
+| CP2a | Tasks 2.1-2.3: default icon + spec rung, host-look sheet button, gear size | OR | done (3a062f8..66914ec; 132724 + SPEC_n rung, host tab/EUI label citing DEV-SKIN-SHEET-BUTTON, gear via S.CloseButton) |
 | CP2b | Task 2.4: slot selectors, flyout arrow, flyout alignment | OR | todo |
 | CP2c | Task 2.5: outfit bar as a Ka0s HUD window | OR | todo |
 | CP2d | Task 2.6: test mode shows the window | OR | todo |
@@ -72,26 +72,27 @@ CP1 runs in parallel with CP2a-CP2d (different repo). CP2a-CP2d run in order on 
 **Files:** `core/Constants.lua`, `modules/Outfits.lua` (`NS.OutfitIcon`), `modules/Outfits_Seed.lua`,
 `modules/Broker.lua`, `core/SkinSetup.lua`, tests (`test_skinsetup`, icon/broker/outfits tests).
 
-- [ ] Tests: no-icon multi-item outfit -> 132724 (white); a `builtin = "SPEC_2"` outfit with no icon ->
+- [x] Tests: no-icon multi-item outfit -> 132724 (white); a `builtin = "SPEC_2"` outfit with no icon ->
   that spec's icon even with its trigger removed; "Outfitter chooses" on it -> spec icon; an EM mirror
   adopted by name keeps its EM icon; broker idle icon is 132724 untinted.
-- [ ] Implement G1. Retire `SHEET_BUTTON_TINT` and `of.sheet.button` with their test pins.
+- [x] Implement G1. Retire `SHEET_BUTTON_TINT` and `of.sheet.button` with their test pins.
 
 ## Task 2.2 — The sheet button wears the host's tab — CP2a
 
 **Files:** `modules/Dock.lua` (buildSheet/placeButton/recheckSheet), `modules/Sheet.lua`
 (ButtonAnchor/Kind), `locales/enUS.lua`, tests (`test_dock`, `test_sheet`, skin switch/values pins).
 
-- [ ] Tests: stock and Chonky build the tab textures with the template's coords and 33x35; selected
+- [x] Tests: stock and Chonky build the tab textures with the template's coords and 33x35; selected
   state while the window shows; EUI builds a 64x25 text label above `EUI_CharSheet_Equipment` with the
   idle/hover/active colors and falls back when `ELLESMERE_GREEN` is absent; kind change re-places and
   re-looks; stood down hides it; combat-safe (insecure).
-- [ ] Implement G2. Skin-values rows cite the D4 deviation (row text written in Task 4.1; reserve
-  its id now and use it consistently).
+- [x] Implement G2. Skin-values rows cite the D4 deviation (row text written in Task 4.1; reserve
+  its id now and use it consistently). Reserved id: `DEV-SKIN-SHEET-BUTTON` (the kit's cause-id
+  pattern takes upper case, digits and hyphens only).
 
 ## Task 2.3 — Gear icon size — CP2a
 
-- [ ] `modules/Window.lua`: gear texture centred at the close's art size (fallback 12), the X's tint
+- [x] `modules/Window.lua`: gear texture centred at the close's art size (fallback 12), the X's tint
   and hover. Test in `test_dock`. Commit, ledger CP2a -> done, push.
 
 ## Task 2.4 — Slots, arrow, alignment — CP2b
