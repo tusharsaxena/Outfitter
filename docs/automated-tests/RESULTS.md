@@ -32,6 +32,7 @@ archaeology, for the same reason a skip is never a pass (`automated-tests-§4`).
 
 | Run | Commit | Tree | Version | Lint w/e | Files | Tests | Perf | NLOC | Funcs | Avg NLOC | Avg CCN | Max CCN | CCN warn | Verdict |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| [`20261105-004501`](20261105-004501/) | `f5420fb` | clean | 1.1.0 | 0/0 | 193 | 1383/1/1384 | pass | 42375 | 5304 | 7.0 | 2.3 | 15 | 0 | **green** |
 | [`20261104-233516`](20261104-233516/) | `b71bc61` | clean | 1.1.0 | 0/0 | 193 | 1383/1/1384 | fail | 42369 | 5302 | 7.0 | 2.3 | 18 | 1 | **amber** |
 | [`20261104-225824`](20261104-225824/) | `73d6770` | clean | 1.1.0 | 0/0 | 193 | 1383/1/1384 | fail | 42369 | 5302 | 7.0 | 2.3 | 18 | 1 | **amber** |
 | [`20261104-134211`](20261104-134211/) | `ff19950` | clean | 1.1.0 | 0/0 | 188 | 1291/1/1292 | pass | 40505 | 5091 | 6.9 | 2.3 | 15 | 0 | **green** |
@@ -42,10 +43,11 @@ archaeology, for the same reason a skip is never a pass (`automated-tests-§4`).
 ## Test suite
 
 **1384 cases** — 1383 passed, 0 failed, 1 skipped. The generated inventory
-[`20261104-233516/test-cases.md`](20261104-233516/test-cases.md) is the authority on which cases existed at this run;
+[`20261105-004501/test-cases.md`](20261105-004501/test-cases.md) is the authority on which cases existed at this run;
 `docs/test-cases.md` is that same list at HEAD.
 
-Unchanged from the previous run at 1384 cases.
+The count has been **flat at 1384 across the last 3 runs**. A suite that stopped growing while
+the addon did is a coverage gap, and it is the one thing the table above cannot show.
 
 **1 case(s) reported a `skip`.** A skip is counted in the total and never in `passed`, and at
 the release gate it is NOT EVALUATED rather than passed (`automated-tests-§3`).
@@ -62,31 +64,31 @@ to whoever thinks to open `.luacheckrc`.
 ## Perf
 
 **13 scenarios** from `tests/perf.lua`; the measurements are in
-[`20261104-233516/perf.json`](20261104-233516/perf.json).
+[`20261105-004501/perf.json`](20261105-004501/perf.json).
 
 | `scenario` | `iters` | `ms/iter` | `notes/iter` | `bytes/iter` |
 |---|---|---|---|---|
-| `equipPlanCaptureOff` | 500 | 1.52548 | 0.00 | 229584.1 |
-| `equipPlanCaptureOn` | 500 | 1.85351 | 3.00 | 229584.1 |
-| `zoneFlipsCaptureOff` | 50 | 2.08716 | 0.00 | 118022.7 |
-| `zoneFlipsCaptureOn` | 50 | 1.83258 | 100.00 | 117934.4 |
-| `triggerFanoutCaptureOff` | 100 | 1.23977 | 0.00 | 106103.7 |
-| `triggerFanoutCaptureOn` | 100 | 1.10278 | 40.00 | 106106.6 |
-| `tooltipsCaptureOff` | 50 | 1.19658 | 0.00 | 138494.1 |
-| `tooltipsCaptureOn` | 50 | 0.99950 | 100.00 | 138494.1 |
-| `gaGenerationCaptureOff` | 200 | 9.36673 | 0.00 | 468126.8 |
-| `gaGenerationCaptureOn` | 200 | 9.31487 | 3.00 | 468126.8 |
-| `dockIdleCaptureOff` | 2000 | 0.00969 | 0.00 | 192.3 |
-| `dockIdleCaptureOn` | 2000 | 0.01225 | 1.00 | 192.3 |
-| `tooltipsAbsent` | 50 | 1.34338 | 0.00 | 138494.1 |
+| `equipPlanCaptureOff` | 500 | 1.55600 | 0.00 | 229584.1 |
+| `equipPlanCaptureOn` | 500 | 1.61965 | 3.00 | 229584.1 |
+| `zoneFlipsCaptureOff` | 50 | 1.21506 | 0.00 | 118022.7 |
+| `zoneFlipsCaptureOn` | 50 | 1.34300 | 100.00 | 117934.4 |
+| `triggerFanoutCaptureOff` | 100 | 1.00049 | 0.00 | 106103.7 |
+| `triggerFanoutCaptureOn` | 100 | 1.00798 | 40.00 | 106106.6 |
+| `tooltipsCaptureOff` | 50 | 0.92010 | 0.00 | 138494.1 |
+| `tooltipsCaptureOn` | 50 | 0.83832 | 100.00 | 138494.1 |
+| `gaGenerationCaptureOff` | 200 | 5.85634 | 0.00 | 468126.8 |
+| `gaGenerationCaptureOn` | 200 | 5.16163 | 3.00 | 468126.8 |
+| `dockIdleCaptureOff` | 2000 | 0.00752 | 0.00 | 192.3 |
+| `dockIdleCaptureOn` | 2000 | 0.00601 | 1.00 | 192.3 |
+| `tooltipsAbsent` | 50 | 0.84422 | 0.00 | 138494.1 |
 
 `perf` never fails a run and never blocks a commit — it is recorded, read and compared, not
 thresholded (`performance-§9`). It does gate the **tag** (`automated-tests-§3`).
 
 ## Complexity watch list
 
-Current as of [`20261104-233516`](20261104-233516/) — **this run's measurement, not its diff.** Max CCN **18** across 5302
-functions, **1** of them warned on; 0 file(s) in the 1000–1500 band and 0 over the 1500 cap
+Current as of [`20261105-004501`](20261105-004501/) — **this run's measurement, not its diff.** Max CCN **15** across 5304
+functions, **0** of them warned on; 0 file(s) in the 1000–1500 band and 0 over the 1500 cap
 (`layout-§1`).
 
 Every row below is generated from this run's own `lizard` output. **The `Disposition` column is
@@ -98,7 +100,8 @@ cell is this file saying something crossed and nobody has ruled on it yet.
 
 | Function | CCN | Location | Disposition |
 |---|---|---|---|
-| `placeFlyout` | 18 | `modules/QuickSlots.lua` | **Peel next.** New with the outward drawer. It is guard and default density, not tangled flow. Split the anchor choice from the host-settings read before the tag |
+
+None.
 
 ### Files by `layout-§1` band
 
