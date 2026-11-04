@@ -38,14 +38,51 @@ Update the row and commit the plan at every checkpoint. A resumed run reads this
 |---|---|---|---|
 | CP0 | Slash rename + design committed | OR | done (11ead73, f4aa2b0) |
 | CP1 | M1 LibKa0s IconBrowser released as v1.86.0, pushed | LK | done (tag v1.86.0 = cad1609, branch pushed) |
-| CP2 | M2 Quick Comms re-vendored onto the library browser, pushed | QC | todo |
+| CP2 | M2 Quick Comms re-vendored onto the library browser, pushed | QC | done (7398649..b154e6e, review fixes included, pushed) |
 | CP3a | M3 Tasks 3.1–3.4 (sheet adapter, dock, chrome, rows) | OR | done (b70853e..4793a91, pushed) |
-| CP3b | M3 Tasks 3.5–3.6 (re-vendor, icon model, browser) | OR | todo |
-| CP3c | M3 Tasks 3.7–3.9 (slots/drawers, broker, docs), pushed | OR | todo |
+| CP3b | M3 Tasks 3.5–3.6 (re-vendor, icon model, browser) | OR | done (c6c8d53..0f7a2da, pushed) |
+| CP3c | M3 Tasks 3.7–3.9 (slots/drawers, broker, docs), pushed | OR | done (8e21b14..1058dc8; whole-branch review: 13 OR + 6 QC defects confirmed and fixed; pushed) |
+| CP3d | Clear the two amber release gates from bundle 20261104-233516 | OR | **in progress — resume here** (see *Resume notes*) |
 | CP4 | Owner's in-game smoke pass; fixes on the branches | all | todo |
 | CP5 | Owner go-ahead → merge all three, push, delete run branches/stashes/worktrees | all | todo |
 
 M1 and Tasks 3.1–3.4 are independent and run in parallel. M2 and Tasks 3.5–3.6 wait for CP1.
+
+### Resume notes (2026-11-05, owner restarted the machine)
+
+State when paused (all three branches pushed, nothing merged, all working trees clean):
+
+- **LibKa0s** `feat/2026-11-04-icon-browser` at `cad1609` = tag `v1.86.0` (pushed).
+- **QuickComms** `feat/2026-11-04-icon-browser-revendor` at `b154e6e` (pushed). Green: 1706 passed, luacheck 0/0.
+- **OutfitterReborn** `feat/2026-11-04-sheet-window-feedback` at `1058dc8` (pushed; this ledger commit on top). Green: 1383 passed, luacheck 0/0.
+- Upstream done and pushed: WowAddonStandards `baebb21` (v2.101.0, events-frames-taint-§9 wow-ui-source), dev-copilot `f55715c` (2.7.0).
+
+**CP3d — what is left.** The last automated-test bundle (`docs/automated-tests/20261104-233516/`) is **amber**; the
+bundle before this round (`20261104-134211`) was green. Both regressions came in this round:
+
+1. `placeFlyout` in `modules/QuickSlots.lua` is CCN 18 (cap 15). Split the anchor choice from the host-settings
+   read, no behavior change. A partial, **unverified** attempt by the stopped agent is parked in
+   `git stash` as `wip-cp3d: partial placeFlyout CCN refactor` (28+/18- in QuickSlots.lua): inspect it
+   (`git stash show -p stash@{0}`), apply or drop it, and drop the stash either way (CP5 cleans stashes).
+2. `tests/perf.lua` `equipPlan` allocates 229584.1 bytes/iter vs a 229000 ceiling (passed before this
+   round). Find the cause on the equip-plan path (`git diff master..HEAD`); remove avoidable waste, or re-pin
+   the ceiling per `docs/performance.md`'s rule with the reason recorded. Never bump it bare.
+3. One gate run during Task 3.9 saw a test failure that did not recur: run `lua tests/run.lua` five times
+   and chase any flake test-first.
+4. Green gate, then a fresh bundle via `tests/_kit/run-automated-tests.sh` (AUTOMATED_TESTS.md) — target
+   **green** — commit, `git push origin feat/2026-11-04-sheet-window-feedback`. Mark CP3d done.
+
+Then **CP4**: hand the owner `docs/smoke-tests.md` §11 (one concrete pass per sheet: stock, EllesmereUI,
+Chonky) and the three branch names. Then **CP5** on the owner's go-ahead only.
+
+Cleanup inventory for CP5 (everything this run created): branches `feat/2026-11-04-icon-browser` (LK),
+`feat/2026-11-04-icon-browser-revendor` (QC), `feat/2026-11-04-sheet-window-feedback` (OR), locally and on
+origin; the CP3d stash above if still present. No worktrees remain (the scratch ones were removed). The
+`v1.86.0` tag stays. The wow-ui-source clone lived in the session scratchpad and is gone after a restart:
+re-clone `https://github.com/Gethe/wow-ui-source` (`live`, was `297d7aa`) if a Blizzard symbol needs checking.
+
+Execution guidelines from the owner (still binding): ask only when necessary; commit incrementally on the
+branches; push after milestones; never merge without the go-ahead; ultracode workflows for substantive work.
 
 ---
 
