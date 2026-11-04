@@ -768,14 +768,18 @@ end)
 test("Disabled (Outfitter): the outward drawer goes back to Blizzard's at stand-down and stays there", function()
     -- The head slot's popout arrow, a recorder: Blizzard anchors it `LEFT` -> slot `RIGHT` (-8, 0)
     -- (wow-ui-source@297d7aa:Interface/AddOns/Blizzard_UIPanels_Game/Mainline/PaperDollFrame.lua:1532).
-    local arrow = { pts = {} }
+    -- Shown and hidden too: the open window shows every slot's arrow (smoke round 2 design G3).
+    local arrow = { pts = {}, shown = false }
     function arrow:ClearAllPoints() self.pts = {} end
     function arrow:SetPoint(...) self.pts[#self.pts + 1] = { ... } end
+    function arrow:Show() self.shown = true end
+    function arrow:Hide() self.shown = false end
     local _, NS, M = scene({ mutate = function(M) M.__slotButtons.HeadSlot.popoutButton = arrow end })
     assertEqual(arrow.pts[1] and arrow.pts[1][1], "RIGHT", "the open window did not turn the drawer outward")
     assertTrue(NS.SetByPath("enabled", false))
     -- red under: drop the QuickSlots.DrawerSync() call from QuickSlots.Suspend.
     assertEqual(arrow.pts[1] and arrow.pts[1][1], "LEFT", "the stand-down left the arrow outward")
+    assertFalse(arrow.shown, "the stand-down left the arrow shown")
     M.OutfitterRebornWindow:__fire("OnShow")
     assertEqual(#arrow.pts, 1)
     assertEqual(arrow.pts[1][1], "LEFT", "a window show while down turned the drawer outward")

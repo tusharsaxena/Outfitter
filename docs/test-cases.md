@@ -794,7 +794,7 @@ Total.
 - secrets states: a secret icon falls through to the spell; a secret spell id matches nothing
 - secrets states: the last mana reading survives a secret sample
 
-### test_quickslots.lua (33)
+### test_quickslots.lua (43)
 
 - quickslots: NS.QuickSlots and its sort are published
 - quickslots: the hooks are post-hooks, built once however often the addon stands up
@@ -815,20 +815,30 @@ Total.
 - quickslots: every hook body stands down with the addon and comes back with it
 - quickslots: quickSlots.enabled off silences every hook body; on brings them back
 - quickslots: the stand-down owns nothing to tear down: no event, no timer, no frame
-- drawer: with the window open a left-column flyout's buttonFrame is anchored TOPRIGHT to the arrow's TOPLEFT
+- drawer: with the window open a left-column flyout's buttonFrame is anchored TOPRIGHT to the slot's TOPLEFT
+- drawer: a right-column flyout's first item is level with its slot, past the arrow
+- drawer: a left-column flyout on a taller slot is level with it too
 - drawer: with the window open the left-column arrows sit on the slot's left, mirrored
-- drawer: a right-column flyout is left alone
+- drawer: a right-column arrow stays where Blizzard put it, the flyout beside the slot
+- drawer: a moved right-column flyout gets Blizzard's own point back when the window closes
 - drawer: the weapons' flyout opens down as Blizzard has it
 - drawer: a right-column flyout after a left one drops the left one's anchor
 - drawer: another host's flyout after a left-column one keeps that host's own anchor
 - drawer: SetReversed on a left-column arrow mirrors its coords
 - drawer: with the window closed the flyout keeps Blizzard's anchors
-- drawer: closing the window restores the left-column arrows and an open flyout
+- drawer: closing the window restores the left-column arrows and closes a locked flyout
 - drawer: a window hidden through its parent restores the drawer
 - drawer: stood down nothing is moved
 - drawer: a stand-down with the window open puts Blizzard's drawer back
 - drawer: in combat lockdown nothing is moved
 - drawer: a missing Blizzard function installs nothing and errors nothing
+- arrows: shown on every slot, weapons included, while the window shows; hidden when it closes
+- arrows: shown once per change, not on every sync
+- arrows: closing the window leaves the Equipment Manager pane's arrows shown
+- arrows: Blizzard's HideAll while the window shows puts them back
+- arrows: Blizzard's HideAll with the window closed leaves them hidden
+- arrows: Blizzard's HideAll never reopens a flyout it closed
+- arrows: a stand-down with the window open hides them
 
 ### test_equip_bracket.lua (32)
 
@@ -1667,7 +1677,7 @@ Total.
 | test_companion.lua | 25 |
 | test_states.lua | 29 |
 | test_secrets_states.lua | 6 |
-| test_quickslots.lua | 33 |
+| test_quickslots.lua | 43 |
 | test_equip_bracket.lua | 32 |
 | test_tooltips.lua | 18 |
 | test_stack.lua | 27 |
@@ -1707,4 +1717,4 @@ Total.
 | test_lizard_sighted.lua | 8 |
 | test_prose.lua | 15 |
 | Skipped | 1 |
-| **Total** | **1401** |
+| **Total** | **1411** |

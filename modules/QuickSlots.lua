@@ -17,32 +17,49 @@ local _, NS = ...
 -- cannot be removed, so a stand-down leaves them installed and every body reads the gate first: the
 -- latch, then the profile's `quickSlots.enabled` (H26). QuickSlots owns no frames, events or timers.
 --
--- THE OUTWARD DRAWER (sheet and window feedback design G8; owner ruling: only while the outfit window
--- shows). The left column's arrows and flyouts open left, away from the sheet, the way the right
--- column's already open right. Verified at wow-ui-source@297d7aa (`live`):
+-- THE DRAWER (sheet and window feedback design G8, smoke round 2 design G3; owner ruling: only while
+-- the outfit window shows). Every slot's arrow is shown, the left column's arrows and flyouts open
+-- left, away from the sheet, the way the right column's open right, and a character-sheet slot's flyout
+-- lines up with its slot. Verified at wow-ui-source@297d7aa (`live`):
+--   * the arrow template is hidden (Blizzard_FrameXML/EquipmentFlyout.xml:26-37), and only the
+--     Equipment Manager pane shows the arrows: its OnShow calls EquipmentFlyoutPopoutButton_ShowAll and
+--     its OnHide _HideAll (Blizzard_UIPanels_Game/Mainline/PaperDollFrame.lua:2316-2319, 2345-2346;
+--     the pane is PaperDollFrame.EquipmentManagerPane, :134). HideAll also unlocks every popout and
+--     hides a locked flyout (EquipmentFlyout.lua:598-612). So DrawerSync shows every slot's own
+--     `button.popoutButton`, weapons included, per button (never ShowAll/HideAll, which write
+--     flyoutLocked from this context), and hides them again when the window goes, unless the pane is
+--     shown (its arrows are Blizzard's). A locked flyout is closed through EquipmentFlyout_Hide first,
+--     whose OnHide clears the lock and the reversal (:98-107), so no flyout outlives its arrow. A
+--     HideAll post-hook shows them again while still wanted (leaving the Equipment Manager tab with the
+--     window open); it never reopens a flyout. Alpha is never touched, so EllesmereUI's "hide slot
+--     flyout arrows" setting keeps working;
 --   * the arrow is anchored once, in PaperDollItemSlotButton_OnLoad, `LEFT` -> slot `RIGHT` (-8, 0), with
---     the unreversed coords (Blizzard_UIPanels_Game/Mainline/PaperDollFrame.lua:1515-1534); nothing
---     re-anchors it, so DrawerSync moves the left column's to `RIGHT` -> slot `LEFT` (+8, 0), mirrored,
---     when the window shows, and puts Blizzard's exact anchor and coords back when it hides or the addon
---     stands down;
+--     the unreversed coords (PaperDollFrame.lua:1515-1534); nothing re-anchors it, so DrawerSync moves
+--     the left column's to `RIGHT` -> slot `LEFT` (+8, 0), mirrored, when the window shows, and puts
+--     Blizzard's exact anchor and coords back when it hides or the addon stands down;
 --   * EquipmentFlyoutPopoutButton_SetReversed sets the arrow's coords on every open and close
 --     (Blizzard_FrameXML/EquipmentFlyout.lua:633-651); its post-hook mirrors a left-column arrow's;
 --   * EquipmentFlyout_UpdateItems places the items, anchoring `flyout.buttonFrame` `TOPLEFT` -> the arrow's
 --     `TOPRIGHT` + (anchorX, anchorY) without clearing it first (EquipmentFlyout.lua:331-339;
---     PaperDollItemsFrame.flyoutSettings, PaperDollFrame.lua:343-354); its post-hook re-anchors a
---     left-column flyout `TOPRIGHT` -> the arrow's `TOPLEFT` (-anchorX, anchorY). The flyout's background
---     textures hang off buttonFrame (:345-400), so they follow. A moved buttonFrame is cleared and given
---     Blizzard's own point back the next time it is not wanted, so Blizzard's TOPLEFT never joins ours.
--- Blizzard's flyoutSettings table is never written, the weapons (vertical flyouts) and the right column
--- are never touched, and nothing is written in combat lockdown: the window hides at
--- PLAYER_REGEN_DISABLED, before lockdown, and its hide restores the drawer (modules/Dock.lua). None of
--- these frames is protected. The drawer's gate is the stand-down latch and the window, not
--- `quickSlots.enabled`, which is the flyout's lists and clicks only. Each global hook is installed only
--- when the client has the function.
+--     PaperDollItemsFrame.flyoutSettings, PaperDollFrame.lua:343-354). The items sit BORDERWIDTH (3)
+--     inside it and are EFITEM_HEIGHT (37) tall (:39, 44, 67), so Blizzard's first item starts 5.5 px
+--     below a 37 px slot's top. The post-hook re-anchors a character-sheet slot's horizontal flyout to
+--     the SLOT, past the arrow's visible 8 px: right column `TOPLEFT` -> slot `TOPRIGHT` (8, y), left
+--     column `TOPRIGHT` -> slot `TOPLEFT` (-8, y), y = BORDERWIDTH - (slot height - EFITEM_HEIGHT) / 2,
+--     so the first item is level with the slot. The flyout's background textures hang off buttonFrame
+--     (:345-400), so they follow. A moved buttonFrame is cleared and given Blizzard's own point back
+--     the next time it is not wanted, so Blizzard's TOPLEFT never joins ours.
+-- Blizzard's flyoutSettings table is never written; the weapons' (vertical) flyouts and the other
+-- hosts' (Item Upgrade, Item Interaction, Runeforge) keep Blizzard's anchor; and nothing is written
+-- in combat lockdown: the window hides at PLAYER_REGEN_DISABLED, before lockdown, and its hide
+-- restores the drawer (modules/Dock.lua). None of these frames is protected. The drawer's gate is the
+-- stand-down latch and the window, not `quickSlots.enabled`, which is the flyout's lists and clicks
+-- only. Each global hook is installed only when the client has the function.
 --
 -- CLIENT READS beyond this file's luacheck stanza go through `_G` by name, read at call time:
 -- CursorHasItem, EquipmentFlyoutFrame, EquipmentFlyout_UpdateItems,
--- EquipmentFlyoutPopoutButton_SetReversed and the ITEM_INVENTORY_LOCATION_* bits (each with the
+-- EquipmentFlyoutPopoutButton_SetReversed, EquipmentFlyoutPopoutButton_HideAll, PaperDollFrame, and the
+-- ITEM_INVENTORY_LOCATION_*, EQUIPMENTFLYOUT_BORDERWIDTH and EFITEM_HEIGHT numbers (each with the
 -- client's value as its fallback). Every link is read through NS.Compat, which hands a secret one back
 -- as nil.
 --
@@ -158,9 +175,12 @@ local ARROW = {
                highlight = { 0.15625, 0.5, 0.84375, 0.5, 0.15625, 1, 0.84375, 1 } },
 }
 local ARROW_INSET = 8             -- PaperDollFrame.lua:1532, the arrow's overlap of its slot
+local ARROW_WIDTH = 16            -- PaperDollFrame.lua:1530, a horizontal arrow's width
+local FLYOUT_GAP = ARROW_WIDTH - ARROW_INSET  -- the arrow's visible half, between slot and items
+local SLOT_HEIGHT = 37            -- a stock slot button, when the client answers no height
 
-local arrowsOut = false           -- the left column's arrows are on the slot's left
-local flyoutMoved = false         -- buttonFrame carries this file's TOPRIGHT, not Blizzard's TOPLEFT
+local drawerOn = false            -- the arrows are shown and the left column's sit on the slot's left
+local flyoutMoved = false         -- buttonFrame carries this file's point, not Blizzard's
 
 local function locked() return Compat.InCombatLockdown() end
 
@@ -212,38 +232,80 @@ local function hostSettings(button)
     return PaperDollItemsFrame and PaperDollItemsFrame.flyoutSettings or {}
 end
 
--- Anchor the cleared item frame to `button` by its host's settings: below a vertical flyout, else
--- beside it, outward when `out`. True when the frame now carries this file's TOPRIGHT.
-local function anchorFlyout(frame, button, out)
+-- Blizzard's own point for the cleared item frame (EquipmentFlyout.lua:335-339), by the button's host's
+-- settings: below a vertical flyout, else beside the arrow (or the button, with none).
+local function blizzardAnchor(frame, button)
     local settings = hostSettings(button)
     local rel = button.popoutButton or button
     if button.verticalFlyout then
         frame:SetPoint("TOPLEFT", rel, "BOTTOMLEFT", NS.SafeNumber(settings.verticalAnchorX, 0),
             NS.SafeNumber(settings.verticalAnchorY, 0))
-        return false
+    else
+        frame:SetPoint("TOPLEFT", rel, "TOPRIGHT", NS.SafeNumber(settings.anchorX, 0),
+            NS.SafeNumber(settings.anchorY, 0))
     end
-    local x, y = NS.SafeNumber(settings.anchorX, 0), NS.SafeNumber(settings.anchorY, 0)
-    if out then
-        frame:SetPoint("TOPRIGHT", rel, "TOPLEFT", -x, y)
-        return true
-    end
-    frame:SetPoint("TOPLEFT", rel, "TOPRIGHT", x, y)
-    return false
 end
 
--- The flyout's item frame: outward for a left-column slot while wanted, else Blizzard's own point,
--- written back only when this file moved it.
+-- A slot button's height, plain; a stock slot's when the client answers none.
+local function slotHeight(button)
+    local ok, h = pcall(button.GetHeight, button)
+    h = ok and NS.SafeNumber(h, 0) or 0
+    return h > 0 and h or SLOT_HEIGHT
+end
+
+-- The cleared item frame beside the slot itself, past the arrow, its first item level with the slot:
+-- outward (to the slot's left) for the left column.
+local function alignFlyout(frame, button)
+    local y = clientNumber("EQUIPMENTFLYOUT_BORDERWIDTH", 3)
+        - (slotHeight(button) - clientNumber("EFITEM_HEIGHT", SLOT_HEIGHT)) / 2
+    if leftColumn(button) then
+        frame:SetPoint("TOPRIGHT", button, "TOPLEFT", -FLYOUT_GAP, y)
+    else
+        frame:SetPoint("TOPLEFT", button, "TOPRIGHT", FLYOUT_GAP, y)
+    end
+end
+
+-- The flyout's item frame: beside a character-sheet slot's horizontal flyout while wanted, else
+-- Blizzard's own point, written back only when this file moved it.
 local function placeFlyout()
     local flyout = _G.EquipmentFlyoutFrame
     local frame = flyout and flyout.buttonFrame
     if not frame then return end
     local button = flyout.button
-    local out = button ~= nil and not button.verticalFlyout and drawerWanted() and leftColumn(button)
-    if not out and not flyoutMoved then return end
+    local want = button ~= nil and slotOf[button] ~= nil and not button.verticalFlyout and drawerWanted()
+    if not want and not flyoutMoved then return end
     frame:ClearAllPoints()
     flyoutMoved = false
     if not button then return end
-    flyoutMoved = anchorFlyout(frame, button, out)
+    if want then
+        alignFlyout(frame, button)
+        flyoutMoved = true
+    else
+        blizzardAnchor(frame, button)
+    end
+end
+
+-- Whether the Equipment Manager pane is shown: its arrows are Blizzard's, never hidden from here.
+local function equipmentPaneShown()
+    local doll = _G.PaperDollFrame
+    local pane = type(doll) == "table" and doll.EquipmentManagerPane
+    if type(pane) ~= "table" or type(pane.IsShown) ~= "function" then return false end
+    return Secrets.PlainTruth(pane:IsShown()) == true
+end
+
+-- Every slot's own arrow shown, or hidden with a locked flyout on it closed first (its OnHide clears
+-- the lock). Per button, never ShowAll/HideAll. Hides nothing while the Equipment Manager pane shows.
+local function showArrows(want)
+    if not want and equipmentPaneShown() then return end
+    for button in pairs(slotOf) do
+        local popout = button.popoutButton
+        if popout and want then
+            popout:Show()
+        elseif popout then
+            if popout.flyoutLocked and type(EquipmentFlyout_Hide) == "function" then EquipmentFlyout_Hide() end
+            popout:Hide()
+        end
+    end
 end
 
 -- EquipmentFlyout_UpdateItems' post-hook.
@@ -254,23 +316,30 @@ end
 
 -- EquipmentFlyoutPopoutButton_SetReversed's post-hook: a moved arrow keeps pointing outward.
 local function onSetReversed(popout, reversed)
-    if not arrowsOut or locked() or type(popout) ~= "table" or not popout.GetParent then return end
+    if not drawerOn or locked() or type(popout) ~= "table" or not popout.GetParent then return end
     if leftColumn(popout:GetParent()) then paintArrow(popout, reversed == true, true) end
 end
 
---- Bring the drawer in line with the window: the left column's arrows out while the window shows,
---- Blizzard's back otherwise, and an open flyout with them. Dock's window OnShow / OnHide call it;
---- so does the stand-down. Never in combat lockdown.
+-- EquipmentFlyoutPopoutButton_HideAll's post-hook: the arrows back while still wanted. Shows only; the
+-- flyout HideAll closed stays closed.
+local function onHideAll()
+    if drawerOn and drawerWanted() and not locked() then showArrows(true) end
+end
+
+--- Bring the drawer in line with the window: every arrow shown and the left column's out while the
+--- window shows, Blizzard's back otherwise, and an open flyout with them (placed before the arrows
+--- hide, so a locked flyout closed with its arrow keeps Blizzard's point). Dock's window OnShow /
+--- OnHide call it; so does the stand-down. Never in combat lockdown.
 function QS.DrawerSync()
     if not installed or locked() then return end
-    local out = drawerWanted()
-    if out ~= arrowsOut then
-        for button, slot in pairs(slotOf) do
-            if NS.SlotEnables.COLUMN[slot] == "LEFT" then placeArrow(button, out) end
-        end
-        arrowsOut = out
+    local want = drawerWanted()
+    if want == drawerOn then return placeFlyout() end
+    for button, slot in pairs(slotOf) do
+        if NS.SlotEnables.COLUMN[slot] == "LEFT" then placeArrow(button, want) end
     end
+    drawerOn = want
     placeFlyout()
+    showArrows(want)
 end
 
 -- Post-hook the client global `name` with `fn` when the client has it (hooksecurefunc raises on a
@@ -297,6 +366,7 @@ function QS.Install()
     if type(hooksecurefunc) ~= "function" then return end
     hookGlobal("EquipmentFlyout_UpdateItems", onFlyoutUpdate)
     hookGlobal("EquipmentFlyoutPopoutButton_SetReversed", onSetReversed)
+    hookGlobal("EquipmentFlyoutPopoutButton_HideAll", onHideAll)
     local settings = PaperDollItemsFrame and PaperDollItemsFrame.flyoutSettings
     if type(settings) ~= "table" then return end
     hookFlyout(settings, "getItemsFunc", filterItems)
