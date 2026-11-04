@@ -116,7 +116,7 @@ function Bar.LayoutSpec(counts, strip)
     return {
         size = num(NS.GetSetting("bar.icons.size"), 32), spacing = num(NS.GetSetting("bar.layout.spacing"), 5),
         padding = num(NS.GetSetting("bar.layout.padding"), 4), perLine = num(NS.GetSetting("bar.layout.perLine"), 0),
-        vertical = NS.GetSetting("bar.vertical") == true, labelH = 0, top = Bar.HeaderHeight(strip),
+        vertical = NS.GetSetting("bar.vertical") == true, labelH = Bar.LabelHeight(), top = Bar.HeaderHeight(strip),
         minWidth = Bar.Layout.MIN_WIDTH, gx = gx, gy = gy, counts = counts,
     }
 end
@@ -175,13 +175,20 @@ local function ensureFrame()
         local row = CreateFrame("Frame", "OutfitterRebornBarRow" .. i, f)
         row:SetFrameLevel(level(f) + LAYERS.LEVEL.BAR_ROW)
         row:Hide()
-        rows[i] = { frame = row, pool = NS.Pool.New() }
+        local label = row:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+        label:SetWordWrap(false)
+        rows[i] = { frame = row, pool = NS.Pool.New(), label = label }
     end
     return f
 end
 
 --- The container, or nil before the first render (for the suites and the skin survey).
 function Bar.Frame() return bar end
+
+--- Row `i`'s category label (a FontString), or nil before the first render.
+--- @param i number
+--- @return table|nil
+function Bar.Label(i) return rows[i] and rows[i].label end
 
 --- The buttons handed out by the last render, row by row.
 --- @return table[]
@@ -200,6 +207,20 @@ local function anchor(p)
     local s = num(bar:GetEffectiveScale(), 1)
     if s <= 0 then s = 1 end
     bar:SetPoint(p.point, UIParent, p.point, (num(p.x, 0)) / s, (num(p.y, 0)) / s)
+end
+
+--- Row `row`'s category label over block `b` (truncated to its width), justified to the side the
+--- bar grows from; hidden with the labels off.
+local function placeLabel(row, b, spec, categoryID)
+    local fs = row.label
+    if spec.labelH <= 0 then return fs:Hide() end
+    fs:ClearAllPoints()
+    fs:SetPoint("TOPLEFT", bar, "TOPLEFT", b.label.x, -b.label.y)
+    fs:SetWidth(b.label.w)
+    fs:SetHeight(spec.labelH)
+    fs:SetJustifyH(spec.gx > 0 and "LEFT" or "RIGHT")
+    Bar.StyleLabel(fs, NS.WindowListModel.LABEL[categoryID] or tostring(categoryID))
+    fs:Show()
 end
 
 --- Place row frame `row` at layout block `b` and fill it with `outfits`, `size` px buttons at the
@@ -247,7 +268,10 @@ function Bar.Render(source, strip)
     for i, row in ipairs(list) do counts[i] = #row.outfits end
     local spec = Bar.LayoutSpec(counts, strip)
     local g = Bar.Layout.Compute(spec)
-    for i, row in ipairs(list) do placeRow(rows[i], g.blocks[i], row.outfits, spec.size) end
+    for i, row in ipairs(list) do
+        placeRow(rows[i], g.blocks[i], row.outfits, spec.size)
+        placeLabel(rows[i], g.blocks[i], spec, row.categoryID)
+    end
     bar:SetSize(g.width, g.height)
     bar:SetScale(scale())
     anchor(position())

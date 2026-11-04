@@ -2,7 +2,8 @@ local _, NS = ...
 -- settings/OutfitBar.lua — the Outfit Bar settings page, `bar` (design §4.2, smoke round 2 design G6),
 -- registered between General and Profiles. Tabs: Display (what shows, and the bar's one anchor row,
 -- `bar.position`, never drawn), Layout (orientation, wrap, padding, spacing, grow direction), Icons
--- (their size) and Frame (the background and the border, options-ui-§16's composed blocks).
+-- (their size), Labels (each category's, a composed font block) and Frame (the background and the
+-- border, options-ui-§16's composed blocks).
 --
 -- NO SECOND SWITCHES (options-ui-§15). Scale, opacity, the lock, Reset position and General
 -- visibility are the Master controls' and govern this one frame. The Display tab's Reset position
@@ -11,8 +12,9 @@ local _, NS = ...
 -- the combat opacity row points to.
 --
 -- FOLLOWING THE SKIN (skinning-§6). Every color here carries a FromSkin companion, default on: the
--- composers' own (`borderStyleFromSkin`) and, in this addon's words after each block (so never
--- `composed`), *Use the skin's background* and *Use the skin's color*.
+-- composers' own (`fontFromSkin`, `borderStyleFromSkin`) and, in this addon's words after each block
+-- (so never `composed`), *Use the skin's background*, *Use the skin's color* and *Use the skin's
+-- shadow*. Font flags lead with From skin (`flagsFromSkin`), drawn through S.FontFlags.
 --
 -- The bar re-renders on SETTINGS_CHANGED for any `bar.*` path (modules/Bar.lua), so no row here needs
 -- an onChange: the panel, `/or set` and a reset all reach the bar the same way.
@@ -23,6 +25,7 @@ local PAGE = "bar"
 local DISPLAY = L["Display"]
 local LAYOUT = L["Layout"]
 local ICONS = L["Icons"]
+local LABELS = L["Labels"]
 local FRAME = L["Frame"]
 local DB = D.bar
 local H = NS.Helpers
@@ -148,6 +151,43 @@ NS.RegisterSchemaRows({
       min = 16, max = 64, step = 1, label = L["Icon size (px)"], default = DB.icons.size,
       tooltip = L["The width and height of each outfit icon, in pixels."] },
 })
+
+-- ── Labels ─────────────────────────────────────────────────────────────────────────────────────
+-- One label per category, over its row (over its column, truncated, in the vertical layout), drawn
+-- through S.HudFont (modules/Bar_Chrome.lua). The font block's rows dim while the labels are off,
+-- the swatch excepted (it is never grayed, anti-pattern #74); a row the composer already governs by
+-- its skin companion dims for either (AuraMaster settings/Layout.lua:582-597's shape).
+local function labelsOff() return NS.GetSetting("bar.labels.show") == false end
+
+NS.RegisterSchemaRows({
+    { path = "bar.labels.show", page = PAGE, group = LABELS, type = "bool",
+      label = L["Show category labels"], default = DB.labels.show,
+      tooltip = L["Names each row of the bar: Complete outfits, Accessories."] },
+})
+do
+    local d = DB.labels
+    local rows = H.FontGroup({
+        prefix = "bar.labels.", page = PAGE, group = LABELS, subgroup = L["Font"], order = 100,
+        classColor = PLAYER_CLASS, defaults = d, fromSkin = true, flagsFromSkin = true,
+        extra = {
+            { path = "bar.labels.fontColorFromSkin", type = "bool", startsLine = true,
+              label = L["Use the skin's color"], default = d.fontColorFromSkin,
+              tooltip = L["Draw the labels in the skin's HUD label color. The Font color swatch is not read while this is on, and Use class color comes first."] },
+            { path = "bar.labels.fontShadowFromSkin", type = "bool",
+              label = L["Use the skin's shadow"], default = d.fontShadowFromSkin,
+              tooltip = L["Draw the labels with the skin's shadow. Font shadow is not read while this is on."] },
+        },
+    })
+    for _, row in ipairs(rows) do
+        local governedBy = row.disabledIf
+        if type(governedBy) == "string" then
+            row.disabledIf = function() return labelsOff() or NS.GetSetting(governedBy) == true end
+        elseif row.type ~= "color" then
+            row.disabledIf = labelsOff
+        end
+    end
+    registerComposed(rows)
+end
 
 -- ── Frame ──────────────────────────────────────────────────────────────────────────────────────
 -- Show background leads; then the Background block (a backdrop with no texture: a ColorPair,

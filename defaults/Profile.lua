@@ -17,6 +17,11 @@ NS.defaults = {
         bar        = { shown = false, vertical = false, showBackground = true, combatAlpha = 1.0,
                        layout = { perLine = 0, padding = 4, spacing = 5, growH = "auto", growV = "auto" },
                        icons  = { size = 32 },
+                       -- Each category's label: the HUD font block, each part following the skin.
+                       labels = { show = true, font = "Ka0s Prototype", fontSize = 11,
+                                  fontColor = { r = 1, g = 0.82, b = 0, a = 1 }, useClassColorFont = false,
+                                  fontFlags = "@skin", fontShadow = false, fontFromSkin = true,
+                                  fontColorFromSkin = true, fontShadowFromSkin = true },
                        -- The window's colors: each follows the skin until its companion is off.
                        bgColor = { r = 0.06, g = 0.06, b = 0.08, a = 0.9 }, useClassColorBg = false,
                        bgFromSkin = true,

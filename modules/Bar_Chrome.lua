@@ -1,7 +1,7 @@
 local _, NS = ...
 -- modules/Bar_Chrome.lua — the outfit bar's window look (smoke round 2 design G6, D8): the Ka0s
--- window chrome, the header on its title band, the background and border the player can pick, and
--- the test strip under the band. Extends NS.Bar (modules/Bar.lua), which calls Bar.BuildChrome once
+-- window chrome, the header on its title band, the background and border the player can pick, the
+-- test strip under the band, and the category labels. Extends NS.Bar (modules/Bar.lua), which calls Bar.BuildChrome once
 -- and Bar.PaintChrome on every render.
 --
 -- TWO SIBLING LAYERS, never one repainted. `bar.chrome` wears NS.ApplySkin's Shell, exactly a Ka0s
@@ -25,8 +25,14 @@ local _, NS = ...
 -- THE TEST STRIP hangs flush under the band (DpsRace modules/Hud.lua:501-512), and Bar.HeaderHeight
 -- adds its height above the icons.
 --
+-- THE LABELS (one per category, over its row) are HUD text (skinning-§6): face, size, flags and
+-- shadow through S.HudFont from the Labels tab's font block, the size through S.HudFontSize and the
+-- flags From skin by default (S.FontFlags inside S.HudFont); the color is the class color, else the
+-- skin's HUD label color (S.HudLabelColor) while *Use the skin's color* is on, else the swatch. A
+-- skin change re-renders the bar (modules/Bar.lua), which draws them again.
+--
 -- CALLS (at call time): NS.Skin (Shell through NS.ApplySkin, Band, Header, CloseButton, BarBorder,
--- Resolve, Color), NS.SkinBandGeometry, NS.ResolveColor, NS.MakeCloseButton, NS.MakeTestStrip,
+-- Resolve, Color, HudFont, HudFontSize, HudLabelColor), NS.SkinBandGeometry, NS.ResolveColor, NS.MakeCloseButton, NS.MakeTestStrip,
 -- NS.SetByPath, NS.OpenOptionsPanel.
 
 local Bar = NS.Bar
@@ -233,6 +239,59 @@ function Bar.EnsureStrip()
         end
     end
     return f.strip or nil
+end
+
+-- ── the labels ────────────────────────────────────────────────────────────────────────────────
+
+local LABEL = "bar.labels."
+local LABEL_LEADING = 4   -- the label line's height over its drawn size
+
+--- Whether the category labels show.
+--- @return boolean
+function Bar.LabelsShown() return setting(LABEL .. "show") ~= false end
+
+local function labelFromSkin() return setting(LABEL .. "fontFromSkin") ~= false end
+
+local function labelSize()
+    return NS.Skin.HudFontSize(setting(LABEL .. "fontSize"), labelFromSkin())
+end
+
+--- The label line's height (0 with the labels off), from the size the label draws at.
+--- @return number
+function Bar.LabelHeight()
+    if not Bar.LabelsShown() then return 0 end
+    return math.ceil(num(labelSize(), 11)) + LABEL_LEADING
+end
+
+--- The stored face's path while the labels keep their own face; nil follows the skin (S.HudFont).
+local function labelFace()
+    if labelFromSkin() then return nil end
+    local LSM = LibStub and LibStub("LibSharedMedia-3.0", true)
+    return LSM and LSM.Fetch and LSM:Fetch("font", setting(LABEL .. "font"), true) or nil
+end
+
+--- The label color: the class color, else the skin's HUD label color while it follows the skin,
+--- else the swatch.
+local function labelColor()
+    local class = setting(LABEL .. "useClassColorFont") == true
+    if not class and setting(LABEL .. "fontColorFromSkin") ~= false then
+        local r, g, b, a = NS.Skin.HudLabelColor()
+        if r ~= nil then return r, g, b, a or 1 end
+    end
+    return NS.ResolveColor(setting(LABEL .. "fontColor"), class)
+end
+
+--- Draw `text` on label `fs` in the Labels tab's look.
+--- @param fs table a FontString
+--- @param text string
+function Bar.StyleLabel(fs, text)
+    NS.Skin.HudFont(fs, {
+        face = labelFace(), size = labelSize(), flags = setting(LABEL .. "fontFlags"),
+        shadow = setting(LABEL .. "fontShadow") == true,
+        shadowFromSkin = setting(LABEL .. "fontShadowFromSkin") ~= false,
+    })
+    fs:SetTextColor(labelColor())
+    fs:SetText(text)
 end
 
 -- ── the background and the border ─────────────────────────────────────────────────────────────

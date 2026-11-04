@@ -157,12 +157,16 @@ test("settings: the Outfit Bar page's tabs and rows, the position row never draw
         .. "bar.vertical=Layout,bar.layout.perLine=Layout,bar.layout.growH=Layout,bar.layout.growV=Layout,"
         .. "bar.layout.padding=Layout,bar.layout.spacing=Layout,"
         .. "bar.icons.size=Icons,"
+        .. "bar.labels.show=Labels,bar.labels.font=Labels,bar.labels.fontSize=Labels,bar.labels.fontColor=Labels,"
+        .. "bar.labels.useClassColorFont=Labels,bar.labels.fontFlags=Labels,bar.labels.fontShadow=Labels,"
+        .. "bar.labels.fontFromSkin=Labels,bar.labels.fontColorFromSkin=Labels,bar.labels.fontShadowFromSkin=Labels,"
         .. "bar.showBackground=Frame,bar.bgColor=Frame,bar.useClassColorBg=Frame,bar.bgFromSkin=Frame,"
         .. "bar.frame.borderShow=Frame,bar.frame.borderStyle=Frame,bar.frame.borderSize=Frame,"
         .. "bar.frame.borderColor=Frame,bar.frame.useClassColorBorder=Frame,bar.frame.borderStyleFromSkin=Frame,"
         .. "bar.frame.borderColorFromSkin=Frame")
     -- skinning-§6: every color's companion, default on, in the row and in the defaults tree.
-    for _, path in ipairs({ "bar.bgFromSkin", "bar.frame.borderStyleFromSkin", "bar.frame.borderColorFromSkin" }) do
+    for _, path in ipairs({ "bar.bgFromSkin", "bar.frame.borderStyleFromSkin", "bar.frame.borderColorFromSkin",
+                            "bar.labels.fontFromSkin", "bar.labels.fontColorFromSkin", "bar.labels.fontShadowFromSkin" }) do
         assertEqual(NS.FindSchemaRow(path).default, true, path .. " row default")
         assertEqual(NS.GetSetting(path), true, path)
     end
@@ -172,6 +176,17 @@ test("settings: the Outfit Bar page's tabs and rows, the position row never draw
     assertNil(NS.FindSchemaRow("bar.bgFromSkin").composed)
     assertNil(NS.FindSchemaRow("bar.frame.borderColorFromSkin").composed)
     assertEqual(NS.FindSchemaRow("bar.bgFromSkin").label, "Use the skin's background")
+    -- The label font block: From skin flags, its rows dimmed while the labels are off, never the swatch.
+    assertEqual(NS.FindSchemaRow("bar.labels.fontFlags").default, "@skin")
+    NS.db.profile.bar.labels.show = false
+    assertTrue(NS.FindSchemaRow("bar.labels.fontSize").disabledIf(), "the size dims with the labels off")
+    assertTrue(NS.FindSchemaRow("bar.labels.font").disabledIf(), "the face dims with the labels off")
+    assertNil(NS.FindSchemaRow("bar.labels.fontColor").disabledIf, "the swatch is never grayed")
+    NS.db.profile.bar.labels.show = true
+    assertTrue(NS.FindSchemaRow("bar.labels.font").disabledIf(), "the face dims under Use the skin's font")
+    NS.db.profile.bar.labels.fontFromSkin = false
+    assertTrue(not NS.FindSchemaRow("bar.labels.font").disabledIf(), "the face is live with both off")
+    NS.db.profile.bar.labels.fontFromSkin = true
     local function range(path, lo, hi, step)
         local r = NS.FindSchemaRow(path)
         assertTrue(r.min == lo and r.max == hi and r.step == step, path .. " range")

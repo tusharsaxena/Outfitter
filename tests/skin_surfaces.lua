@@ -30,7 +30,8 @@
 -- COMPANIONS. The window and the dialogs store no colors. The bar's do, each with a FromSkin row
 -- (skinning-§6, smoke round 2 design G6), but its window chrome is the skin's Shell whatever they
 -- say: `bar.bgFromSkin` off swaps it for the player's plate, which no skin paints, so the chrome
--- carries no `companion`. No `scope`: none of these is on the settings panel.
+-- carries no `companion`. A bar label does: its font block's three companions; it is drawn at
+-- render (S.HudFont is not recorded), so its `paint` is the bar's redraw. No `scope`: none of these is on the settings panel.
 
 return function(T)
     local scene = dofile(T.root .. "/tests/dialog_scene.lua")(T)
@@ -179,6 +180,12 @@ return function(T)
         { name = "the icon browser's dim", build = function() return browser().catcher end },
         { name = "the bar's window chrome", build = function() return bar().chrome end },
         { name = "the bar's lock control", build = function() return bar().lock end },
+        { name = "a bar label", paint = function() NS.Bar.Refresh() end,
+          build = function() bar(); return assert(NS.Bar.Label(1), "the bar drew no label") end,
+          companion = function(on)
+              local l = NS.db.profile.bar.labels
+              l.fontFromSkin, l.fontColorFromSkin, l.fontShadowFromSkin = on, on, on
+          end },
         { name = "a bar button", build = barButton },
         { name = "a bar button's worn mark", build = function() return barButton().worn end },
         { name = "the bar's test strip", build = strip },
