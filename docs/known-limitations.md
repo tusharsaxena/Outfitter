@@ -51,17 +51,15 @@ in [smoke-tests.md](smoke-tests.md) §12 for the owner's eye.
   EllesmereUI's own Equipment label each time it is placed (a sheet open, a sheet kind change), so a
   font changed in EllesmereUI shows on the next placing, not at once. Its active color is read at
   paint time, with a fallback when `EllesmereUI.ELLESMERE_GREEN` is absent.
+- **The flyout's rim is near black under Ka0s Default.** While the outfit window holds Blizzard's
+  equipment flyout, its rim takes the skin's window border color (smoke round 3 E1, the accepted
+  deviation `DEV-SKIN-FLYOUT-TINT` in [ARCHITECTURE.md](ARCHITECTURE.md#documented-deviations)). Ka0s
+  Default's border is black, so the rim reads as a dark edge rather than Blizzard's gold; the owner
+  accepted that with the ruling. Another skin's border color shows as that color. The flyout is
+  Blizzard's again as soon as the window closes or another window opens it.
 - **Test mode's alone window cannot stand alone while parked.** A window that fell back to the sheet
   holder (following failed) cannot show without the sheet; in test mode the bar still shows the
   samples.
-
-## Awaiting an owner ruling (smoke round 3)
-
-What the round of 2026-11-05 held rather than built ([round 3 plan](superpowers/plans/2026-11-05-smoke-round-3.md)).
-
-- **The equipment flyout keeps Blizzard's border color** (E1). Tinting it in the skin's border color
-  means a skin painting Blizzard's shared `EquipmentFlyoutFrame`, which skinning-§7 forbids and no
-  deviation row covers. It waits on a register row or a change to the standard.
 
 ## Living beside the old addon
 

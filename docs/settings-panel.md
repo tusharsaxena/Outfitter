@@ -211,6 +211,12 @@ switch (`PROFILE_CHANGED`) itself: modules/Dock.lua (the button, the drawer; the
 follow's corner compare), modules/SlotEnables.lua (the boxes) and modules/Window.lua (the sections and
 marks, redrawn on the follow tick).
 
+`window.marks.em` hides the mark only. The Equipment Manager store itself is not a setting: an
+outfit's gear menu carries *Save in equipment manager* directly below *Rename...*, with *On* and *Off*
+radios ticking the outfit's true state, on the same path as the mark's click (`NS.EM.SetStored`, smoke
+round 3 E12), so an outfit can be saved or removed with the mark off. The menu stays open on a pick;
+both refuse in combat, and in test mode the radios are grayed.
+
 ## Profiles
 
 `settings/Profiles.lua`, page `profiles`, registered last: AceDBOptions' own table through

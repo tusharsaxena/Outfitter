@@ -343,15 +343,19 @@ Its Character Sheet skin must be on, as in section 11.2.
 The smoke round 3 pass ([plan](superpowers/plans/2026-11-05-smoke-round-3.md), decisions E1 to E12),
 the owner's R7 pass. It supersedes two rows of section 12: RB7's *Show background* is gone (E6), and
 RT1's placement is now the screen center, draggable (E3). Sections 13.1 to 13.3 are one pass per sheet,
-set up as section 12's are; sections 13.4 to 13.7 run once, on any sheet. Run 13.4's border rows under
-Ka0s Default and under one other skin. E1 is held for an owner ruling, so its rows check that nothing
-changed and record the ruling.
+set up as section 12's are; sections 13.4 to 13.7 run once, on any sheet. Run 13.4's border rows, and
+the flyout-tint rows (R3S1, R3S5, R3E1, R3C1), under Ka0s Default and under one other skin with a
+colored window border. E1, E7 and E12 are built to the owner's rulings of 2026-11-05 (the plan's
+*Owner rulings on the held items*); E1 is the accepted deviation `DEV-SKIN-FLYOUT-TINT`
+([ARCHITECTURE.md](ARCHITECTURE.md#documented-deviations)).
 
 ### 13.1 The stock sheet
 
 | # | Do | See |
 |---|---|---|
-| R3S1 (E1) | Window open: open the Head flyout, then close the window and open it again | The flyout's border is Blizzard's own color both times (E1 is held: nothing tints the flyout). Record the owner's ruling on E1 here |
+| R3S1 (E1) | Window open: open the Head flyout; page it if it has a second page; then close the window with the flyout still open (or reopen the flyout with the window closed) | Window open: the flyout's whole rim, its paging strip and a second page's pieces included, is in the skin's window border color, near black under Ka0s Default and that skin's color under the other; the open slot's own glow is untouched. Window closed: the rim is Blizzard's gold again, no dark or gray piece left |
+| R3S5 (E1) | Window open with the Head flyout up: switch the skin in General; then open Item Upgrade (or an Item Interaction or Runeforge window) and open its item flyout; back on the sheet with the window and a flyout open, type `/or disable`, then `/or enable` and open the window and a flyout again | The rim takes the new skin's border color at once. The other window's flyout draws Blizzard's gold, not the skin's. After `/or disable` the rim is Blizzard's; enabled again with the window open, the next flyout is tinted again. No `ADDON_ACTION_BLOCKED` |
+| R3S6 (E1) | Window open with a flyout up: attack a training dummy | The window steps aside before combat locks it and the flyout's rim is Blizzard's gold through the fight; after it, with the window back, the next flyout is tinted. No `ADDON_ACTION_BLOCKED` |
 | R3S2 (E2) | Window open, an outfit selected: open the Head flyout, then the Hands flyout; close each | While a flyout is open, its slot's check box stays on top of the flyout's slot highlight, as it is with the flyout closed. After the close the box is where it was, and the other slots' boxes never moved. No `ADDON_ACTION_BLOCKED` |
 | R3S3 (E10) | Press `C`; compare the outfit tab with the Equipment Manager tab beside it; hover it; open the window | The chest-armor icon is the same size as the neighbors' icons, centered where theirs are, with the tab's bevel showing around it; the tab's bottom and spacing match the tabs between themselves; its border, hover light and selected look are those of the Blizzard tabs |
 | R3S4 (E11) | Outfit Window → Character sheet: untick *Show the button on the character sheet*, then tick it; untick *Show slot check boxes* with an outfit selected; untick *Show the flyout arrows while the window is open*; set *Gap from the character sheet (px)* to 20, then 0 | The tab goes and comes back in place; `/or show` still opens the window without it. No box on any slot; ticked again, they return for the selection. With the window open no arrow shows and a flyout opens at Blizzard's place. At 20 the window stands 20 px right of the sheet, at 0 flush again |
@@ -360,7 +364,7 @@ changed and record the ruling.
 
 | # | Do | See |
 |---|---|---|
-| R3E1 (E1) | As R3S1 | Blizzard's color (EllesmereUI's flyout skin, if it draws one), unchanged by this addon |
+| R3E1 (E1) | As R3S1 | Window open: the rim Blizzard draws is in the skin's border color (where EllesmereUI's own flyout look hides Blizzard's rim, nothing of this addon's shows over it); window closed: the flyout looks exactly as EllesmereUI draws it without this addon |
 | R3E2 (E2) | As R3S2 | The box stays over the flyout on EllesmereUI's square slot art, with its accent edge |
 | R3E3 (E10) | Press `C`; look at the *Outfits* text tab | Unchanged from round 2 (the owner passed it): stacked above *Equipment*, in its face, size and color |
 | R3E4 (E11) | As R3S4 | The same, with the *Outfits* text tab as the button and EllesmereUI's arrows (*Hide Slot Flyout Arrows* off) |
@@ -369,7 +373,7 @@ changed and record the ruling.
 
 | # | Do | See |
 |---|---|---|
-| R3C1 (E1) | As R3S1 | Blizzard's color, unchanged |
+| R3C1 (E1) | As R3S1, on Chonky's slots | Window open: the rim in the skin's border color; window closed: Blizzard's gold again, on every slot Chonky shows |
 | R3C2 (E2) | As R3S2, with Chonky's stats panel open | The box stays over the flyout and its highlight (Chonky's slots are already `HIGH`), and over the slot once the flyout closes |
 | R3C3 (E10) | Press `C`; compare the outfit tab with Chonky's tab icons | The icon is the same size as Chonky's tab icons and on the same line as them, the tab spaced from its neighbor as they are from each other (the row's right-heavy offset of RC1 stays accepted) |
 | R3C4 (E11) | As R3S4 | The same on Chonky's tab row and slots |
@@ -413,6 +417,7 @@ the set once the swap lands.
 |---|---|---|
 | R3M1 (E12) | Hover the EM icon of an outfit not in the Equipment Manager, then of one that is | Not stored: *Not stored in the Equipment Manager*, then *Click to save in the Equipment Manager*. Stored: *Stored in the Equipment Manager*, then *Click to remove from the Equipment Manager* |
 | R3M2 (E12) | With no outfit selected, click the dimmed EM icon of an outfit you are not wearing; then click its full icon | One click: the outfit is worn, and a moment later its icon is full and the sheet's Equipment Manager list has the set with that gear. The second click: the icon dims and the set leaves the list, the outfit kept as an Outfitter outfit |
+| R3M6 (E12) | Click an outfit to select it; click its dimmed EM icon; then its full icon | The same as R3M2 on the selected outfit: one click saves it (the set appears, the icon fills, the outfit stays selected with its slot boxes), one click removes it. No click is spent on selecting or wearing first |
 | R3M3 (E12) | Open an outfit's gear menu | *Save in equipment manager* sits directly below *Rename...*; its submenu has *On* and *Off*, the outfit's state ticked. Pick the other one: the menu stays open, the change is the same as R3M2's click, and the tick moves once the save lands |
 | R3M4 (E12) | Attack a training dummy; in combat, click an EM icon, then pick On or Off in the menu | Refused with *Outfits can't be changed in combat.*; nothing is worn and the Equipment Manager is unchanged. A full Equipment Manager shows its popup before anything is worn |
 | R3M5 (E12) | `/or test`: hover sample 4's EM icon and another sample's; open a sample's gear menu, then *Save in equipment manager* | The tooltip gives the sample's drawn state and *Not available in test mode*. The submenu opens, and *On* and *Off* are grayed |

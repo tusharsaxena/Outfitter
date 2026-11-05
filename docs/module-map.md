@@ -105,7 +105,7 @@ the diagnostics sections.
 | `modules/Equip.lua` | `NS.Equip`: the bracket that cannot strand, its gates, execution and the muted SFX |
 | `modules/Equip_Changes.lua` | `NS.Changes`: the pure change-list builder, unique-equip order and the optimize rules |
 | `modules/Equip_Moves.lua` | `NS.Moves`: pickup, a move to an empty bag slot, the empty-slot lists and `/or unequip` |
-| `modules/EquipmentManager.lua` | `NS.EM`: the Blizzard Equipment Manager mirror |
+| `modules/EquipmentManager.lua` | `NS.EM`: the Blizzard Equipment Manager mirror; `EM.SetStored`, the one path that saves an outfit in the Equipment Manager or takes it out (the EM mark's click and the gear menu's *Save in equipment manager*; a save wears the outfit first and stores once the swap lands), and `EM.Current`, the outfit that now stands for an id after a store |
 | `modules/Bank.lua` | `NS.Bank`: deposit, withdraw and the missing-items report |
 | `modules/ItemStats.lua` | `NS.Stats`: the stats the optimizer scores items by |
 | `modules/ItemStats_Sources.lua` | `NS.StatSources`: Pawn and WeightsWatcher as optional stat sources |
@@ -141,9 +141,9 @@ the diagnostics sections.
 | `modules/Dock.lua` | `NS.Dock`: the sheet holder, the sheet button in the host's tab look (deviation `DEV-SKIN-SHEET-BUTTON`), the window's show model (test mode alone or docked included; alone, centered and draggable for the session, `AloneSpot`), its follow and its layer sync; the Outfit Window page's sheet-button switch and dock gap, and the drawer's sync on a `window.*` write |
 | `modules/Window.lua` | `NS.Window`: the outfit window's chrome (the gear at the close X's size and tint), list body, scroll bar, footer, test strip and render; redrawn on a `window.*` write or a profile switch |
 | `modules/Window_ListModel.lua` | `NS.WindowListModel`: what the outfit list shows, in order; the sample outfits with no item section in test mode; an item section the Outfit Window page turned off left out |
-| `modules/Window_Rows.lua` | `NS.WindowRows`: the list's 14 rows and the secure child each one owns; the EM mark and the lightning as the Outfit Window page has them |
+| `modules/Window_Rows.lua` | `NS.WindowRows`: the list's 14 rows and the secure child each one owns; the EM mark and the lightning as the Outfit Window page has them; the EM mark's tooltip (the true stored state and the click hint) and its one-click save or remove (`NS.EM.SetStored`) |
 | `modules/SlotEnables.lua` | `NS.SlotEnables`: the 18 slot checkboxes over the character sheet while an outfit is selected, in the host strata with an accent edge, lifted over Blizzard's equipment flyout while it is open on a sheet slot (smoke round 3 E2); none in test mode or with `window.slotBoxes` off |
-| `modules/OutfitMenu.lua` | `NS.OutfitMenu`: the outfit context menu, as one cascading tree (keep-open radio and toggle rows, act-and-close rows); in test mode a sample's browse-only copy, every data row disabled |
+| `modules/OutfitMenu.lua` | `NS.OutfitMenu`: the outfit context menu, as one cascading tree (keep-open radio and toggle rows, act-and-close rows); *Save in equipment manager* (On and Off) below *Rename...*, through `NS.EM.SetStored`, every row following the outfit to its record after a store (`NS.EM.Current`); in test mode a sample's browse-only copy, every data row disabled |
 | `modules/UIDialogs.lua` | `NS.Dialogs`: the dialogs' shared chrome and controls |
 | `modules/Dialog_Outfit.lua` | `NS.OutfitDialog`: the new-outfit and rename dialog |
 | `modules/Dialog_Trigger.lua` | `NS.TriggerDialog`: the trigger chooser and its settings |
@@ -155,7 +155,7 @@ the diagnostics sections.
 | `modules/Bar_Chrome.lua` | The bar's Ka0s window look (extends `NS.Bar`): the Shell chrome or the player's plate, the header on the title band with its title, lock and close, the drag strip, the test strip under the band (the title says test mode without the library), the category labels (none while Collapsed, `Bar.Collapsed`); *Show border* reaches the chrome through `S.Shell`'s `noBorder` once *Use the skin's border* is off |
 | `modules/Bar_Buttons.lua` | The outfit bar's pooled buttons: icon (its art's border cropped by hand, so the only edge is the one *Show border* governs), border (the skin's window icon outline or the player's), worn highlight (the mark on a mouse-off overlay over the edges, every child on a named `LAYERS.LEVEL` rung), clicks and drops |
 | `modules/Broker.lua` | `NS.Broker`: the `OutfitterRebornOutfits` LibDataBroker data source, the old addon's outfit switcher (a second object beside the launcher; [ARCHITECTURE.md](ARCHITECTURE.md#documented-deviations)) |
-| `modules/QuickSlots.lua` | `NS.QuickSlots`: the equipment flyout hooks; while the window shows, every slot's arrow, the left column's drawer turned outward, and a horizontal flyout level with its slot; the drawer gated by `window.drawer` |
+| `modules/QuickSlots.lua` | `NS.QuickSlots`: the equipment flyout hooks; while the window shows, every slot's arrow, the left column's drawer turned outward, and a horizontal flyout level with its slot; the drawer gated by `window.drawer`; the flyout's rim tinted in the skin's `win.border` while the window holds it, Blizzard's color restored when it lets go (`QS.TintSync`, the deviation `DEV-SKIN-FLYOUT-TINT`) |
 | `modules/QuickSlots_Sort.lua` | The flyout's upgrade-track sort (extends `NS.QuickSlots`) |
 | `modules/Preview.lua` | `NS.Preview`: test mode, the sample outfits on the bar and the window |
 | `modules/Api.lua` | The public API, `NS.API.v1`, published as `OutfitterReborn.API.v1` ([ARCHITECTURE.md](ARCHITECTURE.md#public-api)) |

@@ -107,8 +107,10 @@ NS.Equip.Batch(function()  NS.Stack.Wear / Remove (layer, byTrigger)  end) â—„â”
   sidebar tab on stock and Chonky, EllesmereUI's text tab; re-placed on the next frame when the
   sheet kind changes) and paints it selected while the window shows. The window's show and hide, and
   the sheet's hide, call `NS.QuickSlots.DrawerSync`, which, only while the window is visible, shows
-  every slot's popout arrow, turns the left column's drawer outward, and lines a horizontal flyout up
-  with its slot ([`taint.md`](taint.md)). The slot checkboxes restack from the same follow when the
+  every slot's popout arrow, turns the left column's drawer outward, lines a horizontal flyout up
+  with its slot, and tints the flyout's rim in the skin's `win.border` (`QS.TintSync`, also run from
+  the flyout's update hook and on a skin change; Blizzard's color is restored when the window, the
+  sheet slot or the stand-down lets go: `DEV-SKIN-FLYOUT-TINT`, [`taint.md`](taint.md)). The slot checkboxes restack from the same follow when the
   host's strata or level moves, and when Blizzard's equipment flyout opens or closes on a sheet slot
   (its `OnShow`/`OnHide` post-hooks, and the follow's probe for what a hook missed): open, they take
   the flyout's strata and a level over it, out of lockdown only (smoke round 3 E2). The Outfit
