@@ -1481,7 +1481,7 @@ Total.
 - window settings: a section's row redraws the open window
 - window settings: the outfit row's marks follow their rows, the name taking the EM mark's place
 
-### test_flyout_tint.lua (11)
+### test_flyout_tint.lua (12)
 
 - flyout tint: with the window open a sheet slot's flyout rim takes the skin's border color
 - flyout tint: the window's close gives each texture back exactly what it had
@@ -1494,6 +1494,7 @@ Total.
 - flyout tint: nothing is written in combat lockdown
 - flyout tint: a tinted rim is not written over in lockdown either
 - flyout tint: a skin change in lockdown writes nothing
+- flyout tint: once let go the rim is Blizzard's alone, and later updates write nothing to it
 
 ### test_outfit_menu.lua (33)
 
@@ -1837,7 +1838,7 @@ Total.
 | test_preview.lua | 35 |
 | test_preview_place.lua | 8 |
 | test_window_settings.lua | 12 |
-| test_flyout_tint.lua | 11 |
+| test_flyout_tint.lua | 12 |
 | test_outfit_menu.lua | 33 |
 | test_dialogs.lua | 24 |
 | test_trigger_dialog.lua | 11 |
@@ -1852,4 +1853,4 @@ Total.
 | test_lizard_sighted.lua | 8 |
 | test_prose.lua | 15 |
 | Skipped | 1 |
-| **Total** | **1530** |
+| **Total** | **1531** |

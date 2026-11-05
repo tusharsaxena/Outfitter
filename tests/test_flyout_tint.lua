@@ -278,3 +278,16 @@ test("flyout tint: a skin change in lockdown writes nothing", function()
     M.InCombatLockdown = function() return false end
     Skin:SetChoice(OWNER, "ka0s", "ka0s")
 end)
+
+test("flyout tint: once let go the rim is Blizzard's alone, and later updates write nothing to it", function()
+    local NS, M, state = tintInstance()
+    setWindow(NS, state, true)
+    openOn(M, M.__slotButtons.HeadSlot)
+    setWindow(NS, state, false)
+    local writes = {}
+    for i, t in ipairs(rim(M)) do writes[i] = t.writes end
+    M.EquipmentFlyout_UpdateItems()
+    NS.QuickSlots.DrawerSync()
+    -- red under: a restore that keeps what it read (each later sync writes the old color over Blizzard's).
+    for i, t in ipairs(rim(M)) do assertEqual(t.writes, writes[i], "rim texture " .. i .. " was written after the let-go") end
+end)
