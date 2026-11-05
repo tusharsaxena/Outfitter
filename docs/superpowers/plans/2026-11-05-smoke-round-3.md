@@ -82,7 +82,7 @@ only the E3 amendment of the D10 clause. Anything else: stop and flag.
 | R2 | Task 2: ingress alignment and border (E10) | done (be15a7b..be15a7b; the tab icon is 26 x 26, the neighbors' picture width, centered on PaperDollSidebarTab3.Icon's live center (template 1,-2), so TabBg's bevel shows; TabBg/Hider/Highlight already matched the template. Needs the client look on stock and Chonky in R7) |
 | R3 | Task 3: bar options — E5, E6, E7, E8, E9 | done (46fab62..2077ad7; E5's cause was S.SquareIcon's permanent icon.outline edge on each button, now cropped by hand; E7 hands S.Shell `noBorder`; Show background removed; padding 8 / spacing 4; Grouping row `bar.layout.mode` Grouped/Collapsed dims the Labels tab. Ka0s Default's "on" is the skin's black HUD icon edge: needs the client look in R7) |
 | R4 | Task 4: test mode placement and menu — E3, E4 | done (2300bef..4c3660a; the alone window opens centered (Dock.AloneSpot) and drags for the session, user-placed flag cleared, never docked or in lockdown; the bar starts 8 px left of it (st.testPlace) until dragged, which saves; the sample gear opens a browse-only OutfitMenu, data rows disabled no-ops with L["Not available in test mode"]; Sheet.AloneCorner retired; the D10 row's E3 amendment is already in docs/ARCHITECTURE.md; new suite test_preview_place) |
-| R5 | Task 5: Outfit window settings page — E11; Equipment Manager tooltip and menu — E12 | todo |
+| R5 | Task 5: Outfit window settings page — E11; Equipment Manager tooltip and menu — E12 | done (702e299..702e299; E11: page `window`, "Outfit Window", between Outfit Bar and Profiles: Character sheet tab (sheet button, slot check boxes, flyout-arrow drawer, dock gap 0-40 px) and List tab (Odds 'n ends / Warbound / Unopened sections, EM and automation marks), each surface following a window.* write and a profile switch; new suite test_window_settings. E12 NOT done and its box left open: this run's brief was E11 only, and E12(2) needs a ruling first: the EM mark's click on an unselected, not-stored outfit wears and selects it, and only a second click saves (INV §3.5), so "Click to save in the Equipment Manager" is not yet what one click does) |
 | R6 | Task 6: docs, D10 amendment, smoke §13, whole-branch review, bundle, push | todo |
 | R7 | Owner's in-game pass of smoke §13 | todo |
 | R8 | Owner go-ahead -> merge all rounds in order (see round 2 plan CP6, plus this branch last), delete branches | todo |
@@ -107,7 +107,7 @@ files under the cap; green gate; commit; tick its ledger row; push.
   **Task 5 also does E12** (as its own commits): the EM mark tooltip (`modules/Window_Rows.lua` /
   `modules/OutfitTooltip.lua`), the gear menu entry (`modules/OutfitMenu.lua`), tests in
   `test_outfit_menu` and the rows/tooltip suites.
-  - [ ] E11 Outfit window settings page
+  - [x] E11 Outfit window settings page
   - [ ] E12 (1) not-stored tooltip text, (2) click subtext both states, (3) "Save in equipment
     manager" On/Off submenu below Rename..., same path as the click, disabled in test mode
 - **Task 6 (R6)** docs (settings-panel, schema, module map, data flow, taint, known limitations,
