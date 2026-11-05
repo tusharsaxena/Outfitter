@@ -78,7 +78,7 @@ only the E3 amendment of the D10 clause. Anything else: stop and flag.
 | CP | Task | State |
 |---|---|---|
 | R0 | This plan committed | done |
-| R1 | Task 1: flyout border (E1), selector over flyout (E2) | todo |
+| R1 | Task 1: flyout border (E1), selector over flyout (E2) | partial (85ffa8d..85ffa8d; E2 done: the selectors take the open flyout's strata and a level over it, restored on close. E1 HELD for an owner ruling: tinting Blizzard's shared EquipmentFlyoutFrame is a skin painting a Blizzard frame, which skinning-§7 forbids and no register row covers; needs a deviation row or an upstream change first) |
 | R2 | Task 2: ingress alignment and border (E10) | todo |
 | R3 | Task 3: bar options — E5, E6, E7, E8, E9 | todo |
 | R4 | Task 4: test mode placement and menu — E3, E4 | todo |
