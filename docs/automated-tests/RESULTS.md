@@ -32,6 +32,7 @@ archaeology, for the same reason a skip is never a pass (`automated-tests-§4`).
 
 | Run | Commit | Tree | Version | Lint w/e | Files | Tests | Perf | NLOC | Funcs | Avg NLOC | Avg CCN | Max CCN | CCN warn | Verdict |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| [`20261105-070533`](20261105-070533/) | `9aeba89` | clean | 1.1.0 | 0/0 | 197 | 1470/1/1471 | pass | 44960 | 5598 | 7.0 | 2.3 | 15 | 0 | **green** |
 | [`20261105-004501`](20261105-004501/) | `f5420fb` | clean | 1.1.0 | 0/0 | 193 | 1383/1/1384 | pass | 42375 | 5304 | 7.0 | 2.3 | 15 | 0 | **green** |
 | [`20261104-233516`](20261104-233516/) | `b71bc61` | clean | 1.1.0 | 0/0 | 193 | 1383/1/1384 | fail | 42369 | 5302 | 7.0 | 2.3 | 18 | 1 | **amber** |
 | [`20261104-225824`](20261104-225824/) | `73d6770` | clean | 1.1.0 | 0/0 | 193 | 1383/1/1384 | fail | 42369 | 5302 | 7.0 | 2.3 | 18 | 1 | **amber** |
@@ -42,19 +43,18 @@ archaeology, for the same reason a skip is never a pass (`automated-tests-§4`).
 
 ## Test suite
 
-**1384 cases** — 1383 passed, 0 failed, 1 skipped. The generated inventory
-[`20261105-004501/test-cases.md`](20261105-004501/test-cases.md) is the authority on which cases existed at this run;
+**1471 cases** — 1470 passed, 0 failed, 1 skipped. The generated inventory
+[`20261105-070533/test-cases.md`](20261105-070533/test-cases.md) is the authority on which cases existed at this run;
 `docs/test-cases.md` is that same list at HEAD.
 
-The count has been **flat at 1384 across the last 3 runs**. A suite that stopped growing while
-the addon did is a coverage gap, and it is the one thing the table above cannot show.
+Moved **1384 → 1471** since the previous run.
 
 **1 case(s) reported a `skip`.** A skip is counted in the total and never in `passed`, and at
 the release gate it is NOT EVALUATED rather than passed (`automated-tests-§3`).
 
 ## Lint
 
-**0 warnings / 0 errors over 193 files** (`luacheck .`).
+**0 warnings / 0 errors over 197 files** (`luacheck .`).
 
 Read that figure with its scope attached: `.luacheckrc` excludes 6 path(s) from it — `libs/`, `tests/_kit/`, `docs/audits/`, `docs/reviews/`, `docs/revendor/`, `_dev/` —
 so nothing under them is in the count above. A `0/0` that never moves is partly a statement about
@@ -64,30 +64,30 @@ to whoever thinks to open `.luacheckrc`.
 ## Perf
 
 **13 scenarios** from `tests/perf.lua`; the measurements are in
-[`20261105-004501/perf.json`](20261105-004501/perf.json).
+[`20261105-070533/perf.json`](20261105-070533/perf.json).
 
 | `scenario` | `iters` | `ms/iter` | `notes/iter` | `bytes/iter` |
 |---|---|---|---|---|
-| `equipPlanCaptureOff` | 500 | 1.55600 | 0.00 | 229584.1 |
-| `equipPlanCaptureOn` | 500 | 1.61965 | 3.00 | 229584.1 |
-| `zoneFlipsCaptureOff` | 50 | 1.21506 | 0.00 | 118022.7 |
-| `zoneFlipsCaptureOn` | 50 | 1.34300 | 100.00 | 117934.4 |
-| `triggerFanoutCaptureOff` | 100 | 1.00049 | 0.00 | 106103.7 |
-| `triggerFanoutCaptureOn` | 100 | 1.00798 | 40.00 | 106106.6 |
-| `tooltipsCaptureOff` | 50 | 0.92010 | 0.00 | 138494.1 |
-| `tooltipsCaptureOn` | 50 | 0.83832 | 100.00 | 138494.1 |
-| `gaGenerationCaptureOff` | 200 | 5.85634 | 0.00 | 468126.8 |
-| `gaGenerationCaptureOn` | 200 | 5.16163 | 3.00 | 468126.8 |
-| `dockIdleCaptureOff` | 2000 | 0.00752 | 0.00 | 192.3 |
-| `dockIdleCaptureOn` | 2000 | 0.00601 | 1.00 | 192.3 |
-| `tooltipsAbsent` | 50 | 0.84422 | 0.00 | 138494.1 |
+| `equipPlanCaptureOff` | 500 | 1.29995 | 0.00 | 232272.1 |
+| `equipPlanCaptureOn` | 500 | 1.35006 | 3.00 | 232272.1 |
+| `zoneFlipsCaptureOff` | 50 | 0.98188 | 0.00 | 118022.7 |
+| `zoneFlipsCaptureOn` | 50 | 1.03486 | 100.00 | 117934.4 |
+| `triggerFanoutCaptureOff` | 100 | 0.87172 | 0.00 | 106775.7 |
+| `triggerFanoutCaptureOn` | 100 | 0.85777 | 40.00 | 106778.6 |
+| `tooltipsCaptureOff` | 50 | 0.59694 | 0.00 | 138494.1 |
+| `tooltipsCaptureOn` | 50 | 0.64260 | 100.00 | 138494.1 |
+| `gaGenerationCaptureOff` | 200 | 4.75911 | 0.00 | 468126.8 |
+| `gaGenerationCaptureOn` | 200 | 4.24240 | 3.00 | 468126.8 |
+| `dockIdleCaptureOff` | 2000 | 0.00505 | 0.00 | 192.3 |
+| `dockIdleCaptureOn` | 2000 | 0.00534 | 1.00 | 192.3 |
+| `tooltipsAbsent` | 50 | 0.60620 | 0.00 | 138494.1 |
 
 `perf` never fails a run and never blocks a commit — it is recorded, read and compared, not
 thresholded (`performance-§9`). It does gate the **tag** (`automated-tests-§3`).
 
 ## Complexity watch list
 
-Current as of [`20261105-004501`](20261105-004501/) — **this run's measurement, not its diff.** Max CCN **15** across 5304
+Current as of [`20261105-070533`](20261105-070533/) — **this run's measurement, not its diff.** Max CCN **15** across 5598
 functions, **0** of them warned on; 0 file(s) in the 1000–1500 band and 0 over the 1500 cap
 (`layout-§1`).
 

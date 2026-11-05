@@ -1,12 +1,15 @@
 local _, NS = ...
--- modules/Preview.lua — NS.Preview: test mode (design §8, H17; preview-mode).
+-- modules/Preview.lua — NS.Preview: test mode (design §8; smoke round 2 design G7; preview-mode).
 --
--- Test mode turns the outfit bar over to the sample outfits of defaults/PreviewOutfits.lua under the
--- amber test strip, so the bar can be placed and skinned without real outfits. The bar does the
--- drawing (modules/Bar.lua): it reads IsActive() in its show decision, draws Preview.Source instead of
--- its live source, and shows the strip, on every PREVIEW_CHANGED this module sends. The window keeps
--- real data and has no marker. Nothing is equipped and nothing is saved: the samples never reach
--- NS.Outfits or NS.Stack, and the one flag is the session-only NS.State.testMode.
+-- Test mode turns the outfit bar and the outfit window over to the sample outfits of
+-- defaults/PreviewOutfits.lua, each under its own amber test strip, so both can be placed and skinned
+-- without real outfits. The surfaces do the drawing on every PREVIEW_CHANGED this module sends. The bar
+-- (modules/Bar.lua) reads IsActive() in its show decision and draws Preview.Source instead of its live
+-- source. The window (modules/Dock.lua, Window.lua, Window_ListModel.lua) lists the samples with no item
+-- section, docked beside an open sheet or alone where a stock sheet would open; X or Escape hides it
+-- for the rest of the session without ending the mode (design D10, which reverses H17). Nothing is
+-- equipped and nothing is saved: the samples never reach NS.Outfits or NS.Stack, and the one flag is
+-- the session-only NS.State.testMode.
 --
 -- Session-only and on until turned off. It ENDS on its own switch (the General row, the launcher's
 -- entry, `/or test`), on combat (PLAYER_STATE_CHANGED "combat", which PlayerState sends on

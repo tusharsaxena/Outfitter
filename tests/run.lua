@@ -186,6 +186,7 @@ local SUITES = {
     { name = "test_slot_enables" },
 
     { name = "test_bar" },
+    { name = "test_bar_look" },
     { name = "test_outfit_icons" },
     { name = "test_broker" },
 
@@ -248,9 +249,18 @@ do
     end
 end
 
--- The typed-value gate (skinning-§1): what no kit category takes, each with its cause. None yet: the
--- only colors typed so far are core/SkinSetup.lua's, which the kit reads as the seam.
-Kit.skinValues = { root = root, rows = {} }
+-- The typed-value gate (skinning-§1): what no kit category takes, each with its cause. The sheet
+-- button wears the host sheet's look, not the skin (smoke round 2 design G2, D4): the accepted
+-- deviation DEV-SKIN-SHEET-BUTTON in docs/ARCHITECTURE.md -> Documented deviations.
+local HOST_LOOK = "DEV-SKIN-SHEET-BUTTON"
+Kit.skinValues = { root = root, rows = {
+    { file = "modules/Dock.lua", substring = "PaperDollInfoFrame\\\\PaperDollSidebarTabs",
+      why = "the sheet button is a copy of the host sheet's own sidebar tab art", cause = HOST_LOOK },
+    { file = "modules/Dock.lua", substring = "SetTextColor(1, 1, 1, 1)",
+      why = "EllesmereUI's tab label hover color, matched to its neighbors", cause = HOST_LOOK },
+    { file = "modules/Dock.lua", substring = "SetTextColor(1, 1, 1, 0.6)",
+      why = "EllesmereUI's tab label idle color, matched to its neighbors", cause = HOST_LOOK },
+} }
 
 -- The skin-switch test's painted surfaces (skinning-§1): the design §9.5 builders (P4.30).
 Kit.skinSwitch = dofile(root .. "/tests/skin_surfaces.lua")(_G.OUTFITTERREBORN_TEST)

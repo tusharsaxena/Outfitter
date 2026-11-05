@@ -269,3 +269,134 @@ test("drawer: the window's show and hide tell the drawer, with the window's stat
     assertFalse(seen[2], "the drawer ran before the window was hidden")
     NS.QuickSlots.DrawerSync = sync
 end)
+
+-- ── host strata (smoke round 2 design G3) ───────────────────────────────────────────────────────
+--
+-- ChonkyCharacterSheet puts every Character<Slot> button in HIGH strata and leaves CharacterFrame
+-- MEDIUM (Chonky core/utils.lua:2059), and raises its model scene to MEDIUM 9000
+-- (Retail/characterSheet.lua:57-58); EllesmereUI raises CharacterFrame itself to HIGH. The boxes take
+-- the highest strata among the sheet and its slots, and a level over the frames of THAT strata only.
+
+local SLOT_STRATA = "HIGH"      -- Chonky's slot strata: a host value, never one of ours (C.LAYERS)
+
+-- Every slot button re-strataed by the host at `level`, the head one at `head` when given.
+local function chonkySlots(NS, M, level, head)
+    for _, slot in ipairs(NS.ItemData.SLOT_NAMES) do
+        local b = M["Character" .. slot]
+        b:SetFrameStrata(SLOT_STRATA)
+        b:SetFrameLevel(level)
+    end
+    if head then M.CharacterHeadSlot:SetFrameLevel(head) end
+end
+
+test("slot enables: the layers carry the client's strata order, low to high, and a level cap", function()
+    local C = T.NS.Constants.LAYERS
+    assertEqual(table.concat(C.STRATA_ORDER, ","),
+        "BACKGROUND,LOW,MEDIUM,HIGH,DIALOG,FULLSCREEN,FULLSCREEN_DIALOG,TOOLTIP")
+    for i, s in ipairs(C.STRATA_ORDER) do assertEqual(C.STRATA_RANK[s], i, s) end
+    assertTrue(C.LEVEL.MAX < 10000, "the cap is under the client's level ceiling")
+end)
+
+test("slot enables: HostStrata is the highest of CharacterFrame's and the slot buttons'", function()
+    local NS, M = selected()
+    assertEqual(NS.SlotEnables.HostStrata(), "MEDIUM", "the stock sheet")
+    M.CharacterHeadSlot:SetFrameStrata(SLOT_STRATA)
+    -- red under: read CharacterFrame's strata alone (the boxes stay MEDIUM under Chonky's HIGH slots).
+    assertEqual(NS.SlotEnables.HostStrata(), SLOT_STRATA, "a HIGH slot")
+    local get = M.CharacterHeadSlot.GetFrameStrata
+    rawset(M.CharacterHeadSlot, "GetFrameStrata", function() error("forbidden") end)
+    assertEqual(NS.SlotEnables.HostStrata(), "MEDIUM", "a raising read counts for nothing")
+    M.CharacterHeadSlot.GetFrameStrata = get
+    M.CharacterFrame:SetFrameStrata(RAISED_HOST_STRATA)
+    assertEqual(NS.SlotEnables.HostStrata(), RAISED_HOST_STRATA, "EllesmereUI's HIGH sheet")
+end)
+
+test("slot enables: a host that answers no strata gets none restated as a literal", function()
+    -- frame-layering-§1: a host-matched surface reads the host's strata, never restates it.
+    local NS, M = selected()
+    local frame = M.OutfitterRebornSlotEnables
+    local function raise() error("forbidden") end
+    local saved = { CharacterFrame = M.CharacterFrame.GetFrameStrata }
+    rawset(M.CharacterFrame, "GetFrameStrata", raise)
+    for _, slot in ipairs(NS.ItemData.SLOT_NAMES) do
+        local b = M["Character" .. slot]
+        saved[slot] = b.GetFrameStrata
+        rawset(b, "GetFrameStrata", raise)
+    end
+    -- red under: `strataOf(CharacterFrame) or "MEDIUM"` (a strata literal standing in for the host's).
+    assertEqual(NS.SlotEnables.HostStrata(), nil)
+    local writes = 0
+    local setStrata = frame.SetFrameStrata
+    frame.SetFrameStrata = function(...) writes = writes + 1; return setStrata(...) end
+    NS.SlotEnables.Restack()
+    assertEqual(writes, 0, "a strata was written with none read")
+    frame.SetFrameStrata = setStrata
+    M.CharacterFrame.GetFrameStrata = saved.CharacterFrame
+    for _, slot in ipairs(NS.ItemData.SLOT_NAMES) do M["Character" .. slot].GetFrameStrata = saved[slot] end
+end)
+
+test("slot enables: HIGH slots under a MEDIUM sheet lift the boxes to HIGH, over the HIGH frames only", function()
+    local NS, M = selected()
+    chonkySlots(NS, M, 15, 20)
+    NS.SlotEnables.Restack()
+    local frame = M.OutfitterRebornSlotEnables
+    -- red under: frame:SetFrameStrata(CharacterFrame:GetFrameStrata()) (MEDIUM, under every slot).
+    assertEqual(frame:GetFrameStrata(), SLOT_STRATA)
+    -- red under: an unfiltered HighestLevel (the MEDIUM sheet button at 510 would set the level).
+    assertEqual(frame:GetFrameLevel(), 20 + NS.Constants.LAYERS.LEVEL.SLOT_ENABLES_OVER_HOST)
+    assertEqual(M.OutfitterRebornEnableHeadSlot:GetFrameLevel(), frame:GetFrameLevel() + 1)
+end)
+
+test("slot enables: a MEDIUM 9000 model scene no longer inflates the boxes' level", function()
+    local NS, M = selected()
+    local scene9000 = M.CreateFrame("Frame", nil, M.CharacterFrame)
+    scene9000:SetFrameLevel(9000)
+    chonkySlots(NS, M, 12)
+    NS.SlotEnables.Restack()
+    -- red under: count every frame's level whatever its strata.
+    assertEqual(M.OutfitterRebornSlotEnables:GetFrameLevel(), 13)
+    assertEqual(NS.SlotEnables.HighestLevel(M.CharacterFrame, M.OutfitterRebornSheetHolder, SLOT_STRATA), 12)
+    assertEqual(NS.SlotEnables.HighestLevel(M.CharacterFrame, M.OutfitterRebornSheetHolder), 9000,
+        "no strata: every frame counts, as before")
+end)
+
+test("slot enables: the level is capped under the client's ceiling", function()
+    local NS, M = selected()
+    chonkySlots(NS, M, 9999)
+    NS.SlotEnables.Restack()
+    -- red under: no math.min against LAYERS.LEVEL.MAX.
+    assertEqual(M.OutfitterRebornSlotEnables:GetFrameLevel(), NS.Constants.LAYERS.LEVEL.MAX)
+end)
+
+test("slot enables: MaybeRestack restacks on a strata-only change, and once", function()
+    local NS, M = selected()
+    local frame = M.OutfitterRebornSlotEnables
+    local writes = 0
+    local setLevel = frame.SetFrameLevel
+    frame.SetFrameLevel = function(...) writes = writes + 1; return setLevel(...) end
+    chonkySlots(NS, M, 15)
+    -- red under: a MaybeRestack that compares CharacterFrame's level only (Chonky's lazy HIGH is missed).
+    NS.SlotEnables.MaybeRestack()
+    assertEqual(writes, 1)
+    assertEqual(frame:GetFrameStrata(), SLOT_STRATA)
+    NS.SlotEnables.MaybeRestack()
+    assertEqual(writes, 1, "a steady host restacks nothing")
+    frame.SetFrameLevel = setLevel
+end)
+
+test("slot enables: each box carries an edge in the skin's accent", function()
+    local NS, M = scene()
+    local marks = {}
+    local mark = NS.Skin.Mark
+    NS.Skin.Mark = function(tex, opts)
+        if type(opts) == "table" and opts.token == "text.accent" then marks[#marks + 1] = tex end
+        return mark(tex, opts)
+    end
+    M.__world:openCharacter()
+    NS.Dock.Open()
+    NS.Stack.Select(NS.Outfits.Create("Hat", { HeadSlot = { id = 0 } }))
+    NS.Skin.Mark = mark
+    -- red under: newBox without the edge (the 1 px near-black check.border alone, hard to see).
+    assertEqual(#marks, 4 * 18, "four accent sides per box")
+    assertTrue(M.OutfitterRebornEnableHeadSlot.edge ~= nil, "the box keeps its edge")
+end)

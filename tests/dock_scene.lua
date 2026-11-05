@@ -54,6 +54,7 @@ return function(T)
 
     --- opts.scenario  the gear scenario (default "geared")
     --- opts.resume    false = leave the dock, the window and the slot checkboxes un-resumed
+    --- opts.mutate    function(M), run on the mocks after the recorders, before anything loads
     local function scene(opts)
         opts = opts or {}
         local inst = T.load({ mutate = function(M)
@@ -61,6 +62,7 @@ return function(T)
             recorders(M)
             M.STANDARD_TEXT_FONT = "Fonts\\FRIZQT__.TTF"
             M.__gear:load(opts.scenario or "geared")
+            if opts.mutate then opts.mutate(M) end
         end })
         local NS, M = inst.NS, inst.mocks
         M.__now = 100

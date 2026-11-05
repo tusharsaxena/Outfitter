@@ -1,6 +1,6 @@
 local addonName, NS = ...
--- core/CoreSetup.lua — NS.Print, the secret-safe stringifier, the SafeRegister* family and the window
--- chrome, from LibKa0s-Core-1.0; every tagged chat line leaves through here.
+-- core/CoreSetup.lua — NS.Print, the secret-safe stringifier, the SafeRegister* family, the window
+-- chrome and NS.ResolveColor, from LibKa0s-Core-1.0; every tagged chat line leaves through here.
 
 NS.Util = NS.Util or {}
 
@@ -50,6 +50,12 @@ if not lib then
     -- No grip: the window keeps its stored size (Core's own answer where it cannot build one).
     NS.MakeResizable   = function() return nil end
     NS.RaiseStaticPopups = function() end
+    -- A stored swatch as drawn (Core's ResolveColor): no class color without the library, so the
+    -- swatch itself, keyed or positional, white where it holds nothing.
+    NS.ResolveColor = function(stored)
+        local c = type(stored) == "table" and stored or {}
+        return c.r or c[1] or 1, c.g or c[2] or 1, c.b or c[3] or 1, c.a or c[4] or 1
+    end
 
     -- The SafeRegister* family as ONE-RUNG pcall bodies (events-frames-taint-§1).
     local function reject(rejected, event)
@@ -97,6 +103,9 @@ NS.MakeResizable = lib.MakeResizable
 -- A toplevel DIALOG window re-raises a shown StaticPopup when it shows, so a confirmation shown first
 -- is never buried under it (frame-layering-§4).
 NS.RaiseStaticPopups = lib.RaiseStaticPopups or function() end
+-- A stored swatch through its Use class color companion, four numbers out (options-ui-§17): the
+-- outfit bar's background, borders and label color.
+NS.ResolveColor = lib.ResolveColor
 
 -- WRAPPED, TO SAY WHO IS ASKING -- a MUST (standalone-windows, anti-patterns #64/#65). Core draws the
 -- catalog's `close` mark only when told which addon FOLDER to build the path from. Every close

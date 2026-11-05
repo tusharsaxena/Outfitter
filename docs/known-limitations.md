@@ -32,6 +32,28 @@ open issues (§14); a row here leaves when its check passes or its owner rules.
   will not remove it after one, because "did equip" is runtime state.
 - **Rename no longer emits worn and removed events** (O16); no trigger relies on them.
 
+## The character sheet and its hosts
+
+What the round of 2026-11-05 accepted rather than fixed (smoke round 2 design G2, G3); each is a row
+in [smoke-tests.md](smoke-tests.md) §12 for the owner's eye.
+
+- **Chonky's tab row sits right-heavy.** ChonkyCharacterSheet centers its row of tab icons for its
+  own count; the sheet button after the last tab makes the row about 18 px right-heavy. Accepted:
+  this addon never moves another addon's tabs (and moving them would fight Chonky and risk O29).
+- **The tab's Hider strip on Chonky.** The button copies Blizzard's tab, Hider strip included; Chonky's
+  own extra tab draws none. Which reads better beside Chonky's tabs is the owner's call in §12.
+- **The flyout gaps differ by a few pixels.** With the window open, a right-column slot's first item
+  stands about 11 px from its slot (the arrow's visible 8 px plus the item frame's 3 px border); the
+  left column's outward flyout reads 8 px. Both are level with their slot; the weapons' flyouts are
+  Blizzard's.
+- **The EllesmereUI label's face is read when it is placed.** The *Outfits* tab copies the face of
+  EllesmereUI's own Equipment label each time it is placed (a sheet open, a sheet kind change), so a
+  font changed in EllesmereUI shows on the next placing, not at once. Its active color is read at
+  paint time, with a fallback when `EllesmereUI.ELLESMERE_GREEN` is absent.
+- **Test mode's alone window cannot stand alone while parked.** A window that fell back to the sheet
+  holder (following failed) cannot show without the sheet; in test mode the bar still shows the
+  samples.
+
 ## Living beside the old addon
 
 - If the old Outfitter is also loaded, both change gear: the addon warns once at login and does not
@@ -71,7 +93,7 @@ Each is a row in [smoke-tests.md](smoke-tests.md) with its pass criterion.
 | O22 | The lockpicking line's composed GlobalString | `L["Requires Lockpicking"]` (row D4) |
 | O23 | `ChangeActionBarPage` in combat (Fishing) | Skipped in lockdown, retried on regen |
 | O27 | Druid and rogue form spell IDs | A forms dump under `/or debug` |
-| O29 | The sheet button after the Equipment Manager tab (stock), the Equipment tab (EllesmereUI) or the last tab icon (ChonkyCharacterSheet) overlaps nothing on any of the three sheets | Move it (`NS.Sheet.ButtonAnchor`) |
+| O29 | The sheet button, a tab after the Equipment Manager tab (stock) or Chonky's last tab icon, or the *Outfits* text tab above EllesmereUI's Equipment label, overlaps nothing on any of the three sheets | Move it (`NS.Sheet.ButtonAnchor`) |
 | O31 | The window title fits 260 px | Shorten it |
 | O34 | The Equipment Sets tooltip line | Suppression through `AddLinePreCall` |
 | O38 | The title submenu with 200+ titles | — |
@@ -83,7 +105,7 @@ Each is a row in [smoke-tests.md](smoke-tests.md) with its pass criterion.
 
 - **One headless case flakes, about 1 run in 8 to 20** ([LibKa0s#75](https://github.com/tusharsaxena/LibKa0s/issues/75)):
   "bar: a profile switch redraws the bar from the new profile and rebinds the triggers"
-  (`tests/test_bar.lua:577`). The cause is in the vendored kit: `Callbacks:unregisterAll`
+  (`tests/test_bar.lua:837`). The cause is in the vendored kit: `Callbacks:unregisterAll`
   (`tests/_kit/mock_ace.lua:116-117`) writes `list[target] = nil` into lists that do not hold the
   target. In Lua 5.1 that can rehash a list mid-dispatch, so `Callbacks:fire`'s `next()` walk ends
   early and skips the bar's `PROFILE_CHANGED` listener; the trigger binder's `onProfile` calls
@@ -94,6 +116,8 @@ Each is a row in [smoke-tests.md](smoke-tests.md) with its pass criterion.
 ## Frame layering
 
 The window and the slot checkboxes take their layer from the character sheet rather than a fixed
-strata, so they never poke through a window that covers the sheet. The cost: another addon that
-redraws the sheet at a higher level after the follow tick can sit over the checkboxes until the next
-tick re-syncs them.
+strata, so they never poke through a window that covers the sheet. The checkboxes take the highest
+strata among the sheet and its 18 slot buttons, so a sheet addon that lifts its slots (Chonky puts
+them in `HIGH`) lifts the boxes too. The cost: another addon that redraws the sheet at a higher level
+after the follow tick can sit over the checkboxes until the next tick re-syncs them, and a level is
+capped at `LAYERS.LEVEL.MAX` (9990), under the client's ceiling.

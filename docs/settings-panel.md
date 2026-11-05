@@ -14,7 +14,7 @@ there is no LoadOnDemand split (H21; the comment is in `settings/OptionsSetup.lu
 | Page | Covers |
 |---|---|
 | General | Master controls, automatic outfit changes and equip behavior, tooltips, the skin, and key bindings |
-| Outfit Bar | Whether the bar shows, its layout, background and opacity in combat |
+| Outfit Bar | Whether the bar shows and how it marks the worn outfit, opacity in combat; its layout, icons and their border, category labels, and its window frame (background and border) |
 | Profiles | AceDB profiles: settings only; outfits belong to each character |
 
 ## Landing page
@@ -43,7 +43,7 @@ Composed by `H.MasterControls` from one declaration, the canonical rows in canon
 | Debug console | `state.debugConsole` | `NS.DebugLog:ConsoleCheckbox()` (session; Reset all turns it off) |
 | Minimap button | `global.minimap.shown` | `NS.Launcher:IsShown()`/`SetShown()`; exempt from reset. The launcher's Show window entry has a key binding of its own, **Toggle outfit window** (`CLICK OutfitterRebornToggleWindow:LeftButton`, first in `Bindings.xml`), set on the Keybindings tab below or in Options → Keybindings |
 | Test mode | `state.testMode` | `NS.Preview.Start`/`Stop` (session; Reset all ends it) |
-| Reset position | button | Resets `bar.position` |
+| Reset position | button | Resets `bar.position` (the Outfit Bar page's Display tab has the same button, writing the same row) |
 | Reset all settings | button | `NS.ShowResetAll` |
 
 The Master reactions are resolved at call time. The host stamps `default = false` on the two session
@@ -99,15 +99,62 @@ General Defaults tooltip ends with `H.KEYBINDS_UNCHANGED`: no reset changes a ke
 
 ## Outfit Bar
 
-`settings/OutfitBar.lua`, page `bar`, one tab, **Display**:
+`settings/OutfitBar.lua`, page `bar` (smoke round 2 design G6). The bar is drawn as a Ka0s window:
+the skin's title band is its header, with the title *Outfits* on the left and a lock and a close
+on the right, and the header drags it. Tabs in declaration order:
+
+### Display
 
 | Path | Default | Label |
 |---|---|---|
 | `bar.shown` | `false` | Show outfit bar |
-| `bar.vertical` | `false` | Vertical layout |
-| `bar.showBackground` | `true` | Show background |
+| `bar.worn.style` | `both` (`both`, `mark`, `border`, `none`) | Worn outfit highlight |
 | `bar.combatAlpha` | `1.0` (0 to 1, step 0.05) | Opacity in combat (%) |
 | `bar.position` | `TOPLEFT 200 -200` | Outfit bar position (`skipRender`; encodes `profile.windows.bar`) |
+| *(after the tab)* | button | Reset position: `NS.ApplyDefault` on `bar.position`, the Master button's twin |
+
+### Layout
+
+| Path | Default | Label |
+|---|---|---|
+| `bar.vertical` | `false` | Vertical layout |
+| `bar.layout.perLine` | `0` (0 to 20) | Per row or column (0 = one line) |
+| `bar.layout.growH` | `auto` (`auto`, `right`, `left`) | Grow horizontally |
+| `bar.layout.growV` | `auto` (`auto`, `down`, `up`) | Grow vertically |
+| `bar.layout.padding` | `4` (0 to 20) | Padding (px) |
+| `bar.layout.spacing` | `5` (0 to 20) | Spacing (px); 32 + 5 keeps the old 37 px pitch |
+
+### Icons
+
+`bar.icons.size` (`32`, 16 to 64, *Icon size (px)*), then the library's Border block (`H.BorderGroup`,
+prefix `bar.icons.`, on the skin's icon family): show, style, size, color and *Use class color*
+with *Use the skin's border*, then this addon's *Use the skin's color*
+(`bar.icons.borderColorFromSkin`). With both companions on, a button wears the skin's own HUD icon
+edge.
+
+### Labels
+
+`bar.labels.show` (`true`, *Show category labels*), then the library's Font block (`H.FontGroup`,
+prefix `bar.labels.`): face, size, flags (From skin first), shadow, color and *Use class color*, with
+*Use the skin's font*, then this addon's *Use the skin's color* and *Use the skin's shadow*. The
+block's rows dim while the labels are off, the swatch excepted. One label per category, drawn as
+HUD text through `S.HudFont`, its face resolved through `S.Resolve`: with *Ignore fonts* on, the
+labels draw the stored face whatever *Use the skin's font* says (skinning-§6).
+
+### Frame
+
+`bar.showBackground` (`true`, *Show background*), then the Background block (`H.ColorPair`,
+`bar.bgColor` with `bar.useClassColorBg`) with this addon's *Use the skin's background*
+(`bar.bgFromSkin`), and the Border block (`H.BorderGroup`, prefix `bar.frame.`, on the skin's bar
+family) with *Use the skin's color*. While *Use the skin's background* is on, the bar is drawn
+exactly as a Ka0s window and the colors wait; off, they draw on a plate of the bar's own.
+
+**No second switches** (options-ui-§15): scale, opacity, the lock, Reset position and General
+visibility are the Master controls' and govern this one frame. The header's lock writes `locked`
+and its close writes `bar.shown = false`, the same rows (in test mode the close only dismisses the
+bar for that test session and writes nothing); hiding the bar in combat is General
+visibility, which the combat opacity row's tooltip points to. Every color has its FromSkin
+companion, default on (skinning-§6).
 
 No row has an `onChange`: the bar re-renders on `SETTINGS_CHANGED` for any `bar.*` path.
 `bar.position` reads and writes `POINT X Y` through its own get/set, refuses anything but a screen

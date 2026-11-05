@@ -254,7 +254,7 @@ Total.
 - schema: a trigger flag written on an outfit with no trigger leaves no trigger table (design §3.3)
 - schema: an outfit batch is all or nothing and forwards through NS.Schema.SetMany
 
-### test_settings.lua (15)
+### test_settings.lua (16)
 
 - settings: the parent category registers eagerly and every page body renders quietly
 - settings: the pages register General first, then Outfit Bar, and Profiles last
@@ -264,7 +264,8 @@ Total.
 - settings: Tooltips holds the used-by line and the comparison
 - settings: the flyout and tooltip rows react through their modules
 - settings: Delete all outfits closes Behavior with no heading and asks through the popup
-- settings: the Outfit Bar page is one Display tab, the position row never drawn
+- settings: the Outfit Bar page's tabs and rows, the position row never drawn
+- settings: the Outfit Bar page's Reset position writes the Master button's path, bar.position's default
 - settings: the global reset confirms with options-ui-§12's one wording, verbatim
 - settings: accepting the reset restores the profile and says so
 - settings: the H21 comment records why options are not split into LoadOnDemand
@@ -272,7 +273,7 @@ Total.
 - settings: the Profiles page says outfits are per character, above AceDBOptions' controls
 - settings: library absent, the addon still loads and the reset still lands
 
-### test_slash.lua (44)
+### test_slash.lua (45)
 
 - slash: the reserved verbs open NS.COMMANDS, in the DpsRace order
 - slash: bare /or opens the settings panel
@@ -317,6 +318,7 @@ Total.
 - slash: `withdrawothers` brings every other outfit's banked items (INV §3.7 Fix)
 - slash: `unequip` takes the argument, moves one item, and stops after a miss
 - slash: `iteminfo` prints the link's fields through the secret-safe reader
+- slash: `bar show|hide|toggle` writes bar.shown through the CLI; no word toggles
 - slash: `test` flips test mode
 
 ### test_launcher.lua (12)
@@ -334,7 +336,7 @@ Total.
 - launcher: the icon and label stay put across outfit changes (H6)
 - launcher: the Locked entry runs the lock and unlock verbs (launcher-§2)
 
-### test_keybinds.lua (21)
+### test_keybinds.lua (22)
 
 - keybinds: NS.BINDINGS is Bindings.xml's order, Show window first, each with a tooltip
 - keybinds: Bindings.xml is the addon's own category, no header, no default, labeled
@@ -353,6 +355,7 @@ Total.
 - keybinds: an unbound key says so
 - keybinds: the key announces on UIErrorsFrame in the outfit color, unless announceKeys is off
 - keybinds: AutoOn and AutoOff write auto.enabled through the auto verb
+- keybinds: Toggle outfit bar runs `/or bar toggle`, so the key and the verb are one handler
 - keybinds: UpdateOutfit with no Complete outfit prints the line and raises nothing
 - keybinds: every button refuses through the one helper before its handler, AutoOn/AutoOff too
 - keybinds: NS.WearBoundOutfit refuses for a direct caller too
@@ -604,7 +607,7 @@ Total.
 - inventory: OutfitsUsing pairs the rings, the trinkets and the weapons
 - inventory: Suspend drops every registration and the pending sync; Resume rebuilds them
 
-### test_outfits.lua (46)
+### test_outfits.lua (47)
 
 - outfits: NS.Outfits and NS.OutfitSchema are published
 - outfits: Create allocates o<N>, stores the record's shape, appends to the order, announces once
@@ -631,6 +634,7 @@ Total.
 - outfits: a second LoadPass seeds nothing and calls no EM.Sync; the first marks FirstPassDone
 - outfits: seeding adopts an outfit that already has the built-in's name instead of duplicating it
 - outfits: an adopted spec outfit takes the spec icon, as the legacy SetIcon did (Outfitter.lua:5788-5790)
+- outfits: an Equipment Manager mirror adopted by name keeps its set's icon
 - outfits: the repair prunes stale ids and duplicates, re-asserts nextID and rebuilds the orders
 - outfits: the repair points the Argent Lance at the player's faction lance (quirk 23)
 - outfits: the first PLAYER_ENTERING_WORLD arms a 1 s LoadPass; Suspend cancels and Resume re-arms it
@@ -793,7 +797,7 @@ Total.
 - secrets states: a secret icon falls through to the spell; a secret spell id matches nothing
 - secrets states: the last mana reading survives a secret sample
 
-### test_quickslots.lua (33)
+### test_quickslots.lua (44)
 
 - quickslots: NS.QuickSlots and its sort are published
 - quickslots: the hooks are post-hooks, built once however often the addon stands up
@@ -814,20 +818,31 @@ Total.
 - quickslots: every hook body stands down with the addon and comes back with it
 - quickslots: quickSlots.enabled off silences every hook body; on brings them back
 - quickslots: the stand-down owns nothing to tear down: no event, no timer, no frame
-- drawer: with the window open a left-column flyout's buttonFrame is anchored TOPRIGHT to the arrow's TOPLEFT
+- drawer: with the window open a left-column flyout's buttonFrame is anchored TOPRIGHT to the slot's TOPLEFT
+- drawer: a right-column flyout's first item is level with its slot, past the arrow
+- drawer: a left-column flyout on a taller slot is level with it too
 - drawer: with the window open the left-column arrows sit on the slot's left, mirrored
-- drawer: a right-column flyout is left alone
+- drawer: a right-column arrow stays where Blizzard put it, the flyout beside the slot
+- drawer: a moved right-column flyout gets Blizzard's own point back when the window closes
 - drawer: the weapons' flyout opens down as Blizzard has it
 - drawer: a right-column flyout after a left one drops the left one's anchor
 - drawer: another host's flyout after a left-column one keeps that host's own anchor
 - drawer: SetReversed on a left-column arrow mirrors its coords
 - drawer: with the window closed the flyout keeps Blizzard's anchors
-- drawer: closing the window restores the left-column arrows and an open flyout
+- drawer: closing the window restores the left-column arrows and closes a locked flyout
 - drawer: a window hidden through its parent restores the drawer
 - drawer: stood down nothing is moved
 - drawer: a stand-down with the window open puts Blizzard's drawer back
 - drawer: in combat lockdown nothing is moved
+- drawer: a HideAll after lockdown begins, with the drawer already out, shows no arrow
 - drawer: a missing Blizzard function installs nothing and errors nothing
+- arrows: shown on every slot, weapons included, while the window shows; hidden when it closes
+- arrows: shown once per change, not on every sync
+- arrows: closing the window leaves the Equipment Manager pane's arrows shown
+- arrows: Blizzard's HideAll while the window shows puts them back
+- arrows: Blizzard's HideAll with the window closed leaves them hidden
+- arrows: Blizzard's HideAll never reopens a flyout it closed
+- arrows: a stand-down with the window open hides them
 
 ### test_equip_bracket.lua (32)
 
@@ -1149,10 +1164,11 @@ Total.
 - pvp: a disabled spec keeps the outfit off, and the spec change puts it on or takes it off
 - pvp: every zone trigger honors each of the four spec toggles
 
-### test_sheet.lua (15)
+### test_sheet.lua (16)
 
 - sheet: NS.Sheet is published with the adapter's surface
 - sheet: stock by default
+- sheet: without the stock tab the button keeps its place left of the close X, as a tab
 - sheet: EllesmereUI with its equipment tab shown is eui
 - sheet: EllesmereUI loaded with the blizzard style resolves to stock
 - sheet: EllesmereUI's tab hidden off the Character tab still reads eui
@@ -1167,7 +1183,7 @@ Total.
 - sheet: with no Chonky panel shown DockRight is the backdrop's edge
 - sheet: the adapter creates, anchors and shows nothing
 
-### test_dock.lua (36)
+### test_dock.lua (45)
 
 - dock: NS.Dock is published with the §7.2 surface
 - dock: the holder fills the sheet, and the sheet button toggles the window
@@ -1192,21 +1208,30 @@ Total.
 - dock: the footer's New outfit opens the outfit dialog, the title-strip button the settings
 - dock: no file in modules/ names a strata literal (frame-layering-§5)
 - dock: the sheet button sits right of the Equipment Manager tab
-- dock: on EllesmereUI the button follows the Equipment label
+- dock: on EllesmereUI the button is a label above the Equipment label
 - dock: the button is parented to CharacterFrame and above the close button's level
 - dock: the button shows with the paper doll and hides with it
-- dock: the button's icon is the coat hanger, tinted, with no border
+- dock: the button's icon is the default outfit icon, the gold tint retired
+- dock: on the stock sheet the button is a sidebar tab, selected while the window shows
+- dock: on Chonky the button is the same sidebar tab
+- dock: on EllesmereUI the button is a text label in EUI's tab style
+- dock: without EllesmereUI's accent the active label takes EUI's own fallback
+- dock: the sheet button's label has a face before its text is set
+- dock: a sheet kind that changes after the show re-places and re-looks the button
+- dock: the button is placed and shown in combat: it is a plain, insecure button
 - dock: the window's top is flush with the sheet's top
 - dock: an open Chonky side panel pushes the window right
 - dock: stood down, a sheet show neither shows nor re-anchors the button
 - window: the close button is anchored at the header's top right
 - window: the gear sits left of the close button
+- window: the gear's art is the close X's size, centered, in the X's rest and hover tint
+- window: without a close art texture the gear's art falls back to 12 px
 - dock: switching to the Reputation tab on EllesmereUI does not re-anchor the button to stock
 - dock: a sheet tab built after the paper doll's OnShow is picked up on the next frame
 - dock: the next frame's sheet check does nothing once the doll is gone or stood down
 - dock: on Chonky the Reputation tab takes the button and window down, the Character tab brings them back
 
-### test_list_model.lua (7)
+### test_list_model.lua (8)
 
 - list model: NS.WindowListModel is published with Build, Status and the outfit compare
 - list model: the sections run Complete, Accessory, then the item sections in Inventory's order
@@ -1215,6 +1240,7 @@ Total.
 - list model: the items keep Inventory's level-then-name order inside each section
 - list model: a collapsed category keeps its header and drops its rows
 - list model: Status caches O.Status in the table it is handed, until that is wiped
+- list model: in test mode the list is the sample outfits under their headers, no item section
 
 ### test_rows_secure.lua (21)
 
@@ -1240,7 +1266,7 @@ Total.
 - rows: a profile switch redraws the trigger mark from the new profile's auto.enabled
 - rows: an item with no quality color is drawn muted, never in the previous item's color
 
-### test_slot_enables.lua (17)
+### test_slot_enables.lua (25)
 
 - slot enables: NS.SlotEnables is published with the §7.4 surface
 - slot enables: one 14x14 checkbox per slot, anchored to Character<Slot> (old test_xml:101-112)
@@ -1259,20 +1285,45 @@ Total.
 - slot enables: UnknownSlots answers the selected outfit's unknown set
 - slot enables: hidden when stood down, and a selection while down shows nothing
 - drawer: the window's show and hide tell the drawer, with the window's state already set
+- slot enables: the layers carry the client's strata order, low to high, and a level cap
+- slot enables: HostStrata is the highest of CharacterFrame's and the slot buttons'
+- slot enables: a host that answers no strata gets none restated as a literal
+- slot enables: HIGH slots under a MEDIUM sheet lift the boxes to HIGH, over the HIGH frames only
+- slot enables: a MEDIUM 9000 model scene no longer inflates the boxes' level
+- slot enables: the level is capped under the client's ceiling
+- slot enables: MaybeRestack restacks on a strata-only change, and once
+- slot enables: each box carries an edge in the skin's accent
 
-### test_bar.lua (29)
+### test_bar.lua (44)
 
 - bar: NS.Bar is published with the §7.7 surface
 - bar: bar.shown defaults false, so a fresh profile and a repaired one both come up hidden
 - bar: the container sits in the HUD strata, movable, clamped and toplevel; rows and buttons in their bands
 - bar: one button per visible outfit, a row per category, and a re-render never grows the pool
 - bar: an outfit whose trigger is off is not on the bar, and a manual wear of it puts it back
-- bar: the buttons grow away from the saved corner, per quadrant, both orientations
-- bar: the size, the scale and the backplate follow the settings
-- bar: the drag stop saves the nearest corner; a locked bar does not move
+- bar: the layout's defaults keep the legacy 37 px pitch, 4 px in from the edge
+- bar: the layout wraps at icons per line, in rows or in columns
+- bar: the layout grows away from its corner, the first icon and block at that corner
+- bar: the layout adds each block's label line and never draws narrower than its minimum
+- bar: Render places the buttons from the layout settings and sizes the bar
+- bar: with grow direction auto the buttons grow away from the saved corner, per quadrant
+- bar: an explicit grow direction lays out by it and the drag stop saves the corner it implies
+- bar: changing the grow direction re-saves the place at the corner it implies, so the bar does not jump
+- bar: a place written behind an explicit grow direction is re-saved at its corner on the next draw
+- bar: the scale follows the Master row and divides the offset
+- bar: the window look: the skin's Shell while it follows the skin, the player's plate when not
+- bar: the header band is titled Outfits, carries close and lock, and the icons sit under it
+- bar: the header's lock writes the Master lock and its close writes bar.shown off
+- bar: the header's right click opens the bar's settings page
+- bar: without the library the header stands on a host band, title and lock included
+- bar: each category's row carries its label above it, and the labels switch off
+- bar: a vertical layout's label is as wide as its column
+- bar: the header's drag stop saves the nearest corner; a locked bar does not move
 - bar: the drag stop writes bar.position through the seam, and its echo leaves the bar where it fell
 - bar: the reset copies the default, so a drag after it never writes the default
-- bar: the icon ladder: own, the trigger's descriptor, the Birthday Suit, a single item, the coat hanger
+- bar: the icon ladder: own, the trigger's descriptor, the Birthday Suit, a single item, the default
+- bar: an icon's border is the skin's HUD edge while it follows the skin, the player's when not
+- bar: the worn highlight is the corner mark, an accent edge, both or neither
 - bar: a left click wears; a worn accessory is removed; a worn Complete outfit stays on
 - bar: a right click opens the outfit menu afresh on every open
 - bar: Alt + a dropped spell sets the icon through C_Spell; item and macro too
@@ -1282,21 +1333,29 @@ Total.
 - bar: the hover shows the outfit tooltip with always = true, and hides GameTooltip when it shows nothing
 - bar: alpha 0 takes the mouse off every button; any other alpha gives it back
 - bar: in combat the alpha is Master alpha times bar.combatAlpha, from PLAYER_STATE_CHANGED
-- bar: leaving the bar fades the handle over 0.3 s and the bar to its alpha over 0.5 s
-- bar: a rebuild leaves a faded handle faded; an unlock shows it again
+- bar: leaving the bar fades it to its alpha over 0.5 s
 - bar: an alpha change stops a hover-out fade still running, so it cannot land on the old alpha
-- bar: the clamp covers the handle above the bar while it shows, and only then
 - bar: hidden during a pet battle, back after it
 - bar: rebuilds are coalesced on one 0 s timer
 - bar: a profile switch redraws the bar from the new profile and rebinds the triggers
 - bar: Suspend hides it and stops the rebuilds; the stand-down keeps it down
 - bar: test mode shows the sample outfits with the strip, even with the bar off, and they do nothing
 
-### test_outfit_icons.lua (15)
+### test_bar_look.lua (5)
+
+- bar: a label draws through S.HudFont with its font block, and its color follows the skin until told not to
+- bar: the player's plate and icon edge take the skin's border color while that companion stays on
+- bar: without the library test mode reserves no strip room, and the header title says test mode
+- bar: with Ignore fonts on a label draws its own stored face, the seam's answer
+- bar: a button's edges, worn edge and worn mark stand on named rungs, the mark on a mouse-off overlay
+
+### test_outfit_icons.lua (17)
 
 - icons: NS.OutfitIcon and NS.Outfits.SetIcon are published, and char.emIcons defaults empty
 - icons: a 1.1.0 fileID draws as before
-- icons: no icon falls through trigger, item, then the coat hanger
+- icons: no icon falls through trigger, item, then 132724
+- icons: a seeded spec outfit draws its spec's icon with no icon and no trigger
+- icons: only a SPEC_n seed key takes the spec rung
 - icons: a glyph with a color tints
 - icons: the icon row takes a fileID, a glyph or nil, and refuses any other string or color
 - icons: 134400 stores nil
@@ -1314,7 +1373,7 @@ Total.
 
 - broker: a data source named OutfitterRebornOutfits exists and is not on the minimap
 - broker: text and icon follow the worn outfit
-- broker: no outfit shows the brand and the coat hanger
+- broker: no outfit shows the brand and the default icon, untinted and cropped
 - broker: left-click lists categories then outfits, worn ones checked, missing in the missing color
 - broker: the menu leaves out an outfit whose trigger is off or that is hidden from the bar
 - broker: clicking a worn accessory removes it; clicking a Complete wears it
@@ -1342,12 +1401,12 @@ Total.
 - parity: the menu sorts as legacy's, and a renamed or refiled row by the same rule
 - parity: a class row is offered to its own class only, as the legacy menu filtered it
 
-### test_preview.lua (14)
+### test_preview.lua (36)
 
 - preview: NS.Preview publishes the §8 surface and starts off
 - preview: the placeholders are five Test Outfits in two rows, each stamped placeholder and preview:<n>
 - preview: Start fills the bar with the five sample outfits, real icons and the localized strip
-- preview: the window keeps real data while the bar shows the samples
+- preview: the window lists the same samples as the bar, and the real outfits again after
 - preview: placeholders never equip and a whole session writes nothing to the saved data
 - preview: refused in combat with the exact line, and silent while stood down
 - preview: PLAYER_REGEN_DISABLED ends it with the one ended line and gives the live bar back
@@ -1358,8 +1417,30 @@ Total.
 - preview: Start and Stop each announce PREVIEW_CHANGED once, and a repeat is a no-op
 - preview: Diagnose reports the mode, the bar it opened and the sample count
 - preview: every start and stop, from any source, repaints an open settings panel
+- preview window: the list is the five samples under their headers, no item section, nothing armed
+- preview window: every row handler refuses a sample quietly and nothing is written
+- preview window: with the sheet closed, test mode shows the window alone at the stock sheet's right
+- preview window: the alone corner reads the client's panel layout and the sheet's scale
+- preview window: opening the sheet docks it, closing the sheet puts it back alone
+- preview window: with the sheet open, test mode shows the window docked
+- preview window: X and Escape hide it for the session without ending test mode
+- preview window: combat ends test mode and hides the alone window before lockdown
+- preview window: test mode is refused in combat and never touches the window in lockdown
+- preview window: the stand-down hides it and the stand-up does not bring it back
+- preview window: a window parked in the sheet holder docks again when the sheet reopens
+- preview window: the strip shows under the title and pushes the list; off puts it back
+- preview window: without the library's strip the title says test mode
+- preview window: New outfit is disabled in test mode and enabled after
+- preview window: entering test mode clears the selection, and no slot box or Slots button acts
+- preview bar: /or bar hide dismisses the bar for the test session, never writing bar.shown
+- preview bar: /or bar toggle dismisses the bar for the test session, never writing bar.shown
+- preview bar: the Toggle outfit bar key dismisses the bar for the test session, never writing bar.shown
+- preview bar: the header's close X dismisses the bar for the test session, never writing bar.shown
+- preview bar: show, toggle and the key bring a dismissed bar back, never writing bar.shown
+- preview bar: the dismissal ends with test mode; the bar follows bar.shown, and a new session shows it
+- preview bar: the dismissal ends with the General switch; a bar the player had on comes back
 
-### test_outfit_menu.lua (11)
+### test_outfit_menu.lua (30)
 
 - menu: NS.OutfitMenu is published
 - menu: the rows per section are legacy's, less Void Storage and the script editor
@@ -1370,8 +1451,27 @@ Total.
 - menu: the toggles keep the menu open, Turn trigger off writes outfit.trigger.disabled
 - menu: picking a trigger writes outfit.trigger.id and opens its settings when it has params
 - menu: Delete, Update and Rebuild ask through popups carrying the id; the dialogs open
+- menu: the whole tree goes to the library once, each nested level as a submenu row
+- menu: Key binding picks are radios that keep the menu open, tick the key and rename its holders
+- menu: Title picks and a trigger without params keep the menu open; the parent's label follows
+- menu: rows that open a dialog, popup or window, and the bank moves, act and close
+- menu: on the client's MenuUtil only keep-open rows answer Refresh, the rest close
+- menu: an outfit deleted under its open menu leaves rows that paint and click without raising
+- menu: a ticked toggle clicked after its outfit is deleted repaints without its tick
 - menu: nothing opens for an unknown id or while stood down
 - menu: the class category reads the client's class name, the rest their own labels
+- bar menu: /or bar hide closes the outfit menu the bar opened
+- bar menu: /or bar toggle closes the outfit menu the bar opened
+- bar menu: the Toggle outfit bar key closes the outfit menu the bar opened
+- bar menu: the header's close X closes the outfit menu the bar opened
+- bar menu: the stand-down closes the outfit menu the bar opened
+- bar menu: in test mode /or bar hide still closes the outfit menu the bar opened
+- bar menu: in test mode /or bar toggle still closes the outfit menu the bar opened
+- bar menu: in test mode the Toggle outfit bar key still closes the outfit menu the bar opened
+- bar menu: in test mode the header's close X still closes the outfit menu the bar opened
+- bar menu: hiding the bar leaves a menu the window opened alone
+- bar menu: a bar menu already dismissed is forgotten, so a later menu is not taken for it
+- bar menu: NS.CloseMenuFrom closes only what its owner claims, and answers whether it closed
 
 ### test_dialogs.lua (24)
 
@@ -1447,10 +1547,10 @@ Total.
 - skin: the primitive scan is falsifiable
 - skin: every library color a call site reads by name has a host copy
 - skin: with every surface built, no Blizzard frame is painted
-- skin: the window and the dialogs wear NS.ApplySkin's Shell, the bar a Panel
+- skin: the window, the dialogs and the bar wear NS.ApplySkin's Shell
 - skin: Blizzard icon art in a window is cropped and edged from the skin, never as a HUD
 - skin: the bar's icons are HUD icons, cropped and edged from the skin
-- skin: the sheet button is borderless, its glyph in of.sheet.button
+- skin: the sheet button wears the host's look and is never painted through the skin
 - window: the header gear has no border
 - skin: no source file writes inline icon markup by hand (W.IconText crops it)
 - skin: a switch recolors a dialog's error line through of.dialog.error
@@ -1463,11 +1563,9 @@ Total.
 - skin values: no typed value outside the kit's categories and the host's rows
 - skin values: the check is falsifiable, a planted value of each shape is reported
 
-### test_skin_switch.lua (83)
+### test_skin_switch.lua (84)
 
 - skin switch: the check is falsifiable, a surface that redraws a literal is reported
-- skin switch: the sheet button changes
-- skin switch: the sheet button changes with the Scope ignored
 - skin switch: the window's shell changes
 - skin switch: the window's shell changes with the Scope ignored
 - skin switch: the window's settings button changes
@@ -1536,16 +1634,19 @@ Total.
 - skin switch: the icon browser's selected cell changes with the Scope ignored
 - skin switch: the icon browser's dim changes
 - skin switch: the icon browser's dim changes with the Scope ignored
-- skin switch: the bar's backplate changes
-- skin switch: the bar's backplate changes with the Scope ignored
+- skin switch: the bar's window chrome changes
+- skin switch: the bar's window chrome changes with the Scope ignored
+- skin switch: the bar's lock control changes
+- skin switch: the bar's lock control changes with the Scope ignored
+- skin switch: a bar label changes
 - skin switch: a bar button changes
 - skin switch: a bar button changes with the Scope ignored
 - skin switch: a bar button's worn mark changes
 - skin switch: a bar button's worn mark changes with the Scope ignored
-- skin switch: the bar's drag handle changes
-- skin switch: the bar's drag handle changes with the Scope ignored
 - skin switch: the bar's test strip changes
 - skin switch: the bar's test strip changes with the Scope ignored
+- skin switch: the window's test strip changes
+- skin switch: the window's test strip changes with the Scope ignored
 - skin switch: a compare tooltip changes
 - skin switch: a compare tooltip changes with the Scope ignored
 
@@ -1627,10 +1728,10 @@ Total.
 | test_surface_parity.lua | 29 |
 | test_perf_harness.lua | 19 |
 | test_schema.lua | 25 |
-| test_settings.lua | 15 |
-| test_slash.lua | 44 |
+| test_settings.lua | 16 |
+| test_slash.lua | 45 |
 | test_launcher.lua | 12 |
-| test_keybinds.lua | 21 |
+| test_keybinds.lua | 22 |
 | test_disabled.lua | 24 |
 | test_locale.lua | 18 |
 | test_glyphs.lua | 2 |
@@ -1642,14 +1743,14 @@ Total.
 | test_itemlink.lua | 42 |
 | test_item_match.lua | 20 |
 | test_inventory.lua | 24 |
-| test_outfits.lua | 46 |
+| test_outfits.lua | 47 |
 | test_reset.lua | 8 |
 | test_equip_plan.lua | 31 |
 | test_item_stats.lua | 23 |
 | test_companion.lua | 25 |
 | test_states.lua | 29 |
 | test_secrets_states.lua | 6 |
-| test_quickslots.lua | 33 |
+| test_quickslots.lua | 44 |
 | test_equip_bracket.lua | 32 |
 | test_tooltips.lua | 18 |
 | test_stack.lua | 27 |
@@ -1665,28 +1766,29 @@ Total.
 | test_triggers_quest.lua | 12 |
 | test_triggers_class.lua | 11 |
 | test_triggers_pvp.lua | 7 |
-| test_sheet.lua | 15 |
-| test_dock.lua | 36 |
-| test_list_model.lua | 7 |
+| test_sheet.lua | 16 |
+| test_dock.lua | 45 |
+| test_list_model.lua | 8 |
 | test_rows_secure.lua | 21 |
-| test_slot_enables.lua | 17 |
-| test_bar.lua | 29 |
-| test_outfit_icons.lua | 15 |
+| test_slot_enables.lua | 25 |
+| test_bar.lua | 44 |
+| test_bar_look.lua | 5 |
+| test_outfit_icons.lua | 17 |
 | test_broker.lua | 13 |
 | test_triggers_parity.lua | 13 |
-| test_preview.lua | 14 |
-| test_outfit_menu.lua | 11 |
+| test_preview.lua | 36 |
+| test_outfit_menu.lua | 30 |
 | test_dialogs.lua | 24 |
 | test_trigger_dialog.lua | 11 |
 | test_diagnostics.lua | 12 |
 | test_credits.lua | 8 |
 | test_skin.lua | 14 |
 | test_skin_values.lua | 3 |
-| test_skin_switch.lua | 83 |
+| test_skin_switch.lua | 84 |
 | test_eol.lua | 2 |
 | test_layout_cap.lua | 13 |
 | test_diagnostics_contract.lua | 8 |
 | test_lizard_sighted.lua | 8 |
 | test_prose.lua | 15 |
 | Skipped | 1 |
-| **Total** | **1383** |
+| **Total** | **1481** |

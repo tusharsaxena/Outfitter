@@ -182,11 +182,11 @@ local SHELLS = {
     { "the trigger dialog's shell", "Shell" },
     { "the rebuild dialog's shell", "Shell" },
     { "the progress dialog's shell", "Shell" },
-    { "the bar's backplate", "Panel" },
+    { "the bar's window chrome", "Shell" },
     { "a compare tooltip", "Tooltip" },
 }
 
-test("skin: the window and the dialogs wear NS.ApplySkin's Shell, the bar a Panel", function()
+test("skin: the window, the dialogs and the bar wear NS.ApplySkin's Shell", function()
     -- red under: NS.ApplySkin dropped from modules/UIDialogs.lua's chrome (a dialog keeps Core's
     -- fixed edge), S.Tooltip from a compare tooltip.
     local _, _, Skin, built = buildAll()
@@ -233,34 +233,34 @@ test("skin: the bar's icons are HUD icons, cropped and edged from the skin", fun
     -- without hud (the bar would wear a window's icon.outline), or S.SquareIcon without crop.
     local _, _, Skin, built = buildAll()
     local btn = built["a bar button"]
-    local o = iconBorder(Skin, btn)
+    -- On the button's own skin-edge frame, so the player's edge can stand in for it (G6).
+    local o = iconBorder(Skin, btn.skinEdge)
     assertTrue(o ~= nil, "the bar button has no S.IconBorder")
     assertEqual(o.hud, true, "hud")
     assertEqual(o.fromSkin, true, "fromSkin")
     assertCropped(btn.icon, "a bar button's icon")
 end)
 
-test("skin: the sheet button is borderless, its glyph in of.sheet.button", function()
-    -- Sheet and window feedback design G1: borderless like the tab icons beside it, the coat hanger in
-    -- the accent. red under: modules/Dock.lua's NS.Skin.Button(button) without noBg / noBorder, or
-    -- without the icon remap (the glyph is drawn in btn.icon gray), or the old SquareIcon outline.
-    local _, _, Skin, built = buildAll()
-    local btn = built["the sheet button"]
-    local calls = Skin.painted[btn].calls
-    local opts = calls.Button and calls.Button[1]
-    assertTrue(type(opts) == "table" and opts.noBg == true and opts.noBorder == true, "S.Button(btn, { noBg, noBorder })")
-    assertTrue(type(opts.tokens) == "table" and opts.tokens.icon == "of.sheet.button", "the icon token remap")
-    assertTrue(calls.SquareIcon == nil, "S.SquareIcon outlines the glyph")
+test("skin: the sheet button wears the host's look and is never painted through the skin", function()
+    -- Smoke round 2 design G2 (D4): the accepted deviation DEV-SKIN-SHEET-BUTTON (skinning-§1/§9,
+    -- docs/ARCHITECTURE.md -> Documented deviations). It left Kit.skinSwitch.surfaces with it.
+    -- red under: NS.Skin.Button(button) kept in modules/Dock.lua's buildSheet.
+    local _, M, Skin = buildAll()
+    local btn = M.OutfitterRebornSheetButton
+    assertTrue(btn ~= nil, "no sheet button")
+    assertTrue(Skin.painted[btn] == nil, "the sheet button is painted through the skin")
 end)
 
 test("window: the header gear has no border", function()
     -- Sheet and window feedback design G10: the window's small icon buttons lose their box and
-    -- bevel; the text buttons (New outfit..., Slots: All / None) keep theirs. red under:
-    -- modules/Window.lua's NS.Skin.Button(gear) without { noBg, noBorder }.
+    -- bevel; the text buttons (New outfit..., Slots: All / None) keep theirs. Smoke round 2 design
+    -- G5: the gear is painted as the close X is (S.CloseButton: close.rest, close.hot), which draws
+    -- no box. red under: modules/Window.lua's NS.Skin.Button(gear) (a box, and no X tint).
     local _, _, Skin, built = buildAll()
     local gear = built["the window's settings button"]
-    local opts = Skin.painted[gear].calls.Button and Skin.painted[gear].calls.Button[1]
-    assertTrue(type(opts) == "table" and opts.noBg == true and opts.noBorder == true, "S.Button(gear, { noBg, noBorder })")
+    local calls = Skin.painted[gear].calls
+    assertTrue(calls.CloseButton ~= nil, "the gear is not painted as the close X is")
+    assertTrue(calls.Button == nil, "S.Button(gear) draws a box")
     -- The New outfit mark is an S.Mark on a texture (a tint, never a box); its button keeps its border.
     local new = built["the New outfit button"]
     local newOpts = Skin.painted[new].calls.Button[1]
@@ -351,6 +351,8 @@ test("skin: a switch marks the window, and its next tick recolors an item row's 
     -- red under: modules/Window.lua without its NS.Skin.OnLooksChanged listener (an item's name keeps
     -- the last skin's quality color until something else dirties the list).
     local NS, M, Skin = buildAll()
+    -- Building the bar's strip left test mode on, and the test window lists no item rows.
+    NS.Preview.Stop()
     NS.Window.Render()
     local row
     for _, r in ipairs(NS.WindowRows.rows) do

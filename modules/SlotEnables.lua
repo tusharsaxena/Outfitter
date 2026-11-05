@@ -9,19 +9,35 @@ local _, NS = ...
 -- STACKING (Outfitter.lua:1451-1456). The boxes sit on top of the sheet's item buttons, and on top of
 -- anything another addon draws over the sheet, so they need a level above everything in it. A fixed
 -- high level or strata does that but also pokes them through any window covering the sheet, so they
--- take the sheet's strata and one level above its highest frame instead, and follow it as it is
--- raised and lowered (MaybeRestack, from the dock's follow tick). The holder is skipped because the
--- boxes are in it. They hold no secure frame, so unlike the window this is allowed in combat.
--- They are first stacked in Show, not at build: the sheet's level only means something once the
--- sheet is shown.
+-- take the HOST's strata and one level above its highest frame of that strata instead, and follow it
+-- as it is raised, lowered or re-strataed (MaybeRestack, from the dock's follow tick). The host's
+-- strata is the highest of CharacterFrame's and the 18 Character<Slot> buttons' (smoke round 2 design
+-- G3): ChonkyCharacterSheet puts every slot button in HIGH under a MEDIUM CharacterFrame (Chonky
+-- core/utils.lua:2059), where no level in MEDIUM can clear them, and raises its model scene to MEDIUM
+-- 9000, which a level search across strata would count; EllesmereUI raises CharacterFrame itself to
+-- HIGH. The level search still descends through every frame, since Chonky's HIGH slots sit under
+-- MEDIUM parents, and the level is capped at LAYERS.LEVEL.MAX. Chonky sets its strata lazily and
+-- defers its setup in combat, so a strata change restacks as a level change does. The holder is
+-- skipped because the boxes are in it. They hold no secure frame, so unlike the window this is
+-- allowed in combat. They are first stacked in Show, not at build: the sheet's level only means
+-- something once the sheet is shown.
+--
+-- THE EDGE. Each box carries a 1 px edge in the skin's accent (`text.accent`, through S.Mark, so a
+-- skin switch repaints it) over the skin's checkbox: the box alone is near-black on dark item icons.
+--
+-- TEST MODE (smoke round 2 design G7): the window shows sample outfits, so no box is shown for any
+-- selection while NS.Preview is on (the dock clears the selection as it starts; a wear's follow could
+-- still select a real outfit behind the samples' back), and they come back with the selection after.
 --
 -- CALLS (at call time; design §12): NS.Dock.Holder, NS.Stack.Selected, NS.Outfits.SlotState/
--- SetSlotEnabled/UnknownSlots, NS.Inventory.Cache, NS.Compat.PickupInventoryItem/InventorySlotID.
+-- SetSlotEnabled/UnknownSlots, NS.Inventory.Cache, NS.Compat.PickupInventoryItem/InventorySlotID,
+-- NS.Preview.IsActive.
 
 local SE = {}
 NS.SlotEnables = SE
 
-local LEVEL = NS.Constants.LAYERS.LEVEL
+local LAYERS = NS.Constants.LAYERS
+local LEVEL, STRATA_RANK = LAYERS.LEVEL, LAYERS.STRATA_RANK
 
 -- The sheet's three slot columns (sheet and window feedback design G8). Each box sits on the slot's
 -- inner corner: LEFT and BOTTOM boxes at TOPRIGHT, RIGHT boxes at TOPLEFT. NS.QuickSlots reads the LEFT
@@ -39,7 +55,7 @@ local MAX_DEPTH = 12
 
 local frame
 local order = {}           -- the checkboxes, in SLOT_NAMES order
-local hostLevel
+local hostLevel, hostProbe  -- the sheet's level and strata probe at the last Restack
 local installed = false
 
 local function cursorHasItem()
@@ -68,19 +84,30 @@ local function pushChildren(f, depth, frames, depths)
     end
 end
 
---- The highest frame level under `root`, the `skip` subtree and forbidden frames left out.
+-- A frame's strata, plain and one the client has, or nil.
+local function strataOf(f)
+    if type(f) ~= "table" then return nil end
+    local ok, v = pcall(f.GetFrameStrata, f)
+    local s = ok and NS.Secrets.PlainString(v) or nil
+    if s and STRATA_RANK[s] then return s end
+    return nil
+end
+
+--- The highest frame level under `root`, the `skip` subtree and forbidden frames left out. With
+--- `strata`, only frames of that strata count, but every frame is still descended into.
 --- Iterative, MAX_DEPTH deep; every read through pcall and SafeNumber.
 --- @param root table
 --- @param skip table|nil
+--- @param strata string|nil
 --- @return number
-function SE.HighestLevel(root, skip)
+function SE.HighestLevel(root, skip, strata)
     local best = 0
     local frames, depths = { root }, { 0 }
     while #frames > 0 do
         local f, depth = table.remove(frames), table.remove(depths)
         if f ~= skip and not forbidden(f) then
             local lv = levelOf(f)
-            if lv > best then best = lv end
+            if lv > best and (strata == nil or strataOf(f) == strata) then best = lv end
             if depth < MAX_DEPTH then pushChildren(f, depth, frames, depths) end
         end
     end
@@ -94,18 +121,43 @@ function SE.Relevel()
     for _, cb in ipairs(order) do cb:SetFrameLevel(base) end
 end
 
---- Take CharacterFrame's strata and one level above its highest descendant.
+--- The host's strata: the highest-ranked of CharacterFrame's and the 18 slot buttons' (a read that
+--- raises, or answers no strata, counts for nothing); nil when none answers, never a literal stand-in
+--- (frame-layering-§1: a host-matched surface reads its host's strata).
+--- @return string|nil
+function SE.HostStrata()
+    local best = strataOf(CharacterFrame)
+    for _, slot in ipairs(NS.ItemData.SLOT_NAMES) do
+        local s = strataOf(_G["Character" .. slot])
+        if s and (best == nil or STRATA_RANK[s] > STRATA_RANK[best]) then best = s end
+    end
+    return best
+end
+
+-- The cheap per-tick probe of the host's strata: the sheet's and one slot's (a host re-strataes its
+-- slots together, Chonky core/utils.lua:2059).
+local function strataProbe()
+    return (strataOf(CharacterFrame) or "") .. "/" .. (strataOf(_G.CharacterHeadSlot) or "")
+end
+
+--- Take the host's strata and one level above its highest descendant of that strata, capped. A host
+--- that answers no strata leaves the boxes the one they inherit, over every descendant's level.
 function SE.Restack()
     if not frame then return end
     hostLevel = NS.SafeNumber(CharacterFrame:GetFrameLevel(), 0)
-    frame:SetFrameStrata(CharacterFrame:GetFrameStrata())
-    frame:SetFrameLevel(SE.HighestLevel(CharacterFrame, NS.Dock.Holder()) + LEVEL.SLOT_ENABLES_OVER_HOST)
+    hostProbe = strataProbe()
+    local strata = SE.HostStrata()
+    if strata then frame:SetFrameStrata(strata) end
+    local level = SE.HighestLevel(CharacterFrame, NS.Dock.Holder(), strata) + LEVEL.SLOT_ENABLES_OVER_HOST
+    frame:SetFrameLevel(math.min(level, LEVEL.MAX))
     SE.Relevel()
 end
 
---- Restack only when the sheet's level moved (the follow tick calls this; no steady-state cost).
+--- Restack only when the sheet's level or the host's strata moved (the follow tick calls this; no
+--- steady-state cost).
 function SE.MaybeRestack()
-    if frame and frame:IsShown() and NS.SafeNumber(CharacterFrame:GetFrameLevel(), 0) ~= hostLevel then
+    if not (frame and frame:IsShown()) then return end
+    if NS.SafeNumber(CharacterFrame:GetFrameLevel(), 0) ~= hostLevel or strataProbe() ~= hostProbe then
         SE.Restack()
     end
 end
@@ -153,6 +205,27 @@ end
 
 -- ── build ─────────────────────────────────────────────────────────────────────────────────────
 
+-- The four 1 px sides, from the box's outer edge in: white the accent tints (S.Mark), over the box.
+local WHITE = "Interface\\Buttons\\WHITE8X8"
+local EDGE = {
+    { "TOPLEFT", "TOPRIGHT", "SetHeight" }, { "BOTTOMLEFT", "BOTTOMRIGHT", "SetHeight" },
+    { "TOPLEFT", "BOTTOMLEFT", "SetWidth" }, { "TOPRIGHT", "BOTTOMRIGHT", "SetWidth" },
+}
+
+local function accentEdge(cb)
+    local sides = {}
+    for i, e in ipairs(EDGE) do
+        local t = cb:CreateTexture(nil, "ARTWORK")
+        t:SetPoint(e[1], cb, e[1])
+        t:SetPoint(e[2], cb, e[2])
+        t[e[3]](t, 1)
+        t:SetTexture(WHITE)
+        NS.Skin.Mark(t, { token = "text.accent" })
+        sides[i] = t
+    end
+    return sides
+end
+
 local function newBox(slot)
     local cb = CreateFrame("CheckButton", "OutfitterRebornEnable" .. slot, frame)
     cb:SetSize(BOX_SIZE, BOX_SIZE)
@@ -164,6 +237,7 @@ local function newBox(slot)
     end
     cb.slot = slot
     NS.Skin.Checkbox(cb, { hover = true })
+    cb.edge = accentEdge(cb)
     cb.unknown = cb:CreateTexture(nil, "OVERLAY")
     cb.unknown:SetAllPoints(cb)
     cb.unknown:SetTexture(NS.Icon("help"))
@@ -191,7 +265,7 @@ end
 --- Show the boxes for `id` (the selection), stacking them first.
 --- @param id string
 function SE.Show(id)
-    if NS.IsStoodDown() or not id then return end
+    if NS.IsStoodDown() or not id or NS.Preview.IsActive() then return SE.Hide() end
     SE.Build()
     frame:Show()
     SE.Restack()
@@ -213,6 +287,7 @@ function SE.Install()
     local bus = NS.NewBusTarget()
     if not bus then return end
     bus:RegisterMessage(NS.MSG.SELECTION_CHANGED, onSelection)
+    bus:RegisterMessage(NS.MSG.PREVIEW_CHANGED, function() onSelection(nil, NS.Stack.Selected()) end)
     bus:RegisterMessage(NS.MSG.OUTFIT_EDITED, SE.Update)
     bus:RegisterMessage(NS.MSG.INVENTORY_CHANGED, SE.Update)
 end

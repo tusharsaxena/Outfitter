@@ -334,7 +334,7 @@ test("parity: the Widgets seam answers on both arms, nil being a real answer", f
     -- copied from the debug console's own Copy button). red under: restoring NS.ShowCopy in
     -- core/WidgetsSetup.lua.
     bothArms("NS", function(NS) return NS end, {
-        MakeDropdown = "function", OpenMenu = "function", CloseMenu = "function",
+        MakeDropdown = "function", OpenMenu = "function", CloseMenu = "function", CloseMenuFrom = "function",
         MakeTestStrip = "function", TEST_STRIP_HEIGHT = "number",
     })
     local l, d = pair()
@@ -348,11 +348,14 @@ test("parity: the Widgets seam answers on both arms, nil being a real answer", f
     assertNil(d.NS.MakeTestStrip(d.mocks.UIParent, "Test mode"), "the stub drew a strip")
     d.NS.CloseMenu()
     l.NS.CloseMenu()
+    -- The degraded arm owns no menu, so a claim of everything closes nothing.
+    assertFalse(d.NS.CloseMenuFrom(function() return true end), "the stub closed a menu it never opened")
 end)
 
 test("parity: OpenMenu draws the same fill on both arms", function()
     -- The fill is written once, against MenuUtil's description. red under: a recorder that drops a
-    -- disabled state, or a submenu row that runs its own (absent) click instead of opening its level.
+    -- disabled state, or a submenu row that runs its own (absent) click instead of carrying its level
+    -- (the library opens a `submenu` row's rows beside it, Widgets minor 23).
     local l, d = pair()
     local clicks = {}
     local function fill(root)
@@ -374,10 +377,10 @@ test("parity: OpenMenu draws the same fill on both arms", function()
         assertNil(rows[2].disabled); assertTrue(rows[3].disabled, "the disabled row")
         assertTrue(menus[1].opts.cursor, "the menu opens at the cursor")
         rows[2].onClick()
-        rows[4].onClick()   -- the submenu row opens its own level in the menu's place
-        assertEqual(#menus, 2, "the submenu level did not open")
-        assertEqual(menus[2].rows[1].label, "Outfit 1")
-        menus[2].rows[1].onClick()
+        assertNil(rows[4].onClick, "the submenu row runs a click of its own")
+        assertEqual(#menus, 1, "the menu opened again")
+        assertEqual(rows[4].submenu[1].label, "Outfit 1")
+        rows[4].submenu[1].onClick()
     end)
     W.ContextMenu = real
     if not ok then error(err, 0) end

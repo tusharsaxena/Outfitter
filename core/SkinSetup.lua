@@ -37,6 +37,8 @@ local addonName, NS = ...
 --   NS.QualityColor(q)      an item quality's r, g, b: the skin's q.* token where it sets one, else the
 --                           client's ITEM_QUALITY_COLORS; heirloom (7) is drawn as artifact (6), as the
 --                           old item rows drew it; nil for none.
+--   NS.SkinBandGeometry()   where S.Band lays the title band now, its inset and height (the library's
+--                           rule, EllesmereUI's flush 25 px included); live arm only.
 --   NS.SkinPaintAceTree(c)  `Skin:PaintAceTree` with the owner bound: an AceGUI tree this addon
 --                           acquired past the Options proxy (the Profiles page), painted for its skin.
 --   NS.MaybeShowSkinPicker() the first-run skin picker: `O.SkinPicker` while the profile's
@@ -124,9 +126,6 @@ NS.SKIN_TOKENS = {
     ["of.slot.unknown"]    = { default = { 1, 0.82, 0, 1 }, follow = "sem.statusWarn" },
     -- The outfit bar's worn mark over a button whose outfit is on.
     ["of.bar.worn"]        = { default = { 1, 0.82, 0, 1 }, follow = "icon.hot" },
-    -- The sheet button's coat hanger (sheet and window feedback design G1): the accent, not the rows'
-    -- white. Ka0s gold under Ka0s Default (NS.Constants.SHEET_BUTTON_TINT), each skin's accent else.
-    ["of.sheet.button"]    = { default = NS.Constants.SHEET_BUTTON_TINT, follow = "text.accent" },
     -- A dialog's error line (a duplicate name, an invalid trigger parameter).
     ["of.dialog.error"]    = { default = { 1, 0.33, 0.33, 1 }, follow = "sem.bad" },
 }
@@ -519,6 +518,29 @@ Skin:RegisterOwner(addonName, {
     -- console under the Skin tag (resolved at call time: core/DebugLogSetup.lua loads below).
     log    = function(line) if NS.Debug then NS.Debug("Skin", "%s", line) end end,
 })
+
+-- EllesmereUI's shell bar, flush with the window's top, while it paints this owner's Shell: the
+-- library's EUI_BAR_H (SkinPaintExtras.lua, bandGeometry).
+local EUI_BAR_H = 25
+
+--- Where S.Band lays this owner's title band now, as the library works it out (SkinPaintExtras.lua's
+--- bandGeometry): flush and EUI_BAR_H high while EllesmereUI paints the Shell and has not been
+--- refused, else `win.borderSize` in from a flat edge (1 from any other) and `title.height` high.
+--- The library exposes no reader of its own (DPS Race's core/SkinSetup.lua carries the same mirror).
+--- The outfit bar sizes its header from it (modules/Bar_Chrome.lua). Live arm only: without the
+--- library there is no band, and the bar lays a holder of its own.
+--- @return number inset, number height
+function NS.SkinBandGeometry()
+    local route = Skin.__euiRoute
+    local refused = type(Skin.euiRefused) == "table" and Skin.euiRefused[addonName]
+    if type(route) == "function" and route(addonName, "Shell") and not refused then
+        return 0, EUI_BAR_H
+    end
+    local style = Skin:Token(addonName, "win.borderStyle") or "flat"
+    local inset = style == "flat" and Skin:Token(addonName, "win.borderSize") or 1
+    local height = Skin:Token(addonName, "title.height")
+    return type(inset) == "number" and inset or 1, type(height) == "number" and height or 30
+end
 
 -- The one line a reload request earns on the path that has no popup of its own (a profile change
 -- leaving an EllesmereUI that painted this session). The Skin tab raises the library's popup for its

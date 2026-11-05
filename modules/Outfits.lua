@@ -606,7 +606,7 @@ end
 -- ── the icon (sheet and window feedback design G5, G6; plan Task 3.5) ─────────────────────────────
 
 local NAKED_ICON = 237360      -- cDefaultScriptIcons[cNakedOutfit] (OutfitterBar.lua:51)
-local PLAIN_ICON = 132662      -- the legacy plain icon: the last rung only when the coat hanger is absent
+local PLAIN_ICON = 132662      -- the legacy plain icon (GetOutfitTexture's last rung), published only
 local WILDCARD_ICON = 134400   -- "Outfitter chooses": stored as no icon (INV §7.6)
 O.NAKED_ICON, O.PLAIN_ICON = NAKED_ICON, PLAIN_ICON
 
@@ -673,9 +673,23 @@ local function ownIcon(rec)
     return drawn(rec.icon, rec.iconColor)
 end
 
--- What Outfitter chooses for an outfit with none: its trigger's descriptor icon (INSTANCE_DIFFICULTY's
--- replaces the legacy `Solo` key, which never matched), the Birthday Suit's, its single item's.
+-- A seeded spec outfit's spec icon (smoke round 2 design G1, D2): its seed key is the SPEC_n trigger
+-- descriptor's id, whose icon is cached and secret-sanitized (modules/Triggers.lua), so it holds with
+-- the trigger changed or removed. Below ownIcon, so the player's pick and an Equipment Manager
+-- mirror's set icon still win. nil before the spec data is ready: the next redraw corrects it.
+local function specIcon(rec)
+    local key = rec.builtin
+    if type(key) ~= "string" or not key:find("^SPEC_%d+$") then return nil end
+    local desc = NS.Triggers.Get(key)
+    return desc and plainIcon(desc.icon) or nil
+end
+
+-- What Outfitter chooses for an outfit with none: a seeded spec outfit's spec icon, its trigger's
+-- descriptor icon (INSTANCE_DIFFICULTY's replaces the legacy `Solo` key, which never matched), the
+-- Birthday Suit's, its single item's.
 local function chosenIcon(rec)
+    local spec = specIcon(rec)
+    if spec then return spec end
     local tid = rec.trigger and rec.trigger.id
     local desc = type(tid) == "string" and tid ~= "" and NS.Triggers.Get(tid)
     local icon = desc and plainIcon(desc.icon)
@@ -686,8 +700,9 @@ local function chosenIcon(rec)
 end
 
 --- An outfit's icon, the one resolver the row, the bar and the broker draw: its own (a glyph in its
---- color), then what Outfitter chooses, else the default outfit icon, the coat hanger, in white
---- (GetOutfitTexture, OutfitterBar.lua:363-404, whose last rung was the plain icon).
+--- color), then what Outfitter chooses, else the default outfit icon, the fileID 132724, in white
+--- (GetOutfitTexture, OutfitterBar.lua:363-404, whose last rung was the plain icon). The default is
+--- computed here and never stored.
 --- @param rec table|nil
 --- @return number|string texture, number r, number g, number b
 function NS.OutfitIcon(rec)
@@ -697,7 +712,7 @@ function NS.OutfitIcon(rec)
         tex = chosenIcon(rec)
         if tex then return tex, 1, 1, 1 end
     end
-    return NS.Constants.DEFAULT_OUTFIT_ICON or PLAIN_ICON, 1, 1, 1
+    return NS.Constants.DEFAULT_OUTFIT_ICON, 1, 1, 1
 end
 
 local function validIcon(icon)

@@ -12,6 +12,8 @@ local test, assertEqual, assertTrue, assertFalse, assertNil =
 local scene = dofile(T.root .. "/tests/dock_scene.lua")(T)
 
 local DOCK_OVER_HOST = 1
+
+local function near(a, b) return type(a) == "number" and math.abs(a - b) < 1e-6 end
 -- The fake sheet re-strataed by the host: a host value, never one of ours (C.LAYERS).
 local RAISED_HOST_STRATA = "HIGH"
 
@@ -426,13 +428,14 @@ test("dock: the sheet button sits right of the Equipment Manager tab", function(
     local sized = recordSize(M.OutfitterRebornSheetButton)
     M.__world:openCharacter()
     local p = buttonPoint(M)
-    -- red under: keep the old anchor, RIGHT of CharacterFrameCloseButton -2 (G1: it sat by the close X).
-    assertEqual(p[1], "LEFT"); assertEqual(p[2], M.PaperDollSidebarTab3); assertEqual(p[3], "RIGHT")
+    -- red under: keep the old anchor, RIGHT of CharacterFrameCloseButton -2 (G1: it sat by the close X),
+    -- or the square LEFT/RIGHT one before smoke round 2 (design G2: bottoms on the tabs' line).
+    assertEqual(p[1], "BOTTOMLEFT"); assertEqual(p[2], M.PaperDollSidebarTab3); assertEqual(p[3], "BOTTOMRIGHT")
     assertEqual(p[4], 4); assertEqual(p[5], 0)
-    assertEqual(sized.w, 33); assertEqual(sized.h, 33)
+    assertEqual(sized.w, 33); assertEqual(sized.h, 35)
 end)
 
-test("dock: on EllesmereUI the button follows the Equipment label", function()
+test("dock: on EllesmereUI the button is a label above the Equipment label", function()
     local _, M = scene()
     local tab = M.__sheets.eui()
     M.__loadedAddOns.EllesmereUIBlizzardSkin = true
@@ -440,9 +443,9 @@ test("dock: on EllesmereUI the button follows the Equipment label", function()
     -- red under: anchor the button once at build instead of on every sheet show (the kind is re-read).
     M.__world:openCharacter()
     local p = buttonPoint(M)
-    assertEqual(p[1], "LEFT"); assertEqual(p[2], tab); assertEqual(p[3], "RIGHT")
-    assertEqual(p[4], 2); assertEqual(p[5], 0)
-    assertEqual(sized.w, 20); assertEqual(sized.h, 20)
+    assertEqual(p[1], "BOTTOM"); assertEqual(p[2], tab); assertEqual(p[3], "TOP")
+    assertEqual(p[4], 0); assertEqual(p[5], 0)
+    assertEqual(sized.w, 64); assertEqual(sized.h, 25)
 end)
 
 test("dock: the button is parented to CharacterFrame and above the close button's level", function()
@@ -469,20 +472,203 @@ test("dock: the button shows with the paper doll and hides with it", function()
     assertTrue(button:IsShown())
 end)
 
-test("dock: the button's icon is the coat hanger, tinted, with no border", function()
+test("dock: the button's icon is the default outfit icon, the gold tint retired", function()
     local NS, M = scene()
     M.__world:openCharacter()
     local button = M.OutfitterRebornSheetButton
-    local hanger = NS.Icon("ph:coat-hanger")
-    assertTrue(hanger ~= nil, "ph:coat-hanger is not a shipped icon (the LibKa0s icons: line)")
-    assertEqual(NS.Constants.DEFAULT_OUTFIT_ICON, hanger)
-    -- red under: keep NS.Constants.LOGO_128 on the button.
-    assertEqual(button.icon:GetTexture(), hanger)
-    local tint = NS.Constants.SHEET_BUTTON_TINT
+    -- Smoke round 2 design G1 (D1): 132724, cropped as item art is, untinted.
+    -- red under: the coat hanger, tinted with SHEET_BUTTON_TINT / of.sheet.button.
+    assertEqual(button.icon:GetTexture(), 132724)
+    assertNil(NS.Constants.SHEET_BUTTON_TINT, "the retired tint constant is still published")
     local r, g, b = button.icon:GetVertexColor()
-    -- red under: drop the icon token remap from the button's Skin.Button (the icon is drawn btn.icon gray).
-    assertEqual(r, tint[1]); assertEqual(g, tint[2]); assertEqual(b, tint[3])
-    -- No box and no border: tests/test_skin.lua holds the Skin.Button options (noBg, noBorder).
+    assertTrue(r == 1 and g == 1 and b == 1, "the icon is tinted")
+    local l, t, _, bottom, right = button.icon:GetTexCoord()
+    assertTrue(near(l, 0.07) and near(t, 0.07) and near(right, 0.93) and near(bottom, 0.93), "the icon is not cropped")
+end)
+
+-- ── the host's look (smoke round 2 design G2, D3/D4) ──────────────────────────────────────────
+
+-- PaperDollSidebarTabTemplate's art (wow-ui-source@297d7aa:Interface/AddOns/Blizzard_UIPanels_Game/
+-- Mainline/PaperDollFrame.xml:393-430) and its selected TabBg (PaperDollFrame.lua:2678-2692).
+local SIDEBAR_TABS = "Interface\\PaperDollInfoFrame\\PaperDollSidebarTabs"
+local TAB_BG = { 0.015625, 0.796875, 0.61328125, 0.78125 }
+local TAB_BG_SELECTED = { 0.015625, 0.796875, 0.7890625, 0.95703125 }
+local HIDER = { 0.015625, 0.546875, 0.11328125, 0.1875 }
+local HIGHLIGHT = { 0.015625, 0.5, 0.1953125, 0.31640625 }
+
+-- A texture's left, right, top, bottom, from the mock's four corners.
+local function coords(tex)
+    local l, t, _, b, r = tex:GetTexCoord()
+    return { l, r, t, b }
+end
+
+local function assertCoords(tex, want, what)
+    local got = coords(tex)
+    for i = 1, 4 do
+        assertTrue(near(got[i], want[i]), ("%s coord %d: %s, want %s"):format(what, i, tostring(got[i]), tostring(want[i])))
+    end
+end
+
+local function assertTabLook(button, selected)
+    assertEqual(button.TabBg:GetTexture(), SIDEBAR_TABS)
+    assertEqual((button.TabBg:GetDrawLayer()), "BACKGROUND")
+    assertEqual(button.TabBg:GetWidth(), 50); assertEqual(button.TabBg:GetHeight(), 43)
+    local p = { button.TabBg:GetPoint(1) }
+    assertEqual(p[1], "BOTTOMLEFT"); assertEqual(p[4], -9); assertEqual(p[5], -2)
+    assertTrue(button.TabBg:IsShown(), "the tab background is hidden")
+    assertTrue(button.icon:IsShown(), "the tab's icon is hidden")
+    assertEqual(button.Hider:GetTexture(), SIDEBAR_TABS)
+    assertEqual((button.Hider:GetDrawLayer()), "OVERLAY")
+    assertCoords(button.Hider, HIDER, "Hider")
+    assertEqual(button.Highlight:GetTexture(), SIDEBAR_TABS)
+    assertEqual((button.Highlight:GetDrawLayer()), "HIGHLIGHT")
+    assertCoords(button.Highlight, HIGHLIGHT, "Highlight")
+    assertFalse(button.label:IsShown(), "the EllesmereUI label shows on a tab")
+    if selected then
+        assertCoords(button.TabBg, TAB_BG_SELECTED, "the selected TabBg")
+        assertFalse(button.Hider:IsShown(), "a selected tab keeps its Hider")
+        assertFalse(button.Highlight:IsShown(), "a selected tab keeps its Highlight")
+    else
+        assertCoords(button.TabBg, TAB_BG, "TabBg")
+        assertTrue(button.Hider:IsShown(), "an unselected tab has no Hider")
+        assertTrue(button.Highlight:IsShown(), "an unselected tab has no Highlight")
+    end
+end
+
+test("dock: on the stock sheet the button is a sidebar tab, selected while the window shows", function()
+    local NS, M = scene()
+    M.__sheets.place(M.CharacterFrame, 300, 500)
+    M.__world:openCharacter()
+    local button = M.OutfitterRebornSheetButton
+    -- red under: the borderless skinned icon (no TabBg, Hider or Highlight).
+    assertTabLook(button, false)
+    NS.Dock.Open()
+    assertTrue(NS.Dock.IsShown())
+    -- red under: no selected state (the tab keeps the unselected art while the window is open).
+    assertTabLook(button, true)
+    NS.Dock.Close()
+    assertTabLook(button, false)
+end)
+
+test("dock: on Chonky the button is the same sidebar tab", function()
+    local _, M = scene()
+    M.__sheets.chonky()
+    M.__loadedAddOns.ChonkyCharacterSheet = true
+    M.__world:openCharacter()
+    assertTabLook(M.OutfitterRebornSheetButton, false)
+end)
+
+-- The EllesmereUI sheet with its Equipment label carrying EUI's font, and the accent `green`.
+local function euiScene(green)
+    local NS, M = scene()
+    local tab = M.__sheets.eui()
+    tab._text = tab:CreateFontString(nil, "OVERLAY")
+    tab._text:SetFont("Fonts\\EUI.ttf", 10, "")
+    M.EllesmereUI = { ELLESMERE_GREEN = green }
+    M.__loadedAddOns.EllesmereUIBlizzardSkin = true
+    M.__sheets.place(M.CharacterFrame, 300, 500)
+    M.__world:openCharacter()
+    return NS, M, M.OutfitterRebornSheetButton
+end
+
+local function textColor(button)
+    return ("%.3f %.3f %.3f %.2f"):format(button.label:GetTextColor())
+end
+
+test("dock: on EllesmereUI the button is a text label in EUI's tab style", function()
+    local NS, M, button = euiScene({ r = 0.2, g = 0.8, b = 0.4 })
+    -- red under: the tab look on EllesmereUI's sheet (TabBg and the icon over its text labels).
+    assertTrue(button.label:IsShown(), "no label")
+    assertEqual(button.label:GetText(), NS.L["Outfits"])
+    local face, size, flags = button.label:GetFont()
+    assertEqual(face, "Fonts\\EUI.ttf", "the label's face is not EUI's"); assertEqual(size, 10); assertEqual(flags, "")
+    for _, key in ipairs({ "TabBg", "icon", "Hider", "Highlight" }) do
+        assertFalse(button[key]:IsShown(), key .. " shows on EllesmereUI")
+    end
+    -- Idle white at 0.6, hover at 1, active in EllesmereUI's accent (_paintTopButton's rule).
+    assertEqual(textColor(button), "1.000 1.000 1.000 0.60")
+    button:__fire("OnEnter")
+    assertEqual(textColor(button), "1.000 1.000 1.000 1.00")
+    button:__fire("OnLeave")
+    assertEqual(textColor(button), "1.000 1.000 1.000 0.60")
+    NS.Dock.Open()
+    assertTrue(NS.Dock.IsShown())
+    assertEqual(textColor(button), "0.200 0.800 0.400 1.00")
+    -- The accent is read at paint time: EllesmereUI updates its table in place.
+    M.EllesmereUI.ELLESMERE_GREEN.r = 0.9
+    button:__fire("OnLeave")
+    assertEqual(textColor(button), "0.900 0.800 0.400 1.00")
+    NS.Dock.Close()
+    assertEqual(textColor(button), "1.000 1.000 1.000 0.60")
+end)
+
+test("dock: without EllesmereUI's accent the active label takes EUI's own fallback", function()
+    local NS, _, button = euiScene(nil)
+    NS.Dock.Open()
+    -- EllesmereUIBlizzardSkin_CharacterSheet.lua _paintTopButton's fallback { 0.51, 0.784, 1 }.
+    assertEqual(textColor(button), "0.510 0.784 1.000 1.00")
+end)
+
+test("dock: the sheet button's label has a face before its text is set", function()
+    -- The client raises "Font not set" on SetText for a FontString made with no template and no
+    -- font yet; the mock stores the text regardless, so this scene models the client's refusal on
+    -- the sheet button's own font strings. red under: buildLooks setting the label's text with its
+    -- face left to applyLook (which only runs on EllesmereUI's text look, after the build).
+    local refused = {}
+    local _, M = scene({ mutate = function(Mk)
+        local prev = Mk.CreateFrame
+        Mk.CreateFrame = function(kind, name, parent, template)
+            local f = prev(kind, name, parent, template)
+            if name ~= "OutfitterRebornSheetButton" or type(f) ~= "table" then return f end
+            local make = f.CreateFontString
+            rawset(f, "CreateFontString", function(self, n, layer, tpl)
+                local fs = make(self, n, layer, tpl)
+                local setText = fs.SetText
+                rawset(fs, "SetText", function(s, v)
+                    if tpl == nil and s:GetFont() == nil and s:GetFontObject() == nil then
+                        refused[#refused + 1] = v
+                    end
+                    return setText(s, v)
+                end)
+                return fs
+            end)
+            return f
+        end
+    end })
+    M.__world:openCharacter()
+    assertTrue(M.OutfitterRebornSheetButton ~= nil, "no sheet button")
+    assertEqual(#refused, 0, "SetText on a font string with no font (the client's \"Font not set\")")
+end)
+
+test("dock: a sheet kind that changes after the show re-places and re-looks the button", function()
+    local _, M = scene()
+    M.__loadedAddOns.EllesmereUIBlizzardSkin = true
+    M.__world:openCharacter()
+    local button = M.OutfitterRebornSheetButton
+    assertTabLook(button, false)
+    -- EllesmereUI builds its labels from a CharacterFrame OnShow hook after ours: the next frame.
+    local tab = M.__sheets.eui()
+    M.__fireTimers()
+    -- red under: recheckSheet re-anchoring without the look (the tab art floats over the labels).
+    local p = buttonPoint(M)
+    assertEqual(p[2], tab)
+    assertTrue(button.label:IsShown(), "the label did not follow the kind change")
+    assertFalse(button.TabBg:IsShown(), "the tab art stayed up over EllesmereUI's labels")
+end)
+
+test("dock: the button is placed and shown in combat: it is a plain, insecure button", function()
+    local _, M = scene()
+    local button = M.OutfitterRebornSheetButton
+    -- The mock protects a Secure* frame by installing its own IsProtected (tests/mock_world.lua).
+    assertNil(rawget(button, "IsProtected"), "the sheet button is a protected frame")
+    local blocked = #M.__blocked
+    M.__lockdown = true
+    M.__world:openCharacter()
+    assertTrue(button:IsShown(), "the button was not shown in combat")
+    assertEqual(buttonPoint(M)[2], M.PaperDollSidebarTab3)
+    assertTabLook(button, false)
+    assertEqual(#M.__blocked, blocked, "a protected call was blocked")
+    M.__lockdown = false
 end)
 
 test("dock: the window's top is flush with the sheet's top", function()
@@ -559,6 +745,39 @@ test("window: the gear sits left of the close button", function()
     assertTrue(g[4] < c[4] - CLOSE_SIZE, "the gear overlaps the close button")
 end)
 
+local function rgb(tex) return ("%.3f %.3f %.3f"):format(tex:GetVertexColor()) end
+
+test("window: the gear's art is the close X's size, centered, in the X's rest and hover tint", function()
+    -- Smoke round 2 design G5 (D7): the gear drew 18 x 18 (SetAllPoints) against the X's 12 x 12.
+    local _, M, _, win = opened()
+    local gear, close = M.OutfitterRebornWindowSettings, win.close
+    assertTrue(close.icon ~= nil, "the close has no art texture to measure")
+    local art = close.icon:GetWidth()
+    assertEqual(art, 12, "LibKa0s Core's CLOSE_ART")
+    -- red under: gear.icon:SetAllPoints(gear) (the art fills the 18 px button).
+    assertEqual(gear.icon:GetWidth(), art); assertEqual(gear.icon:GetHeight(), art)
+    local p = { gear.icon:GetPoint(1) }
+    assertEqual(p[1], "CENTER"); assertEqual(p[2], gear)
+    -- red under: the gear left untinted (white) beside the X's gray, or no hover.
+    local rest = rgb(close.icon)
+    assertEqual(rgb(gear.icon), rest, "the gear's rest tint is not the X's")
+    gear:__fire("OnEnter"); close:__fire("OnEnter")
+    assertEqual(rgb(gear.icon), rgb(close.icon), "the gear's hover tint is not the X's")
+    assertTrue(rgb(gear.icon) ~= rest, "the gear has no hover tint")
+    gear:__fire("OnLeave"); close:__fire("OnLeave")
+    assertEqual(rgb(gear.icon), rgb(close.icon), "the gear did not go back to the X's rest tint")
+end)
+
+test("window: without a close art texture the gear's art falls back to 12 px", function()
+    local NS, M = scene()
+    rawset(NS, "MakeCloseButton", function() return nil end)
+    M.__sheets.place(M.CharacterFrame, 300, 500)
+    M.__world:openCharacter()
+    NS.Dock.Open()
+    local gear = M.OutfitterRebornWindowSettings
+    assertEqual(gear.icon:GetWidth(), 12); assertEqual(gear.icon:GetHeight(), 12)
+end)
+
 -- ── the paper-doll pane across the sheet's tabs (review follow-up to Tasks 3.1-3.2) ──────────────
 -- The button and the window belong to the paper doll: the Reputation and Currency tabs hide
 -- PaperDollFrame, not CharacterFrame, and the Character tab shows it again.
@@ -594,7 +813,7 @@ test("dock: switching to the Reputation tab on EllesmereUI does not re-anchor th
     assertTrue(button:IsShown())
     local p = buttonPoint(M)
     assertEqual(p[2], tab, "the button went to the stock Equipment Manager tab")
-    assertEqual(p[4], 2)
+    assertEqual(p[1], "BOTTOM"); assertEqual(p[4], 0)
 end)
 
 test("dock: a sheet tab built after the paper doll's OnShow is picked up on the next frame", function()

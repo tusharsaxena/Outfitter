@@ -1,5 +1,6 @@
 local addonName, NS = ...
--- core/WidgetsSetup.lua — NS.MakeDropdown / NS.OpenMenu / NS.CloseMenu / NS.MakeTestStrip / NS.MakeDragHandle from LibKa0s-Widgets-1.0 (BP §6.13).
+-- core/WidgetsSetup.lua — NS.MakeDropdown / NS.OpenMenu / NS.CloseMenu / NS.CloseMenuFrom / NS.MakeTestStrip from
+-- LibKa0s-Widgets-1.0 (BP §6.13).
 --
 -- A seam, nothing else (library-stack-§7): one file leases the major, so the art the controls draw
 -- is resolved once, here, and every control is handed this addon's skin owner. The library is
@@ -15,6 +16,11 @@ local addonName, NS = ...
 -- THE POPUP IS A PROCESS-WIDE SINGLETON parented to UIParent, so hiding a window does not reach it.
 -- Every non-click close path of a window that opens a menu calls NS.CloseMenu(): the character
 -- sheet's OnHide, the outfit window's OnHide and each dialog's OnHide (design §7.2, §7.3, §7.6).
+-- A surface that shares the screen with another menu's owner closes only its OWN menu instead:
+-- NS.OpenMenu remembers the anchor it opened from until that menu hides by any route (a row's click,
+-- an outside press, NS.CloseMenu), and NS.CloseMenuFrom(owns) closes it only when `owns` claims that
+-- anchor. The outfit bar does that from every path that hides it (modules/Bar.lua hideFrames), so a
+-- menu the window opened stays up when the bar goes.
 --
 -- DEGRADED (the library absent): NS.MakeDropdown and NS.MakeTestStrip answer nil, and the caller
 -- draws no control rather than a dead one; NS.OpenMenu hands the same `fill` to the client's
@@ -38,14 +44,21 @@ end
 
 -- ── the context menus ────────────────────────────────────────────────────────────────────────────
 -- A `fill(root)` is written against MenuUtil's own description (CreateTitle, CreateButton, and on a
--- button SetEnabled and a nested CreateButton), recorded here, then drawn through W.ContextMenu
--- (Widgets minor 21) one level at a time: that menu has no flyout, so a submenu's row opens its own
--- rows in the menu's place. Without the library the same `fill` goes to the client's menu. The
--- library hides the menu before a row's click runs, which retires the old 0.1/0.2 s auto-hide.
+-- button SetEnabled and a nested CreateButton), recorded here, then handed whole to W.ContextMenu:
+-- a button with a nested level becomes a `submenu` row, which the library (Widgets minor 23) opens
+-- beside its row with the parent kept drawn. Without the library the same `fill` goes to the
+-- client's MenuUtil, which cascades natively. The library hides every level before a row's click
+-- runs, which retires the old 0.1/0.2 s auto-hide.
+--
+-- KEEP-OPEN OR ACT-AND-CLOSE (design 2026-11-05 G4). A CreateCheckbox (a toggle) and a CreateRadio
+-- (one choice of several, ticked) keep every level open; anything else closes them, because a row
+-- that opens a dialog, popup or window would sit under the FULLSCREEN_DIALOG menu. On the client's
+-- menu that is the responder's answer: MenuResponse.Refresh from the keep-open rows, nil (close all)
+-- from the rest.
 
 --- A level of a description: the recorder a `fill` writes to, and each button's own nested level.
---- Beside MenuUtil's CreateTitle and CreateButton it records CreateDivider, CreateCheckbox (a toggle
---- row that keeps the menu open) and a row's SetTooltip, each under MenuUtil's own name and shape, so
+--- Beside MenuUtil's CreateTitle and CreateButton it records CreateDivider, CreateCheckbox and
+--- CreateRadio (keep-open rows) and a row's SetTooltip, each under MenuUtil's own name and shape, so
 --- the client's menu reads the same `fill` on the degraded arm.
 local function newLevel()
     local level = { items = {} }
@@ -61,7 +74,7 @@ local function newLevel()
         local sub = newLevel()
         sub.label, sub.onClick, sub.enabled = text, onClick, true
         function sub.SetEnabled(_, on) sub.enabled = on and true or false end
-        -- MenuUtil's tooltip is `fn(tooltip, description)`; it is read once, here, into plain text.
+        -- MenuUtil's tooltip is `fn(tooltip, description)`; it is read into plain text at each paint.
         function sub.SetTooltip(_, fn) sub.tooltip = fn end
         self.items[#self.items + 1] = sub
         return sub
@@ -73,10 +86,14 @@ local function newLevel()
         sub.isSelected, sub.setSelected, sub.data = isSelected, setSelected, data
         return sub
     end
+    --- A choice row: as a toggle, drawn as a radio with the menu's tick on the current choice.
+    function level:CreateRadio(text, isSelected, setSelected, data)
+        local sub = self:CreateCheckbox(text, isSelected, setSelected, data)
+        sub.radio = true
+        return sub
+    end
     return level
 end
-
-local showLevel
 
 -- A row's tooltip as plain text: the recorded MenuUtil-shaped function, handed a capture of the one
 -- tooltip call it makes.
@@ -90,45 +107,110 @@ local function tooltipText(item)
     return text
 end
 
--- A toggle row's label: its tick when selected.
-local function checkLabel(item)
-    if item.isSelected(item.data) then return NS.Skin.MarkText(NS.Icon("confirm"), 0) .. " " .. item.label end
+-- A row's label: a toggle's carries its tick when selected; a radio's tick is the library's column.
+local function rowLabel(item)
+    if item.isSelected and not item.radio and item.isSelected(item.data) then
+        return NS.Skin.MarkText(NS.Icon("confirm"), 0) .. " " .. item.label
+    end
     return item.label
 end
 
---- A toggle row. Its click may change other rows' state too (wearing a Complete outfit takes the
---- others off), and the library repaints the open menu from the rows' labels, so every toggle row of
---- the level (`checks`) is read again, as MenuUtil re-reads each checkbox.
-local function checkRow(item, out, checks)
-    out.label, out.keepOpen = checkLabel(item), true
-    checks[#checks + 1] = { item = item, out = out }
-    out.onClick = function()
-        item.setSelected(item.data)
-        for _, c in ipairs(checks) do c.out.label = checkLabel(c.item) end
+--- Write a recorded item's state onto its W.ContextMenu row: label, disabled state, tooltip, and a
+--- radio's tick predicate. The library reads these on every paint.
+local function paintRow(out, item)
+    out.label = rowLabel(item)
+    if item.title then return end
+    out.disabled = item.enabled == false or nil
+    out.tooltip = tooltipText(item)
+    if item.radio then out.selected = function() return item.isSelected(item.data) and true or false end end
+end
+
+--- After a keep-open pick: the fill written again (`level`, the fresh root) onto the open rows, so
+--- every level the library repaints reads the new labels, ticks and disabled states (a parent's
+--- "Automation: X", a key's holder). A level whose shape moved keeps what it had, its keep-open
+--- rows repainted from their own items first (NS.OpenMenu's refresh).
+local function relabel(rows, level)
+    if #rows ~= #level.items then return end
+    for i, out in ipairs(rows) do
+        local item = level.items[i]
+        if (item.divider == true) ~= (out.divider == true) or (item.title == true) ~= (out.title == true) then return end
+        if not item.divider then paintRow(out, item) end
+        if out.submenu and #item.items > 0 then relabel(out.submenu, item) end
+    end
+end
+
+local buildRows
+
+--- One W.ContextMenu row: a title, a divider, a submenu row carrying its level, a keep-open toggle or
+--- radio, or a button with its click. `menu.refresh` rewrites the whole open tree after a keep-open pick.
+local function menuRow(item, menu)
+    if item.title then return { label = item.label, title = true } end
+    if item.divider then return { divider = true } end
+    local out = {}
+    paintRow(out, item)
+    if item.isSelected then
+        out.keepOpen, out.radio = true, item.radio or nil
+        menu.own[#menu.own + 1] = { out = out, item = item }
+        out.onClick = function()
+            item.setSelected(item.data)
+            menu.refresh()
+        end
+    elseif #item.items > 0 then
+        out.submenu = buildRows(item, menu)
+    else
+        out.onClick = item.onClick
     end
     return out
 end
 
---- One W.ContextMenu row: a title, a divider, or a button with its click, a submenu's mark, its
---- disabled state and its tooltip. `checks` collects the level's toggle rows.
-local function menuRow(anchor, item, checks)
-    if item.title then return { label = item.label, title = true } end
-    if item.divider then return { divider = true } end
-    local out = { disabled = item.enabled == false or nil, tooltip = tooltipText(item) }
-    if item.isSelected then return checkRow(item, out, checks) end
-    local isSubmenu = #item.items > 0
-    out.label = item.label
-    if isSubmenu then out.label = out.label .. " " .. NS.Skin.MarkText(NS.Icon("chevron-right"), 0) end
-    out.onClick = isSubmenu and function() showLevel(anchor, item) end or item.onClick
-    return out
+buildRows = function(level, menu)
+    local rows = {}
+    for i, item in ipairs(level.items) do rows[i] = menuRow(item, menu) end
+    return rows
 end
 
---- Open `level` at the cursor. The library hides the menu before a row's click, so a submenu's row
---- may open the next level from its own callback.
-showLevel = function(anchor, level)
-    local rows, checks = {}, {}
-    for i, item in ipairs(level.items) do rows[i] = menuRow(anchor, item, checks) end
-    W.ContextMenu(anchor, rows, { owner = addonName, cursor = true })
+-- The value a keep-open row's responder answers on the client's menu: Refresh, guarded, since a
+-- client without MenuResponse is one where nil (close all) is the only safe answer.
+local function refreshResponse()
+    local R = MenuResponse
+    return R and R.Refresh or nil
+end
+
+--- The client's description, wrapped so a toggle or radio answers Refresh and keeps the menu open,
+--- and every button answers nil and closes it, at any depth. Every other method passes through.
+local function wrapDescription(desc)
+    local w = setmetatable({}, { __index = function(_, k)
+        return function(_, ...) return desc[k](desc, ...) end
+    end })
+    function w.CreateButton(_, text, onClick)
+        local cb = onClick and function(...) onClick(...) end
+        return wrapDescription(desc:CreateButton(text, cb))
+    end
+    local function keepOpen(method)
+        return function(_, text, isSelected, setSelected, data)
+            local function set(...)
+                setSelected(...)
+                return refreshResponse()
+            end
+            return wrapDescription(desc[method](desc, text, isSelected, set, data))
+        end
+    end
+    w.CreateCheckbox, w.CreateRadio = keepOpen("CreateCheckbox"), keepOpen("CreateRadio")
+    return w
+end
+
+-- THE OPENER: the anchor of the menu NS.OpenMenu has up, or nil. Cleared by the menu's own OnHide,
+-- hooked once on the frame W.ContextMenu answers (the library's one popup), so a menu dismissed by an
+-- outside press is forgotten before a dropdown drops the same popup; and by NS.CloseMenu.
+local opener
+local watched = setmetatable({}, { __mode = "k" })
+
+local function remember(m, anchor)
+    if m == nil then return end
+    opener = anchor
+    if type(m) ~= "table" or watched[m] or type(m.HookScript) ~= "function" then return end
+    watched[m] = true
+    m:HookScript("OnHide", function() opener = nil end)
 end
 
 --- A context menu at the cursor: `fill(root)` adds its rows as it would to a MenuUtil description.
@@ -138,12 +220,22 @@ end
 function NS.OpenMenu(anchor, fill)
     if not W then
         if not (MenuUtil and MenuUtil.CreateContextMenu) then return false end
-        MenuUtil.CreateContextMenu(anchor, function(_, root) fill(root) end)
+        MenuUtil.CreateContextMenu(anchor, function(_, root) fill(wrapDescription(root)) end)
         return true
     end
     local level = newLevel()
     fill(level)
-    showLevel(anchor, level)
+    local menu = { own = {} }
+    local rows = buildRows(level, menu)
+    function menu.refresh()
+        -- Every toggle and radio from its own item: a pick may move another's tick (wearing a
+        -- Complete outfit takes the others off), as MenuUtil re-reads each checkbox.
+        for _, o in ipairs(menu.own) do paintRow(o.out, o.item) end
+        local fresh = newLevel()
+        fill(fresh)
+        relabel(rows, fresh)
+    end
+    remember(W.ContextMenu(anchor, rows, { owner = addonName, cursor = true }), anchor)
     return true
 end
 
@@ -160,7 +252,19 @@ end
 --- Close the shared popup menu behind every dropdown and context menu in the process, if one is
 --- open. Safe when none ever opened, and a no-op on a degraded install.
 function NS.CloseMenu()
+    opener = nil
     if W then W.CloseMenu() end
+end
+
+--- Close the menu NS.OpenMenu has up only when `owns(anchor)` claims the anchor it opened from: a
+--- surface's own hide takes its own menu down and leaves another surface's alone. Nothing on a
+--- degraded install, where the client's menu is not this seam's to close (NS.CloseMenu above).
+--- @param owns function (anchor) -> boolean
+--- @return boolean closed
+function NS.CloseMenuFrom(owns)
+    if opener == nil or not owns(opener) then return false end
+    NS.CloseMenu()
+    return true
 end
 
 -- ── the test-mode strip ──────────────────────────────────────────────────────────────────────────
@@ -188,21 +292,4 @@ function NS.MakeTestStrip(parent, label, opts)
         for k, v in pairs(opts) do o[k] = v end
     end
     return W.TestStrip(parent, o)
-end
-
--- ── the drag handle ──────────────────────────────────────────────────────────────────────────────
-
---- The unlocked drag strip over a movable frame (the library's W.DragHandle, born hidden and
---- unanchored), or nil when the library is absent: the frame then simply has no strip. Its help mark
---- is the catalog's help icon and its colors follow this addon's skin owner. The outfit bar's (§7.7).
---- @param parent table the frame to parent it to
---- @param spec table W.DragHandle's spec (`label` and `moveFrame` required); its own fields win
---- @return table|nil
-function NS.MakeDragHandle(parent, spec)
-    if not (W and W.DragHandle) then return nil end
-    local o = { helpIcon = NS.Icon("help"), owner = addonName }
-    if type(spec) == "table" then
-        for k, v in pairs(spec) do o[k] = v end
-    end
-    return W.DragHandle(parent, o)
 end

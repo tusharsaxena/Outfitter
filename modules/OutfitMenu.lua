@@ -3,10 +3,16 @@ local _, NS = ...
 --
 -- Open(anchor, id) from a list row's right click or menu mark, and a bar button's right click. The
 -- menu is written as a MenuUtil description `fill(root)` and drawn through NS.OpenMenu
--- (core/WidgetsSetup.lua): W.ContextMenu one level at a time, a submenu row opening its level in the
--- menu's place, and the client's MenuUtil on a degraded install. The library hides the menu before a
--- row's click runs, which retires the legacy 0.1 s / 0.2 s auto-hide; a toggle row (CreateCheckbox)
--- keeps it open and shows its new state.
+-- (core/WidgetsSetup.lua): W.ContextMenu with the whole tree, each nested level opening beside its
+-- parent with the parent kept (Widgets minor 23), and the client's MenuUtil on a degraded install.
+-- The library hides the menu before a row's click runs, which retires the legacy 0.1 s / 0.2 s
+-- auto-hide.
+--
+-- KEEP-OPEN OR ACT-AND-CLOSE (design 2026-11-05 G4). A choice made in place keeps the menu open and
+-- ticks the current one: the toggles (CreateCheckbox) and the radios (CreateRadio) of Key binding,
+-- Title and a trigger without settings, after which every open level shows its new labels. A row
+-- that opens a dialog, popup or window (Rename, Delete, Update, Rebuild, Trigger settings, Change
+-- icon, a trigger with settings) closes it, and so do the bank moves.
 --
 -- FOUR SECTIONS, legacy's rows less Void Storage and the script editor (H1):
 --   General     the name; Rename...; Key binding (None, Outfit 1-10 with each key's holder); Title
@@ -52,16 +58,24 @@ local function tip(text)
     return function(tooltip) tooltip:SetText(text) end
 end
 
+-- The outfit's record, or an empty one once it is gone: the menu stays open across keep-open picks
+-- and the library reads each tick on every paint, while the Equipment Manager sync can prune the
+-- outfit from under it. Every write still goes through a seam that refuses an unknown id.
+local NO_RECORD = {}
+local function recOf(id) return NS.Outfits.Get(id) or NO_RECORD end
+
 -- ── General ───────────────────────────────────────────────────────────────────────────────────
 
 local function fillBinding(root, id)
     local O = NS.Outfits
     local kb = root:CreateButton(L["Key binding"])
-    kb:CreateButton(L["None"], function() O.SetBinding(id, nil) end)
+    local function bound(n) return O.BindingOf(id) == n end
+    local function bind(n) O.SetBinding(id, n) end
+    kb:CreateRadio(L["None"], function() return bound(nil) end, function() bind(nil) end)
     for n = 1, MAX_BINDING do
         local holder = O.Get(O.BoundTo(n))
         local label = holder and L["Outfit %d (%s)"]:format(n, tostring(holder.name or "")) or L["Outfit %d"]:format(n)
-        kb:CreateButton(label, function() O.SetBinding(id, n) end)
+        kb:CreateRadio(label, bound, bind, n)
     end
 end
 
@@ -84,13 +98,15 @@ end
 
 local function fillTitles(root, id)
     local level = root:CreateButton(L["Title"])
-    level:CreateButton(L["None"], function() setTitle(id, nil) end)
+    local function worn(titleID) return recOf(id).titleID == titleID end
+    local function pick(titleID) setTitle(id, titleID) end
+    level:CreateRadio(L["None"], function() return worn(nil) end, function() pick(nil) end)
     local n = 0
     for _, t in ipairs(Compat.KnownTitles()) do
         if n == TITLES_PER_LEVEL then
             level, n = level:CreateButton(L["More"]), 0
         end
-        level:CreateButton(t.name, function() setTitle(id, t.id) end)
+        level:CreateRadio(t.name, worn, pick, t.id)
         n = n + 1
     end
 end
@@ -123,8 +139,8 @@ end
 
 -- A record flag as a toggle row.
 local function flagToggle(root, label, id, flag)
-    root:CreateCheckbox(label, function() return NS.Outfits.Get(id)[flag] == true end,
-        function() NS.Outfits.SetFlag(id, flag, NS.Outfits.Get(id)[flag] ~= true) end)
+    root:CreateCheckbox(label, function() return recOf(id)[flag] == true end,
+        function() NS.Outfits.SetFlag(id, flag, recOf(id)[flag] ~= true) end)
 end
 
 local function fillGeneral(root, rec)
@@ -163,18 +179,34 @@ local function pickTrigger(id, tid)
     if hasParams(NS.Triggers.Get(tid)) then NS.TriggerDialog.Open(id) end
 end
 
+-- The outfit's trigger id, or "" without one (the No trigger row's value).
+local function triggerOf(id)
+    local t = recOf(id).trigger
+    return t and t.id or ""
+end
+
+-- One trigger pick: a trigger with settings acts and closes (its dialog opens); one without is a
+-- radio that keeps the menu open.
+local function triggerRow(level, id, d)
+    local b
+    if hasParams(d) then
+        b = level:CreateButton(d.name .. "...", function() pickTrigger(id, d.id) end)
+    else
+        b = level:CreateRadio(d.name, function() return triggerOf(id) == d.id end,
+            function() pickTrigger(id, d.id) end)
+    end
+    b:SetTooltip(tip(d.desc))
+end
+
 local function fillTriggerPicker(root, rec)
     local id = rec.id
-    local desc = NS.Triggers.Get(rec.trigger and rec.trigger.id)
+    local desc = NS.Triggers.Get(triggerOf(id))
     local menu = root:CreateButton(L["Automation: %s"]:format(desc and desc.name or L["None"]))
-    menu:CreateButton(L["No trigger"], function() pickTrigger(id, "") end)
+    menu:CreateRadio(L["No trigger"], function() return triggerOf(id) == "" end, function() pickTrigger(id, "") end)
     local classFile = Compat.PlayerClass()
     for _, cat in ipairs(NS.Triggers.Categories(classFile)) do
         local level = menu:CreateButton(OM.CategoryLabel(cat))
-        for _, d in ipairs(NS.Triggers.List(cat, classFile)) do
-            local b = level:CreateButton(d.name .. (hasParams(d) and "..." or ""), function() pickTrigger(id, d.id) end)
-            b:SetTooltip(tip(d.desc))
-        end
+        for _, d in ipairs(NS.Triggers.List(cat, classFile)) do triggerRow(level, id, d) end
     end
 end
 
@@ -182,7 +214,7 @@ end
 local function triggerToggle(root, label, id, flag, enabled)
     local path = "outfit.trigger." .. flag
     local function on()
-        local t = NS.Outfits.Get(id).trigger
+        local t = recOf(id).trigger
         return t ~= nil and t[flag] == true
     end
     local row = root:CreateCheckbox(label, on, function() NS.SetByPath(path, not on(), id) end)
@@ -194,7 +226,7 @@ local function fillAutomation(root, rec)
     root:CreateDivider()
     fillTriggerPicker(root, rec)
     root:CreateButton(L["Trigger settings..."], function() NS.TriggerDialog.Open(id) end)
-    local has = rec.trigger ~= nil and rec.trigger.id ~= nil
+    local has = triggerOf(id) ~= ""
     triggerToggle(root, L["Turn trigger off"], id, "disabled", has)
     triggerToggle(root, L["Disable outfit in combat"], id, "combatDisabled", has)
 end
@@ -205,7 +237,7 @@ local function fillBar(root, rec)
     local id = rec.id
     root:CreateDivider()
     local function shown()
-        local bar = NS.Outfits.Get(id).bar
+        local bar = recOf(id).bar
         return not (bar and bar.hide)
     end
     root:CreateCheckbox(L["Show in outfit bar"], shown,
@@ -219,9 +251,12 @@ end
 --- @return boolean opened
 function OM.Open(anchor, id)
     if NS.IsStoodDown() then return false end
-    local rec = NS.Outfits.Get(id)
-    if not rec then return false end
+    if not NS.Outfits.Get(id) then return false end
+    -- The record is read on every fill: a keep-open pick fills the menu again to relabel it. A fill
+    -- after the outfit is gone adds nothing, and the open rows keep what they show.
     return NS.OpenMenu(anchor, function(root)
+        local rec = NS.Outfits.Get(id)
+        if not rec then return end
         fillGeneral(root, rec)
         fillRebuild(root, rec)
         fillAutomation(root, rec)

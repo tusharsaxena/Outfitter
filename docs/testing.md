@@ -165,18 +165,19 @@ has no row here, or a row leaves its §9.3 group or order.
 | Suite | What it covers |
 |---|---|
 | `test_sheet` | The sheet adapter: stock, EllesmereUI and Chonky told apart (addon loaded and its frame there: EllesmereUI's tab built, so its hidden state off the Character tab still reads eui; Chonky's backdrop shown), the fallback to stock when a sheet addon's skin is off, the button anchor per sheet, the dock edge past an open Chonky side panel |
-| `test_dock` | The window dock: strata and level from the host, the secure queue under lockdown, combat hide and restore, the follow driver, Escape |
-| `test_list_model` | The list model: section order, both sorts, nil names last, collapse |
+| `test_dock` | The window dock: strata and level from the host, the secure queue under lockdown, combat hide and restore, the follow driver, Escape; the sheet button in each host's tab look (sidebar tab on stock and Chonky, selected while the window shows; EllesmereUI's text tab), the header gear at the close X's size and tint |
+| `test_list_model` | The list model: section order, both sorts, nil names last, collapse; the sample outfits with no item section in test mode |
 | `test_rows_secure` | The secure row children: built once, never moved after the build, disarmed in lockdown |
-| `test_slot_enables` | The slot checkboxes: one per slot on the character sheet, the tri-state, All and None, the restack |
-| `test_outfit_menu` | The outfit context menu: the rows per kind, the bank rows, the binding labels, the title submenu, the trigger switch |
+| `test_slot_enables` | The slot checkboxes: one per slot on the character sheet, the tri-state, All and None, the restack to the host strata (the slot buttons' included) and its level cap, the accent edge |
+| `test_outfit_menu` | The outfit context menu: the rows per kind, the bank rows, the binding labels, the title submenu, the trigger switch; the whole tree as cascading levels, keep-open radios and toggles against act-and-close rows, MenuUtil's Refresh; the bar's menu closing on every path that hides the bar, and only the bar's |
 | `test_dialogs` | The new-outfit and rename dialogs, the popups' data, the icon browser (Change icon...), the row's Equipment Manager checkbox |
 | `test_trigger_dialog` | The trigger dialog: the draft, validation, Done writes through `SetMany` only, X and Escape discard, the nine field types |
-| `test_bar` | The outfit bar: defaults, buttons, stacking, the icon ladder, drag, alpha and fades, pet battles, the menu, disabled-trigger outfits |
-| `test_outfit_icons` | The outfit icon model: one resolver for row, bar and broker (a 1.1.0 fileID as before, a tinted glyph, the trigger, item and coat-hanger fall-through), `NS.Outfits.SetIcon`, the wildcard as nil, an Equipment Manager outfit's per-character glyph override and its clearing |
+| `test_bar` | The outfit bar: defaults, buttons, stacking, the icon ladder, alpha and fades, pet battles, the menu, disabled-trigger outfits; the layout arithmetic (per line, padding, spacing, size, grow direction and its saved corner), the window look and header band with lock and close, the labels, the icon border and the worn highlight |
+| `test_bar_look` | The outfit bar's look, split from `test_bar` for the file budget: the label's face through `S.Resolve` (Ignore fonts included) and its color, the border color's skin companion on the player's plate and icon edge, the button's frame-level rungs and worn-mark overlay, and test mode without the library (no strip room, the title says test mode) |
+| `test_outfit_icons` | The outfit icon model: one resolver for row, bar and broker (a 1.1.0 fileID as before, a tinted glyph, a seeded spec outfit's spec icon, the trigger, item and default 132724 fall-through), `NS.Outfits.SetIcon`, the wildcard as nil, an Equipment Manager outfit's per-character glyph override and its clearing |
 | `test_broker` | The Outfits data source: its name and type, not on the minimap, text and icon following the worn outfit, the menu's categories and visible outfits with their checks and status colors, wear/remove/set-current clicks, right-click, the tooltip, a combat wear as the window's |
-| `test_preview` | Test mode: the placeholder outfits, nothing worn and nothing saved, refused and ended in combat, the ends |
-| `test_quickslots` | The flyout quick slots: the sort against the legacy capture, the upgrade fallback, the specials, the guards and the latch |
+| `test_preview` | Test mode: the placeholder outfits, nothing worn and nothing saved, refused and ended in combat, the ends; the window's samples, alone at the stock sheet's spot or docked, its strip, X and Escape dismissing it for the session, every row action refused, New outfit off and the selection cleared |
+| `test_quickslots` | The flyout quick slots: the sort against the legacy capture, the upgrade fallback, the specials, the guards and the latch; the drawer: every arrow shown while the window shows, the `HideAll` post-hook, the flyout level with its slot in both columns and Blizzard's point back |
 | `test_tooltips` | The "Used by outfits" line on bag, inventory and hyperlink tooltips (never another unit's), its colors and cache; the compare tooltips; the outfit tooltip |
 | `test_skinsetup` | The skin seam: the owner registration, the `of.*` tokens, the choice and the picker |
 | `test_skin` | Only our frames are skinned; the window, bar, dialogs and menus follow a skin switch |

@@ -148,17 +148,74 @@ end)
 
 -- ── Outfit Bar (design §4.2) ──────────────────────────────────────────────────────────────────
 
-test("settings: the Outfit Bar page is one Display tab, the position row never drawn", function()
+test("settings: the Outfit Bar page's tabs and rows, the position row never drawn", function()
     local out = {}
     for _, r in ipairs(NS.SchemaForPage("bar")) do out[#out + 1] = r.path .. "=" .. r.group end
-    assertEqual(table.concat(out, ","), "bar.shown=Display,bar.vertical=Display,bar.showBackground=Display,"
-        .. "bar.combatAlpha=Display,bar.position=Display")
+    -- red under: a layout row registered on the Display tab
+    assertEqual(table.concat(out, ","), "bar.shown=Display,bar.worn.style=Display,"
+        .. "bar.combatAlpha=Display,bar.position=Display,"
+        .. "bar.vertical=Layout,bar.layout.perLine=Layout,bar.layout.growH=Layout,bar.layout.growV=Layout,"
+        .. "bar.layout.padding=Layout,bar.layout.spacing=Layout,"
+        .. "bar.icons.size=Icons,bar.icons.borderShow=Icons,bar.icons.borderStyle=Icons,bar.icons.borderSize=Icons,"
+        .. "bar.icons.borderColor=Icons,bar.icons.useClassColorBorder=Icons,bar.icons.borderStyleFromSkin=Icons,"
+        .. "bar.icons.borderColorFromSkin=Icons,"
+        .. "bar.labels.show=Labels,bar.labels.font=Labels,bar.labels.fontSize=Labels,bar.labels.fontColor=Labels,"
+        .. "bar.labels.useClassColorFont=Labels,bar.labels.fontFlags=Labels,bar.labels.fontShadow=Labels,"
+        .. "bar.labels.fontFromSkin=Labels,bar.labels.fontColorFromSkin=Labels,bar.labels.fontShadowFromSkin=Labels,"
+        .. "bar.showBackground=Frame,bar.bgColor=Frame,bar.useClassColorBg=Frame,bar.bgFromSkin=Frame,"
+        .. "bar.frame.borderShow=Frame,bar.frame.borderStyle=Frame,bar.frame.borderSize=Frame,"
+        .. "bar.frame.borderColor=Frame,bar.frame.useClassColorBorder=Frame,bar.frame.borderStyleFromSkin=Frame,"
+        .. "bar.frame.borderColorFromSkin=Frame")
+    -- skinning-§6: every color's companion, default on, in the row and in the defaults tree.
+    for _, path in ipairs({ "bar.bgFromSkin", "bar.frame.borderStyleFromSkin", "bar.frame.borderColorFromSkin",
+                            "bar.icons.borderStyleFromSkin", "bar.icons.borderColorFromSkin",
+                            "bar.labels.fontFromSkin", "bar.labels.fontColorFromSkin", "bar.labels.fontShadowFromSkin" }) do
+        assertEqual(NS.FindSchemaRow(path).default, true, path .. " row default")
+        assertEqual(NS.GetSetting(path), true, path)
+    end
+    -- options-ui-§21: the composed rows carry the library's words, the companions after them ours.
+    assertEqual(NS.FindSchemaRow("bar.frame.borderStyle").composed, true)
+    assertEqual(NS.FindSchemaRow("bar.bgColor").composed, true)
+    assertNil(NS.FindSchemaRow("bar.bgFromSkin").composed)
+    assertNil(NS.FindSchemaRow("bar.frame.borderColorFromSkin").composed)
+    assertEqual(NS.FindSchemaRow("bar.bgFromSkin").label, "Use the skin's background")
+    local worn = NS.FindSchemaRow("bar.worn.style")
+    assertEqual(worn.label, "Worn outfit highlight")
+    assertTrue(worn.values.mark and worn.values.border and worn.values.both and worn.values.none, "the four styles")
+    -- The label font block: From skin flags, its rows dimmed while the labels are off, never the swatch.
+    assertEqual(NS.FindSchemaRow("bar.labels.fontFlags").default, "@skin")
+    NS.db.profile.bar.labels.show = false
+    assertTrue(NS.FindSchemaRow("bar.labels.fontSize").disabledIf(), "the size dims with the labels off")
+    assertTrue(NS.FindSchemaRow("bar.labels.font").disabledIf(), "the face dims with the labels off")
+    assertNil(NS.FindSchemaRow("bar.labels.fontColor").disabledIf, "the swatch is never grayed")
+    NS.db.profile.bar.labels.show = true
+    assertTrue(NS.FindSchemaRow("bar.labels.font").disabledIf(), "the face dims under Use the skin's font")
+    NS.db.profile.bar.labels.fontFromSkin = false
+    assertTrue(not NS.FindSchemaRow("bar.labels.font").disabledIf(), "the face is live with both off")
+    NS.db.profile.bar.labels.fontFromSkin = true
+    local function range(path, lo, hi, step)
+        local r = NS.FindSchemaRow(path)
+        assertTrue(r.min == lo and r.max == hi and r.step == step, path .. " range")
+    end
+    range("bar.layout.perLine", 0, 20, 1)
+    range("bar.layout.padding", 0, 20, 1)
+    range("bar.layout.spacing", 0, 20, 1)
+    range("bar.icons.size", 16, 64, 1)
+    assertEqual(NS.FindSchemaRow("bar.layout.perLine").label, "Per row or column (0 = one line)")
+    for _, path in ipairs({ "bar.layout.growH", "bar.layout.growV" }) do
+        local values = NS.FindSchemaRow(path).values
+        assertEqual(values.auto, "Automatic", path)
+    end
+    assertEqual(NS.FindSchemaRow("bar.layout.growH").values.left, "Left")
+    assertEqual(NS.FindSchemaRow("bar.layout.growV").values.up, "Up")
     assertEqual(NS.FindSchemaRow("bar.shown").label, "Show outfit bar")
     assertEqual(NS.FindSchemaRow("bar.vertical").tooltip, "One column per category.")
     assertEqual(NS.FindSchemaRow("bar.showBackground").label, "Show background")
     local ca = NS.FindSchemaRow("bar.combatAlpha")
     assertEqual(ca.label, "Opacity in combat (%)")
-    assertEqual(ca.tooltip, "Multiplied by Master opacity on General > Master controls.")
+    -- options-ui-§15: no "hide in combat" of the bar's own; the row points at General visibility.
+    -- red under: a tooltip that does not end with the Multiplied-by sentence (options-ui-§21).
+    assertEqual(ca.tooltip, "To hide the bar in combat, set General visibility on General > Master controls. Multiplied by Master opacity on General > Master controls.")
     assertTrue(ca.min == 0 and ca.max == 1 and ca.step == 0.05 and ca.isPercent == true, "the 0..1 percent slider")
     -- red under: the position row without skipRender (the panel would draw a text box for it).
     assertEqual(NS.FindSchemaRow("bar.position").skipRender, true)
@@ -168,6 +225,23 @@ test("settings: the Outfit Bar page is one Display tab, the position row never d
     assertEqual(NS.BAR_PAGE.panelName, "OutfitterRebornBarPanel")
     assertEqual(NS.BAR_PAGE.defaultsTooltip,
         "Restore every Outfit Bar setting to its default. The bar's position is reset too.")
+end)
+
+test("settings: the Outfit Bar page's Reset position writes the Master button's path, bar.position's default", function()
+    local inst = T.load()
+    local NS2 = inst.NS
+    local hook = NS2.BAR_PAGE.afterGroup and NS2.BAR_PAGE.afterGroup["Display"]
+    assertTrue(type(hook) == "function", "a button after the Display rows")
+    local spec
+    local real = NS2.Helpers.InlineButtonPair
+    NS2.Helpers.InlineButtonPair = function(_, a) spec = a end
+    hook({})
+    NS2.Helpers.InlineButtonPair = real
+    assertEqual(spec.text, "Reset position")
+    NS2.db.profile.windows.bar = { point = "BOTTOMRIGHT", x = -5, y = 5 }
+    spec.onClick()
+    -- red under: a page button with a position of its own (options-ui-§15's second switch)
+    assertEqual(NS2.GetSetting("bar.position"), "TOPLEFT 200 -200")
 end)
 
 test("settings: the global reset confirms with options-ui-§12's one wording, verbatim", function()

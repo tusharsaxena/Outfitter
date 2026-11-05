@@ -23,6 +23,11 @@ local _, NS = ...
 -- Arming and disarming are no-ops in combat lockdown. Disarm runs before a row goes blank, on every
 -- render, and at PLAYER_REGEN_DISABLED (modules/Dock.lua).
 --
+-- A SAMPLE ROW (test mode, smoke round 2 design G7; the entry's `placeholder`) draws its record's
+-- display fields (worn, triggered, em, status) instead of the live state, and every handler refuses
+-- it quietly: the row click, the worn box (which takes its drawn state back), the EM mark and the
+-- gear. Its tooltip is the bar's sample line. Only item rows arm, and test mode lists none.
+--
 -- CALLS (at call time; design §12): NS.Window.MarkDirty/ToggleCollapsed, NS.Stack.Wear/Remove/IsWorn/
 -- Select/Selected, NS.Outfits.Get/IsEM, NS.EM.StoreOnServer/StoreLocally, NS.OutfitMenu.Open,
 -- NS.OutfitTooltip.Show, NS.OutfitIcon (the one icon resolver), NS.Compat (pickup, use, sell
@@ -136,7 +141,7 @@ function Rows.OnClick(row, button)
     local spell = row.usingSpell
     row.usingSpell = nil
     local e = row.entry
-    if spell or not e then return end
+    if spell or not e or e.placeholder then return end
     CLICK[e.kind](row, e, button)
     NS.Window.MarkDirty(true)
 end
@@ -144,6 +149,7 @@ end
 local function onWornClick(row)
     local e = row.entry
     if NS.IsStoodDown() or not (e and e.kind == "outfit") then return end
+    if e.placeholder then return row.worn:SetChecked(e.rec.worn == true) end
     if row.worn:GetChecked() then
         NS.Stack.Wear(e.id, { hw = true, clearDisabled = true })
     else
@@ -168,7 +174,7 @@ end
 
 local function onEmClick(row)
     local e = row.entry
-    if NS.IsStoodDown() or not (e and e.kind == "outfit") then return end
+    if NS.IsStoodDown() or not (e and e.kind == "outfit") or e.placeholder then return end
     if locked() then
         NS.Print(L["Outfits can't be changed in combat."])
         return
@@ -204,6 +210,13 @@ function HOVER.category(row, e)
     GameTooltip:Show()
 end
 function HOVER.outfit(row, e)
+    if e.placeholder then
+        GameTooltip:SetOwner(row, "ANCHOR_RIGHT")
+        GameTooltip:SetText(tostring(e.rec.name))
+        GameTooltip:AddLine(L["Sample outfit (test mode). Nothing is equipped."], nil, nil, nil, true)
+        GameTooltip:Show()
+        return
+    end
     if not NS.OutfitTooltip.Show(e.id, row, "ANCHOR_RIGHT") then GameTooltip:Hide() end
 end
 function HOVER.item(row, e) itemTooltip(row, e.item) end
@@ -231,27 +244,36 @@ function RENDER.category(row, e)
     row.label:Show()
 end
 
+-- What an outfit row's marks say: the live state, or a sample's display fields (test mode).
+-- @return boolean worn, boolean em, boolean trigger shown, boolean trigger dimmed
+local function outfitMarks(e, rec)
+    if e.placeholder then return rec.worn == true, rec.em == true, rec.triggered == true, false end
+    local trigger = rec.trigger
+    local shown = (trigger and trigger.id) and true or false
+    local dim = shown and (NS.GetSetting("auto.enabled") == false or trigger.disabled == true)
+    return NS.Stack.IsWorn(e.id), NS.Outfits.IsEM(e.id), shown, dim
+end
+
 function RENDER.outfit(row, e)
-    local O, rec = NS.Outfits, NS.Outfits.Get(e.id)
+    local rec = e.rec or NS.Outfits.Get(e.id)
     if not rec then return end
-    row.worn:SetChecked(NS.Stack.IsWorn(e.id))
+    local worn, em, trig, dim = outfitMarks(e, rec)
+    row.worn:SetChecked(worn)
     row.worn:Show()
-    -- A fileID is Blizzard art, drawn edged and cropped; a glyph (the coat hanger by default) whole.
+    -- A fileID is Blizzard art (the default, 132724, among them), drawn edged and cropped; a glyph whole.
     local tex, r, g, b = outfitIcon(rec)
     local icon = type(tex) == "number" and row.outfitArt or row.outfitIcon
     icon:SetTexture(tex)
     icon:SetVertexColor(r, g, b)
     icon:Show()
-    row.em:SetAlpha(O.IsEM(e.id) and 1 or EM_DIM_ALPHA)
+    row.em:SetAlpha(em and 1 or EM_DIM_ALPHA)
     row.em:Show()
     local name = type(rec.name) == "string" and rec.name or ""
     if e.status == "disabled" then name = L["%s (Disabled)"]:format(name) end
     row.name:SetText(name)
     NS.Skin.Text(row.name, STATUS_TOKEN[e.status] or "body")
     row.name:Show()
-    local trigger = rec.trigger
-    if trigger and trigger.id then
-        local dim = NS.GetSetting("auto.enabled") == false or trigger.disabled == true
+    if trig then
         row.trig:SetAlpha(dim and DIM_ALPHA or 1)
         row.trig:Show()
     end
@@ -313,9 +335,9 @@ local function regions(row)
     row.icon:SetSize(16, 16)
     row.icon:SetPoint("LEFT", row, "LEFT", 14, 0)
     S.IconBorder(row.icon, { fromSkin = true })
-    -- An outfit's icon, in one of two textures at one place: a catalog glyph (the default coat hanger,
-    -- or a browser pick) drawn whole and borderless, as the sheet button draws it; a fileID, Blizzard
-    -- art, edged and zoom-cropped as the item's icon is. RENDER.outfit shows the one that fits.
+    -- An outfit's icon, in one of two textures at one place: a catalog glyph (a browser pick) drawn
+    -- whole and borderless; a fileID, Blizzard art (the default 132724 too), edged and zoom-cropped as
+    -- the item's icon is. RENDER.outfit shows the one that fits.
     row.outfitIcon = row:CreateTexture(nil, "ARTWORK")
     row.outfitIcon:SetSize(16, 16)
     row.outfitIcon:SetPoint("LEFT", row, "LEFT", 32, 0)
@@ -369,7 +391,7 @@ local function gearMenu(row)
     NS.Skin.Button(menu, { noBg = true, noBorder = true })
     menu:SetScript("OnClick", function()
         local e = row.entry
-        if NS.IsStoodDown() or not (e and e.kind == "outfit") then return end
+        if NS.IsStoodDown() or not (e and e.kind == "outfit") or e.placeholder then return end
         NS.OutfitMenu.Open(menu, e.id)
     end)
     return menu

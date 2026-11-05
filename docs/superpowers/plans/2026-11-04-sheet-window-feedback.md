@@ -43,7 +43,7 @@ Update the row and commit the plan at every checkpoint. A resumed run reads this
 | CP3b | M3 Tasks 3.5–3.6 (re-vendor, icon model, browser) | OR | done (c6c8d53..0f7a2da, pushed) |
 | CP3c | M3 Tasks 3.7–3.9 (slots/drawers, broker, docs), pushed | OR | done (8e21b14..1058dc8; whole-branch review: 13 OR + 6 QC defects confirmed and fixed; pushed) |
 | CP3d | Clear the two amber release gates from bundle 20261104-233516 | OR | done (729d23a placeFlyout split, f5420fb equipPlan re-pinned: the rise is the test recorder's registration survey; 5/5 test runs green; bundle 20261105-004501 **green**; pushed; stash dropped) |
-| CP4 | Owner's in-game smoke pass; fixes on the branches | all | **next — handed to the owner** |
+| CP4 | Owner's in-game smoke pass; fixes on the branches | all | done 2026-11-05: feedback taken into round 2 (`docs/superpowers/plans/2026-11-05-smoke-round-2.md`, branch `feat/2026-11-05-smoke-round-2`) |
 | CP5 | Owner go-ahead → merge all three, push, delete run branches/stashes/worktrees | all | todo |
 
 M1 and Tasks 3.1–3.4 are independent and run in parallel. M2 and Tasks 3.5–3.6 wait for CP1.

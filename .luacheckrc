@@ -71,8 +71,9 @@ files["core/Compat.lua"] = {
 -- The skin seam falls back to the client's item-quality colors where the skin sets no q.* token.
 files["core/SkinSetup.lua"] = { read_globals = { "ITEM_QUALITY_COLORS" } }
 
--- The degraded context menu hands its `fill` to the client's own menu (core/WidgetsSetup.lua).
-files["core/WidgetsSetup.lua"] = { read_globals = { "MenuUtil" } }
+-- The degraded context menu hands its `fill` to the client's own menu, whose keep-open rows answer
+-- MenuResponse.Refresh (core/WidgetsSetup.lua).
+files["core/WidgetsSetup.lua"] = { read_globals = { "MenuUtil", "MenuResponse" } }
 
 -- The Outfits broker's modifier-click asks to set the outfit to the worn items (plan Task 3.8).
 files["modules/Broker.lua"] = { read_globals = { "IsShiftKeyDown", "IsControlKeyDown", "IsAltKeyDown" } }
@@ -146,6 +147,11 @@ for _, f in ipairs({ "modules/Sheet.lua", "modules/Dock.lua", "modules/Window.lu
         },
     }
 end
+-- The sheet adapter reads EllesmereUI's live accent for the sheet button's label (smoke round 2 G2).
+table.insert(files["modules/Sheet.lua"].read_globals, "EllesmereUI")
+-- Where a stock sheet would open, for the test-mode window alone (smoke round 2 G7).
+table.insert(files["modules/Sheet.lua"].read_globals, "GetUIPanelLayoutAttribute")
+table.insert(files["modules/Sheet.lua"].read_globals, "CHARACTERFRAME_EXPANDED_WIDTH")
 
 -- The flyout hooks.
 for _, f in ipairs({ "modules/QuickSlots.lua", "modules/QuickSlots_Sort.lua" }) do
@@ -160,8 +166,9 @@ for _, f in ipairs({ "modules/QuickSlots.lua", "modules/QuickSlots_Sort.lua" }) 
     }
 end
 
--- The bar takes a dropped spell, item or macro as an icon.
-for _, f in ipairs({ "modules/Bar.lua", "modules/Bar_Buttons.lua" }) do
+-- The bar takes a dropped spell, item or macro as an icon, fades, and its buttons and header controls
+-- show a tooltip.
+for _, f in ipairs({ "modules/Bar.lua", "modules/Bar_Chrome.lua", "modules/Bar_Buttons.lua" }) do
     files[f] = {
         read_globals = {
             "GetCursorInfo", "C_Spell", "C_Item", "GetMacroInfo", "IsAltKeyDown",

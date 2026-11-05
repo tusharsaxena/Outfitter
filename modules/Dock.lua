@@ -18,6 +18,12 @@ local _, NS = ...
 -- to CharacterFrame and set above the close button's level: in the sheet holder it shared
 -- PaperDollFrame's level (useParentLevel), and the frame's NineSlice (500) and close button (510)
 -- drew over it, which hid it on the stock sheet. It is a plain button: no secure frame is touched.
+-- It wears the HOST'S look, not the skin (smoke round 2 design G2; the accepted deviation
+-- DEV-SKIN-SHEET-BUTTON, skinning-§1/§9, docs/ARCHITECTURE.md -> Documented deviations): on the stock
+-- and Chonky sheets a hand-built copy of PaperDollSidebarTabTemplate (its OnLoad indexes
+-- PAPERDOLL_SIDEBARS by id, so it cannot be inherited), selected while the window shows; on
+-- EllesmereUI a text label in its tab style, idle, hover and active (its accent) as _paintTopButton
+-- paints its own. The button builds both looks once and placeButton picks one (NS.Sheet.ButtonAnchor).
 --
 -- THE PAPER-DOLL PANE. The button and the window belong to the Character tab: the Reputation and
 -- Currency tabs hide PaperDollFrame but not CharacterFrame, the button's parent, so the doll's OnHide
@@ -26,6 +32,18 @@ local _, NS = ...
 -- its tabs from a CharacterFrame OnShow hook on the first open, EllesmereUIBlizzardSkin_
 -- CharacterSheet.lua:4907, :3171), so the sheet show looks again on the next frame and re-anchors
 -- only when the kind moved.
+--
+-- TEST MODE (smoke round 2 design G7, D9, D10). While NS.Preview is on, the window shows its sample
+-- outfits under its own strip (NS.Window.SetTestMode) whether or not the player asked for it: beside
+-- the sheet when the paper doll is up, else ALONE, where a stock sheet would open (NS.Sheet.
+-- AloneCorner, in UIParent's units), through the same one TOPLEFT -> UIParent BOTTOMLEFT point and
+-- the same Refresh, so never in lockdown (test mode is refused in combat and ends at
+-- PLAYER_REGEN_DISABLED, before lockdown). The follow then reads the alone corner, not the hidden
+-- sheet's. X, Escape or the sheet button's close hide it for the rest of that test session
+-- (`testDismissed`) without ending the mode, which still ends only on its own switch, combat or Reset
+-- all (preview-mode). Entering test mode clears the selection, so the sheet's slot boxes and the
+-- footer's Slots buttons never act on a real outfit while the samples show. A window parked in the
+-- holder (followDisabled) cannot stand alone; the bar still shows the samples.
 --
 -- THE ONLY SHOW AND HIDE. Dock.Refresh is the one place this addon shows or hides
 -- `OutfitterRebornWindow`. It never does so in combat lockdown (design §7.0 rule 2): the window hides
@@ -44,10 +62,10 @@ local _, NS = ...
 --
 -- CALLS (at call time; design §12): NS.Window, NS.WindowRows.DisarmSecure, NS.SlotEnables.MaybeRestack,
 -- NS.Stack.Select, NS.Dialogs.CloseAll, NS.IconBrowser.Close, NS.CloseMenu, NS.SecureQueue,
--- NS.Sheet.Refresh/Kind/DockRight/Frame/ButtonAnchor, NS.QuickSlots.DrawerSync (the window's show and
+-- NS.Preview.IsActive, NS.Sheet.Refresh/Kind/DockRight/AloneCorner/Frame/ButtonAnchor, NS.QuickSlots.DrawerSync (the window's show and
 -- hide turn the left column's equipment drawer outward and back; modules/QuickSlots.lua).
 
-local Dock = { wanted = false, suspended = false, followDisabled = false, built = false,
+local Dock = { wanted = false, suspended = false, followDisabled = false, built = false, testDismissed = false,
                Y_OFFSET = 0, FOLLOW_INTERVAL = 0.05 }
 NS.Dock = Dock
 
@@ -59,6 +77,7 @@ local WINDOW_NAME = "OutfitterRebornWindow"
 
 local holder, button, driver, win, events
 local placedKind -- the sheet kind the button was last anchored for
+local placedLook -- the look it wears there: "tab" | "text"
 local installed = false
 local sinceTick = 0
 local toldCombat = false
@@ -80,19 +99,36 @@ function Dock.IsVisible()
     return win ~= nil and win:IsVisible() == true
 end
 
---- Whether the window should be up: wanted, not suspended for combat, standing up, the sheet showing.
+--- Test mode wants the window: on, and not dismissed for this test session.
+--- @return boolean
+function Dock.TestWanted()
+    return NS.Preview.IsActive() == true and not Dock.testDismissed
+end
+
+--- Whether the window should be up: not suspended for combat, standing up, out of lockdown; then
+--- beside the shown sheet when wanted or in test mode, or alone in test mode with the sheet closed.
 function Dock.ShouldShow()
-    return Dock.wanted and not Dock.suspended and not NS.IsStoodDown()
-        and PaperDollFrame:IsVisible() == true and not locked()
+    if Dock.suspended or NS.IsStoodDown() or locked() then return false end
+    if PaperDollFrame:IsVisible() == true then return Dock.wanted or Dock.TestWanted() end
+    return Dock.TestWanted() and not Dock.followDisabled
 end
 
 -- ── position and layers ───────────────────────────────────────────────────────────────────────
 
-local function corner() return NS.Sheet.DockRight() end
+-- The corner and the frame whose units it is in: the sheet's, or, standing alone in test mode with
+-- the sheet closed, where a stock sheet would open, in UIParent's.
+local function corner()
+    if PaperDollFrame:IsVisible() ~= true and Dock.TestWanted() then
+        local x, top = NS.Sheet.AloneCorner()
+        return x, top, UIParent
+    end
+    local x, top = NS.Sheet.DockRight()
+    return x, top, NS.Sheet.Frame()
+end
 
--- The one SetPoint, at the sheet's corner times the anchor-to-own scale ratio.
+-- The one SetPoint, at the corner times the anchor-to-own scale ratio.
 local function positionWindow()
-    local right, top = corner()
+    local right, top, host = corner()
     if not right or not top then
         -- The sheet has never been laid out: park it; it is placed properly when the sheet opens.
         Dock.followRight, Dock.followTop = nil, nil
@@ -100,7 +136,7 @@ local function positionWindow()
         return
     end
     local scale = NS.SafeNumber(win:GetEffectiveScale(), 1)
-    local hostScale = NS.SafeNumber(NS.Sheet.Frame():GetEffectiveScale(), 1)
+    local hostScale = NS.SafeNumber(host:GetEffectiveScale(), 1)
     if scale <= 0 then scale = 1 end
     Dock.followRight, Dock.followTop = right, top
     win:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", right * hostScale / scale, top * hostScale / scale + Dock.Y_OFFSET)
@@ -153,14 +189,104 @@ local function followTick(_, elapsed)
     if t0 then Perf.Note("dockFollow", debugprofilestop() - t0) end
 end
 
+-- ── the sheet button's host look (smoke round 2 design G2; deviation DEV-SKIN-SHEET-BUTTON) ──────
+
+-- PaperDollSidebarTabTemplate's art and coords (wow-ui-source@297d7aa:Interface/AddOns/
+-- Blizzard_UIPanels_Game/Mainline/PaperDollFrame.xml:393-430), and the selected TabBg
+-- PaperDollFrame_UpdateSidebarTabs writes (PaperDollFrame.lua:2673-2694). Chonky's own extra tab,
+-- MyTransmogButton, is built by hand from the same file (characterSheet.lua:878-922).
+local TAB_ART = "Interface\\PaperDollInfoFrame\\PaperDollSidebarTabs"
+local TAB_BG = { 0.015625, 0.796875, 0.61328125, 0.78125 }
+local TAB_BG_SELECTED = { 0.015625, 0.796875, 0.7890625, 0.95703125 }
+local TAB_HIDER = { 0.015625, 0.546875, 0.11328125, 0.1875 }
+local TAB_HIGHLIGHT = { 0.015625, 0.5, 0.1953125, 0.31640625 }
+-- The icon inside the tab: Chonky's 30 x 30 centered (its full-bleed tab icon), cropped as item art is.
+local TAB_ICON_SIZE = 30
+local ICON_CROP = { 0.07, 0.93, 0.07, 0.93 }
+-- EllesmereUI's label face size (CreateEUIButton: SetFont(fontPath, 10, "")).
+local EUI_FONT_SIZE = 10
+
+local function tabTexture(layer, w, h, coords)
+    local t = button:CreateTexture(nil, layer)
+    t:SetTexture(TAB_ART)
+    t:SetSize(w, h)
+    t:SetTexCoord(unpack(coords))
+    return t
+end
+
+-- Both looks, built once; placeButton shows one.
+local function buildLooks()
+    button.TabBg = tabTexture("BACKGROUND", 50, 43, TAB_BG)
+    button.TabBg:SetPoint("BOTTOMLEFT", button, "BOTTOMLEFT", -9, -2)
+    button.icon = button:CreateTexture(nil, "ARTWORK")
+    button.icon:SetSize(TAB_ICON_SIZE, TAB_ICON_SIZE)
+    button.icon:SetPoint("CENTER", button, "CENTER", 0, 0)
+    button.icon:SetTexture(NS.Constants.DEFAULT_OUTFIT_ICON)
+    button.icon:SetTexCoord(unpack(ICON_CROP))
+    button.Hider = tabTexture("OVERLAY", 34, 19, TAB_HIDER)
+    button.Hider:SetPoint("BOTTOM", button, "BOTTOM", 0, 0)
+    button.Highlight = tabTexture("HIGHLIGHT", 31, 31, TAB_HIGHLIGHT)
+    button.Highlight:SetPoint("TOPLEFT", button, "TOPLEFT", 2, -3)
+    button.label = button:CreateFontString(nil, "OVERLAY")
+    -- A face before the text: the client refuses SetText on a template-less string with no font
+    -- ("Font not set"). applyLook swaps in EllesmereUI's own face on each text placing.
+    button.label:SetFont(STANDARD_TEXT_FONT, EUI_FONT_SIZE, "")
+    button.label:SetPoint("TOP", button, "TOP", 0, 0)
+    button.label:SetText(L["Outfits"])
+end
+
+-- The tab: unselected, or selected while the window shows (PaperDollFrame_UpdateSidebarTabs' rule).
+local function paintTab(selected)
+    button.TabBg:SetTexCoord(unpack(selected and TAB_BG_SELECTED or TAB_BG))
+    button.Hider:SetShown(not selected)
+    button.Highlight:SetShown(not selected)
+end
+
+-- The label: EllesmereUI's accent while the window shows, white on hover, white at 0.6 idle
+-- (_paintTopButton, EllesmereUIBlizzardSkin_CharacterSheet.lua:3133-3145).
+local function paintLabel(selected)
+    if selected then
+        local r, g, b = NS.Sheet.EUIAccent()
+        button.label:SetTextColor(r, g, b, 1)
+    elseif button.hovered then
+        button.label:SetTextColor(1, 1, 1, 1)
+    else
+        button.label:SetTextColor(1, 1, 1, 0.6)
+    end
+end
+
+-- Repaint the look the button wears for the window's state now.
+local function paintButton()
+    if not button then return end
+    local selected = Dock.IsShown()
+    if placedLook == "text" then return paintLabel(selected) end
+    paintTab(selected)
+end
+
+-- Show one look's regions and hide the other's; the label copies EllesmereUI's face on each placing.
+local function applyLook(look)
+    local tab = look ~= "text"
+    for _, key in ipairs({ "TabBg", "icon", "Hider", "Highlight" }) do button[key]:SetShown(tab) end
+    button.label:SetShown(not tab)
+    if not tab then
+        local source = NS.Sheet.EUILabelText()
+        local face = source and source:GetFont()
+        button.label:SetFont(face or STANDARD_TEXT_FONT, EUI_FONT_SIZE, "")
+    end
+    placedLook = look
+    paintButton()
+end
+
 local function onWindowShow()
     sinceTick = 0
     driver:Show()
     driver:SetScript("OnUpdate", followTick)
     NS.QuickSlots.DrawerSync()
+    paintButton()
 end
 
 local function onWindowHide()
+    paintButton()
     driver:SetScript("OnUpdate", nil)
     driver:Hide()
     -- The outward drawer is for the open window only (sheet and window feedback design G8).
@@ -168,8 +294,13 @@ local function onWindowHide()
     -- Escape (UISpecialFrames) hides it behind the dock's back: that is a close, unless combat did it.
     -- A close takes the Name and Rebuild dialogs with it (Outfitter.lua:1491-1504); the combat
     -- suspend keeps them (O30).
+    -- In test mode the close dismisses the test window for the session (D10): Refresh must not bring
+    -- it straight back. Not the sheet's close taking a window parked in its holder down with it: that
+    -- window cannot stand alone, and the sheet's next open docks it again.
     if not Dock.suspended then
         Dock.wanted = false
+        local sheetTookIt = Dock.followDisabled and PaperDollFrame:IsVisible() ~= true
+        if NS.Preview.IsActive() and not sheetTookIt then Dock.testDismissed = true end
         NS.Dialogs.CloseAll("host")
     end
     NS.Stack.Select(nil)
@@ -193,6 +324,7 @@ function Dock.Refresh()
     if locked() then return end
     if Dock.ShouldShow() then
         Dock.build()
+        NS.Window.SetTestMode(NS.Preview.IsActive())
         Dock.Attach()
         Dock.ApplyLayers()
         win:Show()
@@ -222,6 +354,7 @@ end
 
 function Dock.Close()
     Dock.wanted = false
+    if NS.Preview.IsActive() then Dock.testDismissed = true end
     Dock.Refresh()
 end
 
@@ -238,13 +371,14 @@ end
 
 -- ── hooks and events ──────────────────────────────────────────────────────────────────────────
 
--- Re-anchor the sheet button where the current sheet wants it, over the close button. Out of the
--- stand-down only; a plain button, so allowed in combat.
+-- Re-anchor the sheet button where the current sheet wants it, over the close button, in that
+-- sheet's look. Out of the stand-down only; a plain button, so allowed in combat.
 local function placeButton()
-    local point, rel, relPoint, x, y, size = NS.Sheet.ButtonAnchor()
+    local point, rel, relPoint, x, y, w, h, look = NS.Sheet.ButtonAnchor()
     button:ClearAllPoints()
     button:SetPoint(point, rel, relPoint, x, y)
-    button:SetSize(size, size)
+    button:SetSize(w, h)
+    applyLook(look)
     local close = CharacterFrameCloseButton
     local base = close and NS.SafeNumber(close:GetFrameLevel(), 0) or NS.SafeNumber(CharacterFrame:GetFrameLevel(), 0)
     button:SetFrameLevel(base + LEVEL.SHEET_BUTTON_OVER_CLOSE)
@@ -281,6 +415,17 @@ local function onSheetHide()
     if not wasShown then NS.Dialogs.CloseAll("host") end
 end
 
+-- Test mode on: a fresh session's window (not dismissed), and no selection for the samples to act on.
+-- On or off, Refresh shows, re-docks or hides the window and swaps its chrome (never in lockdown).
+local function onPreviewChanged(_, on)
+    if NS.IsStoodDown() then return end
+    if on then
+        Dock.testDismissed = false
+        NS.Stack.Select(nil)
+    end
+    Dock.Refresh()
+end
+
 local function onRegenDisabled()
     if NS.IsStoodDown() then return end
     if win and win:IsShown() then
@@ -304,18 +449,21 @@ local function buildSheet()
     holder:EnableMouse(false)
     button = CreateFrame("Button", "OutfitterRebornSheetButton", CharacterFrame)
     button:Hide()
-    button.icon = button:CreateTexture(nil, "ARTWORK")
-    button.icon:SetAllPoints(button)
-    button.icon:SetTexture(NS.Constants.DEFAULT_OUTFIT_ICON)
-    -- Borderless, like the tab icons beside it; the glyph in the accent token, which follows the skin.
-    NS.Skin.Button(button, { noBg = true, noBorder = true, tokens = { icon = "of.sheet.button" } })
+    -- The host's look, never the skin's (DEV-SKIN-SHEET-BUTTON): no NS.Skin call on this button.
+    buildLooks()
     button:SetScript("OnClick", function() if not NS.IsStoodDown() then Dock.Toggle() end end)
     button:SetScript("OnEnter", function(self)
+        self.hovered = true
+        paintButton()
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
         GameTooltip:SetText(L["Toggle the Outfitter window"])
         GameTooltip:Show()
     end)
-    button:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    button:SetScript("OnLeave", function(self)
+        self.hovered = false
+        paintButton()
+        GameTooltip:Hide()
+    end)
     -- Draws nothing: its OnUpdate is the follow, set only while the window is shown.
     driver = CreateFrame("Frame", "OutfitterRebornDockDriver", UIParent)
     driver:Hide()
@@ -328,6 +476,9 @@ function Dock.Install()
     buildSheet()
     PaperDollFrame:HookScript("OnShow", onSheetShow)
     PaperDollFrame:HookScript("OnHide", onSheetHide)
+    -- The bus record drops and replays this receiver across a stand-down.
+    local bus = NS.NewBusTarget()
+    if bus then bus:RegisterMessage(NS.MSG.PREVIEW_CHANGED, onPreviewChanged) end
     NS.Window.Install()
 end
 

@@ -2,9 +2,12 @@
 -- its rows per section, the submenus, the toggles that keep it open, and where each row leads.
 --
 -- The menu is drawn through the real NS.OpenMenu seam (core/WidgetsSetup.lua); tests/dialog_scene.lua
--- records W.ContextMenu's rows, so a submenu row's click reopens the recorder one level down, as the
--- library's menu does. NS.Bank runs against a recorded fake where a case asserts which move a row
--- asks for; the bank's own behavior is test_bank's.
+-- records W.ContextMenu's rows. The seam hands the library the whole tree once (Widgets minor 23's
+-- cascading `submenu` rows, design 2026-11-05 G4), so `click` on a submenu row records its child
+-- level as the newest menu, as the library opens it beside the parent. NS.Bank runs against a
+-- recorded fake where a case asserts which move a row asks for; the bank's own behavior is test_bank's.
+-- The last section opens the menu from the outfit bar instead (tests/bar_scene.lua) and pins that it
+-- closes with the bar, and that only the bar's own menu does.
 
 local T = _G.OUTFITTERREBORN_TEST
 local test, assertEqual, assertTrue, assertFalse, assertNil =
@@ -36,12 +39,36 @@ local function open(NS, ctl, id)
     assertTrue(NS.OutfitMenu.Open({}, id), "the menu did not open")
 end
 
--- Click a row of the newest menu by its label (a submenu row opens its level in the recorder).
+-- Click a row of the newest menu by its label: a submenu row records its child level (the library
+-- opens it beside the parent, the parent kept), any other row runs its click as the library does.
 local function click(ctl, text)
     local r = ctl.row(text)
     assertTrue(r ~= nil, "no row " .. text .. " in " .. ctl.labels())
-    r.onClick(nil, r)
+    if r.submenu then
+        ctl.menus[#ctl.menus + 1] = { rows = r.submenu, parent = r }
+    else
+        r.onClick(nil, r)
+    end
     return r
+end
+
+-- The first trigger the picker offers, with params (`true`) or without (`false`): its category and descriptor.
+local function triggerWith(NS, params)
+    local class = NS.Compat.PlayerClass()
+    for _, cat in ipairs(NS.Triggers.Categories(class)) do
+        for _, d in ipairs(NS.Triggers.List(cat, class)) do
+            if (#(d.params or {}) > 0) == params then return cat, d end
+        end
+    end
+    error("no trigger " .. (params and "with" or "without") .. " params")
+end
+
+-- The row of `rows` whose plain label is `text` exactly.
+local function exact(rows, text)
+    for _, r in ipairs(rows) do
+        if r.label and plain(r.label) == text then return r end
+    end
+    return nil
 end
 
 test("menu: NS.OutfitMenu is published", function()
@@ -265,6 +292,208 @@ test("menu: Delete, Update and Rebuild ask through popups carrying the id; the d
     assertTrue(NS.IconBrowser.IsOpen())
 end)
 
+-- ── cascading levels (design 2026-11-05 G4; LibKa0s Widgets minor 23) ─────────────────────────
+
+test("menu: the whole tree goes to the library once, each nested level as a submenu row", function()
+    local NS, _, ctl = scene()
+    local acc = outfits(NS)
+    open(NS, ctl, acc)
+    -- red under: the old replay, a submenu row whose click reopened the one menu with its level.
+    assertEqual(#ctl.menus, 1, "the menu opened more than once")
+    assertTrue(ctl.menus[1].opts.cursor, "the menu opens at the cursor")
+    for _, name in ipairs({ "Key binding", "Title", "Bank", "Automation" }) do
+        local r = ctl.row(name)
+        assertEqual(type(r.submenu), "table", name .. " carries no submenu")
+        assertNil(r.onClick, name .. " runs a click of its own")
+        -- The library draws the arrow: the label carries no chevron markup.
+        assertNil(r.label:find("|T", 1, true), name .. " draws its own chevron")
+    end
+    assertEqual(#ctl.row("Key binding").submenu, 11, "None and Outfit 1-10")
+    local cat = triggerWith(NS, false)
+    local auto = ctl.row("Automation").submenu
+    -- Two deep: Automation > category > trigger.
+    local level = exact(auto, NS.OutfitMenu.CategoryLabel(cat))
+    assertTrue(level ~= nil and type(level.submenu) == "table", "the category opens no level")
+    click(ctl, "Key binding")
+    assertEqual(#ctl.menus, 2)
+    assertEqual(plain(ctl.menus[2].rows[1].label), "None")
+end)
+
+test("menu: Key binding picks are radios that keep the menu open, tick the key and rename its holders", function()
+    local NS, _, ctl = scene()
+    local acc = outfits(NS)
+    local tank = NS.Outfits.Create("Tank", { HeadSlot = { id = 0 } })
+    NS.Outfits.SetBinding(tank, 3)
+    open(NS, ctl, acc)
+    click(ctl, "Key binding")
+    local rows = ctl.menus[#ctl.menus].rows
+    for i, r in ipairs(rows) do
+        -- red under: binding rows recorded as plain buttons (the menu closes on a pick, no tick).
+        assertTrue(r.radio, "row " .. i .. " is not a radio")
+        assertTrue(r.keepOpen, "row " .. i .. " closes the menu")
+        assertEqual(type(r.selected), "function", "row " .. i .. " has no tick predicate")
+    end
+    assertTrue(rows[1].selected(rows[1]), "None is not ticked on an unbound outfit")
+    assertFalse(rows[4].selected(rows[4]))
+    click(ctl, "Outfit 3")
+    assertEqual(NS.Outfits.BindingOf(acc), 3)
+    -- The library repaints the open level from these same tables: the tick moved, the holder renamed.
+    assertTrue(rows[4].selected(rows[4]), "Outfit 3 is not ticked after the pick")
+    assertFalse(rows[1].selected(rows[1]), "None stays ticked")
+    -- red under: a keep-open pick that leaves the labels the first fill wrote.
+    assertEqual(plain(rows[4].label), "Outfit 3 (Ride)")
+    assertEqual(#ctl.menus, 1 + 1, "the pick reopened the menu")
+end)
+
+test("menu: Title picks and a trigger without params keep the menu open; the parent's label follows", function()
+    local NS, _, ctl = scene()
+    local _, comp = outfits(NS)
+    open(NS, ctl, comp)
+    local root = ctl.menus[1].rows
+    click(ctl, "Title")
+    local none = ctl.row("None")
+    assertTrue(none.radio and none.keepOpen, "the Title rows are not keep-open radios")
+    assertTrue(none.selected(none), "None is not ticked with no title")
+    local private = ctl.row("Private")
+    click(ctl, "Private")
+    assertTrue(private.selected(private), "the picked title is not ticked")
+    assertFalse(none.selected(none))
+    -- A trigger without params: picked in place, the root's Automation row renamed.
+    local cat, d = triggerWith(NS, false)
+    assertTrue(exact(root, "Turn trigger off").disabled, "Turn trigger off is live with no trigger")
+    ctl.menus = { ctl.menus[1] }
+    click(ctl, "Automation")
+    local noTrigger = ctl.row("No trigger")
+    assertTrue(noTrigger.radio and noTrigger.keepOpen and noTrigger.selected(noTrigger), "No trigger")
+    click(ctl, NS.OutfitMenu.CategoryLabel(cat))
+    local r = exact(ctl.menus[#ctl.menus].rows, d.name)
+    assertTrue(r ~= nil, "no row " .. d.name)
+    assertTrue(r.radio and r.keepOpen, "a trigger without params closes the menu")
+    r.onClick(nil, r)
+    assertEqual(NS.Outfits.Get(comp).trigger.id, d.id)
+    assertFalse(NS.TriggerDialog.IsOpen(), "a trigger without params opened its settings")
+    assertTrue(r.selected(r), "the picked trigger is not ticked")
+    assertFalse(noTrigger.selected(noTrigger))
+    -- red under: refreshing the picked level only (the root still says None, the toggles stay off).
+    assertTrue(exact(root, "Automation: " .. d.name) ~= nil, "the root's Automation label did not follow")
+    assertNil(exact(root, "Turn trigger off").disabled, "Turn trigger off stays disabled")
+end)
+
+test("menu: rows that open a dialog, popup or window, and the bank moves, act and close", function()
+    local NS, _, ctl = scene()
+    local acc, comp = outfits(NS)
+    open(NS, ctl, acc)
+    for _, name in ipairs({ "Rename...", "Delete", "Update to current items", "Rebuild for...",
+                            "Trigger settings...", "Change icon..." }) do
+        local r = exact(ctl.menus[1].rows, name)
+        assertTrue(r ~= nil, "no row " .. name)
+        -- red under: a seam marking every row keepOpen (the menu would cover the dialog).
+        assertNil(r.keepOpen, name .. " keeps the menu open")
+        assertNil(r.radio, name .. " is a radio")
+    end
+    assertNil(ctl.row("Rebuild for S").keepOpen)
+    click(ctl, "Bank")
+    for _, r in ipairs(ctl.menus[#ctl.menus].rows) do
+        if not r.divider then assertNil(r.keepOpen, plain(r.label) .. " keeps the menu open") end
+    end
+    open(NS, ctl, comp)
+    local cat, d = triggerWith(NS, true)
+    click(ctl, "Automation")
+    click(ctl, NS.OutfitMenu.CategoryLabel(cat))
+    local r = exact(ctl.menus[#ctl.menus].rows, d.name .. "...")
+    assertTrue(r ~= nil, "no row " .. d.name .. "...")
+    -- red under: every trigger pick a keep-open radio (its settings dialog would sit under the menu).
+    assertNil(r.keepOpen, "a trigger with params keeps the menu open")
+    assertNil(r.radio, "a trigger with params is a radio")
+end)
+
+-- The client's MenuUtil, for the library-absent load: each description recorded with its responder.
+local function menuUtil(M)
+    local made = {}
+    local function desc(kind, text, responder)
+        local d = { kind = kind, text = text, responder = responder }
+        made[#made + 1] = d
+        function d.CreateButton(_, t, cb) return desc("button", t, cb) end
+        function d.CreateRadio(_, t, _, set, data) return desc("radio", t, function() return set(data) end) end
+        function d.CreateCheckbox(_, t, _, set, data) return desc("checkbox", t, function() return set(data) end) end
+        function d.CreateTitle() return {} end
+        function d.CreateDivider() return {} end
+        function d.SetEnabled() end
+        function d.SetTooltip() end
+        return d
+    end
+    M.MenuUtil = { CreateContextMenu = function(owner, gen) gen(owner, desc("root")) end }
+    return function(text)
+        for _, d in ipairs(made) do
+            if d.text and plain(d.text):find(text, 1, true) == 1 then return d end
+        end
+        error("no description " .. text)
+    end
+end
+
+test("menu: on the client's MenuUtil only keep-open rows answer Refresh, the rest close", function()
+    local inst = T.load({ libFiles = {} })
+    local NS, M = inst.NS, inst.mocks
+    local acc = NS.Outfits.Create("Ride", { FeetSlot = { id = 0 } })
+    M.MenuResponse = { Open = 1, Refresh = 2, Close = 3, CloseAll = 4 }
+    local find = menuUtil(M)
+    assertTrue(NS.OutfitMenu.Open({}, acc), "the degraded menu did not open")
+    -- red under: radios handed to MenuUtil as they are (a responder returning nil closes the tree).
+    assertEqual(find("Outfit 2").responder(), 2, "a binding pick closes the client's menu")
+    assertEqual(NS.Outfits.BindingOf(acc), 2)
+    assertEqual(find("Ignore in comparison").responder(), 2, "a toggle closes the client's menu")
+    -- red under: a seam that answers Refresh from every row.
+    assertNil(find("Rename").responder(), "Rename keeps the client's menu open")
+    NS.OutfitDialog.Close("test")
+    -- Without MenuResponse the keep-open rows answer nil (close) rather than raise.
+    M.MenuResponse = nil
+    find = menuUtil(M)
+    assertTrue(NS.OutfitMenu.Open({}, acc))
+    assertNil(find("Outfit 4").responder())
+    assertEqual(NS.Outfits.BindingOf(acc), 4)
+    M.MenuUtil = nil
+end)
+
+test("menu: an outfit deleted under its open menu leaves rows that paint and click without raising", function()
+    -- The menu stays open across keep-open picks and the library reads each radio's tick on every
+    -- paint, while the outfit can go from under it (the Equipment Manager sync prunes a mirror whose
+    -- set was deleted, on EQUIPMENT_SETS_CHANGED). red under: a tick predicate or a refill that
+    -- indexes NS.Outfits.Get(id) without a record.
+    local NS, _, ctl = scene()
+    local acc = outfits(NS)
+    open(NS, ctl, acc)
+    local root = ctl.menus[1].rows
+    local title = ctl.row("Title").submenu
+    click(ctl, "Automation")
+    local noTrigger = ctl.row("No trigger")
+    assertTrue(NS.Outfits.Delete(acc))
+    for _, r in ipairs(title) do
+        if r.selected then r.selected(r) end
+    end
+    noTrigger.selected(noTrigger)
+    exact(root, "Turn trigger off").onClick()
+    exact(root, "Ignore in comparison tooltips").onClick()
+    exact(title, "None").onClick()
+    noTrigger.onClick()
+    assertNil(NS.Outfits.Get(acc), "a pick brought the deleted outfit back")
+end)
+
+test("menu: a ticked toggle clicked after its outfit is deleted repaints without its tick", function()
+    -- The refill after a delete comes back empty, so relabel keeps the open rows as they are; only the
+    -- keep-open rows' own repaint (menu.refresh) reads the record again, now NO_RECORD.
+    local NS, _, ctl = scene()
+    local acc = outfits(NS)
+    open(NS, ctl, acc)
+    local ignore = exact(ctl.menus[1].rows, "Ignore in comparison tooltips")
+    ignore.onClick(nil, ignore)
+    assertTrue(ignore.label:find("|T", 1, true) ~= nil, "the toggle shows its tick")
+    assertTrue(NS.Outfits.Delete(acc))
+    ignore.onClick(nil, ignore)
+    -- red under: menu.refresh without its repaint of menu.own (the row keeps the stale tick)
+    assertNil(ignore.label:find("|T", 1, true), "the deleted outfit's toggle still shows its tick")
+    assertEqual(plain(ignore.label), "Ignore in comparison tooltips")
+end)
+
 test("menu: nothing opens for an unknown id or while stood down", function()
     local NS, _, ctl = scene()
     local acc = outfits(NS)
@@ -284,4 +513,129 @@ test("menu: the class category reads the client's class name, the rest their own
     assertEqual(CL("QUEST"), "Questing"); assertEqual(CL("ENTERTAIN"), "Entertainment")
     assertEqual(CL("SPEC"), "Specialization")
     assertEqual(CL("CLASS"), NS.Compat.PlayerClassName())
+end)
+
+-- ── the bar's menu closes with the bar (smoke round 2 review) ─────────────────────────────────────
+-- Every path that hides the outfit bar (`/or bar hide|toggle`, the Toggle outfit bar binding, the
+-- header's close X, the stand-down) takes down a menu the bar opened through NS.OpenMenu, and only
+-- that menu: core/WidgetsSetup.lua's rule, a menu must not outlive its owner, and the shared popup is
+-- a process-wide singleton no Hide of the bar reaches. After `/or disable` an orphaned menu's rows
+-- would still write saved data (the Key binding rows' O.SetBinding). The bar is tests/bar_scene.lua's
+-- and the menu the real library's: W.ContextMenu is wrapped only to keep the frame it answers.
+
+local H = dofile(T.root .. "/tests/bar_scene.lua")(T)
+local barScene, accessory, settle, buttonFor = H.scene, H.accessory, H.settle, H.buttonFor
+
+--- The bar up with one outfit on it, and the library's menu frame recorded as it opens.
+local function barSetup()
+    local NS, M, Bar = barScene()
+    local hat = accessory(NS, "Hat")
+    settle(M)
+    local W = M.LibStub("LibKa0s-Widgets-1.0")
+    local seen = {}
+    local real = W.ContextMenu
+    W.ContextMenu = function(...)
+        local m = real(...)
+        seen.menu = m
+        return m
+    end
+    return NS, M, Bar, hat, seen
+end
+
+--- Right-click the bar's button for `id`: the outfit menu opens on it.
+local function openFromBar(Bar, id, seen)
+    buttonFor(Bar, id):__fire("OnClick", "RightButton")
+    local m = seen.menu
+    assertTrue(m ~= nil and m:IsShown(), "the fixture needs the bar's menu open")
+    return m
+end
+
+--- The Toggle outfit bar binding's press (Bindings.xml: it clicks a hidden button).
+local function pressToggle(M)
+    M._G.OutfitterRebornToggleBar:__fire("OnClick", "LeftButton", true)
+end
+
+-- ── each hide path ─────────────────────────────────────────────────────────────────────────────
+
+local PATHS = {
+    { "/or bar hide",              function(NS) NS.Slash:OnSlash("bar hide") end },
+    { "/or bar toggle",            function(NS) NS.Slash:OnSlash("bar toggle") end },
+    { "the Toggle outfit bar key", function(_, M) pressToggle(M) end },
+    { "the header's close X",      function(_, _, Bar) Bar.Frame().close:__fire("OnClick") end },
+    { "the stand-down",            function(NS) NS.SetByPath("enabled", false) end },
+}
+
+for _, path in ipairs(PATHS) do
+    test("bar menu: " .. path[1] .. " closes the outfit menu the bar opened", function()
+        local NS, M, Bar, hat, seen = barSetup()
+        local m = openFromBar(Bar, hat, seen)
+        path[2](NS, M, Bar)
+        settle(M)
+        assertFalse(Bar.Frame():IsShown(), "the path did not hide the bar")
+        -- red under: hideFrames (modules/Bar.lua) without NS.CloseMenuFrom(Bar.IsButton)
+        assertFalse(m:IsShown(), "the bar's menu outlived the bar")
+    end)
+end
+
+-- In test mode the first four paths dismiss the bar for the test session instead of writing
+-- `bar.shown` (modules/Bar.lua's header); the dismissal still takes the bar's menu down with it.
+for i = 1, 4 do
+    local path = PATHS[i]
+    test("bar menu: in test mode " .. path[1] .. " still closes the outfit menu the bar opened", function()
+        local NS, M, Bar, hat, seen = barSetup()
+        local m = openFromBar(Bar, hat, seen)
+        rawset(NS.Preview, "IsActive", function() return true end)
+        path[2](NS, M, Bar)
+        settle(M)
+        assertFalse(Bar.Frame():IsShown(), "the path did not dismiss the bar")
+        assertEqual(NS.db.profile.bar.shown, true, "the path wrote bar.shown in test mode")
+        -- red under: a dismissal that hides the bar around hideFrames
+        assertFalse(m:IsShown(), "the bar's menu outlived the dismissed bar")
+    end)
+end
+
+-- ── only the bar's own menu ────────────────────────────────────────────────────────────────────
+
+test("bar menu: hiding the bar leaves a menu the window opened alone", function()
+    local NS, M, Bar, hat, seen = barSetup()
+    openFromBar(Bar, hat, seen)
+    -- The window's row opens the outfit menu afresh (it replaces the bar's on the one popup).
+    local row = M.CreateFrame("Button", nil, M.UIParent)
+    assertTrue(NS.OutfitMenu.Open(row, hat), "the window's menu did not open")
+    local m = seen.menu
+    NS.Slash:OnSlash("bar hide")
+    settle(M)
+    assertFalse(Bar.Frame():IsShown())
+    -- red under: hideFrames calling NS.CloseMenu() whoever opened the menu
+    assertTrue(m:IsShown(), "hiding the bar closed the window's menu")
+end)
+
+test("bar menu: a bar menu already dismissed is forgotten, so a later menu is not taken for it", function()
+    local NS, M, Bar, hat, seen = barSetup()
+    local m = openFromBar(Bar, hat, seen)
+    -- An outside press hides the library's menu (its own OnHide, which the client fires on Hide).
+    m:Hide()
+    m:__fire("OnHide")
+    -- Then a dropdown of the window drops the same shared popup, which NS.OpenMenu never saw.
+    local W = M.LibStub("LibKa0s-Widgets-1.0")
+    local dd = M.CreateFrame("Button", nil, M.UIParent)
+    W.ContextMenu(dd, { { label = "Any", value = "any", onClick = function() end } }, {})
+    assertTrue(m:IsShown(), "the fixture needs the dropdown's menu up")
+    NS.Slash:OnSlash("bar hide")
+    settle(M)
+    -- red under: an opener kept past the menu's OnHide
+    assertTrue(m:IsShown(), "hiding the bar closed a dropdown's menu it never opened")
+end)
+
+test("bar menu: NS.CloseMenuFrom closes only what its owner claims, and answers whether it closed", function()
+    local NS, _, Bar, hat, seen = barSetup()
+    local m = openFromBar(Bar, hat, seen)
+    assertFalse(NS.CloseMenuFrom(function() return false end), "a claim of nothing closed the menu")
+    assertTrue(m:IsShown())
+    assertTrue(Bar.IsButton(buttonFor(Bar, hat)), "the bar does not know its own button")
+    assertFalse(Bar.IsButton(Bar.Frame()), "the container is no button")
+    assertTrue(NS.CloseMenuFrom(Bar.IsButton))
+    assertFalse(m:IsShown())
+    assertFalse(NS.CloseMenuFrom(Bar.IsButton), "nothing open, yet it closed one")
+    assertEqual(Bar.Frame():IsShown(), true, "closing the menu hid the bar")
 end)

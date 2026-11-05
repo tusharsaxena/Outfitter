@@ -6,90 +6,18 @@
 -- mode and the window's state itself; NS.OutfitMenu is the real menu under a recorder (tests/spy.lua,
 -- its fake retired at P4.27). Outfits, Stack, Equip, Inventory, Triggers and OutfitTooltip are
 -- the real modules, and the items move for real in tests/mock_gear.lua. The bar's frames are built
--- lazily, so the kit's paint and layer recorders and this file's geometry recorder are installed after
--- the load and still see every frame the bar makes.
+-- lazily, so the kit's paint and layer recorders and the scene's geometry recorder
+-- (tests/bar_scene.lua) are installed after the load and still see every frame the bar makes. Since
+-- smoke round 2 (design G6) it also pins the layout, the header, the labels, the icon edge and the
+-- worn highlight.
 
 local T = _G.OUTFITTERREBORN_TEST
-local spy = dofile(T.root .. "/tests/spy.lua")
 local test, assertEqual, assertTrue, assertFalse, assertNil =
     T.test, T.assertEqual, T.assertTrue, T.assertFalse, T.assertNil
 
-local SLOTS = {
-    "HeadSlot", "ShoulderSlot", "ChestSlot", "WristSlot", "HandsSlot", "WaistSlot", "LegsSlot", "FeetSlot",
-    "MainHandSlot", "SecondaryHandSlot", "BackSlot", "NeckSlot", "ShirtSlot", "TabardSlot", "Finger0Slot",
-    "Finger1Slot", "Trinket0Slot", "Trinket1Slot",
-}
-
---- Every frame built from here on records its points, mouse, scale and size, and answers geometry
---- from `geom` when the suite sets it.
-local function recordGeometry(M)
-    local prev = M.CreateFrame
-    M.CreateFrame = function(...)
-        local f = prev(...)
-        if type(f) ~= "table" then return f end
-        rawset(f, "__pts", {})
-        rawset(f, "SetPoint", function(self, ...) local p = rawget(self, "__pts"); p[#p + 1] = { ... } end)
-        rawset(f, "ClearAllPoints", function(self) rawset(self, "__pts", {}) end)
-        rawset(f, "EnableMouse", function(self, on) rawset(self, "__mouse", on and true or false) end)
-        rawset(f, "SetScale", function(self, s) rawset(self, "__scale", s) end)
-        rawset(f, "GetScale", function(self) return rawget(self, "__scale") or 1 end)
-        rawset(f, "GetEffectiveScale", function(self) return rawget(self, "__scale") or 1 end)
-        rawset(f, "SetSize", function(self, w, h) rawset(self, "__w", w); rawset(self, "__h", h) end)
-        return f
-    end
-end
-
---- Arm `f`'s edges (UIParent was built before the recorder, so they are set on the frame itself).
-local function geom(f, left, right, top, bottom)
-    local g = { Left = left, Right = right, Top = top, Bottom = bottom }
-    for edge, v in pairs(g) do rawset(f, "Get" .. edge, function() return v end) end
-end
-
-local function naked()
-    local items = {}
-    for _, s in ipairs(SLOTS) do items[s] = { id = 0 } end
-    return items
-end
-
---- A fresh instance at t = 100 on the geared scenario, the engine resumed, the recorders in, the
---- two fakes and the menu recorder installed, and the bar resumed with `bar.shown` on unless `opts.hidden`.
-local function scene(opts)
-    opts = opts or {}
-    local inst = T.load({ mutate = function(M) M.__gear:load("geared") end })
-    local NS, M = inst.NS, inst.mocks
-    M.__now = 100
-    NS.PlayerState.Resume()
-    NS.Inventory.Resume()
-    NS.Equip.Resume()
-    M.__fireTimers()
-    dofile(T.root .. "/tests/_kit/mock_paint.lua")(M)
-    dofile(T.root .. "/tests/_kit/mock_layers.lua")(M)
-    recordGeometry(M)
-    local ctl = { preview = false, previewRows = {}, fades = {}, stops = 0 }
-    M.UIFrameFadeOut = function(f, secs, from, to) ctl.fades[#ctl.fades + 1] = { f, secs, from, to } end
-    M.UIFrameFadeRemoveFrame = function() ctl.stops = ctl.stops + 1 end
-    -- Both are in the latch's MODULES walk, so each answers Suspend and Resume too.
-    T.fake(NS, "Dock", { IsShown = function() return false end, Suspend = true, Resume = true })
-    local preview = T.fake(NS, "Preview", { IsActive = function() return ctl.preview end, Suspend = true,
-                                            Resume = true })
-    rawset(preview, "Source", { Rows = function() return ctl.previewRows end })
-    ctl.menu = spy(NS, "OutfitMenu", { "Open" })
-    if not opts.hidden then NS.db.profile.bar.shown = true end
-    NS.Bar.Resume()
-    M.__fireTimers()
-    return NS, M, NS.Bar, ctl
-end
-
-local function complete(NS, name) return NS.Outfits.Create(name, naked()) end
-local function accessory(NS, name, slot) return NS.Outfits.Create(name, { [slot or "HeadSlot"] = { id = 0 } }) end
-
-local function ids(Bar)
-    local out = {}
-    for _, btn in ipairs(Bar.Buttons()) do out[#out + 1] = btn.outfit.id end
-    return table.concat(out, ",")
-end
-
-local function settle(M) M.__fireTimers() end
+local H = dofile(T.root .. "/tests/bar_scene.lua")(T)
+local geom, naked, scene, complete, accessory = H.geom, H.naked, H.scene, H.complete, H.accessory
+local ids, settle, buttonFor, point, at = H.ids, H.settle, H.buttonFor, H.point, H.at
 
 -- ── the surface and the default ───────────────────────────────────────────────────────────────
 
@@ -167,9 +95,110 @@ end)
 
 -- ── layout ────────────────────────────────────────────────────────────────────────────────────
 
-local function point(f, i) return f.__pts[i or 1] end
+test("bar: the layout's defaults keep the legacy 37 px pitch, 4 px in from the edge", function()
+    local Layout = T.NS.Bar.Layout
+    local D = T.NS.defaults.profile.bar
+    -- red under: a spacing default other than 5 (the legacy Style.ButtonBar pitch, OutfitterUITools.lua)
+    assertEqual(D.icons.size + D.layout.spacing, 37)
+    assertEqual(D.layout.padding, 4)
+    assertEqual(D.layout.perLine, 0)
+    local g = Layout.Compute({ size = 32, spacing = 5, padding = 4, perLine = 0, counts = { 3, 1 },
+                               gx = 1, gy = -1 })
+    assertEqual(g.width, 4 + 3 * 32 + 2 * 5 + 4)
+    assertEqual(g.height, 4 + 32 + 5 + 32 + 4)
+    local a, b = g.blocks[1].icons[1], g.blocks[1].icons[2]
+    assertEqual(a.x, 4); assertEqual(a.y, 4)
+    assertEqual(b.x - a.x, 37, "the pitch along the row")
+    assertEqual(g.blocks[2].icons[1].y - a.y, 37, "the pitch between the rows")
+end)
 
-test("bar: the buttons grow away from the saved corner, per quadrant, both orientations", function()
+test("bar: the layout wraps at icons per line, in rows or in columns", function()
+    local Layout = T.NS.Bar.Layout
+    local g = Layout.Compute({ size = 20, spacing = 2, padding = 0, perLine = 2, counts = { 5 }, gx = 1, gy = -1 })
+    -- red under: a perLine read as the number of lines
+    assertEqual(g.width, 2 * 20 + 2); assertEqual(g.height, 3 * 20 + 2 * 2)
+    local i = g.blocks[1].icons
+    assertEqual(i[3].x, 0); assertEqual(i[3].y, 22, "the third icon opens the second row")
+    assertEqual(i[5].y, 44)
+    local v = Layout.Compute({ size = 20, spacing = 2, padding = 0, perLine = 2, counts = { 5 }, vertical = true,
+                               gx = 1, gy = -1 })
+    assertEqual(v.width, 3 * 20 + 2 * 2); assertEqual(v.height, 2 * 20 + 2)
+    assertEqual(v.blocks[1].icons[2].y, 22, "down the column first")
+    assertEqual(v.blocks[1].icons[3].x, 22, "then the next column")
+    local none = Layout.Compute({ size = 20, spacing = 2, padding = 0, perLine = 0, counts = { 5 }, gx = 1, gy = -1 })
+    assertEqual(none.height, 20, "0 is one line")
+end)
+
+test("bar: the layout grows away from its corner, the first icon and block at that corner", function()
+    local Layout = T.NS.Bar.Layout
+    local base = { size = 10, spacing = 0, padding = 1, perLine = 0, counts = { 2, 1 }, top = 7 }
+    local function g(gx, gy, vertical)
+        local s = {}
+        for k, v in pairs(base) do s[k] = v end
+        s.gx, s.gy, s.vertical = gx, gy, vertical
+        return Layout.Compute(s)
+    end
+    local left = g(-1, -1)
+    -- red under: an x grown from the left edge whatever gx says
+    assertEqual(left.blocks[1].icons[1].x, 11, "growing left, the first icon is at the right")
+    assertEqual(left.blocks[1].icons[2].x, 1)
+    assertEqual(left.blocks[2].icons[1].x, 11, "a shorter row is right-aligned")
+    local up = g(1, 1)
+    assertEqual(up.blocks[1].icons[1].y, 7 + 1 + 10, "growing up, the first row is at the bottom")
+    assertEqual(up.blocks[2].icons[1].y, 7 + 1)
+    local down = g(1, -1)
+    assertEqual(down.blocks[1].icons[1].y, 7 + 1, "the header's height is above the first row")
+    local vleft = g(-1, -1, true)
+    assertEqual(vleft.blocks[1].x, vleft.blocks[2].x + 10, "vertical and growing left, the first column is right")
+    local vup = g(1, 1, true)
+    -- red under: a vertical block placed at the top whatever gy says
+    assertEqual(vup.blocks[2].icons[1].y, vup.blocks[1].icons[1].y, "growing up, a shorter column is bottom-aligned")
+    assertEqual(vup.blocks[2].icons[1].y, 7 + 1 + 10)
+end)
+
+test("bar: the layout adds each block's label line and never draws narrower than its minimum", function()
+    local Layout = T.NS.Bar.Layout
+    local g = Layout.Compute({ size = 10, spacing = 2, padding = 3, counts = { 1, 1 }, labelH = 12, minWidth = 100,
+                               gx = 1, gy = -1 })
+    assertEqual(g.width, 100)
+    assertEqual(g.height, 3 + 12 + 10 + 2 + 12 + 10 + 3)
+    local b = g.blocks[1]
+    assertEqual(b.icons[1].y, 3 + 12, "the icons sit under the label")
+    assertEqual(b.label.y, 3); assertEqual(b.label.x, 3)
+    assertEqual(b.label.w, 100 - 2 * 3, "a row's label spans the bar")
+    local v = Layout.Compute({ size = 10, spacing = 2, padding = 3, counts = { 1 }, labelH = 12, vertical = true,
+                               gx = 1, gy = -1 })
+    assertEqual(v.blocks[1].label.w, 10, "a column's label is the column's width (truncated)")
+end)
+
+test("bar: Render places the buttons from the layout settings and sizes the bar", function()
+    local NS, M, Bar = scene()
+    complete(NS, "A"); complete(NS, "B"); complete(NS, "C"); accessory(NS, "D")
+    NS.db.profile.windows.bar = { point = "TOPLEFT", x = 0, y = 0 }
+    NS.SetByPath("bar.layout.padding", 6)
+    NS.SetByPath("bar.layout.spacing", 3)
+    NS.SetByPath("bar.icons.size", 20)
+    settle(M)
+    local f, btns = Bar.Frame(), Bar.Buttons()
+    local top, lh = Bar.HeaderHeight(), Bar.LabelHeight()
+    local x1, y1 = at(btns[1])
+    assertEqual(x1, 6); assertEqual(y1, top + 6 + lh)
+    local x2 = at(btns[2])
+    -- red under: Render keeping the fixed 37 px PITCH
+    assertEqual(x2 - x1, 23)
+    assertEqual(btns[1].__w, 20, "the icon size")
+    local _, y4 = at(btns[4])
+    assertEqual(y4 - y1, 23 + lh, "the second category's row, under its own label")
+    local g = Bar.Layout.Compute(Bar.LayoutSpec({ 3, 1 }))
+    assertEqual(f.__w, g.width); assertEqual(f.__h, g.height)
+    NS.SetByPath("bar.layout.perLine", 2)
+    settle(M)
+    btns = Bar.Buttons()
+    local x3, y3 = at(btns[3])
+    assertEqual(x3, 6); assertEqual(y3 - y1, 23, "wrapped onto a second row")
+end)
+
+test("bar: with grow direction auto the buttons grow away from the saved corner, per quadrant", function()
     local NS, _, Bar = scene()
     complete(NS, "A"); complete(NS, "B"); accessory(NS, "C")
     local want = { TOPLEFT = { 1, -1 }, TOPRIGHT = { -1, -1 }, BOTTOMLEFT = { 1, 1 }, BOTTOMRIGHT = { -1, 1 } }
@@ -179,21 +208,18 @@ test("bar: the buttons grow away from the saved corner, per quadrant, both orien
             NS.db.profile.bar.vertical = vertical
             Bar.Refresh()
             local btns = Bar.Buttons()
-            local second = point(btns[2])
-            assertEqual(second[1], corner, corner .. " anchors at its corner")
+            local x1, y1 = at(btns[1])
+            local x2, y2 = at(btns[2])
+            local x3, y3 = at(btns[3])
             -- red under: a QUADRANT row with a flipped sign
             if vertical then
-                assertEqual(second[4], 0, corner .. " vertical x")
-                assertEqual(second[5], sign[2] * Bar.PITCH, corner .. " vertical y")
+                assertEqual(x2, x1, corner .. " vertical: one column")
+                assertEqual((y2 - y1) * -sign[2] > 0, true, corner .. " vertical: down the column away from the corner")
+                assertEqual((x3 - x1) * sign[1] > 0, true, corner .. " the second column away from the corner")
             else
-                assertEqual(second[4], sign[1] * Bar.PITCH, corner .. " horizontal x")
-                assertEqual(second[5], 0, corner .. " horizontal y")
-            end
-            local row2 = point(btns[3]:GetParent())
-            if vertical then
-                assertEqual(row2[4], sign[1] * Bar.PITCH, corner .. " second column")
-            else
-                assertEqual(row2[5], sign[2] * Bar.PITCH, corner .. " second row")
+                assertEqual(y2, y1, corner .. " horizontal: one row")
+                assertEqual((x2 - x1) * sign[1] > 0, true, corner .. " along the row away from the corner")
+                assertEqual((y3 - y1) * -sign[2] > 0, true, corner .. " the second row away from the corner")
             end
             local bar = point(Bar.Frame())
             assertEqual(bar[1], corner); assertEqual(bar[3], corner)
@@ -201,38 +227,224 @@ test("bar: the buttons grow away from the saved corner, per quadrant, both orien
     end
 end)
 
-test("bar: the size, the scale and the backplate follow the settings", function()
+test("bar: an explicit grow direction lays out by it and the drag stop saves the corner it implies", function()
     local NS, M, Bar = scene()
-    complete(NS, "A"); complete(NS, "B"); complete(NS, "C"); accessory(NS, "D")
+    complete(NS, "A"); complete(NS, "B")
+    NS.SetByPath("bar.layout.growH", "left")
+    NS.SetByPath("bar.layout.growV", "up")
+    settle(M)
+    local btns = Bar.Buttons()
+    assertTrue(at(btns[1]) > at(btns[2]), "growing left")
+    local f = Bar.Frame()
+    geom(M.UIParent, 0, 1000, 800, 0)
+    geom(f, 10, 60, 790, 740)   -- nearest TOPLEFT, but the grow says BOTTOMRIGHT
+    -- red under: SavePosition saving the nearest corner whatever the grow direction says
+    local p = Bar.SavePosition()
+    assertEqual(p.point, "BOTTOMRIGHT")
+    assertEqual(p.x, 60 - 1000); assertEqual(p.y, 740)
+    NS.SetByPath("bar.layout.growH", "auto")
+    NS.SetByPath("bar.layout.growV", "down")
+    settle(M)
+    p = Bar.SavePosition()
+    -- red under: an auto horizontal taken as the explicit vertical's side
+    assertEqual(p.point, "TOPLEFT", "auto keeps the nearest side, down pins the top")
+end)
+
+test("bar: changing the grow direction re-saves the place at the corner it implies, so the bar does not jump", function()
+    local NS, M, Bar = scene()
+    complete(NS, "A")
     settle(M)
     local f = Bar.Frame()
-    assertEqual(f.__w, 3 * Bar.PITCH); assertEqual(f.__h, 2 * Bar.PITCH)
+    geom(M.UIParent, 0, 1000, 800, 0)
+    geom(f, 10, 60, 790, 740)
+    NS.SetByPath("bar.layout.growH", "left")
+    settle(M)
+    -- red under: no SavePosition on a grow-direction write (the stored TOPLEFT would keep growing right)
+    assertEqual(NS.db.profile.windows.bar.point, "TOPRIGHT")
+    assertEqual(NS.db.profile.windows.bar.x, 60 - 1000)
+end)
+
+test("bar: a place written behind an explicit grow direction is re-saved at its corner on the next draw", function()
+    local NS, M, Bar = scene()
+    complete(NS, "A")
+    settle(M)
+    local f = Bar.Frame()
+    geom(M.UIParent, 0, 1000, 800, 0)
+    geom(f, 10, 60, 790, 740)
+    NS.SetByPath("bar.layout.growH", "left")
+    settle(M)
+    -- Reset position writes the default TOPLEFT under a bar told to grow left.
+    assertTrue(NS.ApplyDefault(NS.FindSchemaRow("bar.position")))
+    settle(M)
+    -- red under: a Refresh that anchors the stored TOPLEFT as it is (the bar grows right)
+    assertEqual(NS.db.profile.windows.bar.point, "TOPRIGHT")
+    assertEqual(point(f)[1], "TOPRIGHT")
+end)
+
+test("bar: the scale follows the Master row and divides the offset", function()
+    local NS, M, Bar = scene()
+    complete(NS, "A")
+    settle(M)
+    local f = Bar.Frame()
     NS.SetByPath("scale", 1.5)
     settle(M)
     assertEqual(f.__scale, 1.5)
     local p = point(f)
     assertEqual(p[4], 200 / 1.5, "the offset is divided by the effective scale")
-    NS.db.profile.bar.showBackground = false
-    NS.SendBus(NS.MSG.SETTINGS_CHANGED, "bar.showBackground", false)
-    settle(M)
-    -- red under: Render's bg:SetShown ignoring bar.showBackground (always true).
-    assertFalse(f.bg:IsShown())
 end)
 
--- ── position ──────────────────────────────────────────────────────────────────────────────────
+test("bar: the window look: the skin's Shell while it follows the skin, the player's plate when not", function()
+    local NS, M, Bar = scene()
+    complete(NS, "A")
+    settle(M)
+    local f = Bar.Frame()
+    assertTrue(f.chrome:IsShown(), "the chrome shows")
+    assertFalse(f.plate:IsShown(), "the plate waits")
+    NS.SetByPath("bar.bgFromSkin", false)
+    NS.SetByPath("bar.bgColor", { r = 0.2, g = 0.3, b = 0.4, a = 0.5 })
+    NS.SetByPath("bar.frame.borderColorFromSkin", false)
+    NS.SetByPath("bar.frame.borderColor", { r = 1, g = 0, b = 0, a = 1 })
+    NS.SetByPath("bar.frame.borderSize", 3)
+    settle(M)
+    -- red under: a single layer repainted (the Shell would replay the skin's colors over the player's)
+    assertFalse(f.chrome:IsShown(), "the chrome hides")
+    assertTrue(f.plate:IsShown(), "the plate shows")
+    local r, g, b, a = f.plate:GetBackdropColor()
+    assertTrue(r == 0.2 and g == 0.3 and b == 0.4 and a == 0.5, "the background swatch")
+    local bd = f.plate:GetBackdrop()
+    assertEqual(bd.edgeSize, 3, "the border thickness")
+    r, g, b = f.plate:GetBackdropBorderColor()
+    assertTrue(r == 1 and g == 0 and b == 0, "the border swatch")
+    NS.SetByPath("bar.frame.borderShow", false)
+    settle(M)
+    assertNil(f.plate:GetBackdrop().edgeFile, "Show border off draws no edge")
+    NS.SetByPath("bar.showBackground", false)
+    settle(M)
+    -- red under: PaintChrome ignoring bar.showBackground
+    assertFalse(f.plate:IsShown()); assertFalse(f.chrome:IsShown())
+end)
 
-test("bar: the drag stop saves the nearest corner; a locked bar does not move", function()
+test("bar: the header band is titled Outfits, carries close and lock, and the icons sit under it", function()
+    local NS, M, Bar = scene()
+    complete(NS, "A")
+    settle(M)
+    local f = Bar.Frame()
+    -- red under: the retired drag handle still built above the bar
+    assertNil(f.handle, "the separate drag handle is retired")
+    assertEqual(f.title:GetText(), "Outfits")
+    assertTrue(f.close ~= nil and f.lock ~= nil and f.drag ~= nil, "close, lock and the drag strip")
+    local inset, h = Bar.BandGeometry()
+    assertEqual(Bar.HeaderHeight(), inset + h)
+    assertTrue(Bar.HeaderHeight() >= 20, "a real band")
+    local _, y = at(Bar.Buttons()[1])
+    assertEqual(y, Bar.HeaderHeight() + NS.GetSetting("bar.layout.padding") + Bar.LabelHeight(),
+        "the icons start under the band and the first label")
+    assertTrue(f.__w >= Bar.Layout.MIN_WIDTH, "wide enough for the header")
+    -- The drag strip stands on the band, left of the controls.
+    local dp = point(f.drag)
+    assertTrue(dp[2] == Bar.Band(), "the drag strip is anchored to the band")
+end)
+
+test("bar: the header's lock writes the Master lock and its close writes bar.shown off", function()
+    local NS, M, Bar = scene()
+    complete(NS, "A")
+    settle(M)
+    local f = Bar.Frame()
+    local seen = {}
+    NS.NewBusTarget():RegisterMessage(NS.MSG.SETTINGS_CHANGED, function(_, path) seen[#seen + 1] = path end)
+    f.lock:__fire("OnClick")
+    -- red under: a lock control that keeps a lock of its own (options-ui-§15's second switch)
+    assertEqual(NS.db.profile.locked, true)
+    assertEqual(table.concat(seen, ","), "locked", "through the seam")
+    assertEqual(f.lock.icon:GetTexture(), NS.Icon("lock"))
+    f.lock:__fire("OnClick")
+    assertEqual(NS.db.profile.locked, false)
+    assertEqual(f.lock.icon:GetTexture(), NS.Icon("unlock"))
+    f.close:__fire("OnClick")
+    settle(M)
+    assertEqual(NS.db.profile.bar.shown, false, "close writes bar.shown")
+    assertFalse(f:IsShown())
+end)
+
+test("bar: the header's right click opens the bar's settings page", function()
+    local NS, M, Bar = scene()
+    complete(NS, "A")
+    settle(M)
+    local opened = {}
+    local real = NS.OpenOptionsPanel
+    NS.OpenOptionsPanel = function(page) opened[#opened + 1] = page end
+    Bar.Frame().drag:__fire("OnMouseUp", "RightButton")
+    Bar.Frame().drag:__fire("OnMouseUp", "LeftButton")
+    NS.OpenOptionsPanel = real
+    assertEqual(table.concat(opened, ","), "bar")
+end)
+
+test("bar: without the library the header stands on a host band, title and lock included", function()
+    local inst = T.load({ libFiles = {} })
+    local NS, M = inst.NS, inst.mocks
+    dofile(T.root .. "/tests/_kit/mock_paint.lua")(M)
+    NS.db.profile.bar.shown = true
+    NS.Outfits.Create("A", naked())
+    NS.Bar.Resume()
+    M.__fireTimers()
+    local f = NS.Bar.Frame()
+    assertTrue(f ~= nil and f:IsShown(), "the bar shows")
+    -- red under: a header anchored to S.Band alone (nil without the library: nothing laid)
+    local band = NS.Bar.Band()
+    assertTrue(band ~= nil and band == f.hostBand, "the host's band")
+    assertEqual(f.title:GetText(), "Outfits")
+    assertTrue(f.lock ~= nil, "the lock control")
+    assertEqual(NS.Bar.HeaderHeight(), 1 + 30)
+end)
+
+test("bar: each category's row carries its label above it, and the labels switch off", function()
+    local NS, M, Bar = scene()
+    complete(NS, "A"); accessory(NS, "B")
+    NS.db.profile.windows.bar = { point = "TOPLEFT", x = 0, y = 0 }
+    settle(M)
+    local l1, l2 = Bar.Label(1), Bar.Label(2)
+    assertTrue(l1:IsShown() and l2:IsShown(), "both labels show")
+    assertEqual(l1:GetText(), "Complete outfits")
+    assertEqual(l2:GetText(), "Accessories")
+    local lh = Bar.LabelHeight()
+    assertTrue(lh > 0, "a label line")
+    local P = NS.GetSetting("bar.layout.padding")
+    local _, y1 = at(Bar.Buttons()[1])
+    -- red under: a label laid over the icons (no labelH in the layout spec)
+    assertEqual(y1, Bar.HeaderHeight() + P + lh, "the row's icons under its label")
+    local _, rel, _, _, ly = l1:GetPoint(1)
+    assertTrue(rel == Bar.Frame(), "anchored to the bar")
+    assertEqual(-ly, Bar.HeaderHeight() + P, "the label at the block's top")
+    NS.SetByPath("bar.labels.show", false)
+    settle(M)
+    assertFalse(l1:IsShown(), "off: no label")
+    assertEqual(Bar.LabelHeight(), 0)
+    _, y1 = at(Bar.Buttons()[1])
+    assertEqual(y1, Bar.HeaderHeight() + P, "off: no label line")
+end)
+
+test("bar: a vertical layout's label is as wide as its column", function()
+    local NS, M, Bar = scene()
+    complete(NS, "A")
+    NS.SetByPath("bar.vertical", true)
+    settle(M)
+    -- red under: a vertical label spanning the whole bar over the next column
+    assertEqual(Bar.Label(1):GetWidth(), NS.GetSetting("bar.icons.size"))
+end)
+
+-- ── position ─-- ── position ──────────────────────────────────────────────────────────────────────────────────
+
+test("bar: the header's drag stop saves the nearest corner; a locked bar does not move", function()
     local NS, M, Bar = scene()
     complete(NS, "A")
     settle(M)
     local f = Bar.Frame()
     geom(M.UIParent, 0, 1000, 800, 0)
     geom(f, 900, 950, 100, 50)
-    local handle = f.handle
-    assertTrue(handle ~= nil, "a drag handle was built")
-    assertTrue(handle:IsShown(), "shown while unlocked")
-    handle:__fire("OnDragStart")
-    handle:__fire("OnDragStop")
+    local drag = f.drag
+    assertTrue(drag ~= nil, "the header's drag strip was built")
+    drag:__fire("OnDragStart")
+    drag:__fire("OnDragStop")
     local p = NS.db.profile.windows.bar
     assertEqual(p.point, "BOTTOMRIGHT"); assertEqual(p.x, -50); assertEqual(p.y, 50)
     geom(f, 10, 60, 790, 740)
@@ -240,12 +452,12 @@ test("bar: the drag stop saves the nearest corner; a locked bar does not move", 
     assertEqual(NS.db.profile.windows.bar.y, -10)
     NS.SetByPath("locked", true)
     settle(M)
-    assertFalse(handle:IsShown(), "hidden while locked")
     geom(f, 900, 950, 100, 50)
-    handle:__fire("OnDragStart")
-    handle:__fire("OnDragStop")
-    -- red under: a canDrag that ignores the lock
-    assertEqual(NS.db.profile.windows.bar.point, "TOPLEFT", "a locked bar saved nothing")
+    local moved = 0
+    rawset(f, "StartMoving", function() moved = moved + 1 end)
+    drag:__fire("OnDragStart")
+    -- red under: an OnDragStart that ignores the lock
+    assertEqual(moved, 0, "a locked bar does not start moving")
 end)
 
 test("bar: the drag stop writes bar.position through the seam, and its echo leaves the bar where it fell", function()
@@ -259,8 +471,8 @@ test("bar: the drag stop writes bar.position through the seam, and its echo leav
     local f = Bar.Frame()
     geom(M.UIParent, 0, 1000, 800, 0)
     geom(f, 900, 950, 100, 50)
-    f.handle:__fire("OnDragStart")
-    f.handle:__fire("OnDragStop")
+    f.drag:__fire("OnDragStart")
+    f.drag:__fire("OnDragStop")
     assertEqual(table.concat(seen, ","), "bar.position", "the drag stop did not write through the seam")
     assertEqual(NS.GetSetting("bar.position"), "BOTTOMRIGHT -50 50")
     -- The echo schedules one redraw; it anchors at the corner just saved, not back at the old one.
@@ -287,21 +499,22 @@ end)
 
 -- ── the icon ladder ───────────────────────────────────────────────────────────────────────────
 
-test("bar: the icon ladder: own, the trigger's descriptor, the Birthday Suit, a single item, the coat hanger", function()
+test("bar: the icon ladder: own, the trigger's descriptor, the Birthday Suit, a single item, the default", function()
     local NS, M, Bar = scene()
     local O = NS.Outfits
     local own = accessory(NS, "Own")
     NS.SetByPath("outfit.icon", 134400 + 1, own)
     assertEqual(Bar.OutfitIcon(O.Get(own)), 134401)
     local solo = accessory(NS, "Solo")
-    local HANGER = NS.Constants.DEFAULT_OUTFIT_ICON
+    local DEFAULT = 132724   -- smoke round 2 design G1: NS.Constants.DEFAULT_OUTFIT_ICON
+    assertEqual(NS.Constants.DEFAULT_OUTFIT_ICON, DEFAULT)
     -- red under: a name-keyed ladder (the legacy `Solo` key): the name alone draws the default icon
-    assertEqual(Bar.OutfitIcon(O.Get(solo)), HANGER)
+    assertEqual(Bar.OutfitIcon(O.Get(solo)), DEFAULT)
     NS.SetByPath("outfit.trigger.id", "INSTANCE_DIFFICULTY", solo)
     assertEqual(Bar.OutfitIcon(O.Get(solo)), 132132, "INSTANCE_DIFFICULTY's icon replaces Solo")
     local dungeon = accessory(NS, "Dungeon")
     NS.SetByPath("outfit.trigger.id", "IN_DUNGEON", dungeon)
-    assertEqual(Bar.OutfitIcon(O.Get(dungeon)), HANGER, "a descriptor with no icon falls through")
+    assertEqual(Bar.OutfitIcon(O.Get(dungeon)), DEFAULT, "a descriptor with no icon falls through")
     local nakedRec = O.Get(complete(NS, "Birthday"))
     nakedRec.builtin = "NAKED"
     assertEqual(Bar.OutfitIcon(nakedRec), Bar.NAKED_ICON)
@@ -309,8 +522,8 @@ test("bar: the icon ladder: own, the trigger's descriptor, the Birthday Suit, a 
     local single = O.Create("Hero", { ChestSlot = NS.ItemInfo.Snapshot(info) })
     assertEqual(Bar.OutfitIcon(O.Get(single)), M.C_Item.GetItemIconByID(info.id))
     local two = O.Create("Two", { ChestSlot = NS.ItemInfo.Snapshot(info), HeadSlot = { id = 0 } })
-    -- red under: the legacy plain icon (132662) as the last rung (plan Task 3.5: the coat hanger).
-    assertEqual(Bar.OutfitIcon(O.Get(two)), HANGER)
+    -- red under: the legacy plain icon (132662) or the coat hanger as the last rung.
+    assertEqual(Bar.OutfitIcon(O.Get(two)), DEFAULT)
     local glyphed = accessory(NS, "Glyphed")
     O.SetIcon(glyphed, NS.Icon("ph:sword"), "ff0000")
     settle(M)
@@ -329,13 +542,60 @@ test("bar: the icon ladder: own, the trigger's descriptor, the Birthday Suit, a 
     assertTrue(r == 1 and g == 1 and b == 1, "a fileID is drawn white")
 end)
 
+-- ── the icon border and the worn highlight ───────────────────────────────────────────────────
+
+test("bar: an icon's border is the skin's HUD edge while it follows the skin, the player's when not", function()
+    local NS, M, Bar = scene()
+    accessory(NS, "Hat")
+    settle(M)
+    local btn = Bar.Buttons()[1]
+    assertTrue(btn.skinEdge:IsShown(), "the skin's edge")
+    assertTrue(btn.edge == nil or not btn.edge:IsShown(), "no edge of the player's")
+    NS.SetByPath("bar.icons.borderColorFromSkin", false)
+    NS.SetByPath("bar.icons.borderColor", { r = 1, g = 0, b = 0, a = 1 })
+    NS.SetByPath("bar.icons.borderStyleFromSkin", false)
+    NS.SetByPath("bar.icons.borderSize", 2)
+    settle(M)
+    btn = Bar.Buttons()[1]
+    -- red under: a button that keeps S.IconBorder's skin edge whatever the companions say
+    assertFalse(btn.skinEdge:IsShown(), "the skin's edge steps aside")
+    assertTrue(btn.edge ~= nil and btn.edge:IsShown(), "the player's edge")
+    local r, g, b = btn.edge:GetBackdropBorderColor()
+    assertTrue(r == 1 and g == 0 and b == 0, "the swatch")
+    assertEqual(btn.edge:GetBackdrop().edgeSize, 2, "the thickness")
+    NS.SetByPath("bar.icons.borderShow", false)
+    settle(M)
+    btn = Bar.Buttons()[1]
+    assertFalse(btn.skinEdge:IsShown()); assertFalse(btn.edge:IsShown())
+end)
+
+test("bar: the worn highlight is the corner mark, an accent edge, both or neither", function()
+    local NS, M, Bar = scene()
+    local hat = accessory(NS, "Hat")
+    accessory(NS, "Hood")
+    NS.Stack.Wear(hat, { hw = true })
+    settle(M)
+    local function shown()
+        local btn = buttonFor(Bar, hat)
+        local other = Bar.Buttons()[2]
+        assertFalse(other.worn:IsShown() or (other.wornEdge ~= nil and other.wornEdge:IsShown()), "an outfit not worn")
+        return btn.worn:IsShown(), btn.wornEdge ~= nil and btn.wornEdge:IsShown()
+    end
+    assertEqual(NS.GetSetting("bar.worn.style"), "both")
+    local mark, edge = shown()
+    -- red under: a worn style read as the mark alone
+    assertTrue(mark and edge, "both by default")
+    for style, want in pairs({ mark = { true, false }, border = { false, true }, none = { false, false } }) do
+        NS.SetByPath("bar.worn.style", style)
+        settle(M)
+        mark, edge = shown()
+        assertEqual(mark, want[1], style .. " mark")
+        assertEqual(edge, want[2], style .. " edge")
+    end
+end)
+
 -- ── clicks, drops, the menu, the tooltip ──────────────────────────────────────────────────────
 
-local function buttonFor(Bar, id)
-    for _, btn in ipairs(Bar.Buttons()) do
-        if btn.outfit.id == id then return btn end
-    end
-end
 
 test("bar: a left click wears; a worn accessory is removed; a worn Complete outfit stays on", function()
     local NS, M, Bar = scene()
@@ -504,7 +764,7 @@ test("bar: in combat the alpha is Master alpha times bar.combatAlpha, from PLAYE
     assertFalse(Bar.Frame():IsShown(), "the visibility rule hides it in combat")
 end)
 
-test("bar: leaving the bar fades the handle over 0.3 s and the bar to its alpha over 0.5 s", function()
+test("bar: leaving the bar fades it to its alpha over 0.5 s", function()
     local NS, M, Bar, ctl = scene()
     complete(NS, "A")
     NS.SetByPath("alpha", 0.6)
@@ -513,35 +773,18 @@ test("bar: leaving the bar fades the handle over 0.3 s and the bar to its alpha 
     f:__fire("OnEnter")
     assertEqual(f:GetAlpha(), 1, "full while hovered")
     f:__fire("OnLeave")
-    local byFrame = {}
-    for _, fade in ipairs(ctl.fades) do byFrame[fade[1]] = fade end
-    local h, b = byFrame[f.handle], byFrame[f]
-    -- red under: swapped durations
-    assertEqual(h[2], 0.3); assertEqual(h[3], 1); assertEqual(h[4], 0)
+    local b
+    for _, fade in ipairs(ctl.fades) do if fade[1] == f then b = fade end end
+    -- red under: a fade of another length
     assertEqual(b[2], 0.5); assertEqual(b[3], 1); assertEqual(b[4], 0.6)
-    ctl.fades = {}
-    NS.SetByPath("locked", true)
-    settle(M)
-    f:__fire("OnEnter"); f:__fire("OnLeave")
-    for _, fade in ipairs(ctl.fades) do assertFalse(fade[1] == f.handle, "no handle fade while locked") end
-end)
-
-test("bar: a rebuild leaves a faded handle faded; an unlock shows it again", function()
-    local NS, M, Bar = scene()
-    complete(NS, "A")
-    settle(M)
-    local f = Bar.Frame()
-    assertEqual(f.handle:GetAlpha(), 1, "unlocked: the handle shows")
-    f:__fire("OnEnter"); f:__fire("OnLeave")
-    f.handle:SetAlpha(0)                                 -- where UIFrameFadeOut leaves it
-    NS.SendBus(NS.MSG.OUTFIT_EDITED, NS.Outfits.FindByName("A"), "name")
-    settle(M)
-    assertTrue(f.handle:IsShown())
-    -- red under: SetLocked's SetAlpha(1) on every refresh (any rebuild brought the handle back).
-    assertEqual(f.handle:GetAlpha(), 0, "the rebuild left the faded handle alone")
-    NS.SetByPath("locked", true); settle(M)
-    NS.SetByPath("locked", false); settle(M)
-    assertEqual(f.handle:GetAlpha(), 1, "an unlock shows it at full alpha")
+    assertEqual(#ctl.fades, 1, "one fade: there is no handle to fade")
+    -- The header's close keeps the bar lit as its lock and drag strip do.
+    f:SetAlpha(0.6)
+    f.close:__fire("OnEnter")
+    -- red under: the close X built without the bar's hover hooks (the bar fades under the pointer)
+    assertEqual(f:GetAlpha(), 1, "full while the close is hovered")
+    f.close:__fire("OnLeave")
+    assertEqual(#ctl.fades, 2, "leaving the close fades the bar")
 end)
 
 test("bar: an alpha change stops a hover-out fade still running, so it cannot land on the old alpha", function()
@@ -561,22 +804,6 @@ test("bar: an alpha change stops a hover-out fade still running, so it cannot la
     -- red under: ApplyAlpha without its fadeStop(bar) (the fade ends at 0.6 over combatAlpha 0).
     assertTrue(hit, "the running fade was not stopped")
     assertEqual(f:GetAlpha(), 0)
-end)
-
-test("bar: the clamp covers the handle above the bar while it shows, and only then", function()
-    local NS, M, Bar = scene()
-    local insets
-    complete(NS, "A")
-    settle(M)
-    local f = Bar.Frame()
-    rawset(f, "SetClampRectInsets", function(_, l, r, t, b) insets = { l, r, t, b } end)
-    NS.SendBus(NS.MSG.SETTINGS_CHANGED, "bar.vertical", false)
-    settle(M)
-    -- red under: no SetClampRectInsets (a drag to the top edge pushes the handle off screen).
-    assertTrue(insets ~= nil and insets[3] >= 18 + 2, "the top inset reaches over the handle")
-    assertEqual(insets[1], 0); assertEqual(insets[2], 0); assertEqual(insets[4], 0)
-    NS.SetByPath("locked", true); settle(M)
-    assertEqual(insets[3], 0, "locked: no handle, no inset")
 end)
 
 -- ── the show decision and the lifecycle ───────────────────────────────────────────────────────
@@ -680,8 +907,12 @@ test("bar: test mode shows the sample outfits with the strip, even with the bar 
     assertTrue(f:IsShown(), "test mode shows the bar")
     assertEqual(ids(Bar), "preview:1,preview:2")
     assertTrue(f.strip ~= nil and f.strip:IsShown(), "the strip is up")
+    local sp = point(f.strip)
+    -- red under: the strip anchored at the container's top, over the header band
+    assertTrue(sp[2] == Bar.Band() and sp[3] == "BOTTOMLEFT", "the strip hangs under the band")
     local first = point(Bar.Buttons()[1]:GetParent())
-    assertEqual(first[5], -(NS.TEST_STRIP_HEIGHT + 2), "the rows sit below the strip")
+    assertEqual(first[5], -(Bar.HeaderHeight(true) + NS.GetSetting("bar.layout.padding")), "the rows sit below the strip")
+    assertTrue(Bar.HeaderHeight(true) >= Bar.HeaderHeight() + NS.TEST_STRIP_HEIGHT, "the strip adds its height")
     local btn = Bar.Buttons()[1]
     assertFalse(btn.worn:IsShown())
     assertEqual(btn.icon:GetTexture(), 132276)

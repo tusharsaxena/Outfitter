@@ -136,3 +136,10 @@ L["Test Outfit 4"] = "Test Outfit 4"
 L["Test Outfit 5"] = "Test Outfit 5"
 L["Test mode is not available in combat."] = "Test mode is not available in combat."
 L["Test mode ended: you entered combat."] = "Test mode ended: you entered combat."
+
+-- Smoke round 2 Task 2.6 keys (modules/Window.lua: the test window's strip and degraded title)
+L["Test mode: sample outfits, nothing equipped"] = "Test mode: sample outfits, nothing equipped"
+L["Outfitter Reborn (test mode)"] = "Outfitter Reborn (test mode)"
+
+-- Smoke round 2 review fix keys (modules/Bar_Chrome.lua: the bar's degraded test-mode title)
+L["Outfits (test mode)"] = "Outfits (test mode)"

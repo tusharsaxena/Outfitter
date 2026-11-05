@@ -274,10 +274,18 @@ test("rows: an outfit row shows worn, icon, EM mark, name in that order", functi
     assertLeftAt(row, row.name, 68, "the name")
     assertEqual(select(4, row.name:GetPoint(2)), -38, "the name ends clear of the lightning")
     assertEqual(row.outfitIcon:GetWidth(), 16)
-    assertTrue(row.outfitIcon:IsShown(), "an outfit row shows its icon")
-    -- The one resolver the bar and the broker draw too (plan Task 3.5), its tint included.
+    -- The default (a fileID, smoke round 2 design G1) draws on the edged art texture at the same place.
+    assertTrue(row.outfitArt:IsShown(), "an outfit row shows its icon")
+    assertLeftAt(row, row.outfitArt, 32, "the outfit art")
+    -- The one resolver the bar and the broker draw too (plan Task 3.5), its tint included: a tinted
+    -- glyph, so the tint is not the default's white.
     -- red under: the row keeping the bar's interim, untinted answer.
-    local tex, r, g, b = NS.OutfitIcon(NS.Outfits.Get(row.entry.id))
+    local id = row.entry.id
+    assertTrue(NS.Outfits.SetIcon(id, assert(NS.Icon("ph:sword")), "ff8000"))
+    NS.Window.MarkDirty(true); NS.Window.Render()
+    for _, r in ipairs(rows(NS)) do if r.entry and r.entry.id == id then row = r end end
+    assertTrue(row.outfitIcon:IsShown(), "an outfit row shows its glyph icon")
+    local tex, r, g, b = NS.OutfitIcon(NS.Outfits.Get(id))
     assertEqual(row.outfitIcon:GetTexture(), tex)
     local vr, vg, vb = row.outfitIcon:GetVertexColor()
     assertTrue(vr == r and vg == g and vb == b, "the row draws the resolver's tint")
@@ -290,26 +298,31 @@ test("rows: an outfit row shows worn, icon, EM mark, name in that order", functi
     assertFalse(row.em:IsShown(), "an item row drew the EM mark")
 end)
 
--- An outfit's icon is a fileID (Blizzard art, edged and zoom-cropped as an item's is) or a catalog
--- glyph, the coat hanger by default, drawn whole and borderless as the sheet button draws it.
+-- An outfit's icon is a fileID (Blizzard art, edged and zoom-cropped as an item's is; the default,
+-- 132724, among them) or a catalog glyph, drawn whole and borderless.
 test("rows: a glyph outfit icon is drawn uncropped; a fileID one edged and cropped", function()
     local NS = opened()
     local row = rowOf(NS, "outfit")
     local id = row.entry.id
-    local glyph = NS.OutfitIcon(NS.Outfits.Get(id))
-    assertEqual(type(glyph), "string", "the default outfit icon is the coat hanger glyph")
+    local function rebound()
+        NS.Window.MarkDirty(true); NS.Window.Render()
+        for _, r in ipairs(rows(NS)) do if r.entry and r.entry.id == id then row = r end end
+    end
+    -- Smoke round 2 design G1: the default is the fileID 132724, on the edged art texture.
+    -- red under: the coat-hanger glyph default (drawn whole on outfitIcon).
+    assertEqual((NS.OutfitIcon(NS.Outfits.Get(id))), 132724)
+    assertTrue(row.outfitArt:IsShown(), "the default is not on the edged texture")
+    assertEqual(row.outfitArt:GetTexture(), 132724)
+    assertFalse(row.outfitIcon:IsShown(), "the default also drew the glyph texture")
+    local l = row.outfitArt:GetTexCoord()
+    assertTrue(math.abs(l - 0.07) < 1e-6, "the default is not zoom-cropped")
+    local glyph = assert(NS.Icon("ph:sword"))
+    assertTrue(NS.Outfits.SetIcon(id, glyph))
+    rebound()
     assertEqual(row.outfitIcon:GetTexture(), glyph)
     -- red under: the glyph drawn through S.IconBorder (texcoords 0.07..0.93).
     assertEqual((row.outfitIcon:GetTexCoord()), 0, "the glyph is cropped")
     assertFalse(row.outfitArt:IsShown(), "a glyph outfit drew the edged art texture")
-    assertTrue(NS.Outfits.SetIcon(id, 132662))
-    NS.Window.MarkDirty(true); NS.Window.Render()
-    for _, r in ipairs(rows(NS)) do if r.entry and r.entry.id == id then row = r end end
-    assertTrue(row.outfitArt:IsShown(), "a fileID outfit icon is not on the edged texture")
-    assertEqual(row.outfitArt:GetTexture(), 132662)
-    assertFalse(row.outfitIcon:IsShown(), "a fileID outfit icon also drew the glyph texture")
-    local l = row.outfitArt:GetTexCoord()
-    assertTrue(math.abs(l - 0.07) < 1e-6, "the fileID icon is not zoom-cropped")
 end)
 
 test("rows: the EM mark is full for an EM outfit and dimmed otherwise", function()

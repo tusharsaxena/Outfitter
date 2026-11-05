@@ -78,20 +78,24 @@ test("broker: text and icon follow the worn outfit", function()
     -- red under: a broker that never listens to the stack's messages (the text stays the brand).
     assertEqual(obj.icon, glyph)
     assertEqual(("%.2f %.2f %.2f"):format(obj.iconR, obj.iconG, obj.iconB), ("%.2f %.2f %.2f"):format(1, 128 / 255, 0))
+    assertNil(obj.iconCoords, "a glyph is drawn whole, never cropped")
     NS.Stack.Remove(ids.ride, { hw = true })
     M.__fireTimers()
     assertEqual(obj.text, NS.BRAND, "taking it off did not reach the text")
 end)
 
-test("broker: no outfit shows the brand and the coat hanger", function()
+test("broker: no outfit shows the brand and the default icon, untinted and cropped", function()
     local NS, M = scene()
     local obj = object(M)
     assertNil(NS.Stack.Top())
     assertEqual(obj.text, NS.BRAND)
-    assertEqual(obj.icon, NS.Constants.DEFAULT_OUTFIT_ICON)
-    -- The tinted hanger: the sheet button's own token, not the rows' white.
-    local r, g, b = NS.SkinColor("of.sheet.button")
-    assertEqual(("%.2f %.2f %.2f"):format(obj.iconR, obj.iconG, obj.iconB), ("%.2f %.2f %.2f"):format(r, g, b))
+    -- Smoke round 2 design G1 (D1): 132724, white, cropped like the window's art.
+    -- red under: the gold-tinted coat hanger (the retired of.sheet.button token).
+    assertEqual(obj.icon, 132724)
+    assertEqual(("%.2f %.2f %.2f"):format(obj.iconR, obj.iconG, obj.iconB), "1.00 1.00 1.00")
+    local c = obj.iconCoords
+    assertTrue(type(c) == "table" and c[1] == 0.07 and c[2] == 0.93 and c[3] == 0.07 and c[4] == 0.93,
+        "the idle icon is not cropped")
 end)
 
 test("broker: left-click lists categories then outfits, worn ones checked, missing in the missing color", function()

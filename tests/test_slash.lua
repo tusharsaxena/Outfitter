@@ -293,7 +293,7 @@ end)
 
 local OUTFIT_VERBS = { "show", "hide", "wear", "unwear", "toggle", "update", "deposit", "depositunique",
     "depositothers", "withdraw", "withdrawothers", "missing", "unequip", "updatetitle", "auto", "zone",
-    "iteminfo", "test", "lock", "unlock", "deleteall" }
+    "iteminfo", "test", "bar", "lock", "unlock", "deleteall" }
 
 --- A fresh instance at t = 100 on a gear scenario, PlayerState, Inventory and Equip resumed and the
 --- first scan settled (the bank frame opened when `opened`). Every other module is the real one.
@@ -667,6 +667,28 @@ test("slash: `iteminfo` prints the link's fields through the secret-safe reader"
     local link = "|cffffffff|Hitem:6948::::::::|h[Hearthstone]|h|r"
     NS.Slash.Route("iteminfo " .. link)
     assertEqual(table.concat(bare(M), "|"), table.concat(NS.ItemInfo.LinkInfoLines(link), "|"))
+end)
+
+test("slash: `bar show|hide|toggle` writes bar.shown through the CLI; no word toggles", function()
+    local NS, M = scene()
+    NS.Slash:OnSlash("bar show")
+    -- red under: a verb writing NS.db.profile.bar.shown around the seam (no echo)
+    assertEqual(NS.db.profile.bar.shown, true)
+    assertTrue(anyLine(M, "bar.shown"), "echoed")
+    NS.Slash:OnSlash("bar hide")
+    assertEqual(NS.db.profile.bar.shown, false)
+    NS.Slash:OnSlash("bar toggle")
+    assertEqual(NS.db.profile.bar.shown, true)
+    NS.Slash:OnSlash("bar")
+    assertEqual(NS.db.profile.bar.shown, false, "no word toggles")
+    M.__resetPrinted()
+    NS.Slash:OnSlash("bar maybe")
+    assertEqual(NS.db.profile.bar.shown, false, "an unknown word writes nothing")
+    assertEqual(table.concat(bare(M), "|"), "/or bar takes show, hide or toggle")
+    assertTrue(NS.SetByPath("enabled", false))
+    NS.Slash:OnSlash("bar show")
+    -- red under: `bar` on HOST_LIVE_VERBS (a feature verb answers the stand-down's refusal)
+    assertEqual(NS.db.profile.bar.shown, false, "refused while disabled")
 end)
 
 test("slash: `test` flips test mode", function()

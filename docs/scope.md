@@ -34,7 +34,10 @@ each line is `superpowers/specs/2026-11-03-outfitter-feature-inventory.md` (INV)
 - **Quick slots.** Clicking an empty slot, or dropping an item on one, opens the item flyout.
 - **Ka0s surfaces.** A settings panel (General, Outfit Bar, Profiles), a skin from LibKa0s-Skin, a
   minimap button and LibDataBroker launcher, the debug console and the diagnostics report, a test mode
-  that fills the outfit bar with sample outfits, and a performance harness.
+  that fills the outfit bar and the outfit window with sample outfits (the window alone when the sheet
+  is closed), and a performance harness.
+- **The outfit bar** is a Ka0s HUD window: a header with the lock and close, category labels, its
+  own layout, icon and frame options, `/or bar show|hide|toggle` and a *Toggle outfit bar* key.
 
 ## What it does not do
 
@@ -51,8 +54,9 @@ each line is `superpowers/specs/2026-11-03-outfitter-feature-inventory.md` (INV)
   has no saved position and hides for the length of combat (D2, O4).
 - **No quick-switch minimap menu.** The minimap button is the standard Ka0s launcher; quick switching
   lives on the bar, the window, the bindings and `/or wear` (H6).
-- **No simulator.** Nothing simulates a fight or a zone change for preview (H18). Test mode fills the
-  outfit bar with sample outfits and nothing else (H17).
+- **No simulator.** Nothing simulates a fight or a zone change for preview (H18). Test mode shows
+  sample outfits on the bar and the window and equips nothing (H17, reversed for the window by D10
+  on 2026-11-05).
 - **Nothing Blizzard took away.** Void storage, TankPoints, gem capture, the spellbook half of the
   icon picker, bank-item tooltips, the Has Debuff, Low Health and Championing presets, and Around Town
   stay retired (R6, INV §18).

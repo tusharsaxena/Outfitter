@@ -2,51 +2,70 @@ local _, NS = ...
 -- modules/Bar.lua — NS.Bar: the outfit bar (design §7.7, INV §7.6; OutfitterBar.lua at 7ea3dc3).
 --
 -- A HUD (skinning-§6) and a free-floating display: a persisted position, the Master Lock and the
--- position Reset (BP §11). It stores no colors, so it owes no FromSkin rows. ONE container,
--- `OutfitterRebornBar` (strata HUD, movable, clamped, toplevel), holds a backplate, one row frame per
--- category with shown outfits (`OutfitterRebornBarRow1..2`), the drag handle above it and, in test
--- mode, the test strip along its top. The buttons are pooled per row (modules/Bar_Buttons.lua builds
--- them): each render releases every row and acquires exactly one button per outfit, which fixes the
--- legacy `_ButtonBar`'s extra button.
+-- position Reset (BP §11). ONE container, `OutfitterRebornBar` (strata HUD, movable, clamped,
+-- toplevel), wears a Ka0s window's look with a header (modules/Bar_Chrome.lua: the Shell chrome or the
+-- player's plate, the title band with its title, lock and close, the drag strip and, in test mode,
+-- the test strip under the band), and holds one row frame per category with shown outfits
+-- (`OutfitterRebornBarRow1..2`). The buttons are pooled per row (modules/Bar_Buttons.lua builds them):
+-- each render releases every row and acquires exactly one button per outfit, which fixes the legacy
+-- `_ButtonBar`'s extra button. Its colors each carry a FromSkin companion (skinning-§6).
 --
--- LAYOUT. A row runs 1 x N, or N x 1 with `bar.vertical` (one column per category, design §4.2), at a
--- 37 px pitch with 32 px buttons. Everything grows AWAY from the saved corner (QUADRANT): a bar saved
--- at a right corner grows left, one saved at a bottom corner grows up. The position is
+-- LAYOUT is modules/Bar_Layout.lua's arithmetic over the Layout and Icons rows (smoke round 2 design
+-- G6): icons per line, padding, spacing, icon size, and the grow direction. "Automatic" grows AWAY
+-- from the saved corner (QUADRANT): a bar saved at a right corner grows left, one saved at a bottom
+-- corner grows up; an explicit direction pins the corner SavePosition saves at, and a write to it
+-- re-saves the place there, so the bar neither jumps nor flips (a place written at another corner,
+-- by a reset or a profile switch, is re-saved there on the next draw: Bar.CornerDisagrees). The position is
 -- `profile.windows.bar` (design §3.4), the storage of the `bar.position` row (settings/OutfitBar.lua),
 -- and its one writer is that row's set through NS.SetByPath (architecture-§5): SavePosition on a drag
--- stop (the nearest screen corner, in screen pixels, divided by the effective scale on the way back,
--- as legacy stored it), `/or set|reset bar.position` and Reset position (NS.ApplyDefault). The set
--- decodes into a new table each time, so a reset COPIES the default (legacy aliased it, so a reset
--- after a drag could do nothing: OutfitterBar.lua:107-115).
+-- stop (that corner, in screen pixels, divided by the effective scale on the way back, as legacy
+-- stored it), `/or set|reset bar.position` and Reset position (NS.ApplyDefault). The set decodes into
+-- a new table each time, so a reset COPIES the default (legacy aliased it, so a reset after a drag
+-- could do nothing: OutfitterBar.lua:107-115).
 --
--- SHOWN = (bar.shown or test mode) and the Master visibility rule and not in a pet battle and not
--- stood down. The decision is made here and nowhere else, so a stood-down bar cannot be re-shown.
+-- SHOWN = (in test mode: not dismissed for this test session; else bar.shown) and the Master
+-- visibility rule and not in a pet battle and not stood down. The decision is made here and nowhere
+-- else, so a stood-down bar cannot be re-shown.
+--
+-- TEST MODE'S DISMISSAL (the bar's half of design D10; the window's is Dock.testDismissed). While test
+-- mode is on, the four player hide paths (the header's close X, `/or bar hide` and `toggle`, the Toggle
+-- outfit bar key) go through Bar.SetTestShown: they dismiss the bar for the rest of THAT test session
+-- (`st.testDismissed`, session-only, never saved) and never write `bar.shown`, so a player whose bar was
+-- on still has it when test mode ends. `/or bar show` (and toggle or the key while dismissed) brings it
+-- back the same way. Neither ends test mode (preview-mode). The flag clears on every PREVIEW_CHANGED
+-- and on the stand-down, so after test mode, by any route, the bar follows `bar.shown` again.
 -- ALPHA is the Master alpha, times `bar.combatAlpha` in combat (PLAYER_STATE_CHANGED "combat"); at 0
--- the buttons take no mouse (frame-layering-§4: insecure frames, so legal in combat). The legacy fades
--- are kept: off the bar, the handle fades out over 0.3 s and the bar down to its alpha over 0.5 s.
+-- the buttons take no mouse (frame-layering-§4: insecure frames, so legal in combat). The legacy fade
+-- is kept: off the bar, it fades down to its alpha over 0.5 s.
 --
 -- REBUILDS are coalesced on one 0 s AceTimer flag: OUTFIT_WORN/REMOVED/ADDED/DELETED/EDITED/RENAMED,
--- SETTINGS_CHANGED for a `bar.*` or Master row, PREVIEW_CHANGED and PROFILE_CHANGED (which is also
--- the re-anchor a profile switch needs: a new profile carries its own `windows.bar`).
+-- SETTINGS_CHANGED for a `bar.*` or Master row, PREVIEW_CHANGED, PROFILE_CHANGED (which is also the
+-- re-anchor a profile switch needs: a new profile carries its own `windows.bar`) and a skin change
+-- (NS.Skin.OnLooksChanged: the band's height and the skin's colors move with it).
+--
+-- A MENU THE BAR OPENED GOES WITH IT. A right click opens the outfit menu on the shared popup
+-- (NS.OpenMenu), which no Hide of the bar reaches; every path that hides the bar (`/or bar hide` and
+-- `toggle`, the Toggle outfit bar key and the header's close X, through `bar.shown`, or in test mode
+-- through the session's dismissal; the stand-down through Suspend; test mode's end, a pet battle, the visibility rule) ends in hideFrames,
+-- which closes that menu, and only that one (NS.CloseMenuFrom with Bar.IsButton), so a menu the
+-- window opened stays up (core/WidgetsSetup.lua). Left open after `/or disable`, its rows would
+-- still write saved data.
 --
 -- CALLS (at call time, no nil guard; design §12): NS.Outfits, NS.Preview.IsActive/Source,
--- NS.PlayerState.InCombat; the buttons call NS.Stack, NS.OutfitMenu, NS.OutfitTooltip, NS.Triggers.
+-- NS.PlayerState.InCombat, NS.CloseMenuFrom; the buttons call NS.Stack, NS.OutfitMenu,
+-- NS.OutfitTooltip, NS.Triggers.
 
 local Bar = {}
 NS.Bar = Bar
 
-local L = NS.L
 local Secrets = NS.Secrets
 local LAYERS = NS.Constants.LAYERS
 local Perf = NS.Perf
 
-local PITCH, BUTTON_SIZE = 37, 32       -- Style.ButtonBar: 37 px buttons (OutfitterUITools.lua)
 local MAX_ROWS = 2                      -- one per category
-local HANDLE_FADE, BAR_FADE = 0.3, 0.5  -- StartFrameFades (OutfitterBar.lua:236-248)
-local HANDLE_GAP = 2
-local HANDLE_HEIGHT = 18                -- W.DragHandle's strip, when the frame cannot say
+local BAR_FADE = 0.5                    -- StartFrameFades (OutfitterBar.lua:236-248)
 
-Bar.PITCH, Bar.BUTTON_SIZE, Bar.HANDLE_FADE, Bar.BAR_FADE = PITCH, BUTTON_SIZE, HANDLE_FADE, BAR_FADE
+Bar.BAR_FADE = BAR_FADE
 
 --- The direction a bar saved at each corner grows in: the sign of x, then of y.
 local QUADRANT = {
@@ -56,11 +75,13 @@ Bar.QUADRANT = QUADRANT
 
 -- The Master rows that govern the bar (options-ui-§15); every `bar.*` row does too.
 local MASTER = { scale = true, alpha = true, locked = true, visibility = true }
+-- The grow-direction rows: a write re-saves the bar's place at the corner it implies.
+local GROW = { ["bar.layout.growH"] = true, ["bar.layout.growV"] = true }
+local GROW_X = { right = 1, left = -1 }
+local GROW_Y = { down = -1, up = 1 }
 
--- handleFaded: the pointer left since the bar was last locked, so the handle rests faded out until
--- the next hover; a rebuild must not bring it back (the legacy handle showed only on hover).
-local st = { active = false, inCombat = false, inPetBattle = false, hovered = false, handleFaded = false,
-             timer = nil }
+local st = { active = false, inCombat = false, inPetBattle = false, hovered = false, timer = nil,
+             testDismissed = false }
 local bar, rows = nil, {}
 local mod   -- the module's own bus target, with AceTimer and the pet-battle events on it
 
@@ -98,12 +119,63 @@ local function scale()
     return s
 end
 
+--- The direction the bar grows in, as QUADRANT's signs: the grow rows, "auto" the saved corner's.
+--- @param p table|nil the saved place (nil reads it)
+--- @return number gx, number gy
+function Bar.Growth(p)
+    local q = QUADRANT[(p or position()).point]
+    return GROW_X[NS.GetSetting("bar.layout.growH")] or q[1], GROW_Y[NS.GetSetting("bar.layout.growV")] or q[2]
+end
+
+--- Bar_Layout's spec from the settings, for categories of `counts` icons.
+--- @param counts number[]
+--- @param strip boolean|nil
+--- @return table
+function Bar.LayoutSpec(counts, strip)
+    local gx, gy = Bar.Growth()
+    return {
+        size = num(NS.GetSetting("bar.icons.size"), 32), spacing = num(NS.GetSetting("bar.layout.spacing"), 5),
+        padding = num(NS.GetSetting("bar.layout.padding"), 4), perLine = num(NS.GetSetting("bar.layout.perLine"), 0),
+        vertical = NS.GetSetting("bar.vertical") == true, labelH = Bar.LabelHeight(), top = Bar.HeaderHeight(strip),
+        minWidth = Bar.Layout.MIN_WIDTH, gx = gx, gy = gy, counts = counts,
+    }
+end
+
 --- Whether the bar is up: the one show decision (see the header).
 --- @return boolean
 function Bar.ShouldShow()
     if not st.active or NS.IsStoodDown() or st.inPetBattle then return false end
     if not visibilityAllows() then return false end
-    return NS.GetSetting("bar.shown") == true or NS.Preview.IsActive() == true
+    if NS.Preview.IsActive() == true then return not st.testDismissed end
+    return NS.GetSetting("bar.shown") == true
+end
+
+--- Whether the player has the bar on: in test mode, not dismissed for this test session; else
+--- `bar.shown`. What `/or bar toggle` and the Toggle outfit bar key flip.
+--- @return boolean
+function Bar.PlayerWants()
+    if NS.Preview.IsActive() == true then return not st.testDismissed end
+    return NS.GetSetting("bar.shown") == true
+end
+
+--- @return boolean the bar is dismissed for the current test session
+function Bar.TestDismissed() return st.testDismissed end
+
+--- The player's show or hide while test mode is on (see the header): dismiss the bar for this test
+--- session, or bring it back, without writing `bar.shown` and without ending test mode. Outside test
+--- mode it does nothing and answers false, so the caller writes `bar.shown` as usual.
+--- @param want boolean
+--- @return boolean taken  test mode took the request
+function Bar.SetTestShown(want)
+    if NS.Preview.IsActive() ~= true then return false end
+    st.testDismissed = not want
+    Bar.Refresh()
+    return true
+end
+
+--- The header's close X: dismissed for the test session in test mode, else `bar.shown` off.
+function Bar.Close()
+    if not Bar.SetTestShown(false) then NS.SetByPath("bar.shown", false) end
 end
 
 --- The live source: each category's outfits in display order, without the ones whose trigger is
@@ -134,25 +206,6 @@ local function fadeStop(frame)
     if frame and type(UIFrameFadeRemoveFrame) == "function" then UIFrameFadeRemoveFrame(frame) end
 end
 
-local function newHandle(f)
-    local handle = NS.MakeDragHandle(f, {
-        label             = L["Outfit bar"],
-        moveFrame         = f,
-        canDrag           = function() return not locked() end,
-        onDragStop        = function() Bar.SavePosition() end,
-        onRightClick      = function() NS.OpenOptionsPanel("bar") end,
-        tooltip           = { title = L["Outfit bar"], body = { L["Drag to move. Right-click for bar settings."] } },
-        ignoreParentAlpha = true,
-        level             = LAYERS.LEVEL.HANDLE,
-    })
-    if not handle then return nil end
-    handle:SetPoint("BOTTOMLEFT", f, "TOPLEFT", 0, HANDLE_GAP)
-    handle:HookScript("OnEnter", function() Bar.HoverIn() end)
-    handle:HookScript("OnLeave", function() Bar.HoverOut() end)
-    handle:ApplyWidth(BUTTON_SIZE)
-    return handle
-end
-
 --- The container, built on the first render and kept: hidden at birth, so nothing shows before the
 --- show decision says so.
 local function ensureFrame()
@@ -165,36 +218,26 @@ local function ensureFrame()
     f:SetToplevel(true)
     f:SetScript("OnEnter", function() Bar.HoverIn() end)
     f:SetScript("OnLeave", function() Bar.HoverOut() end)
-    f.bg = CreateFrame("Frame", nil, f, "BackdropTemplate")
-    f.bg:SetAllPoints(f)
-    NS.Skin.Panel(f.bg)
+    bar = f
+    Bar.BuildChrome(f)
     for i = 1, MAX_ROWS do
         local row = CreateFrame("Frame", "OutfitterRebornBarRow" .. i, f)
         row:SetFrameLevel(level(f) + LAYERS.LEVEL.BAR_ROW)
         row:Hide()
-        rows[i] = { frame = row, pool = NS.Pool.New() }
+        local label = row:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+        label:SetWordWrap(false)
+        rows[i] = { frame = row, pool = NS.Pool.New(), label = label }
     end
-    f.handle = newHandle(f)
-    bar = f
     return f
-end
-
---- The test strip, built the first time test mode shows the bar.
-local function ensureStrip()
-    if bar.strip == nil then
-        local strip = NS.MakeTestStrip(bar, L["Test mode: sample outfits. Nothing is equipped or saved"])
-        bar.strip = strip or false
-        if strip then
-            strip:SetFrameLevel(level(bar) + LAYERS.LEVEL.MARKER)
-            strip:SetPoint("TOPLEFT", bar, "TOPLEFT", 0, 0)
-            strip:SetPoint("TOPRIGHT", bar, "TOPRIGHT", 0, 0)
-        end
-    end
-    return bar.strip or nil
 end
 
 --- The container, or nil before the first render (for the suites and the skin survey).
 function Bar.Frame() return bar end
+
+--- Row `i`'s category label (a FontString), or nil before the first render.
+--- @param i number
+--- @return table|nil
+function Bar.Label(i) return rows[i] and rows[i].label end
 
 --- The buttons handed out by the last render, row by row.
 --- @return table[]
@@ -215,32 +258,38 @@ local function anchor(p)
     bar:SetPoint(p.point, UIParent, p.point, (num(p.x, 0)) / s, (num(p.y, 0)) / s)
 end
 
---- Lay out row `index` with `outfits`, `top` px below the corner when the bar grows down.
-local function layoutRow(row, index, outfits, p, vertical, top)
-    local q, f = QUADRANT[p.point], row.frame
-    local cross = (index - 1) * PITCH
-    local x, y = 0, q[2] * cross
-    if vertical then x, y = q[1] * cross, 0 end
-    if q[2] < 0 then y = y - top end
+--- Row `row`'s category label over block `b` (truncated to its width), justified to the side the
+--- bar grows from; hidden with the labels off.
+local function placeLabel(row, b, spec, categoryID)
+    local fs = row.label
+    if spec.labelH <= 0 then return fs:Hide() end
+    fs:ClearAllPoints()
+    fs:SetPoint("TOPLEFT", bar, "TOPLEFT", b.label.x, -b.label.y)
+    fs:SetWidth(b.label.w)
+    fs:SetHeight(spec.labelH)
+    fs:SetJustifyH(spec.gx > 0 and "LEFT" or "RIGHT")
+    Bar.StyleLabel(fs, NS.WindowListModel.LABEL[categoryID] or tostring(categoryID))
+    fs:Show()
+end
+
+--- Place row frame `row` at layout block `b` and fill it with `outfits`, `size` px buttons at the
+--- block's points (anchored to the bar's TOPLEFT, Bar_Layout's coordinates).
+local function placeRow(row, b, outfits, size, style)
+    local f = row.frame
     f:ClearAllPoints()
-    f:SetPoint(p.point, bar, p.point, x, y)
+    f:SetPoint("TOPLEFT", bar, "TOPLEFT", b.x, -b.y)
+    f:SetSize(b.w, b.h)
     f:Show()
     local buttonLevel = level(bar) + LAYERS.LEVEL.BAR_BUTTON
     for j, rec in ipairs(outfits) do
         local btn = NS.Pool.Acquire(row.pool, function() return Bar.NewButton(f) end)
-        local along = (j - 1) * PITCH
+        local p = b.icons[j]
         btn:ClearAllPoints()
-        if vertical then
-            btn:SetPoint(p.point, f, p.point, 0, q[2] * along)
-        else
-            btn:SetPoint(p.point, f, p.point, q[1] * along, 0)
-        end
+        btn:SetPoint("TOPLEFT", bar, "TOPLEFT", p.x, -p.y)
+        btn:SetSize(size, size)
         btn:SetFrameLevel(buttonLevel)
-        Bar.SetButton(btn, rec)
+        Bar.SetButton(btn, rec, style)
     end
-    local w, h = #outfits * PITCH, PITCH
-    if vertical then w, h = h, w end
-    f:SetSize(w, h)
 end
 
 --- The rows a source answers, without the empty ones, at most one per row frame.
@@ -252,8 +301,9 @@ local function shownRows(source)
     return out
 end
 
---- Draw `source` (Bar.LiveSource or NS.Preview.Source): its rows, sized, grown from the saved corner,
---- with the test strip's height above the rows while `strip` is set. Perf bucket `barRender`.
+--- Draw `source` (Bar.LiveSource or NS.Preview.Source): its rows, laid out by Bar_Layout from the
+--- settings, the bar sized to them and anchored at the saved corner, with the test strip's height
+--- above the rows while `strip` is set. Perf bucket `barRender`.
 --- @param source table  answers Rows() -> { { categoryID, outfits = { rec, ... } }, ... }
 --- @param strip boolean|nil
 function Bar.Render(source, strip)
@@ -263,30 +313,27 @@ function Bar.Render(source, strip)
         NS.Pool.ReleaseAll(rows[i].pool)
         rows[i].frame:Hide()
     end
-    local list, p = shownRows(source), position()
-    local vertical = NS.GetSetting("bar.vertical") == true
-    local top = strip and (NS.TEST_STRIP_HEIGHT + 2) or 0
-    local longest = 0
+    local list, counts = shownRows(source), {}
+    for i, row in ipairs(list) do counts[i] = #row.outfits end
+    local spec = Bar.LayoutSpec(counts, strip)
+    local g = Bar.Layout.Compute(spec)
+    local style = Bar.IconStyle()
     for i, row in ipairs(list) do
-        layoutRow(rows[i], i, row.outfits, p, vertical, top)
-        longest = math.max(longest, #row.outfits)
+        placeRow(rows[i], g.blocks[i], row.outfits, spec.size, style)
+        placeLabel(rows[i], g.blocks[i], spec, row.categoryID)
     end
-    local main, cross = math.max(longest, 1) * PITCH, math.max(#list, 1) * PITCH
-    local w, h = main, cross
-    if vertical then w, h = cross, main end
-    bar:SetSize(w, h + top)
+    bar:SetSize(g.width, g.height)
     bar:SetScale(scale())
-    anchor(p)
-    bar.bg:SetShown(NS.GetSetting("bar.showBackground") ~= false)
+    anchor(position())
+    Bar.PaintChrome(bar)
     if t0 then Perf.Note("barRender", debugprofilestop() - t0) end
 end
 
 local function hideFrames()
     if not bar then return end
+    NS.CloseMenuFrom(Bar.IsButton)
     fadeStop(bar)
-    fadeStop(bar.handle)
     bar:Hide()
-    if bar.handle then bar.handle:Hide() end
     if bar.strip then bar.strip:Hide() end
 end
 
@@ -300,13 +347,30 @@ function Bar.Refresh()
         return false
     end
     local preview = NS.Preview.IsActive() == true
-    Bar.Render(preview and NS.Preview.Source or Bar.LiveSource, preview)
-    local strip = preview and ensureStrip()
+    -- The strip first, so the rows make room only for one that is drawn (none without the library,
+    -- where the header's title carries the test-mode word instead).
+    ensureFrame()
+    local strip = preview and Bar.EnsureStrip() or nil
+    Bar.Render(preview and NS.Preview.Source or Bar.LiveSource, strip ~= nil)
     if strip then strip:Show() elseif bar.strip then bar.strip:Hide() end
+    Bar.SetTitle(preview and strip == nil)
     bar:Show()
     Bar.SetLocked(locked())
     Bar.ApplyAlpha()
+    if Bar.CornerDisagrees() then Bar.SavePosition() end
     return true
+end
+
+--- Whether the saved corner is not the one an explicit grow direction implies: a place written while
+--- the bar was hidden, a Reset position or a profile switch. The bar then grows from the wrong edge
+--- until it is re-saved, which Refresh does from where it was just drawn (so it does not move). A
+--- rect the client has not laid yet is left for the next draw.
+--- @return boolean
+function Bar.CornerDisagrees()
+    if not bar or bar:GetLeft() == nil then return false end
+    local q = QUADRANT[position().point]
+    local gx, gy = GROW_X[NS.GetSetting("bar.layout.growH")], GROW_Y[NS.GetSetting("bar.layout.growV")]
+    return (gx ~= nil and gx ~= q[1]) or (gy ~= nil and gy ~= q[2])
 end
 
 local function runScheduled()
@@ -350,54 +414,25 @@ function Bar.ApplyAlpha()
     for _, btn in ipairs(Bar.Buttons()) do btn:EnableMouse(mouse) end
 end
 
--- The container's clamp covers the handle above it while it shows, so a drag to the top edge can
--- never push the handle off screen (the legacy moved the drag bar itself, which kept it on).
-local function clampHandle(shown)
-    local top = 0
-    if shown then
-        local h = num(bar.handle:GetHeight(), 0)
-        top = (h > 0 and h or HANDLE_HEIGHT) + HANDLE_GAP
-    end
-    bar:SetClampRectInsets(0, 0, top, 0)
-end
-
---- Show the drag handle while unlocked and the bar is up; hide it while locked. Shown, it is at full
---- alpha until the pointer first leaves after an unlock, then faded until the next hover.
+--- The lock as the header's control draws it (the drag strip reads the setting itself).
 --- @param on boolean|nil  the lock; nil reads the setting
 function Bar.SetLocked(on)
     if on == nil then on = locked() end
-    local handle = bar and bar.handle
-    if not handle then return end
-    if on then st.handleFaded = false end
-    local shown = not on and bar:IsShown() == true
-    clampHandle(shown)
-    if not shown then
-        fadeStop(handle)
-        handle:Hide()
-        return
-    end
-    if not st.handleFaded then handle:SetAlpha(1) end
-    handle:Show()
+    Bar.SetLockIcon(on)
 end
 
---- The pointer is over the bar, a button or the handle: everything at full alpha, the fades stopped.
+--- The pointer is over the bar, a button or a header control: full alpha, the fade stopped.
 function Bar.HoverIn()
     if not bar then return end
-    st.hovered, st.handleFaded = true, false
+    st.hovered = true
     fadeStop(bar)
-    fadeStop(bar.handle)
-    if bar.handle and not locked() then bar.handle:SetAlpha(1) end
     Bar.ApplyAlpha()
 end
 
---- The pointer left: the handle fades out over 0.3 s, the bar down to its alpha over 0.5 s.
+--- The pointer left: the bar fades down to its alpha over 0.5 s.
 function Bar.HoverOut()
     if not bar then return end
     st.hovered = false
-    if bar.handle and not locked() then
-        st.handleFaded = true
-        fadeOut(bar.handle, HANDLE_FADE, 1, 0)
-    end
     local a = Bar.EffectiveAlpha()
     if a ~= 1 and a > 0 then
         fadeOut(bar, BAR_FADE, 1, a)
@@ -408,9 +443,10 @@ end
 
 -- ── position ──────────────────────────────────────────────────────────────────────────────────
 
---- The drag stop: save the nearest screen corner, in screen pixels (OutfitterBar.lua:279-317), through
---- the `bar.position` row's write seam, then redraw grown from it. The seam's SETTINGS_CHANGED echo
---- schedules one more redraw (onSettings below), after the drag, at the corner just saved.
+--- The drag stop: save the corner the grow direction implies (the nearest screen corner on an axis
+--- left Automatic), in screen pixels (OutfitterBar.lua:279-317), through the `bar.position` row's
+--- write seam, then redraw grown from it. The seam's SETTINGS_CHANGED echo schedules one more redraw
+--- (onSettings below), after the drag, at the corner just saved.
 --- @return table|nil the saved { point, x, y }
 function Bar.SavePosition()
     if not bar then return nil end
@@ -419,10 +455,12 @@ function Bar.SavePosition()
     local top, bottom = num(bar:GetTop(), 0) * s, num(bar:GetBottom(), 0) * s
     local uLeft, uRight = num(UIParent:GetLeft(), 0) * u, num(UIParent:GetRight(), 0) * u
     local uTop, uBottom = num(UIParent:GetTop(), 0) * u, num(UIParent:GetBottom(), 0) * u
+    local gx = GROW_X[NS.GetSetting("bar.layout.growH")] or (((left + right) >= (uLeft + uRight)) and -1 or 1)
+    local gy = GROW_Y[NS.GetSetting("bar.layout.growV")] or (((top + bottom) < (uTop + uBottom)) and 1 or -1)
     local vert, y = "TOP", top - uTop
-    if (top + bottom) < (uTop + uBottom) then vert, y = "BOTTOM", bottom - uBottom end
+    if gy > 0 then vert, y = "BOTTOM", bottom - uBottom end
     local horiz, x = "LEFT", left - uLeft
-    if (left + right) >= (uLeft + uRight) then horiz, x = "RIGHT", right - uRight end
+    if gx < 0 then horiz, x = "RIGHT", right - uRight end
     NS.SetByPath("bar.position", NS.EncodeBarPosition({ point = vert .. horiz, x = x, y = y }))
     if st.active then Bar.Refresh() end
     return NS.db.profile.windows.bar
@@ -432,6 +470,8 @@ end
 
 local function onSettings(_, path)
     if type(path) ~= "string" then return end
+    -- A new grow direction keeps the bar where it is: its place, re-saved at the corner it implies.
+    if GROW[path] and bar and bar:IsShown() then Bar.SavePosition() end
     if MASTER[path] or path:find("^bar%.") then schedule() end
 end
 
@@ -449,8 +489,14 @@ local function onGameEvent(event)
     if st.active then Bar.Refresh() end
 end
 
+-- A test session starts or ends: either way the session's dismissal is over (see the header).
+local function onPreviewChanged()
+    st.testDismissed = false
+    schedule()
+end
+
 local REBUILD = { "OUTFIT_WORN", "OUTFIT_REMOVED", "OUTFIT_ADDED", "OUTFIT_DELETED", "OUTFIT_EDITED",
-                  "OUTFIT_RENAMED", "PREVIEW_CHANGED", "PROFILE_CHANGED" }
+                  "OUTFIT_RENAMED", "PROFILE_CHANGED" }
 local GAME_EVENTS = { "PET_BATTLE_OPENING_START", "PET_BATTLE_OVER" }
 
 local function ensureListeners()
@@ -458,15 +504,17 @@ local function ensureListeners()
     mod = NS.NewBusTarget()
     LibStub("AceTimer-3.0"):Embed(mod)
     for _, key in ipairs(REBUILD) do mod:RegisterMessage(NS.MSG[key], schedule) end
+    mod:RegisterMessage(NS.MSG.PREVIEW_CHANGED, onPreviewChanged)
     mod:RegisterMessage(NS.MSG.SETTINGS_CHANGED, onSettings)
     mod:RegisterMessage(NS.MSG.PLAYER_STATE_CHANGED, onPlayerState)
+    NS.Skin.OnLooksChanged(schedule)
 end
 
 -- ── lifecycle ─────────────────────────────────────────────────────────────────────────────────
 
 --- The stand-down (design §5.12): the pet-battle events and the pending rebuild go, and the bar hides.
 function Bar.Suspend()
-    st.active, st.hovered = false, false
+    st.active, st.hovered, st.testDismissed = false, false, false
     if mod then
         mod:UnregisterAllEvents()
         if st.timer then mod:CancelTimer(st.timer) end

@@ -39,11 +39,12 @@ NS.Sheet = Sheet
 -- PaperDollSidebarTabs BOTTOMRIGHT -30,0 (wow-ui-source@297d7aa:Interface/AddOns/
 -- Blizzard_UIPanels_Game/Mainline/PaperDollFrame.xml:393-394, :475-503).
 local STOCK_TAB = "PaperDollSidebarTab3"
-local STOCK_TAB_SIZE = 33
+local TAB_W, TAB_H = 33, 35
 local STOCK_GAP = 4
--- EllesmereUI's Equipment text tab, the last of its three (Character / Titles / Equipment).
+-- EllesmereUI's Equipment text tab, the last of its three (Character / Titles / Equipment): a 64 x 25
+-- frame, its text TOP-anchored (EllesmereUIBlizzardSkin_CharacterSheet.lua:3123-3124, :3176-3183).
 local EUI_TAB = "EUI_CharSheet_Equipment"
-local EUI_GAP, EUI_SIZE = 2, 20
+local EUI_LABEL_W, EUI_LABEL_H = 64, 25
 local CHONKY_BACKDROP = "CharacterFrameBgbg"
 Sheet.CHONKY_PANELS = { "CCSf", "ccsm_sf", "ccsrf_sf", "ccsgf_sf" }
 
@@ -85,28 +86,55 @@ function Sheet.Frame()
     return CharacterFrame
 end
 
--- PaperDollSidebarTab3's square side, its smaller dimension; the template's when it reads nothing.
+-- PaperDollSidebarTab3's size; the template's when it reads nothing.
 local function stockTabSize(tab)
     local w, h = tab:GetSize()
     w, h = NS.SafeNumber(w, 0), NS.SafeNumber(h, 0)
-    local size = math.min(w, h)
-    if size <= 0 then return STOCK_TAB_SIZE end
-    return size
+    if w <= 0 or h <= 0 then return TAB_W, TAB_H end
+    return w, h
 end
 
---- Where the outfit button goes: right of the Equipment Manager tab on the stock and Chonky sheets
---- (Chonky keeps Blizzard's sidebar tabs), right of the Equipment text tab on EllesmereUI. Without
---- the stock tab (another addon removed it) the button keeps its old place, left of the close X.
---- @return string point, table relFrame, string relPoint, number x, number y, number size
+--- Where the outfit button goes and which host look it wears (smoke round 2 design G2): a sidebar
+--- tab right of the Equipment Manager tab, bottoms on one line, on the stock and Chonky sheets
+--- (Chonky keeps Blizzard's sidebar tabs); a text label stacked directly above the Equipment label,
+--- centered on it, on EllesmereUI. Without the stock tab (another addon removed it) the tab keeps
+--- the button's old place, left of the close X.
+--- @return string point, table relFrame, string relPoint, number x, number y, number w, number h,
+---         string look  "tab" | "text"
 function Sheet.ButtonAnchor()
     if Sheet.Kind() == "eui" then
-        return "LEFT", _G[EUI_TAB], "RIGHT", EUI_GAP, 0, EUI_SIZE
+        return "BOTTOM", _G[EUI_TAB], "TOP", 0, 0, EUI_LABEL_W, EUI_LABEL_H, "text"
     end
     local tab = _G[STOCK_TAB]
     if type(tab) == "table" then
-        return "LEFT", tab, "RIGHT", STOCK_GAP, 0, stockTabSize(tab)
+        local w, h = stockTabSize(tab)
+        return "BOTTOMLEFT", tab, "BOTTOMRIGHT", STOCK_GAP, 0, w, h, "tab"
     end
-    return "RIGHT", CharacterFrameCloseButton, "LEFT", -2, 0, 22
+    return "RIGHT", CharacterFrameCloseButton, "LEFT", -2, 0, TAB_W, TAB_H, "tab"
+end
+
+-- EllesmereUI's own fallback for a missing accent (_paintTopButton, EllesmereUIBlizzardSkin_
+-- CharacterSheet.lua:3136).
+local EUI_ACCENT_FALLBACK = { r = 0.51, g = 0.784, b = 1 }
+
+--- EllesmereUI's accent, read now: EllesmereUI updates ELLESMERE_GREEN in place when the player
+--- changes it (EllesmereUI.lua:4419), so a paint-time read is always the live one.
+--- @return number r, number g, number b
+function Sheet.EUIAccent()
+    local eui = EllesmereUI
+    local c = type(eui) == "table" and type(eui.ELLESMERE_GREEN) == "table" and eui.ELLESMERE_GREEN
+    if not c then c = EUI_ACCENT_FALLBACK end
+    return NS.SafeNumber(c.r, EUI_ACCENT_FALLBACK.r), NS.SafeNumber(c.g, EUI_ACCENT_FALLBACK.g),
+        NS.SafeNumber(c.b, EUI_ACCENT_FALLBACK.b)
+end
+
+--- EllesmereUI's Equipment label's font string (its `_text`), or nil: the face the label copies.
+--- @return table|nil
+function Sheet.EUILabelText()
+    local tab = builtFrame(EUI_TAB)
+    local text = tab and rawget(tab, "_text")
+    if type(text) ~= "table" or type(text.GetFont) ~= "function" then return nil end
+    return text
 end
 
 local function scaleOf(f)
@@ -135,4 +163,31 @@ function Sheet.DockRight()
         end
     end
     return right, top
+end
+
+-- Where Blizzard's UI panel manager puts a "left" panel (CharacterFrame, UIPanelWindows.lua:9): TOPLEFT
+-- at LEFT_OFFSET and TOP_OFFSET from UIParent's top left, divided by the panel's scale in its own
+-- units, which is those offsets in UIParent's (wow-ui-source@297d7aa:Interface/AddOns/
+-- Blizzard_UIParentPanelManager/Shared/UIParentPanelManager.lua:617-635; the defaults, 16 and -116,
+-- UIPanelLayoutFrame.lua:1-9). With the paper doll up the stock sheet is CHARACTERFRAME_EXPANDED_WIDTH
+-- (540) wide (Blizzard_UIPanels_Game/Mainline/CharacterFrame.lua:2).
+local LEFT_OFFSET, TOP_OFFSET, EXPANDED_WIDTH = 16, -116, 540
+
+local function layoutAttribute(name, fallback)
+    local get = GetUIPanelLayoutAttribute
+    return NS.SafeNumber(type(get) == "function" and get(name) or nil, fallback)
+end
+
+--- Where the window stands alone while test mode shows it with the sheet closed (smoke round 2
+--- design G7): the top right corner of a stock sheet that is not open, in UIParent's units. Computed,
+--- never read off the hidden CharacterFrame, whose rect is unset before its first open and narrower on
+--- the Reputation and Currency tabs. nil, nil while UIParent has no top.
+--- @return number|nil x, number|nil top
+function Sheet.AloneCorner()
+    local screenTop = NS.SafeNumber(UIParent:GetTop(), nil)
+    if not screenTop then return nil, nil end
+    local scale = NS.SafeNumber(CharacterFrame:GetScale(), 1)
+    local width = NS.SafeNumber(CHARACTERFRAME_EXPANDED_WIDTH, EXPANDED_WIDTH)
+    local x = layoutAttribute("LEFT_OFFSET", LEFT_OFFSET) + width * scale
+    return x, screenTop + layoutAttribute("TOP_OFFSET", TOP_OFFSET)
 end

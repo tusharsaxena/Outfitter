@@ -53,22 +53,22 @@ The libraries load first, each in its own folder under `libs/`, and are vendored
 |---|---|
 | `core/Namespace.lua` | `NS.PREFIX` (`[OR]`), `NS.name`, `NS.BRAND`, `NS.SLASH`/`NS.SLASH_LONG`, the version fallback |
 | `core/MediaSetup.lua` | `NS.Icon`, `NS.MediaFont` and the LibSharedMedia registration (LibKa0s-Media) |
-| `core/Constants.lua` | `FONT_MONO`, `LOGO`/`LOGO_128`, `LAYERS`, `OUTFIT_MESSAGE_COLOR` |
+| `core/Constants.lua` | `FONT_MONO`, `LOGO`/`LOGO_128`, `LAYERS` (with `STRATA_ORDER`/`STRATA_RANK` for the host strata and the `LEVEL.MAX` cap), `DEFAULT_OUTFIT_ICON` (fileID 132724), `OUTFIT_MESSAGE_COLOR` |
 | `core/State.lua` | `NS.State`: session-only flags (`debug`, `testMode`, `legacyLoaded`) |
 | `core/EnvSetup.lua` | `NS.Meta`, `NS.Version` (LibKa0s-Env) |
-| `core/CoreSetup.lua` | `NS.Print`, `NS.SafeToString`, the `SafeRegister*` family, the window chrome (LibKa0s-Core) |
-| `core/SkinSetup.lua` | `NS.Skin`, the owner registration and its `of.*` tokens, the skin choice and picker seams (LibKa0s-Skin) |
+| `core/CoreSetup.lua` | `NS.Print`, `NS.SafeToString`, the `SafeRegister*` family, the window chrome, `NS.ResolveColor` (a swatch through its class-color companion) (LibKa0s-Core) |
+| `core/SkinSetup.lua` | `NS.Skin`, the owner registration and its `of.*` tokens, the skin choice and picker seams, `NS.SkinBandGeometry` (where the title band lies, for the bar's header) (LibKa0s-Skin) |
 | `core/Compat.lua` | `NS.Compat`: every version-variant client call and every LibKa0s-Compat member the addon consumes ([compat-layer.md](compat-layer.md)) |
 | `core/Secrets.lua` | `NS.Secrets`, the only file that inspects a possibly secret value, and the `NS.IsSecret`/`NS.Unsecret`/`NS.SafeNumber` aliases |
 | `core/Bus.lua` | `NS.MSG`, `NS.NewBusTarget`, `NS.SendBus`, `NS.BusStandDown`/`BusStandUp` (LibKa0s-Bus; [message-bus.md](message-bus.md)) |
 | `core/PoolSetup.lua` | `NS.Pool`, the array and keyed widget pools (LibKa0s-Pool) |
 | `core/ItemSetup.lua` | `NS.Item`: `ItemIDFromLink`, `BonusIDsFromLink` on plain links only (LibKa0s-Item) |
-| `core/WidgetsSetup.lua` | `NS.MakeDropdown`, `NS.OpenMenu`, `NS.CloseMenu`, `NS.IconText`, `NS.MakeTestStrip`, `NS.TEST_STRIP_HEIGHT`, `NS.MakeDragHandle` (LibKa0s-Widgets) |
+| `core/WidgetsSetup.lua` | `NS.MakeDropdown`, `NS.OpenMenu` (the whole tree to the library's cascading menu, keep-open toggles and radios, act-and-close buttons; MenuUtil on a degraded install), `NS.CloseMenu`, `NS.CloseMenuFrom`, `NS.IconText`, `NS.MakeTestStrip`, `NS.TEST_STRIP_HEIGHT` (LibKa0s-Widgets) |
 | `core/SecureQueue.lua` | `NS.SecureQueue`: a protected write runs now or waits out combat lockdown, latest per key |
 | `core/LifecycleSetup.lua` | `NS.lifecycle`, the one stand-down latch with its `disabled` and `perf` holds, `NS.ApplyEnabled`, `NS.IsStoodDown`, `NS.StoodDownRefusal` (LibKa0s-Lifecycle) |
 | `core/PerfSetup.lua` | `NS.Perf`, the performance harness over `OutfitterRebornPerfDB` with its ten fixed buckets (LibKa0s-Perf; [performance.md](performance.md)) |
 | `core/DebugLogSetup.lua` | `NS.DebugLog`, the console with its init summary and diagnostics hook, `NS.Debug` and the `DebugOnce`/`DebugChanged`/`DebugAtEnable` gates ([debug.md](debug.md)) |
-| `core/LauncherSetup.lua` | `NS.Launcher` (one LDB object, minimap button and broker row), the binding buttons, `NS.BINDINGS` and the `BINDING_*` globals (LibKa0s-Launcher) |
+| `core/LauncherSetup.lua` | `NS.Launcher` (one LDB object, minimap button and broker row), the 15 binding buttons (Toggle outfit window, Toggle outfit bar, ten wear keys, automation on and off, update), `NS.BINDINGS` and the `BINDING_*` globals (LibKa0s-Launcher) |
 | `core/OutfitterReborn.lua` | `NewAddon`, the `NS.Print` reclaim, `OnInitialize` (DB, migrations, the profile's skin, the enabled hold, launcher, options, slash) |
 | `core/Database.lua` | AceDB, the profile callbacks, the migration runner, both `resolveRoot` functions ([schema.md](schema.md)) |
 
@@ -81,7 +81,7 @@ The libraries load first, each in its own folder under `libs/`, and are vendored
 | `defaults/Zones.lua` | `NS.Zones.rows` and `BRAWL_MAP_IDS`: the single zone source, one row per battleground and arena |
 | `defaults/TriggerData.lua` | The aura, form, NPC, difficulty, map, skill-line and pet ID tables the triggers and their state producers read; pure data, every key an ID |
 | `defaults/Triggers.lua` | `NS.TriggerCatalog`: one data row per non-zone trigger, and `CATEGORY_ORDER` |
-| `defaults/PreviewOutfits.lua` | The test-mode placeholder outfits, read by `modules/Preview.lua` and never by the store |
+| `defaults/PreviewOutfits.lua` | The test-mode sample outfits (five, one row state each: worn, triggered, Equipment Manager, missing items, a spec icon and the default icon), read by `modules/Preview.lua` for the bar and `modules/Window_ListModel.lua` for the window, never by the store |
 
 ## modules/
 
@@ -97,7 +97,7 @@ the diagnostics sections.
 | `modules/Inventory.lua` | `NS.Inventory`: the bag and equipment scan, its cache and the bank-open rules |
 | `modules/Inventory_Lists.lua` | The missing, unused, BoE, warbound, in-use and cooldown lists and their sections (extends `NS.Inventory`) |
 | `modules/IconBrowserSetup.lua` | `NS.Glyph`: the glyph helpers (`IsGlyph`, `ValidColor`, `Tint`) from LibKa0s-IconBrowser, with a library-absent stub; `NS.IconBrowser` (`Open(id)`, `Close`, `IsOpen`, `Browser`): Change icon...'s library browser, tabs Recommended and Equipped and bags ahead of Game icons and Glyphs, no Markers |
-| `modules/Outfits.lua` | `NS.Outfits`: the outfit store and its one writer API; `NS.OutfitIcon`, the one outfit icon resolver, and `NS.Outfits.SetIcon` |
+| `modules/Outfits.lua` | `NS.Outfits`: the outfit store and its one writer API; `NS.OutfitIcon`, the one outfit icon resolver (own icon, a seeded spec outfit's spec icon, the trigger's, the item rungs, then the default 132724), and `NS.Outfits.SetIcon` |
 | `modules/Outfits_Seed.lua` | The LoadPass: store repair, the built-in outfits' seed and the 1 s timer that runs the first one (extends `NS.Outfits`) |
 | `modules/Outfits_Schema.lua` | `NS.OutfitSchema`: the per-outfit instance rows, `outfit.*` and `trigger.<TID>.*` |
 | `modules/OutfitStack.lua` | `NS.Stack`: wear, remove, toggle, layers, recents, selection and title |
@@ -137,25 +137,27 @@ the diagnostics sections.
 | `modules/Tooltips.lua` | `NS.Tooltips`: the "Used by outfits" line on item tooltips |
 | `modules/Tooltips_Compare.lua` | `NS.Compare`: up to five comparison tooltips with the items your outfits use in the hovered slot |
 | `modules/OutfitTooltip.lua` | `NS.OutfitTooltip`: an outfit's tooltip, for the window's rows and the bar's buttons |
-| `modules/Sheet.lua` | `NS.Sheet`: which character sheet is up (stock, EllesmereUI, ChonkyCharacterSheet) and where on it the sheet button and the window go; reads only, anchors nothing |
-| `modules/Dock.lua` | `NS.Dock`: the sheet holder and button, the window's show model, its follow and its layer sync |
-| `modules/Window.lua` | `NS.Window`: the outfit window's chrome, list body, scroll bar, footer and render |
-| `modules/Window_ListModel.lua` | `NS.WindowListModel`: what the outfit list shows, in order |
+| `modules/Sheet.lua` | `NS.Sheet`: which character sheet is up (stock, EllesmereUI, ChonkyCharacterSheet), where on it the sheet button and the window go, where a stock sheet would open (`AloneCorner`, test mode's alone window) and EllesmereUI's tab face and accent; reads only, anchors nothing |
+| `modules/Dock.lua` | `NS.Dock`: the sheet holder, the sheet button in the host's tab look (deviation `DEV-SKIN-SHEET-BUTTON`), the window's show model (test mode alone or docked included), its follow and its layer sync |
+| `modules/Window.lua` | `NS.Window`: the outfit window's chrome (the gear at the close X's size and tint), list body, scroll bar, footer, test strip and render |
+| `modules/Window_ListModel.lua` | `NS.WindowListModel`: what the outfit list shows, in order; the sample outfits with no item section in test mode |
 | `modules/Window_Rows.lua` | `NS.WindowRows`: the list's 14 rows and the secure child each one owns |
-| `modules/SlotEnables.lua` | `NS.SlotEnables`: the 18 slot checkboxes over the character sheet while an outfit is selected |
-| `modules/OutfitMenu.lua` | `NS.OutfitMenu`: the outfit context menu |
+| `modules/SlotEnables.lua` | `NS.SlotEnables`: the 18 slot checkboxes over the character sheet while an outfit is selected, in the host strata with an accent edge; none in test mode |
+| `modules/OutfitMenu.lua` | `NS.OutfitMenu`: the outfit context menu, as one cascading tree (keep-open radio and toggle rows, act-and-close rows) |
 | `modules/UIDialogs.lua` | `NS.Dialogs`: the dialogs' shared chrome and controls |
 | `modules/Dialog_Outfit.lua` | `NS.OutfitDialog`: the new-outfit and rename dialog |
 | `modules/Dialog_Trigger.lua` | `NS.TriggerDialog`: the trigger chooser and its settings |
 | `modules/Dialog_TriggerFields.lua` | `NS.TriggerFields`: the trigger parameter editors, nine field types |
 | `modules/Dialog_Rebuild.lua` | `NS.RebuildDialog`: the multi-stat rebuild dialog |
 | `modules/Dialog_Progress.lua` | `NS.ProgressDialog`: the optimizer's progress window |
-| `modules/Bar.lua` | `NS.Bar`: the outfit bar |
-| `modules/Bar_Buttons.lua` | The outfit bar's pooled buttons |
+| `modules/Bar.lua` | `NS.Bar`: the outfit bar: the show decision, the render, the position and its saved corner, alpha and fades, the coalesced rebuild, and closing the menu it opened when it hides |
+| `modules/Bar_Layout.lua` | `NS.Bar.Layout`: the bar's geometry as pure functions (icons per line, padding, spacing, icon size, grow direction, label lines) |
+| `modules/Bar_Chrome.lua` | The bar's Ka0s window look (extends `NS.Bar`): the Shell chrome or the player's plate, the header on the title band with its title, lock and close, the drag strip, the test strip under the band (the title says test mode without the library), the category labels |
+| `modules/Bar_Buttons.lua` | The outfit bar's pooled buttons: icon, border (the skin's HUD edge or the player's), worn highlight (the mark on a mouse-off overlay over the edges, every child on a named `LAYERS.LEVEL` rung), clicks and drops |
 | `modules/Broker.lua` | `NS.Broker`: the `OutfitterRebornOutfits` LibDataBroker data source, the old addon's outfit switcher (a second object beside the launcher; [ARCHITECTURE.md](ARCHITECTURE.md#documented-deviations)) |
-| `modules/QuickSlots.lua` | `NS.QuickSlots`: the equipment flyout hooks, and the left column's drawer turned outward while the window shows |
+| `modules/QuickSlots.lua` | `NS.QuickSlots`: the equipment flyout hooks; while the window shows, every slot's arrow, the left column's drawer turned outward, and a horizontal flyout level with its slot |
 | `modules/QuickSlots_Sort.lua` | The flyout's upgrade-track sort (extends `NS.QuickSlots`) |
-| `modules/Preview.lua` | `NS.Preview`: test mode |
+| `modules/Preview.lua` | `NS.Preview`: test mode, the sample outfits on the bar and the window |
 | `modules/Api.lua` | The public API, `NS.API.v1`, published as `OutfitterReborn.API.v1` ([ARCHITECTURE.md](ARCHITECTURE.md#public-api)) |
 | `modules/Diagnostics.lua` | This addon's sections of `/or diagnostics` (debug-logging-§14) |
 
@@ -164,10 +166,10 @@ the diagnostics sections.
 | File | Job |
 |---|---|
 | `settings/Schema.lua` | The settings rows, the one write seam, the page filter and the forward to `NS.OutfitSchema` (LibKa0s-Schema) |
-| `settings/Slash.lua` | `NS.COMMANDS`, the LibKa0s-Slash descriptor and the macro-conditional wrapper ([slash-dispatch.md](slash-dispatch.md)) |
+| `settings/Slash.lua` | `NS.COMMANDS` (36 verbs, `bar` among them), the LibKa0s-Slash descriptor and the macro-conditional wrapper ([slash-dispatch.md](slash-dispatch.md)) |
 | `settings/OptionsSetup.lua` | The LibKa0s-Options descriptor (`NS.Helpers`), the tabbed-page helper and the global reset popup |
 | `settings/General.lua` | The General page (Master controls, Behavior, Tooltips, Skin, Keybindings) and the landing page spec, `NS.LANDING` |
-| `settings/OutfitBar.lua` | The Outfit Bar page, `bar`, registered between General and Profiles |
+| `settings/OutfitBar.lua` | The Outfit Bar page, `bar` (tabs Display, Layout, Icons, Labels, Frame), registered between General and Profiles; `NS.EncodeBarPosition` |
 | `settings/Profiles.lua` | The Profiles sub-page, registered last, under a line saying outfits are per character |
 
 ## locales/
@@ -195,6 +197,7 @@ the diagnostics sections.
 | `tests/unit_load.lua` | A unit instance: the whole load and login with the resume walk emptied, for a suite that drives one module's `Resume` itself |
 | `tests/spy.lua` | A recorder over a REAL module's members: the call is recorded, then made (it replaced the fakes once their modules landed, P4.27) |
 | `tests/dock_scene.lua` | The shared scene of the four window suites (`test_dock`, `test_list_model`, `test_rows_secure`, `test_slot_enables`) |
+| `tests/bar_scene.lua` | The outfit bar suite's shared scene and helpers (`test_bar`, `test_bar_look`) |
 | `tests/dialog_scene.lua` | The shared scene of the three dialog suites (`test_outfit_menu`, `test_dialogs`, `test_trigger_dialog`) |
 | `tests/test_*.lua` | The local suites ([testing.md](testing.md)) |
 | `tests/skin_surfaces.lua` | The skin-switch suite's painted surfaces (skinning-§1) |

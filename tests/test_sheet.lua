@@ -36,11 +36,24 @@ test("sheet: stock by default", function()
     NS.Sheet.Refresh()
     assertEqual(NS.Sheet.Kind(), "stock")
     assertEqual(NS.Sheet.Frame(), M.CharacterFrame)
-    local point, rel, relPoint, x, y, size = NS.Sheet.ButtonAnchor()
-    assertEqual(point, "LEFT"); assertEqual(rel, M.PaperDollSidebarTab3); assertEqual(relPoint, "RIGHT")
+    -- Smoke round 2 design G2: a tab of the sidebar's own shape, its bottom on the neighbors' line.
+    -- red under: the old LEFT/RIGHT square (33 x 33) with no look.
+    local point, rel, relPoint, x, y, w, h, look = NS.Sheet.ButtonAnchor()
+    assertEqual(point, "BOTTOMLEFT"); assertEqual(rel, M.PaperDollSidebarTab3); assertEqual(relPoint, "BOTTOMRIGHT")
     assertEqual(x, 4); assertEqual(y, 0)
     -- PaperDollSidebarTabTemplate is 33 x 35 (wow-ui-source@297d7aa PaperDollFrame.xml:393-394).
-    assertEqual(size, 33)
+    assertEqual(w, 33); assertEqual(h, 35)
+    assertEqual(look, "tab")
+end)
+
+test("sheet: without the stock tab the button keeps its place left of the close X, as a tab", function()
+    local NS, M = fresh()
+    M.PaperDollSidebarTab3 = nil
+    NS.Sheet.Refresh()
+    local point, rel, relPoint, x, y, w, h, look = NS.Sheet.ButtonAnchor()
+    assertEqual(point, "RIGHT"); assertEqual(rel, M.CharacterFrameCloseButton); assertEqual(relPoint, "LEFT")
+    assertEqual(x, -2); assertEqual(y, 0)
+    assertEqual(w, 33); assertEqual(h, 35); assertEqual(look, "tab")
 end)
 
 test("sheet: EllesmereUI with its equipment tab shown is eui", function()
@@ -49,9 +62,12 @@ test("sheet: EllesmereUI with its equipment tab shown is eui", function()
     markLoaded(NS, M, "EllesmereUIBlizzardSkin")
     assertEqual(NS.Sheet.Kind(), "eui")
     assertEqual(NS.Sheet.Frame(), M.CharacterFrame)
-    local point, rel, relPoint, x, y, size = NS.Sheet.ButtonAnchor()
-    assertEqual(point, "LEFT"); assertEqual(rel, tab); assertEqual(relPoint, "RIGHT")
-    assertEqual(x, 2); assertEqual(y, 0); assertEqual(size, 20)
+    -- Smoke round 2 design G2: a 64 x 25 text label (EUI's own label size) stacked directly above
+    -- the Equipment label and centered on it. red under: the old 20 px square right of the label.
+    local point, rel, relPoint, x, y, w, h, look = NS.Sheet.ButtonAnchor()
+    assertEqual(point, "BOTTOM"); assertEqual(rel, tab); assertEqual(relPoint, "TOP")
+    assertEqual(x, 0); assertEqual(y, 0); assertEqual(w, 64); assertEqual(h, 25)
+    assertEqual(look, "text")
 end)
 
 test("sheet: EllesmereUI loaded with the blizzard style resolves to stock", function()
@@ -91,9 +107,10 @@ test("sheet: Chonky with its backdrop shown is chonky", function()
     markLoaded(NS, M, "ChonkyCharacterSheet")
     assertEqual(NS.Sheet.Kind(), "chonky")
     assertEqual(NS.Sheet.Frame(), bg)
-    local point, rel, relPoint, x, y, size = NS.Sheet.ButtonAnchor()
-    assertEqual(point, "LEFT"); assertEqual(rel, M.PaperDollSidebarTab3); assertEqual(relPoint, "RIGHT")
-    assertEqual(x, 4); assertEqual(y, 0); assertEqual(size, 33)
+    -- Chonky keeps Blizzard's sidebar tabs, so the button is the same tab as on the stock sheet.
+    local point, rel, relPoint, x, y, w, h, look = NS.Sheet.ButtonAnchor()
+    assertEqual(point, "BOTTOMLEFT"); assertEqual(rel, M.PaperDollSidebarTab3); assertEqual(relPoint, "BOTTOMRIGHT")
+    assertEqual(x, 4); assertEqual(y, 0); assertEqual(w, 33); assertEqual(h, 35); assertEqual(look, "tab")
 end)
 
 test("sheet: Chonky skipped its setup (backdrop hidden) resolves to stock", function()

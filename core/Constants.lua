@@ -22,7 +22,9 @@ C.LOGO = ("Interface\\AddOns\\%s\\media\\logos\\%s.logo.tga"):format(addonName, 
 --
 --   Host-matched       CharacterFrame is the host of the two docked surfaces: the outfit window
 --                      (the sheet holder's strata, its level + DOCK_OVER_HOST) and the slot
---                      checkboxes (the sheet's strata, the highest descendant + SLOT_ENABLES_OVER_HOST)
+--                      checkboxes (the highest strata among the sheet and its 18 slot buttons, ranked
+--                      by STRATA_ORDER; the highest descendant OF THAT STRATA + SLOT_ENABLES_OVER_HOST,
+--                      capped at LEVEL.MAX under the client's level ceiling)
 --   MEDIUM             HUD       the outfit bar: movable, clamped, toplevel
 --   DIALOG             MODAL     the outfit, trigger, rebuild and progress dialogs; the LibKa0s icon
 --                                browser (modules/IconBrowserSetup.lua), a modal over them in a band
@@ -35,26 +37,34 @@ C.LOGO = ("Interface\\AddOns\\%s\\media\\logos\\%s.logo.tga"):format(addonName, 
 --   TOOLTIP            CURSOR    the compare tooltips; GameTooltip and ShoppingTooltip1/2 (Blizzard)
 --
 -- Levels inside a surface (base W): chrome W+1, content W+2, the scroll bar W+3, the row's secure
--- child row + ROW_SECURE, a cover W+30, the test strip W+40, the drag handle W+50 (its grip +10).
+-- child row + ROW_SECURE, a cover W+30, the test strip W+40, the outfit bar's header band W+50
+-- (HANDLE: its title, lock and close, and the drag that replaced the retired drag handle).
+-- Inside one bar button (base B, frame-layering-§3's element rungs): the icon on B, the skin's and the
+-- player's edge B+BAR_EDGE (BORDER), the worn accent edge B+BAR_WORN_EDGE, and the mouse-off overlay
+-- holding the worn mark B+BAR_OVERLAY (OVERLAY).
 C.LAYERS = {
     STRATA = { HUD = "MEDIUM", MODAL = "DIALOG", POPUP = "FULLSCREEN_DIALOG", CURSOR = "TOOLTIP" },
+    -- The client's eight strata, low to high: a host's strata is compared, never written from here.
+    STRATA_ORDER = { "BACKGROUND", "LOW", "MEDIUM", "HIGH", "DIALOG", "FULLSCREEN", "FULLSCREEN_DIALOG",
+                     "TOOLTIP" },
     LEVEL  = {
         DOCK_OVER_HOST = 1, SLOT_ENABLES_OVER_HOST = 1, SLOT_CHECKBOX = 1, SHEET_BUTTON_OVER_CLOSE = 1,
         CHROME = 1, CONTENT = 2, ROW_CONTROLS = 1, ROW_SECURE = 2, SCROLL = 3,
         BAR_ROW = 1, BAR_BUTTON = 2, COVER = 30, MARKER = 40, HANDLE = 50,
+        BAR_EDGE = 2, BAR_WORN_EDGE = 3, BAR_OVERLAY = 4,
         ICON_BROWSER = 1200,
+        MAX = 9990,     -- a host-derived level's cap, under the client's 10000 ceiling
     },
 }
+-- A strata's rank in STRATA_ORDER (1 = BACKGROUND), nil for a name the client does not have.
+C.LAYERS.STRATA_RANK = {}
+for i, s in ipairs(C.LAYERS.STRATA_ORDER) do C.LAYERS.STRATA_RANK[s] = i end
 
--- The default outfit icon (sheet and window feedback design G5): the Phosphor coat hanger, declared
--- on root CLAUDE.md's `LibKa0s icons:` line. Plain white on an outfit row; the sheet button draws it
--- tinted. nil only when the library is absent (NS.Icon).
-C.DEFAULT_OUTFIT_ICON = NS.Icon("ph:coat-hanger")
-
--- The sheet button's tint under Ka0s Default (design G1: the accent, against the rows' plain white):
--- Ka0s gold, the `text.accent` the button's owner token `of.sheet.button` follows under every other
--- skin (core/SkinSetup.lua).
-C.SHEET_BUTTON_TINT = { 1, 0.82, 0, 1 }
+-- The default outfit icon (smoke round 2 design G1, D1): Blizzard's chest-armor art, fileID 132724,
+-- untinted and zoom-cropped like any item icon. The last rung of NS.OutfitIcon (computed, never
+-- stored), the broker's idle icon and the sheet button's icon. Game art, so the library's absence
+-- does not take it away.
+C.DEFAULT_OUTFIT_ICON = 132724
 
 -- The hotkey "equipped / unequipped" line's color on UIErrorsFrame (INV §14): today's value.
 C.OUTFIT_MESSAGE_COLOR = { r = 0.2, g = 0.75, b = 0.3 }

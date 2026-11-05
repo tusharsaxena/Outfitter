@@ -7,8 +7,10 @@
 	     with no blank row. No default key: the player picks one there or on the General page's
 	     Keybindings tab. The button names are permanent; renaming one unbinds every player's key. Not
 	     listed in the TOC: the client reads this file by name. The Show window key is first, then the
-	     ten wear keys, the two automation keys and the update key (design §4.4). -->
+	     outfit bar's toggle (smoke round 2 design G6), the ten wear keys, the two automation keys and the
+	     update key (design §4.4). -->
 	<Binding name="CLICK OutfitterRebornToggleWindow:LeftButton" category="BINDING_HEADER_OUTFITTERREBORN"/>
+	<Binding name="CLICK OutfitterRebornToggleBar:LeftButton" category="BINDING_HEADER_OUTFITTERREBORN"/>
 	<Binding name="CLICK OutfitterRebornWearOutfit1:LeftButton" category="BINDING_HEADER_OUTFITTERREBORN"/>
 	<Binding name="CLICK OutfitterRebornWearOutfit2:LeftButton" category="BINDING_HEADER_OUTFITTERREBORN"/>
 	<Binding name="CLICK OutfitterRebornWearOutfit3:LeftButton" category="BINDING_HEADER_OUTFITTERREBORN"/>

@@ -9,7 +9,8 @@ local _, NS = ...
 -- object is recorded in docs/ARCHITECTURE.md -> Documented deviations.
 --
 --   text / icon   the top outfit's name and its icon (NS.OutfitIcon); with none, or stood down, the
---                 brand and the coat hanger tinted as the sheet button is (`of.sheet.button`)
+--                 brand and the default outfit icon (132724) in white. A fileID icon is cropped
+--                 (iconCoords) as the window's art is; a glyph is drawn whole
 --   left-click    the outfit menu: the brand, Open outfit window (NS.Dock.Open: an open, never a
 --                 close), Automatic changes (the `auto` verb), then each category in the window's
 --                 order with one toggle row per visible outfit (not Disabled, not hidden from the
@@ -47,11 +48,17 @@ local object, installed
 
 -- ── text and icon ───────────────────────────────────────────────────────────────────────────
 
---- The coat hanger in the sheet button's tint (its owner token, Ka0s gold under Ka0s Default).
+-- A fileID's crop, the window's item-art zoom (S.IconBorder's 0.07); a glyph is drawn whole.
+local ART_CROP = { 0.07, 0.93, 0.07, 0.93 }
+
+local function coordsFor(tex)
+    if type(tex) == "number" then return ART_CROP end
+    return nil
+end
+
+--- The default outfit icon, untinted (smoke round 2 design G1).
 local function idleIcon()
-    local r, g, b = NS.SkinColor("of.sheet.button")
-    if r == nil then r, g, b = unpack(NS.Constants.SHEET_BUTTON_TINT) end
-    return NS.Constants.DEFAULT_OUTFIT_ICON, r, g, b
+    return NS.Constants.DEFAULT_OUTFIT_ICON, 1, 1, 1
 end
 
 --- Write the object's text and icon. `down` is the latch's state as the caller knows it: the
@@ -71,6 +78,7 @@ local function render(down)
         tex, r, g, b = idleIcon()
     end
     object.icon, object.iconR, object.iconG, object.iconB = tex, r, g, b
+    object.iconCoords = coordsFor(tex)
 end
 
 --- Redraw from the latch's current state (the bus and the skin's looks-changed listener).
@@ -204,7 +212,7 @@ if LDB then
         type          = "data source",
         label         = NS.BRAND .. ": " .. L["Outfits"],
         text          = NS.BRAND,
-        icon          = tex, iconR = r, iconG = g, iconB = b,
+        icon          = tex, iconR = r, iconG = g, iconB = b, iconCoords = coordsFor(tex),
         OnClick       = onClick,
         OnTooltipShow = onTooltipShow,
     })

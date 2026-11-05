@@ -3,11 +3,12 @@
 -- from it; tests/test_skin.lua builds the same surfaces for its own checks. Loaded with dofile (it
 -- registers no case of its own).
 --
--- THE DESIGN §9.5 BUILDERS (P4.30), one per painted object: the sheet button, the window, a row of
--- each of the three kinds, a slot checkbox in each of the three states, the footer buttons, the
+-- THE DESIGN §9.5 BUILDERS (P4.30), one per painted object: the window, a row of each of the three
+-- kinds, a slot checkbox in each of the three states, the footer buttons, the
 -- outfit, trigger, rebuild and progress dialogs, a trigger field of each of the nine types, the icon
--- browser, the bar and a bar button, the drag handle, the test strip and a compare tooltip. Beside
--- them, the controls P4.19 to P4.21 handed this task to check: the window's scroll bar and settings
+-- browser, the bar's window chrome and lock control, a bar button, both test strips and a compare tooltip. Beside
+-- them, the controls P4.19 to P4.21 handed this task to check (the sheet button is not one: it
+-- wears the host sheet's look, the accepted deviation DEV-SKIN-SHEET-BUTTON, smoke round 2 G2): the window's scroll bar and settings
 -- button, a row's trigger mark and an item row's name, the dialogs' error line, the progress fill,
 -- the bar's worn mark, the icon browser's selected cell and dim, and a list editor's remove mark.
 --
@@ -26,8 +27,11 @@
 -- the window re-renders on the dock's follow tick once NS.Skin.OnLooksChanged has marked it dirty.
 -- Their `paint` is that tick (NS.Window.RenderIfDirty).
 --
--- No `companion`: the window, the dialogs and the bar store no colors, so this addon owes no FromSkin
--- rows (modules/Bar.lua header). No `scope`: none of these is on the settings panel.
+-- COMPANIONS. The window and the dialogs store no colors. The bar's do, each with a FromSkin row
+-- (skinning-§6, smoke round 2 design G6), but its window chrome is the skin's Shell whatever they
+-- say: `bar.bgFromSkin` off swaps it for the player's plate, which no skin paints, so the chrome
+-- carries no `companion`. A bar label does: its font block's three companions; it is drawn at
+-- render (S.HudFont is not recorded), so its `paint` is the bar's redraw. No `scope`: none of these is on the settings panel.
 
 return function(T)
     local scene = dofile(T.root .. "/tests/dialog_scene.lua")(T)
@@ -153,7 +157,6 @@ return function(T)
     end
 
     local surfaces = {
-        { name = "the sheet button", build = function() return named("OutfitterRebornSheetButton") end },
         { name = "the window's shell", build = function() return named("OutfitterRebornWindow") end },
         { name = "the window's settings button", build = function() return named("OutfitterRebornWindowSettings") end },
         { name = "the window's scroll bar", build = function() return named("OutfitterRebornWindowScroll") end },
@@ -175,11 +178,21 @@ return function(T)
     for _, s in ipairs({
         { name = "the icon browser's selected cell", build = function() return browser().cells[1].selected end },
         { name = "the icon browser's dim", build = function() return browser().catcher end },
-        { name = "the bar's backplate", build = function() return bar().bg end },
+        { name = "the bar's window chrome", build = function() return bar().chrome end },
+        { name = "the bar's lock control", build = function() return bar().lock end },
+        { name = "a bar label", paint = function() NS.Bar.Refresh() end,
+          build = function() bar(); return assert(NS.Bar.Label(1), "the bar drew no label") end,
+          companion = function(on)
+              local l = NS.db.profile.bar.labels
+              l.fontFromSkin, l.fontColorFromSkin, l.fontShadowFromSkin = on, on, on
+          end },
         { name = "a bar button", build = barButton },
         { name = "a bar button's worn mark", build = function() return barButton().worn end },
-        { name = "the bar's drag handle", build = function() return bar().handle end },
         { name = "the bar's test strip", build = strip },
+        { name = "the window's test strip", build = function()
+              strip()
+              return assert(named("OutfitterRebornWindow").strip or nil, "test mode drew no window strip")
+          end },
         { name = "a compare tooltip", build = compareTooltip },
     }) do surfaces[#surfaces + 1] = s end
 
