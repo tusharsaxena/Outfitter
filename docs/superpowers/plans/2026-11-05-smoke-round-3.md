@@ -100,8 +100,8 @@ only the E3 amendment of the D10 clause. Anything else: stop and flag.
 | R4 | Task 4: test mode placement and menu — E3, E4 | done (2300bef..4c3660a; the alone window opens centered (Dock.AloneSpot) and drags for the session, user-placed flag cleared, never docked or in lockdown; the bar starts 8 px left of it (st.testPlace) until dragged, which saves; the sample gear opens a browse-only OutfitMenu, data rows disabled no-ops with L["Not available in test mode"]; Sheet.AloneCorner retired; the D10 row's E3 amendment is already in docs/ARCHITECTURE.md; new suite test_preview_place) |
 | R5 | Task 5: Outfit window settings page — E11; Equipment Manager tooltip and menu — E12 | done (702e299..702e299; E11: page `window`, "Outfit Window", between Outfit Bar and Profiles: Character sheet tab (sheet button, slot check boxes, flyout-arrow drawer, dock gap 0-40 px) and List tab (Odds 'n ends / Warbound / Unopened sections, EM and automation marks), each surface following a window.* write and a profile switch; new suite test_window_settings. E12 NOT done and its box left open: this run's brief was E11 only, and E12(2) needs a ruling first: the EM mark's click on an unselected, not-stored outfit wears and selects it, and only a second click saves (INV §3.5), so "Click to save in the Equipment Manager" is not yet what one click does) |
 | R6 | Task 6: docs, D10 amendment, smoke §13, whole-branch review, bundle, push | done (f77ceb0..24e79cd; bundle 20261105-125130 green; pushed) |
-| R6b | Task 7: the ruled items — E1 tint (DEV-SKIN-FLYOUT-TINT), E12 in full (one-click toggle), E7 disabled while following the skin; review, docs, bundle, push | todo |
-| R7 | Owner's in-game pass of smoke §13 | todo |
+| R6b | Task 7: the ruled items — E1 tint (DEV-SKIN-FLYOUT-TINT), E12 in full (one-click toggle), E7 disabled while following the skin; review, docs, bundle, push | done (dbff0b5..52544e8; bundle 20261105-160832 green; pushed) |
+| R7 | Owner's in-game pass of smoke §13 | **next — handed to the owner** |
 | R8 | Owner go-ahead -> merge all rounds in order (see round 2 plan CP6, plus this branch last), delete branches | todo |
 
 ## Tasks
