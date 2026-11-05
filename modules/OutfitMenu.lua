@@ -58,6 +58,12 @@ local function tip(text)
     return function(tooltip) tooltip:SetText(text) end
 end
 
+-- The outfit's record, or an empty one once it is gone: the menu stays open across keep-open picks
+-- and the library reads each tick on every paint, while the Equipment Manager sync can prune the
+-- outfit from under it. Every write still goes through a seam that refuses an unknown id.
+local NO_RECORD = {}
+local function recOf(id) return NS.Outfits.Get(id) or NO_RECORD end
+
 -- ── General ───────────────────────────────────────────────────────────────────────────────────
 
 local function fillBinding(root, id)
@@ -92,7 +98,7 @@ end
 
 local function fillTitles(root, id)
     local level = root:CreateButton(L["Title"])
-    local function worn(titleID) return NS.Outfits.Get(id).titleID == titleID end
+    local function worn(titleID) return recOf(id).titleID == titleID end
     local function pick(titleID) setTitle(id, titleID) end
     level:CreateRadio(L["None"], function() return worn(nil) end, function() pick(nil) end)
     local n = 0
@@ -133,8 +139,8 @@ end
 
 -- A record flag as a toggle row.
 local function flagToggle(root, label, id, flag)
-    root:CreateCheckbox(label, function() return NS.Outfits.Get(id)[flag] == true end,
-        function() NS.Outfits.SetFlag(id, flag, NS.Outfits.Get(id)[flag] ~= true) end)
+    root:CreateCheckbox(label, function() return recOf(id)[flag] == true end,
+        function() NS.Outfits.SetFlag(id, flag, recOf(id)[flag] ~= true) end)
 end
 
 local function fillGeneral(root, rec)
@@ -175,7 +181,7 @@ end
 
 -- The outfit's trigger id, or "" without one (the No trigger row's value).
 local function triggerOf(id)
-    local t = NS.Outfits.Get(id).trigger
+    local t = recOf(id).trigger
     return t and t.id or ""
 end
 
@@ -208,7 +214,7 @@ end
 local function triggerToggle(root, label, id, flag, enabled)
     local path = "outfit.trigger." .. flag
     local function on()
-        local t = NS.Outfits.Get(id).trigger
+        local t = recOf(id).trigger
         return t ~= nil and t[flag] == true
     end
     local row = root:CreateCheckbox(label, on, function() NS.SetByPath(path, not on(), id) end)
@@ -231,7 +237,7 @@ local function fillBar(root, rec)
     local id = rec.id
     root:CreateDivider()
     local function shown()
-        local bar = NS.Outfits.Get(id).bar
+        local bar = recOf(id).bar
         return not (bar and bar.hide)
     end
     root:CreateCheckbox(L["Show in outfit bar"], shown,
@@ -246,9 +252,11 @@ end
 function OM.Open(anchor, id)
     if NS.IsStoodDown() then return false end
     if not NS.Outfits.Get(id) then return false end
-    -- The record is read on every fill: a keep-open pick fills the menu again to relabel it.
+    -- The record is read on every fill: a keep-open pick fills the menu again to relabel it. A fill
+    -- after the outfit is gone adds nothing, and the open rows keep what they show.
     return NS.OpenMenu(anchor, function(root)
         local rec = NS.Outfits.Get(id)
+        if not rec then return end
         fillGeneral(root, rec)
         fillRebuild(root, rec)
         fillAutomation(root, rec)

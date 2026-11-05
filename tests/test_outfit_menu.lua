@@ -452,6 +452,30 @@ test("menu: on the client's MenuUtil only keep-open rows answer Refresh, the res
     M.MenuUtil = nil
 end)
 
+test("menu: an outfit deleted under its open menu leaves rows that paint and click without raising", function()
+    -- The menu stays open across keep-open picks and the library reads each radio's tick on every
+    -- paint, while the outfit can go from under it (the Equipment Manager sync prunes a mirror whose
+    -- set was deleted, on EQUIPMENT_SETS_CHANGED). red under: a tick predicate or a refill that
+    -- indexes NS.Outfits.Get(id) without a record.
+    local NS, _, ctl = scene()
+    local acc = outfits(NS)
+    open(NS, ctl, acc)
+    local root = ctl.menus[1].rows
+    local title = ctl.row("Title").submenu
+    click(ctl, "Automation")
+    local noTrigger = ctl.row("No trigger")
+    assertTrue(NS.Outfits.Delete(acc))
+    for _, r in ipairs(title) do
+        if r.selected then r.selected(r) end
+    end
+    noTrigger.selected(noTrigger)
+    exact(root, "Turn trigger off").onClick()
+    exact(root, "Ignore in comparison tooltips").onClick()
+    exact(title, "None").onClick()
+    noTrigger.onClick()
+    assertNil(NS.Outfits.Get(acc), "a pick brought the deleted outfit back")
+end)
+
 test("menu: nothing opens for an unknown id or while stood down", function()
     local NS, _, ctl = scene()
     local acc = outfits(NS)

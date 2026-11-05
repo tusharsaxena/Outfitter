@@ -12,8 +12,8 @@
 -- sets `frame.__over`.
 --
 -- THE MENU. W.ContextMenu is swapped on this instance's LibKa0s-Widgets-1.0 for a recorder, so the
--- real NS.OpenMenu seam runs and its rows land in `ctl.menus` (newest last) instead of a popup. A
--- submenu's row reopens through the same recorder, as the library's own menu does.
+-- real NS.OpenMenu seam runs and its rows land in `ctl.menus` (newest last) instead of a popup. The
+-- seam hands the whole tree over once: a submenu row carries its level as `submenu` (Widgets minor 23).
 --
 -- Every module these suites drive has landed: no fakes here (design §12, the fake rule).
 
