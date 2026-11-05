@@ -431,8 +431,9 @@ test("optimize: a zero elapsed time prints a finite rate (B16)", function()
     assertEqual(printedMatching(M, "in 0 seconds"), 1)
 end)
 
-test("optimize: STARTED and DONE bracket the genetic search", function()
-    -- red under: a deliver that leaves Running() on the finished genetic job
+test("optimize: STARTED and DONE bracket the genetic search, and the finished job is let go", function()
+    -- red under: a deliver that leaves `running` on the finished genetic job (the module holds it, so
+    -- it is never collected)
     local inst = unitLoad()
     local NS, M = inst.NS, inst.mocks
     fakeStats(NS, GA_SCORES)
@@ -441,11 +442,15 @@ test("optimize: STARTED and DONE bracket the genetic search", function()
     assertEqual(#started, 1)
     assertTrue(started[1][1] == job)
     assertEqual(job.statName, "Label A, Label B")
-    assertTrue(NS.Optimize.Running() == job)
+    assertFalse(job.done == true, "the search is not running")
     assertTrue(drain(M))
     assertEqual(#done, 1)
     assertTrue(done[1][1] == job and done[1][2] == true)
-    assertNil(NS.Optimize.Running())
+    local held = setmetatable({ job }, { __mode = "v" })
+    job, started[1], done[1] = nil, nil, nil
+    collectgarbage("collect")
+    collectgarbage("collect")
+    assertNil(held[1], "the finished job is still held")
 end)
 
 -- ── cancel, stand-down, errors ────────────────────────────────────────────────────────────────
@@ -467,7 +472,6 @@ test("optimize: Cancel ends the ticker and delivers nil, \"canceled\" once", fun
     assertNil(calls[1].items)
     assertEqual(calls[1].reason, "canceled")
     assertTrue(done[1][2] == false and done[1][3] == "canceled")
-    assertNil(NS.Optimize.Running())
     assertFalse(NS.Optimize.Cancel(), "nothing left to cancel")
 end)
 
@@ -485,7 +489,7 @@ test("optimize: a stand-down ends the search with nil, \"stood-down\"", function
     local seen = #progress
     drain(M)
     assertEqual(#progress, seen, "the search ran on after the stand-down")
-    assertNil(NS.Optimize.Running())
+    assertFalse(NS.Optimize.Cancel(), "a search outlived the stand-down")
 end)
 
 test("optimize: a second search cancels the running one", function()
@@ -496,7 +500,7 @@ test("optimize: a second search cancels the running one", function()
     local second, job2 = run(NS, "two", GA_CFG, gaInventory(), { rng = lcg(5) })
     assertEqual(#first, 1)
     assertEqual(first[1].reason, "canceled")
-    assertTrue(NS.Optimize.Running() == job2)
+    assertFalse(job2.done == true, "the second search is not running")
     assertTrue(drain(M))
     assertEqual(#second, 1)
     assertTrue(second[1].items ~= nil)
@@ -517,7 +521,7 @@ test("optimize: a resume error is surfaced once and delivers nil, \"error\"", fu
     assertEqual(calls[1].reason, "error")
     assertEqual(printedMatching(M, NS.L["The outfit optimizer failed (%s); the details are in the debug console"]
         :format("optimize")), 1)
-    assertNil(NS.Optimize.Running())
+    assertFalse(NS.Optimize.Cancel(), "the failed search is still running")
 end)
 
 -- ── Trial ─────────────────────────────────────────────────────────────────────────────────────
@@ -526,6 +530,7 @@ test("optimize: Trial answers the new-outfit dialog's no-items warning", functio
     -- red under: answer true for a simple cfg no item scores on
     local NS = unitLoad().NS
     fakeStats(NS, { STA = { [161] = 1 }, HAS = {} })
+    local started = hear(NS, "OPTIMIZE_STARTED")
     local cache = NS.Inventory.NewCache({ item(161, "INVTYPE_HEAD") })
     T.fake(NS, "Inventory", { Cache = function() return cache end })
     assertTrue(NS.Optimize.Trial({ { stat = "STA" } }))
@@ -533,7 +538,7 @@ test("optimize: Trial answers the new-outfit dialog's no-items warning", functio
     assertFalse(ok)
     assertEqual(msg, NS.L["Warning: None of your items have that attribute"])
     assertTrue(NS.Optimize.Trial({ { stat = "HAS" }, { stat = "STA" } }), "a complex cfg is not tried")
-    assertNil(NS.Optimize.Running(), "Trial started a search")
+    assertEqual(#started, 0, "Trial started a search")
     local ok2, msg2 = NS.Optimize.Trial({ { stat = "GONE" } })
     assertFalse(ok2)
     assertEqual(msg2, NS.L["Unknown stat ID: %s"]:format("GONE"))
