@@ -208,8 +208,9 @@ end
 -- ── Frame ──────────────────────────────────────────────────────────────────────────────────────
 -- The Background block (a backdrop with no texture: a ColorPair, options-ui-§16) and the Border block
 -- on the skin's bar family. While *Use the skin's background* is on the bar is drawn exactly as a
--- Ka0s window and these colors wait; off, they draw. The bar always draws one of the two (smoke
--- round 3 E6 removed Show background; a stored `bar.showBackground` is never read).
+-- Ka0s window and these colors wait, Show border excepted (off, it drops the skin's edge: smoke
+-- round 3 E7); off, they draw. The bar always draws one of the two (smoke round 3 E6 removed Show
+-- background; a stored `bar.showBackground` is never read).
 registerComposed(H.ColorPair({
     prefix = "bar.", page = PAGE, group = FRAME, subgroup = L["Background"], order = 100,
     key = "bgColor", companionKey = "useClassColorBg", label = L["Background color"], classColor = PLAYER_CLASS,
@@ -217,7 +218,7 @@ registerComposed(H.ColorPair({
     extra = { {
         path = "bar.bgFromSkin", type = "bool", startsLine = true, label = L["Use the skin's background"],
         default = DB.bgFromSkin,
-        tooltip = L["Draw the bar as a window of the skin: its background, border and header band. The Background color and Border rows are not read while this is on."],
+        tooltip = L["Draw the bar as a window of the skin: its background, border and header band. While this is on the Background color rows and the border's style, thickness and color are not read; Show border still hides the edge."],
     } },
 }))
 registerComposed(H.BorderGroup({

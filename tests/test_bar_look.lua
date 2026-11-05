@@ -192,3 +192,38 @@ test("bar: Frame > Show background is gone, and a stored false from round 2 hide
     settle(M)
     assertTrue(f.plate:IsShown(), "the player's plate shows whatever a stale value says")
 end)
+
+--- Whether the library's Shell drew an edge on `frame`: its flat top edge shown, or a nine-slice.
+local function shellEdgeShown(Skin, frame)
+    local rec = Skin.painted[frame]
+    if not rec then return false end
+    local top = rec.regions.edgeTop
+    return (top ~= nil and top:IsShown() == true) or rec.regions.nine ~= nil
+end
+
+test("bar: Frame > Show border shows and hides the skin's window edge while the bar follows the skin", function()
+    -- Smoke round 3 E7 (screen 25): the switch was read only by the player's plate, so under the
+    -- default (Use the skin's background on) it did nothing. It now reaches the Shell's edge, and a
+    -- skin switch replays the choice.
+    -- red under: Bar.PaintChrome never handing S.Shell `noBorder` from bar.frame.borderShow.
+    local NS, M, Bar = scene()
+    accessory(NS, "Hat")
+    settle(M)
+    local Skin = M.LibStub("LibKa0s-Skin-1.0")
+    local f = Bar.Frame()
+    assertTrue(f.chrome:IsShown(), "the skin's chrome")
+    local keys = {}
+    for _, def in ipairs(Skin:Skins()) do keys[#keys + 1] = def.key end
+    for _, on in ipairs({ false, true }) do
+        NS.SetByPath("bar.frame.borderShow", on)
+        settle(M)
+        for _, key in ipairs(keys) do
+            NS.ApplySkinChoice("ka0s", key)
+            settle(M)
+            if NS.Skin.Token("win.border") ~= nil then
+                assertEqual(shellEdgeShown(Skin, f.chrome), on, key .. (on and ": on" or ": off"))
+            end
+        end
+    end
+    NS.ApplySkinChoice("ka0s", "ka0s")
+end)

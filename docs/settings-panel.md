@@ -147,7 +147,9 @@ The Background block (`H.ColorPair`,
 `bar.bgColor` with `bar.useClassColorBg`) with this addon's *Use the skin's background*
 (`bar.bgFromSkin`), and the Border block (`H.BorderGroup`, prefix `bar.frame.`, on the skin's bar
 family) with *Use the skin's color*. While *Use the skin's background* is on, the bar is drawn
-exactly as a Ka0s window and the colors wait; off, they draw on a plate of the bar's own.
+exactly as a Ka0s window and the colors wait; off, they draw on a plate of the bar's own. *Show
+border* (`bar.frame.borderShow`) reaches both: off, the plate draws no edge and the skin's window
+edge is dropped (`S.Shell`'s `noBorder`, replayed on every skin switch).
 
 **No second switches** (options-ui-§15): scale, opacity, the lock, Reset position and General
 visibility are the Master controls' and govern this one frame. The header's lock writes `locked`

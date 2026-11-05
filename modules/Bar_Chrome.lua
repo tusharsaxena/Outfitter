@@ -10,7 +10,8 @@ local _, NS = ...
 -- edge, and shows while it is off. S.Shell records and replays its paint on every skin switch, so a
 -- player color painted onto the Shell frame would be overwritten: the two layers switch on
 -- visibility instead, one of them always shown (DpsRace's race HUD is the model:
--- DpsRace@2e27c30 modules/Hud.lua:446-475; smoke round 3 E6 removed Show background).
+-- DpsRace@2e27c30 modules/Hud.lua:446-475; smoke round 3 E6 removed Show background). The Border
+-- block's Show border reaches both: the plate's edge, and the chrome's through S.Shell's `noBorder`.
 --
 -- THE HEADER stands on the chrome's title band: LibKa0s's S.Band, laid by Shell at the skin's inset
 -- and `title.height` (flush and 25 px under EllesmereUI, NS.SkinBandGeometry), or a host holder 1 px
@@ -34,7 +35,7 @@ local _, NS = ...
 -- skin's HUD label color (S.HudLabelColor) while *Use the skin's color* is on, else the swatch. A
 -- skin change re-renders the bar (modules/Bar.lua), which draws them again.
 --
--- CALLS (at call time): NS.Skin (Shell through NS.ApplySkin, Band, Header, CloseButton, BarBorder,
+-- CALLS (at call time): NS.Skin (Shell through NS.ApplySkin, and again for Show border's `noBorder`, Band, Header, CloseButton, BarBorder,
 -- Resolve, Color, HudFont, HudFontSize, HudLabelColor), NS.SkinBandGeometry, NS.ResolveColor, NS.MakeCloseButton, NS.MakeTestStrip,
 -- NS.SetByPath, NS.OpenOptionsPanel.
 
@@ -366,11 +367,22 @@ local function paintPlate(plate)
     if edge then plate:SetBackdropBorderColor(Bar.EdgeColor("bar.frame.", "bar.border")) end
 end
 
---- Show the one background layer the settings ask for and paint the plate when it is that one.
+--- The chrome's edge: the skin's window edge while Show border is on, none while it is off (smoke
+--- round 3 E7). S.Shell records the opts and replays them on every skin switch; it is called again
+--- only when the switch moves.
+local function chromeBorder(f)
+    local noBorder = setting("bar.frame.borderShow") == false
+    if f.chromeNoBorder == noBorder then return end
+    f.chromeNoBorder = noBorder
+    NS.Skin.Shell(f.chrome, { noBorder = noBorder })
+end
+
+--- Show the one background layer the settings ask for and paint it: the plate's colors and edge, or
+--- the chrome's edge on or off.
 --- @param f table the bar
 function Bar.PaintChrome(f)
     local skin = setting("bar.bgFromSkin") ~= false
     f.chrome:SetShown(skin)
     f.plate:SetShown(not skin)
-    if not skin then paintPlate(f.plate) end
+    if skin then chromeBorder(f) else paintPlate(f.plate) end
 end
