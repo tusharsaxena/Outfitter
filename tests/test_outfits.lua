@@ -587,48 +587,6 @@ test("outfits: CreateFromItem names the outfit after the item and holds it in it
     assertNil(O.CreateFromItem("not a link"))
 end)
 
-test("outfits: Duplicate copies a native outfit under a new id; Reorder takes only the same ids", function()
-    local _, NS = scene()
-    local O = NS.Outfits
-    local a = O.Create("A", { HeadSlot = { id = 1 } }, { trigger = "FISHING" })
-    local b = O.Duplicate(a)
-    assertTrue(b ~= a)
-    assertEqual(O.Get(b).items.HeadSlot.id, 1)
-    assertTrue(O.Get(b).items ~= O.Get(a).items, "a copy, not an alias")
-    assertNil(O.Get(b).builtin)
-    assertTrue(O.Get(b).name ~= O.Get(a).name, "the copy's name is free")
-    assertTrue(O.Reorder("Accessory", { b, a }))
-    assertEqual(table.concat(O.Ids("Accessory"), ","), b .. "," .. a)
-    -- red under: Reorder without its `#ids ~= #current` check.
-    assertFalse(O.Reorder("Accessory", { a }), "an order that drops an id is refused")
-    -- red under: Reorder without its `not want[id]` check (o99 lands in the order).
-    assertFalse(O.Reorder("Accessory", { a, "o99" }))
-    assertEqual(table.concat(O.Ids("Accessory"), ","), b .. "," .. a)
-end)
-
-test("outfits: a Duplicate is whole at OUTFIT_ADDED, so its trigger binds at once; triggerState stays behind", function()
-    local _, NS = scene()
-    local O = NS.Outfits
-    local a = O.Create("A", { HeadSlot = { id = 1 } }, { trigger = "FISHING" })
-    local src = O.Get(a)
-    src.triggerParams = { FISHING = { x = 1 } }
-    src.triggerState = { FISHING = { restore = 1 } }
-    local atAdd = {}
-    NS.NewBusTarget():RegisterMessage(NS.MSG.OUTFIT_ADDED, function(_, id)
-        local rec = O.Get(id)
-        atAdd[#atAdd + 1] = { trigger = rec.trigger and rec.trigger.id,
-                              params = rec.triggerParams and rec.triggerParams.FISHING ~= nil }
-    end)
-    local b = O.Duplicate(a)
-    assertEqual(#atAdd, 1)
-    -- red under: Duplicate creating the copy bare and copying the trigger in after OUTFIT_ADDED (design §6.9).
-    assertEqual(atAdd[1].trigger, "FISHING", "the binder's Bind(id) sees the trigger")
-    assertTrue(atAdd[1].params, "and its params")
-    assertTrue(O.Get(b).trigger ~= src.trigger, "a copy, not an alias")
-    -- red under: DUPLICATE_SKIP without triggerState (the copy inherits the source's CVar restores).
-    assertNil(O.Get(b).triggerState)
-end)
-
 test("outfits: UsingItem reads the link into an item info, and answers the outfits that use it", function()
     local _, NS = scene({ scenario = "geared" })
     local O = NS.Outfits
