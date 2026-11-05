@@ -440,12 +440,6 @@ local function nameTaken(id, name)
     return false
 end
 
---- Store a native outfit on the server: a set from its slots (the name cut to 31 bytes, the icon its
---- own fileID, else 134400 with a glyph kept as the mirror's override), mirrored by an em outfit that carries its settings (B17) and binding, worn and
---- selected; then the native outfit is deleted. Refused at the client's cap with the EM-full popup,
---- and with a line when a set or another mirror already holds the cut name (O.Rename's rule).
---- @param id string
---- @return boolean ok, string|nil popupKey, string|nil newId
 -- Why native outfit `rec` cannot become a set now: the EM-full popup's key, or true once the name line
 -- is printed; nil when it can.
 local function storeRefusal(id, rec)
@@ -457,6 +451,12 @@ local function storeRefusal(id, rec)
     return nil
 end
 
+--- Store a native outfit on the server: a set from its slots (the name cut to 31 bytes, the icon its
+--- own fileID, else 134400 with a glyph kept as the mirror's override), mirrored by an em outfit that carries its settings (B17) and binding, worn and
+--- selected; then the native outfit is deleted. Refused at the client's cap with the EM-full popup,
+--- and with a line when a set or another mirror already holds the cut name (O.Rename's rule).
+--- @param id string
+--- @return boolean ok, string|nil popupKey, string|nil newId
 function EM.StoreOnServer(id)
     local O = NS.Outfits
     local rec = O.Get(id)
