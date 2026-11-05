@@ -38,8 +38,11 @@ survive a restart without bloating git: `/home/tushar/.claude/projects/-mnt-d-Pr
 - **E9 Bar layout dropdown** (Layout tab): `Grouped` (today: one row/column per category, with labels)
   or `Collapsed` (one group of all shown outfits, no labels; every label setting disabled while
   Collapsed), with a tooltip explaining both. Default `Grouped`.
-- **E10 Ingress alignment** (29.png Chonky, 30.png stock, 31.png EllesmereUI is fine): on Chonky and
-  stock the button sits slightly off its neighbours; on stock its border does not look like the other
+- **E10 Ingress size and alignment** (29.png Chonky, 30.png stock, 31.png EllesmereUI is fine). Owner,
+  2026-11-05: "fix both the size and alignment of the icon — it seems bigger than its sibling icons".
+  The button's icon must be the **same size** as the neighbouring tabs' icons (measure them in the
+  screenshots and in the template/Chonky geometry; Chonky draws its own extra tab's icon at 30x30
+  CENTER, the template at 33x35 BOTTOM 1,-2), and the button sits slightly off its neighbours; on stock its border does not look like the other
   tabs. Match the neighbouring tab's exact position (same baseline, same spacing as the tabs between
   themselves) and the template's layering of TabBg, icon, Hider and Highlight. Read the live geometry
   from the neighbour (`PaperDollSidebarTab3` / Chonky's row) rather than constants where possible.
