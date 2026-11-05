@@ -54,6 +54,15 @@ survive a restart without bloating git: `/home/tushar/.claude/projects/-mnt-d-Pr
   already live on another page move here only if that removes a second switch (options-ui-§15: never
   two switches for one state). Schema-driven, FromSkin companions for any color (skinning-§6), composed
   groups (options-ui-§16), every row with a tooltip.
+- **E12 Equipment Manager state** (owner request, relayed 2026-11-05 from another session; no
+  screenshot in this repo): (1) the outfit row's Equipment Manager mark tooltip says "Stored in the
+  Equipment Manager" even for an outfit that is NOT stored (seen on Birthday Suit); the not-stored
+  state must say it is not stored. (2) Both states gain a subtext line saying what a click does:
+  `L["Click to save in the Equipment Manager"]` / `L["Click to remove from the Equipment Manager"]`
+  (the click must already do that; verify, and fix it if it does not). (3) The outfit's gear menu gains
+  an entry directly below "Rename...": `L["Save in equipment manager"]`, a submenu with `On` and `Off`
+  radio rows (the current state ticked, LibKa0s v1.87.0 `submenu`/`radio`/`selected`), keep-open, doing
+  exactly what the mark's click does (same code path). In test mode (E4) the rows are disabled.
 
 ## Global Constraints
 
@@ -73,7 +82,7 @@ only the E3 amendment of the D10 clause. Anything else: stop and flag.
 | R2 | Task 2: ingress alignment and border (E10) | todo |
 | R3 | Task 3: bar options — E5, E6, E7, E8, E9 | todo |
 | R4 | Task 4: test mode placement and menu — E3, E4 | todo |
-| R5 | Task 5: Outfit window settings page — E11 | todo |
+| R5 | Task 5: Outfit window settings page — E11; Equipment Manager tooltip and menu — E12 | todo |
 | R6 | Task 6: docs, D10 amendment, smoke §13, whole-branch review, bundle, push | todo |
 | R7 | Owner's in-game pass of smoke §13 | todo |
 | R8 | Owner go-ahead -> merge all rounds in order (see round 2 plan CP6, plus this branch last), delete branches | todo |
@@ -95,6 +104,12 @@ files under the cap; green gate; commit; tick its ledger row; push.
   `modules/OutfitMenu.lua`, `core/WidgetsSetup.lua`, `modules/Bar*.lua`, tests.
 - **Task 5 (R5)** a new `settings/OutfitWindow.lua` page (registered like the others), the modules
   whose behaviour gains a switch, schema/defaults/locales, tests (settings parity, schema, panel).
+  **Task 5 also does E12** (as its own commits): the EM mark tooltip (`modules/Window_Rows.lua` /
+  `modules/OutfitTooltip.lua`), the gear menu entry (`modules/OutfitMenu.lua`), tests in
+  `test_outfit_menu` and the rows/tooltip suites.
+  - [ ] E11 Outfit window settings page
+  - [ ] E12 (1) not-stored tooltip text, (2) click subtext both states, (3) "Save in equipment
+    manager" On/Off submenu below Rename..., same path as the click, disabled in test mode
 - **Task 6 (R6)** docs (settings-panel, schema, module map, data flow, taint, known limitations,
   README, test-cases), the D10 amendment in `docs/ARCHITECTURE.md`, `docs/smoke-tests.md` §13 *Smoke
   round 3 (2026-11-05)* covering E1-E11, a whole-branch review (lenses: correctness, combat/lifecycle,
