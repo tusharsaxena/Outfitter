@@ -1,0 +1,19 @@
+Ka0s Outfitter Reborn — offline perf  (v1.1.0, label 'offline')
+
+scenario                    iters     ms/iter notes/iter  bytes/iter
+equipPlanCaptureOff           500     1.29995       0.00    232272.1
+equipPlanCaptureOn            500     1.35006       3.00    232272.1
+zoneFlipsCaptureOff            50     0.98188       0.00    118022.7
+zoneFlipsCaptureOn             50     1.03486     100.00    117934.4
+triggerFanoutCaptureOff       100     0.87172       0.00    106775.7
+triggerFanoutCaptureOn        100     0.85777      40.00    106778.6
+tooltipsCaptureOff             50     0.59694       0.00    138494.1
+tooltipsCaptureOn              50     0.64260     100.00    138494.1
+gaGenerationCaptureOff        200     4.75911       0.00    468126.8
+gaGenerationCaptureOn         200     4.24240       3.00    468126.8
+dockIdleCaptureOff           2000     0.00505       0.00       192.3
+dockIdleCaptureOn            2000     0.00534       1.00       192.3
+tooltipsAbsent                 50     0.60620       0.00    138494.1
+
+timings are for orientation only — compare scenarios within a run, never across machines
+wrote docs/automated-tests/20261105-070533/perf.json
