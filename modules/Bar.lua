@@ -134,9 +134,11 @@ end
 --- @return table
 function Bar.LayoutSpec(counts, strip)
     local gx, gy = Bar.Growth()
+    -- A value that is no number lays out at the profile default (smoke round 3 E8's 8 and 4).
+    local D = NS.defaults.profile.bar.layout
     return {
-        size = num(NS.GetSetting("bar.icons.size"), 32), spacing = num(NS.GetSetting("bar.layout.spacing"), 5),
-        padding = num(NS.GetSetting("bar.layout.padding"), 4), perLine = num(NS.GetSetting("bar.layout.perLine"), 0),
+        size = num(NS.GetSetting("bar.icons.size"), 32), spacing = num(NS.GetSetting("bar.layout.spacing"), D.spacing),
+        padding = num(NS.GetSetting("bar.layout.padding"), D.padding), perLine = num(NS.GetSetting("bar.layout.perLine"), 0),
         vertical = NS.GetSetting("bar.vertical") == true, labelH = Bar.LabelHeight(), top = Bar.HeaderHeight(strip),
         minWidth = Bar.Layout.MIN_WIDTH, gx = gx, gy = gy, counts = counts,
     }

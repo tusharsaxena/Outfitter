@@ -112,6 +112,16 @@ test("bar: the layout's defaults are 4 px between icons and 8 px in from the edg
     assertEqual(g.blocks[2].icons[1].y - a.y, 37, "the pitch between the rows")
 end)
 
+test("bar: a spacing or padding that is no number lays out at the defaults", function()
+    -- red under: Bar.LayoutSpec's own fallbacks kept at the round 2 values (spacing 5, padding 4)
+    local NS, _, Bar = scene()
+    NS.db.profile.bar.layout.spacing = "wide"
+    NS.db.profile.bar.layout.padding = "wide"
+    local spec = Bar.LayoutSpec({ 1 })
+    assertEqual(spec.spacing, NS.defaults.profile.bar.layout.spacing)
+    assertEqual(spec.padding, NS.defaults.profile.bar.layout.padding)
+end)
+
 test("bar: the layout wraps at icons per line, in rows or in columns", function()
     local Layout = T.NS.Bar.Layout
     local g = Layout.Compute({ size = 20, spacing = 2, padding = 0, perLine = 2, counts = { 5 }, gx = 1, gy = -1 })

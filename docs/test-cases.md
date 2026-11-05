@@ -1303,7 +1303,7 @@ Total.
 - slot enables: another host's flyout, or one opened in lockdown, lifts nothing
 - slot enables: the flyout's hooks do nothing while stood down
 
-### test_bar.lua (44)
+### test_bar.lua (45)
 
 - bar: NS.Bar is published with the §7.7 surface
 - bar: bar.shown defaults false, so a fresh profile and a repaired one both come up hidden
@@ -1311,6 +1311,7 @@ Total.
 - bar: one button per visible outfit, a row per category, and a re-render never grows the pool
 - bar: an outfit whose trigger is off is not on the bar, and a manual wear of it puts it back
 - bar: the layout's defaults are 4 px between icons and 8 px in from the edge
+- bar: a spacing or padding that is no number lays out at the defaults
 - bar: the layout wraps at icons per line, in rows or in columns
 - bar: the layout grows away from its corner, the first icon and block at that corner
 - bar: the layout adds each block's label line and never draws narrower than its minimum
@@ -1785,7 +1786,7 @@ Total.
 | test_list_model.lua | 8 |
 | test_rows_secure.lua | 21 |
 | test_slot_enables.lua | 29 |
-| test_bar.lua | 44 |
+| test_bar.lua | 45 |
 | test_bar_look.lua | 10 |
 | test_outfit_icons.lua | 17 |
 | test_broker.lua | 13 |
@@ -1805,4 +1806,4 @@ Total.
 | test_lizard_sighted.lua | 8 |
 | test_prose.lua | 15 |
 | Skipped | 1 |
-| **Total** | **1495** |
+| **Total** | **1496** |
