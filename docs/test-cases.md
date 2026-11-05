@@ -1351,7 +1351,7 @@ Total.
 - bar: Suspend hides it and stops the rebuilds; the stand-down keeps it down
 - bar: test mode shows the sample outfits with the strip, even with the bar off, and they do nothing
 
-### test_bar_look.lua (10)
+### test_bar_look.lua (11)
 
 - bar: a label draws through S.HudFont with its font block, and its color follows the skin until told not to
 - bar: the player's plate and icon edge take the skin's border color while that companion stays on
@@ -1359,9 +1359,10 @@ Total.
 - bar: with Ignore fonts on a label draws its own stored face, the seam's answer
 - bar: a button's edges, worn edge and worn mark stand on named rungs, the mark on a mouse-off overlay
 - bar: Icons > Show border draws the skin's icon edge when on and no edge at all when off, in every skin
+- bar: Icons > Show border on draws the skin's window icon outline, which shows on the bar's dark background
 - bar: Frame > Show background is gone, and a stored false from round 2 hides nothing
 - bar: Frame > Show border shows and hides the skin's window edge while the bar follows the skin
-- bar: the Layout tab's Grouping row is Grouped or Collapsed, and Collapsed dims every label row
+- bar: the Layout tab's Grouping row is Grouped or Collapsed, and Collapsed hides every label row
 - bar: Collapsed draws every shown outfit as one group with no labels; Grouped keeps a row per category
 
 ### test_outfit_icons.lua (17)
@@ -1592,7 +1593,7 @@ Total.
 - skin: with every surface built, no Blizzard frame is painted
 - skin: the window, the dialogs and the bar wear NS.ApplySkin's Shell
 - skin: Blizzard icon art in a window is cropped and edged from the skin, never as a HUD
-- skin: the bar's icons are HUD icons, cropped and edged from the skin
+- skin: the bar's icons are cropped and edged from the skin in the window outline
 - skin: the sheet button wears the host's look and is never painted through the skin
 - window: the header gear has no border
 - skin: no source file writes inline icon markup by hand (W.IconText crops it)
@@ -1815,7 +1816,7 @@ Total.
 | test_rows_secure.lua | 21 |
 | test_slot_enables.lua | 29 |
 | test_bar.lua | 45 |
-| test_bar_look.lua | 10 |
+| test_bar_look.lua | 11 |
 | test_outfit_icons.lua | 17 |
 | test_broker.lua | 13 |
 | test_triggers_parity.lua | 13 |
@@ -1836,4 +1837,4 @@ Total.
 | test_lizard_sighted.lua | 8 |
 | test_prose.lua | 15 |
 | Skipped | 1 |
-| **Total** | **1518** |
+| **Total** | **1519** |

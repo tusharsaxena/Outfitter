@@ -127,14 +127,14 @@ NS.RegisterSchemaRows({
 local GROW_H = { auto = L["Automatic"], right = L["Right"], left = L["Left"] }
 local GROW_V = { auto = L["Automatic"], down = L["Down"], up = L["Up"] }
 -- Grouped: one block per category under its label; Collapsed: one block, no labels (smoke round 3
--- E9), so every Labels row dims while it is picked.
+-- E9), so every Labels row is hidden while it is picked (options-ui-§22).
 local MODES = { grouped = L["Grouped"], collapsed = L["Collapsed"] }
 
 NS.RegisterSchemaRows({
     { path = "bar.layout.mode", page = PAGE, group = LAYOUT, type = "string",
       values = MODES, sorting = { "grouped", "collapsed" },
       label = L["Grouping"], default = DB.layout.mode,
-      tooltip = L["Grouped: one row of icons per category (one column in the vertical layout), each under its label. Collapsed: every outfit the bar shows in a single group with no labels; the Labels tab is not used."] },
+      tooltip = L["Grouped: one row of icons per category (one column in the vertical layout), each under its label. Collapsed: every outfit the bar shows in a single group with no labels, and the Labels tab's rows are hidden."] },
     { path = "bar.vertical", page = PAGE, group = LAYOUT, type = "bool",
       label = L["Vertical layout"], default = DB.vertical,
       tooltip = L["One column per category."] },
@@ -160,7 +160,7 @@ NS.RegisterSchemaRows({
 -- ── Icons ──────────────────────────────────────────────────────────────────────────────────────
 -- Size, then the Border block on the skin's icon family (`fromSkin = "icon"`: its companion governs
 -- the thickness too), with *Use the skin's color* after it. Both companions on, the button wears the
--- skin's own HUD icon edge (S.IconBorder); either off, the player's (modules/Bar_Buttons.lua).
+-- skin's own window icon outline (S.IconBorder); either off, the player's (modules/Bar_Buttons.lua).
 NS.RegisterSchemaRows({
     { path = "bar.icons.size", page = PAGE, group = ICONS, subgroup = L["Size"], type = "number",
       min = 16, max = 64, step = 1, label = L["Icon size (px)"], default = DB.icons.size,
@@ -177,15 +177,18 @@ registerComposed(H.BorderGroup({
 
 -- ── Labels ─────────────────────────────────────────────────────────────────────────────────────
 -- One label per category, over its row (over its column, truncated, in the vertical layout), drawn
--- through S.HudFont (modules/Bar_Chrome.lua). Every row dims while the Layout tab's Grouping is
--- Collapsed (no labels draw then). The font block's rows dim while the labels are off,
--- the swatch excepted (it is never grayed, anti-pattern #74); a row the composer already governs by
--- its skin companion dims for either (AuraMaster settings/Layout.lua:582-597's shape).
-local function collapsed() return NS.GetSetting("bar.layout.mode") == "collapsed" end
-local function labelsOff() return collapsed() or NS.GetSetting("bar.labels.show") == false end
+-- through S.HudFont (modules/Bar_Chrome.lua). Every row is shown only while the Layout tab's
+-- Grouping is Grouped (options-ui-§22: Collapsed draws no labels, and a group no picked value uses is
+-- hidden, never dimmed); a note stands in for them while Collapsed. The font block's rows dim while
+-- the labels are off, the swatch excepted (it is never grayed, anti-pattern #74); a row the composer
+-- already governs by its skin companion dims for either (AuraMaster settings/Layout.lua:582-597's shape).
+local GROUPED = { path = "bar.layout.mode", equals = "grouped" }
+local function labelsOff() return NS.GetSetting("bar.labels.show") == false end
 
 NS.RegisterSchemaRows({
-    { path = "bar.labels.show", page = PAGE, group = LABELS, type = "bool", disabledIf = collapsed,
+    { type = "note", page = PAGE, group = LABELS, shownWhen = { path = "bar.layout.mode", equals = "collapsed" },
+      text = L["Category labels are drawn only while Grouping is Grouped (Outfit Bar > Layout)."] },
+    { path = "bar.labels.show", page = PAGE, group = LABELS, type = "bool", shownWhen = GROUPED,
       label = L["Show category labels"], default = DB.labels.show,
       tooltip = L["Names each row of the bar: Complete outfits, Accessories."] },
 })
@@ -204,6 +207,7 @@ do
         },
     })
     for _, row in ipairs(rows) do
+        row.shownWhen = GROUPED
         local governedBy = row.disabledIf
         if type(governedBy) == "string" then
             row.disabledIf = function() return labelsOff() or NS.GetSetting(governedBy) == true end

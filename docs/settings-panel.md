@@ -118,7 +118,7 @@ on the right, and the header drags it. Tabs in declaration order:
 
 | Path | Default | Label |
 |---|---|---|
-| `bar.layout.mode` | `grouped` (`grouped`, `collapsed`) | Grouping: Grouped is one block per category under its label; Collapsed is every shown outfit in one block with no labels, and every Labels row dims |
+| `bar.layout.mode` | `grouped` (`grouped`, `collapsed`) | Grouping: Grouped is one block per category under its label; Collapsed is every shown outfit in one block with no labels, and every Labels row is hidden (a note stands in) |
 | `bar.vertical` | `false` | Vertical layout |
 | `bar.layout.perLine` | `0` (0 to 20) | Per row or column (0 = one line) |
 | `bar.layout.growH` | `auto` (`auto`, `right`, `left`) | Grow horizontally |
@@ -131,8 +131,10 @@ on the right, and the header drags it. Tabs in declaration order:
 `bar.icons.size` (`32`, 16 to 64, *Icon size (px)*), then the library's Border block (`H.BorderGroup`,
 prefix `bar.icons.`, on the skin's icon family): show, style, size, color and *Use class color*
 with *Use the skin's border*, then this addon's *Use the skin's color*
-(`bar.icons.borderColorFromSkin`). With both companions on, a button wears the skin's own HUD icon
-edge. *Show border* (`bar.icons.borderShow`) is the only edge a button draws, in every skin: on, the
+(`bar.icons.borderColorFromSkin`). With both companions on, a button wears the skin's own window
+icon outline (`icon.outline`, else `icon.border`), not the HUD edge: the bar always draws a window
+background, and Ka0s Default's black HUD edge on it read as no border (review of smoke round 3 E5).
+*Show border* (`bar.icons.borderShow`) is the only edge a button draws, in every skin: on, the
 skin's edge or the player's; off, none (smoke round 3 E5: the button no longer takes `S.SquareIcon`,
 whose permanent outline edge read as an inverted switch under Ka0s Default and a dead one under the
 other skins; its art is cropped by hand instead).
@@ -142,8 +144,9 @@ other skins; its art is cropped by hand instead).
 `bar.labels.show` (`true`, *Show category labels*), then the library's Font block (`H.FontGroup`,
 prefix `bar.labels.`): face, size, flags (From skin first), shadow, color and *Use class color*, with
 *Use the skin's font*, then this addon's *Use the skin's color* and *Use the skin's shadow*. The
-block's rows dim while the labels are off, the swatch excepted, and every row of the tab (the swatch
-again excepted) dims while the Layout tab's *Grouping* is Collapsed, since no label draws then.
+block's rows dim while the labels are off, the swatch excepted. Every row of the tab carries
+`shownWhen` Grouped (options-ui-§22): while the Layout tab's *Grouping* is Collapsed no label draws,
+so the rows are hidden, not dimmed, and one note in their place says labels draw only while Grouped.
 One label per category, drawn as
 HUD text through `S.HudFont`, its face resolved through `S.Resolve`: with *Ignore fonts* on, the
 labels draw the stored face whatever *Use the skin's font* says (skinning-§6).

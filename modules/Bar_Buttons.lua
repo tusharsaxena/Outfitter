@@ -11,9 +11,11 @@ local _, NS = ...
 -- nothing replaces it).
 --
 -- THE EDGE is the Icons tab's Border block (smoke round 2 design G6). With both its companions on
--- (Use the skin's border, Use the skin's color) and no class color, it is the skin's own HUD icon
--- edge: S.IconBorder{ fromSkin, hud } on `btn.skinEdge`, a child frame, so a skin switch repaints it
--- with no host call. Otherwise that frame hides and `btn.edge` (a BackdropTemplate child made on
+-- (Use the skin's border, Use the skin's color) and no class color, it is the skin's own window icon
+-- outline: S.IconBorder{ fromSkin } on `btn.skinEdge`, a child frame, so a skin switch repaints it
+-- with no host call. Not the HUD edge (`hud`): the bar always draws a window background (smoke round
+-- 3 E6), and Ka0s Default's black HUD `icon.border` on it read as no border (E5, screen 21), where
+-- `icon.outline` (else `icon.border`) shows. Otherwise that frame hides and `btn.edge` (a BackdropTemplate child made on
 -- first need, Drop Watcher's IconStyle shape) draws the style and thickness (the skin's icon family
 -- while its companion is on, S.Resolve) in the class color, the skin's `icon.border` or the swatch.
 -- Show border off draws neither.
@@ -281,7 +283,7 @@ function Bar.NewButton(parent)
     btn.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
     btn.skinEdge = CreateFrame("Frame", nil, btn)
     btn.skinEdge:SetAllPoints(btn)
-    S.IconBorder(btn.skinEdge, { fromSkin = true, hud = true, icon = btn.icon })
+    S.IconBorder(btn.skinEdge, { fromSkin = true, icon = btn.icon })
     S.Mark(btn.worn, { token = "of.bar.worn", art = NS.Icon("confirm") })
     btn:SetScript("OnClick", onClick)
     btn:SetScript("OnReceiveDrag", onReceiveDrag)

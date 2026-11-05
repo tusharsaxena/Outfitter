@@ -36,7 +36,8 @@ test("schema: the settings pages are general, bar, window and profiles", functio
     for _, row in ipairs(NS.Schema.AllRows()) do
         assertTrue(NS.VALID_PAGES[row.page] == true, tostring(row.path) .. " is on page " .. tostring(row.page))
         assertEqual(type(row.group), "string", tostring(row.path))
-        assertEqual(type(row.label), "string", tostring(row.path))
+        -- A note (Outfit Bar > Labels while Collapsed) is text: no path, no label.
+        assertEqual(type(row.type == "note" and row.text or row.label), "string", tostring(row.path))
     end
 end)
 
@@ -45,7 +46,8 @@ test("schema: every stored row's default is the one in defaults/Profile.lua", fu
     -- rows and the Minimap row (LibDBIcon's inverted `hide`) store nothing under their own path.
     local checked = 0
     for _, row in ipairs(NS.Schema.AllRows()) do
-        if not row.sessionOnly and row.path ~= NS.MINIMAP_PATH and type(row.set) ~= "function" then
+        if row.type ~= "note" and not row.sessionOnly and row.path ~= NS.MINIMAP_PATH
+            and type(row.set) ~= "function" then
             local global = row.path:find("^global%.") ~= nil
             local want = global and read(NS.defaults.global, row.path, 2) or read(NS.defaults.profile, row.path, 1)
             assertTrue(want ~= nil, row.path .. " resolves in no defaults tree")
@@ -145,9 +147,10 @@ end)
 test("schema: no instance row is on the settings instance, so no list, page or reset can show one", function()
     -- design §3.5 / O12: outfit rows live on NS.OutfitSchema, never here.
     for _, row in ipairs(NS.Schema.AllRows()) do
-        assertFalse(row.path:find("^outfit%.") ~= nil, row.path)
-        assertFalse(row.path:find("^trigger%.") ~= nil, row.path)
-        assertTrue(row.page ~= "outfit", row.path)
+        local path = row.path or ""   -- a note row has none
+        assertFalse(path:find("^outfit%.") ~= nil, path)
+        assertFalse(path:find("^trigger%.") ~= nil, path)
+        assertTrue(row.page ~= "outfit", path)
     end
 end)
 

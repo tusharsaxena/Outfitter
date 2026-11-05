@@ -228,15 +228,17 @@ test("skin: Blizzard icon art in a window is cropped and edged from the skin, ne
     assertTrue(NS.WindowRows.rows[1] ~= nil, "the rows were built")
 end)
 
-test("skin: the bar's icons are HUD icons, cropped and edged from the skin", function()
-    -- red under: modules/Bar_Buttons.lua's S.IconBorder(btn, { hud = true }) without fromSkin, or
-    -- without hud (the bar would wear a window's icon.outline), or the icon left uncropped.
+test("skin: the bar's icons are cropped and edged from the skin in the window outline", function()
+    -- The bar always draws a window background (smoke round 3 E6), so its icons wear the window's
+    -- icon.outline, not the HUD's icon.border (black under Ka0s Default: on read as off, E5).
+    -- red under: modules/Bar_Buttons.lua's S.IconBorder without fromSkin, or with hud = true, or the
+    -- icon left uncropped.
     local _, _, Skin, built = buildAll()
     local btn = built["a bar button"]
     -- On the button's own skin-edge frame, so the player's edge can stand in for it (G6).
     local o = iconBorder(Skin, btn.skinEdge)
     assertTrue(o ~= nil, "the bar button has no S.IconBorder")
-    assertEqual(o.hud, true, "hud")
+    assertTrue(o.hud ~= true, "the window outline, not the HUD edge")
     assertEqual(o.fromSkin, true, "fromSkin")
     assertCropped(btn.icon, "a bar button's icon")
 end)

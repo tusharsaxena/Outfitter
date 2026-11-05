@@ -176,6 +176,26 @@ test("bar: Icons > Show border draws the skin's icon edge when on and no edge at
     assertTrue(c[1] >= 0.07 and c[7] <= 0.93, "the icon is cropped")
 end)
 
+test("bar: Icons > Show border on draws the skin's window icon outline, which shows on the bar's dark background", function()
+    -- Review of smoke round 3 E5: the bar always draws a window background (E6), and the HUD edge
+    -- (`icon.border`, black under Ka0s Default) on it read as no border at all (screen 21). The
+    -- edge is the window outline, `icon.outline`, which falls back to `icon.border` in a skin that
+    -- states none.
+    -- red under: modules/Bar_Buttons.lua's S.IconBorder(btn.skinEdge, { ..., hud = true, ... }).
+    local NS, M, Bar = scene()
+    accessory(NS, "Hat")
+    NS.ApplySkinChoice("ka0s", "ka0s")
+    NS.SetByPath("bar.icons.borderShow", true)
+    settle(M)
+    local Skin = M.LibStub("LibKa0s-Skin-1.0")
+    local rec = Skin.painted[Bar.Buttons()[1].skinEdge]
+    local top = rec and rec.regions.edgeTop
+    assertTrue(top ~= nil, "the skin's edge is drawn")
+    local got, want = rawget(top, "__color"), NS.Skin.Token("icon.outline")
+    assertTrue(type(want) == "table", "Ka0s Default states icon.outline")
+    for i = 1, 3 do assertEqual(got[i], want[i], "the outline's channel " .. i) end
+end)
+
 test("bar: Frame > Show background is gone, and a stored false from round 2 hides nothing", function()
     -- Smoke round 3 E6 (screen 24): the row, its default and its reader are removed; the bar always
     -- draws one of its two background layers.
@@ -231,8 +251,10 @@ end)
 
 -- ── the layout mode (smoke round 3 E9) ───────────────────────────────────────────────────────────
 
-test("bar: the Layout tab's Grouping row is Grouped or Collapsed, and Collapsed dims every label row", function()
-    -- red under: no bar.layout.mode row, or the label rows' disabledIf blind to it.
+test("bar: the Layout tab's Grouping row is Grouped or Collapsed, and Collapsed hides every label row", function()
+    -- options-ui-§22: a group of rows only one value of a mode selector uses is hidden, not dimmed,
+    -- while another value is picked; the Labels tab then shows one note naming the selector.
+    -- red under: no bar.layout.mode row, or a label row without its shownWhen on Grouped.
     local NS = scene()
     local row = NS.FindSchemaRow("bar.layout.mode")
     assertTrue(row ~= nil, "no bar.layout.mode row")
@@ -245,14 +267,29 @@ test("bar: the Layout tab's Grouping row is Grouped or Collapsed, and Collapsed 
         "the tooltip explains both")
     local function dims(path) local r = NS.FindSchemaRow(path); return r.disabledIf ~= nil and r.disabledIf() == true end
     NS.db.profile.bar.labels.fontFromSkin = false
-    assertFalse(dims("bar.labels.show"), "Grouped: the labels switch is live")
-    assertFalse(dims("bar.labels.fontSize"), "Grouped: the size is live")
-    NS.SetByPath("bar.layout.mode", "collapsed")
-    for _, path in ipairs({ "bar.labels.show", "bar.labels.font", "bar.labels.fontSize", "bar.labels.fontFlags",
-                            "bar.labels.fontShadow", "bar.labels.useClassColorFont", "bar.labels.fontFromSkin",
-                            "bar.labels.fontColorFromSkin", "bar.labels.fontShadowFromSkin" }) do
-        assertTrue(dims(path), path .. " is live while Collapsed")
+    local LABELS = { "bar.labels.show", "bar.labels.font", "bar.labels.fontSize", "bar.labels.fontFlags",
+                     "bar.labels.fontShadow", "bar.labels.useClassColorFont", "bar.labels.fontFromSkin",
+                     "bar.labels.fontColor", "bar.labels.fontColorFromSkin", "bar.labels.fontShadowFromSkin" }
+    for _, path in ipairs(LABELS) do
+        local sw = NS.FindSchemaRow(path).shownWhen
+        assertTrue(type(sw) == "table" and sw.path == "bar.layout.mode" and sw.equals == "grouped",
+            path .. " is shown only while Grouped")
     end
+    -- The note that stands in for them: shown only while Collapsed, and naming the selector.
+    local note
+    for _, r in ipairs(NS.Schema) do
+        if r.type == "note" and r.group == "Labels" and r.page == row.page then note = r end
+    end
+    assertTrue(note ~= nil, "the Labels tab's note")
+    assertTrue(note.shownWhen ~= nil and note.shownWhen.path == "bar.layout.mode"
+        and note.shownWhen.equals == "collapsed", "the note shows only while Collapsed")
+    assertTrue(note.text:find("Grouping", 1, true) ~= nil, "the note names the Grouping row")
+    -- Hidden is not disabled: Collapsed no longer dims them; the labels switch still does.
+    NS.SetByPath("bar.layout.mode", "collapsed")
+    assertFalse(dims("bar.labels.show"), "Collapsed: the labels switch is not dimmed")
+    assertFalse(dims("bar.labels.fontSize"), "Collapsed: the size is not dimmed")
+    NS.SetByPath("bar.labels.show", false)
+    assertTrue(dims("bar.labels.fontSize"), "the font rows still dim while the labels are off")
     T.assertNil(NS.FindSchemaRow("bar.labels.fontColor").disabledIf, "the swatch is never grayed")
 end)
 

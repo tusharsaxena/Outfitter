@@ -152,7 +152,7 @@ end)
 
 test("settings: the Outfit Bar page's tabs and rows, the position row never drawn", function()
     local out = {}
-    for _, r in ipairs(NS.SchemaForPage("bar")) do out[#out + 1] = r.path .. "=" .. r.group end
+    for _, r in ipairs(NS.SchemaForPage("bar")) do out[#out + 1] = (r.path or "(" .. r.type .. ")") .. "=" .. r.group end
     -- red under: a layout row registered on the Display tab
     assertEqual(table.concat(out, ","), "bar.shown=Display,bar.worn.style=Display,"
         .. "bar.combatAlpha=Display,bar.position=Display,"
@@ -161,7 +161,7 @@ test("settings: the Outfit Bar page's tabs and rows, the position row never draw
         .. "bar.icons.size=Icons,bar.icons.borderShow=Icons,bar.icons.borderStyle=Icons,bar.icons.borderSize=Icons,"
         .. "bar.icons.borderColor=Icons,bar.icons.useClassColorBorder=Icons,bar.icons.borderStyleFromSkin=Icons,"
         .. "bar.icons.borderColorFromSkin=Icons,"
-        .. "bar.labels.show=Labels,bar.labels.font=Labels,bar.labels.fontSize=Labels,bar.labels.fontColor=Labels,"
+        .. "(note)=Labels,bar.labels.show=Labels,bar.labels.font=Labels,bar.labels.fontSize=Labels,bar.labels.fontColor=Labels,"
         .. "bar.labels.useClassColorFont=Labels,bar.labels.fontFlags=Labels,bar.labels.fontShadow=Labels,"
         .. "bar.labels.fontFromSkin=Labels,bar.labels.fontColorFromSkin=Labels,bar.labels.fontShadowFromSkin=Labels,"
         .. "bar.bgColor=Frame,bar.useClassColorBg=Frame,bar.bgFromSkin=Frame,"
