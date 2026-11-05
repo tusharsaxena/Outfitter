@@ -72,8 +72,12 @@ end
 -- The outfit's record, or an empty one once it is gone: the menu stays open across keep-open picks
 -- and the library reads each tick on every paint, while the Equipment Manager sync can prune the
 -- outfit from under it. Every write still goes through a seam that refuses an unknown id.
+-- A store in the Equipment Manager (the Save in equipment manager pick, which keeps the menu open)
+-- replaces the outfit with a new record: every row reads and writes through `live`, so the rows built
+-- for the id the menu opened on follow it to its replacement (NS.EM.Current).
 local NO_RECORD = {}
-local function recOf(id) return NS.Outfits.Get(id) or NO_RECORD end
+local function live(id) return NS.EM.Current(id) end
+local function recOf(id) return NS.Outfits.Get(live(id)) or NO_RECORD end
 
 -- ── General ───────────────────────────────────────────────────────────────────────────────────
 
@@ -83,11 +87,11 @@ local function recOf(id) return NS.Outfits.Get(id) or NO_RECORD end
 local function fillEM(root, rec)
     local id = rec.id
     local function stored()
-        local live = NS.Outfits.Get(NS.EM.Current(id))
-        if live then return live.kind == "em" end
+        local now = NS.Outfits.Get(live(id))
+        if now then return now.kind == "em" end
         return rec.em == true
     end
-    local function set(on) NS.EM.SetStored(NS.EM.Current(id), on) end
+    local function set(on) NS.EM.SetStored(live(id), on) end
     local level = root:CreateButton(L["Save in equipment manager"])
     level:CreateRadio(L["On"], stored, set, true)
     level:CreateRadio(L["Off"], function() return not stored() end, set, false)
@@ -96,8 +100,8 @@ end
 local function fillBinding(root, id)
     local O = NS.Outfits
     local kb = root:CreateButton(L["Key binding"])
-    local function bound(n) return O.BindingOf(id) == n end
-    local function bind(n) O.SetBinding(id, n) end
+    local function bound(n) return O.BindingOf(live(id)) == n end
+    local function bind(n) O.SetBinding(live(id), n) end
     kb:CreateRadio(L["None"], function() return bound(nil) end, function() bind(nil) end)
     for n = 1, MAX_BINDING do
         local holder = O.Get(O.BoundTo(n))
@@ -111,7 +115,7 @@ end
 -- CancelAllTimers takes it (slash-commands-§7); C_Timer.After only without AceTimer, where the
 -- stood-down gate below keeps it inert.
 local function setTitle(id, titleID)
-    NS.Outfits.SetFlag(id, "titleID", titleID)
+    NS.Outfits.SetFlag(live(id), "titleID", titleID)
     local function show()
         if not NS.IsStoodDown() then NS.Stack.UpdateTitle(true) end
     end
@@ -146,7 +150,7 @@ local BANK_ROWS = {
 }
 
 local function bankMove(id, row)
-    local ok, why = NS.Bank[row[2]](id, row[3])
+    local ok, why = NS.Bank[row[2]](live(id), row[3])
     if not ok and why then NS.Print(why) end
 end
 
@@ -167,13 +171,13 @@ end
 -- A record flag as a toggle row.
 local function flagToggle(root, label, id, flag)
     root:CreateCheckbox(label, function() return recOf(id)[flag] == true end,
-        function() NS.Outfits.SetFlag(id, flag, recOf(id)[flag] ~= true) end)
+        function() NS.Outfits.SetFlag(live(id), flag, recOf(id)[flag] ~= true) end)
 end
 
 local function fillGeneral(root, rec)
     local id = rec.id
     root:CreateTitle(tostring(rec.name or ""))
-    root:CreateButton(L["Rename..."], function() NS.OutfitDialog.OpenRename(id) end)
+    root:CreateButton(L["Rename..."], function() NS.OutfitDialog.OpenRename(live(id)) end)
     fillEM(root, rec)
     fillBinding(root, id)
     fillTitles(root, id)
@@ -182,7 +186,7 @@ local function fillGeneral(root, rec)
         flagToggle(root, L["On equip, unequip other Accessory outfits"], id, "unequipOthers")
     end
     flagToggle(root, L["Ignore in comparison tooltips"], id, "ignoreComparisons")
-    root:CreateButton(L["Delete"], function() NS.Popups.ShowDelete(id) end)
+    root:CreateButton(L["Delete"], function() NS.Popups.ShowDelete(live(id)) end)
 end
 
 -- ── Rebuild ───────────────────────────────────────────────────────────────────────────────────
@@ -190,12 +194,12 @@ end
 local function fillRebuild(root, rec)
     local id = rec.id
     root:CreateDivider()
-    root:CreateButton(L["Update to current items"], function() NS.Popups.ShowSetCurrent(id) end)
+    root:CreateButton(L["Update to current items"], function() NS.Popups.ShowSetCurrent(live(id)) end)
     local statName = rec.stat and NS.Stats.ConfigName(rec.stat)
     if statName then
-        root:CreateButton(L["Rebuild for %s"]:format(statName), function() NS.Popups.ShowRebuild(id, rec.stat) end)
+        root:CreateButton(L["Rebuild for %s"]:format(statName), function() NS.Popups.ShowRebuild(live(id), rec.stat) end)
     end
-    root:CreateButton(L["Rebuild for..."], function() NS.RebuildDialog.Open(id) end)
+    root:CreateButton(L["Rebuild for..."], function() NS.RebuildDialog.Open(live(id)) end)
 end
 
 -- ── Automation ────────────────────────────────────────────────────────────────────────────────
@@ -203,6 +207,7 @@ end
 local function hasParams(desc) return desc ~= nil and #(desc.params or {}) > 0 end
 
 local function pickTrigger(id, tid)
+    id = live(id)
     if not NS.SetByPath("outfit.trigger.id", tid, id) then return end
     if hasParams(NS.Triggers.Get(tid)) then NS.TriggerDialog.Open(id) end
 end
@@ -245,7 +250,7 @@ local function triggerToggle(root, label, id, flag, enabled)
         local t = recOf(id).trigger
         return t ~= nil and t[flag] == true
     end
-    local row = root:CreateCheckbox(label, on, function() NS.SetByPath(path, not on(), id) end)
+    local row = root:CreateCheckbox(label, on, function() NS.SetByPath(path, not on(), live(id)) end)
     row:SetEnabled(enabled)
 end
 
@@ -253,7 +258,7 @@ local function fillAutomation(root, rec)
     local id = rec.id
     root:CreateDivider()
     fillTriggerPicker(root, rec)
-    root:CreateButton(L["Trigger settings..."], function() NS.TriggerDialog.Open(id) end)
+    root:CreateButton(L["Trigger settings..."], function() NS.TriggerDialog.Open(live(id)) end)
     local has = triggerOf(id) ~= ""
     triggerToggle(root, L["Turn trigger off"], id, "disabled", has)
     triggerToggle(root, L["Disable outfit in combat"], id, "combatDisabled", has)
@@ -269,8 +274,8 @@ local function fillBar(root, rec)
         return not (bar and bar.hide)
     end
     root:CreateCheckbox(L["Show in outfit bar"], shown,
-        function() NS.SetByPath("outfit.bar.hide", shown(), id) end)
-    root:CreateButton(L["Change icon..."], function() NS.IconBrowser.Open(id) end)
+        function() NS.SetByPath("outfit.bar.hide", shown(), live(id)) end)
+    root:CreateButton(L["Change icon..."], function() NS.IconBrowser.Open(live(id)) end)
 end
 
 -- ── test mode: browse only (smoke round 3 E4) ─────────────────────────────────────────────────
@@ -336,7 +341,7 @@ function OM.Open(anchor, id)
     -- The record is read on every fill: a keep-open pick fills the menu again to relabel it. A fill
     -- after the outfit is gone adds nothing, and the open rows keep what they show.
     return NS.OpenMenu(anchor, function(root)
-        local rec = NS.Outfits.Get(id)
+        local rec = NS.Outfits.Get(live(id))
         if not rec then return end
         fillAll(root, rec)
     end) == true

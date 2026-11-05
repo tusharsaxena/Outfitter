@@ -380,6 +380,31 @@ test("menu: Save in equipment manager, below Rename..., is On/Off radios on the 
     assertTrue(rows[2].selected(rows[2]))
 end)
 
+test("menu: once Save in equipment manager stores the outfit, the open menu's other rows act on the stored one", function()
+    -- A store replaces the record (NS.EM.Current), and the menu keeps open on the pick: every row
+    -- built for the old id must follow it, or a pick after the save lands is refused and its tick lies.
+    local NS, M, ctl = scene()
+    local acc = outfits(NS)
+    NS.Outfits.SetBinding(acc, 3)
+    open(NS, ctl, acc)
+    local top = ctl.menus[1].rows
+    click(ctl, "Save in equipment manager")
+    click(ctl, "On")
+    NS.EM.__state.storeTimer.cancelled = true   -- the mock fires every timer at once
+    for _ = 1, 10 do M.__fireTimers(); M.__gear:deliver() end
+    local emId = NS.EM.Current(acc)
+    assertTrue(emId ~= acc and NS.Outfits.Get(emId).kind == "em", "On did not store the outfit")
+    assertEqual(NS.Outfits.BindingOf(emId), 3, "the binding did not move to the stored outfit")
+    local kb = exact(top, "Key binding").submenu
+    -- red under: rows that keep the first fill's id (gone after the store: None reads ticked).
+    assertFalse(kb[1].selected(kb[1]), "None reads ticked on the stored outfit")
+    assertTrue(kb[4].selected(kb[4]), "Outfit 3 is not ticked on the stored outfit")
+    local ignore = exact(top, "Ignore in comparison tooltips")
+    ignore.onClick(nil, ignore)
+    assertTrue(NS.Outfits.Get(emId).ignoreComparisons == true, "the toggle did not reach the stored outfit")
+    assertTrue(ignore.label:find("|T", 1, true) ~= nil, "the toggle's tick does not read the stored outfit")
+end)
+
 test("menu: Title picks and a trigger without params keep the menu open; the parent's label follows", function()
     local NS, _, ctl = scene()
     local _, comp = outfits(NS)

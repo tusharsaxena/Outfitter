@@ -1500,7 +1500,7 @@ Total.
 - flyout tint: a skin change in lockdown writes nothing
 - flyout tint: once let go the rim is Blizzard's alone, and later updates write nothing to it
 
-### test_outfit_menu.lua (34)
+### test_outfit_menu.lua (35)
 
 - menu: NS.OutfitMenu is published
 - menu: the rows per section are legacy's, less Void Storage and the script editor
@@ -1514,6 +1514,7 @@ Total.
 - menu: the whole tree goes to the library once, each nested level as a submenu row
 - menu: Key binding picks are radios that keep the menu open, tick the key and rename its holders
 - menu: Save in equipment manager, below Rename..., is On/Off radios on the EM mark's own path
+- menu: once Save in equipment manager stores the outfit, the open menu's other rows act on the stored one
 - menu: Title picks and a trigger without params keep the menu open; the parent's label follows
 - menu: rows that open a dialog, popup or window, and the bank moves, act and close
 - menu: on the client's MenuUtil only keep-open rows answer Refresh, the rest close
@@ -1844,7 +1845,7 @@ Total.
 | test_preview_place.lua | 8 |
 | test_window_settings.lua | 12 |
 | test_flyout_tint.lua | 12 |
-| test_outfit_menu.lua | 34 |
+| test_outfit_menu.lua | 35 |
 | test_dialogs.lua | 24 |
 | test_trigger_dialog.lua | 11 |
 | test_diagnostics.lua | 12 |
@@ -1858,4 +1859,4 @@ Total.
 | test_lizard_sighted.lua | 8 |
 | test_prose.lua | 15 |
 | Skipped | 1 |
-| **Total** | **1536** |
+| **Total** | **1537** |
