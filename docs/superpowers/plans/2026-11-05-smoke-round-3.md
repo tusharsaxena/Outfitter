@@ -79,6 +79,9 @@ survive a restart without bloating git: `/home/tushar/.claude/projects/-mnt-d-Pr
   and (3) as written above.
 - **E7 ruled: follow the standard.** Frame > Show border is disabled (dimmed, with a tooltip saying why)
   while "Use the skin's border" is on, and governs the border once that is off. No deviation.
+  *Note (as built, 6ebb6f9):* the ruling was "follow the standard", and skinning-§6 refines the
+  wording above: the row is dimmed only while the companion is on **and** the skin has a real bar
+  border style; under a skin whose style is None (Ka0s Default) it stays live and governs.
 
 ## Global Constraints
 
