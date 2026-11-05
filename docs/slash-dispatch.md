@@ -45,11 +45,14 @@ with /or enable`. The `list`, `get`, `set` and `reset` verbs reach settings only
 (slash-commands-§3): the per-outfit rows are on `NS.OutfitSchema`, which the CLI does not read.
 
 `NS.RunVerb(verb, rest)` runs one verb's handler by name, so the launcher's Enabled entry and the
-AutoOn, AutoOff and Update key bindings reach the same handler as the typed verb.
+Toggle outfit bar (`bar toggle`), AutoOn, AutoOff and Update key bindings reach the same handler as
+the typed verb.
 
 ## The outfit verbs
 
-Added after `version`, with their handlers in `modules/Commands.lua`:
+Added after `version`, with their handlers in `modules/Commands.lua` (`bar`, `auto`, `lock` and
+`unlock` write one setting each from `settings/Slash.lua`). With the fourteen reserved verbs that
+makes 36 entries in `NS.COMMANDS`, and the key bindings number 15 (`Bindings.xml`):
 
 | Verb | What it does | While disabled |
 |---|---|---|
@@ -72,6 +75,12 @@ Added after `version`, with their handlers in `modules/Commands.lua`:
 
 `auto`, `zone` and `iteminfo` join `HOST_LIVE_VERBS`, on both the live dispatcher and the
 library-absent stub.
+
+**`bar` is a feature noun with sub-verbs.** `/or bar show` and `/or bar hide` write `bar.shown`
+`true` and `false`; `/or bar toggle`, or `/or bar` alone, flips it; any other word prints
+`/or bar takes show, hide or toggle`. slash-commands-§2's `toggle` reservation binds the top level
+only, so `bar toggle` does not collide with the outfit verb `toggle`. The *Toggle outfit bar* key
+binding runs `bar toggle` through `NS.RunVerb`, and the bar header's close writes the same row.
 
 **No window `toggle` verb.** standalone-windows asks for `show`, `hide` and `toggle` on a window. The
 first two exist; `toggle` does not toggle the window, because `toggle` has been the outfit verb in

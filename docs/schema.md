@@ -24,7 +24,21 @@ profile = {
   equip      = { muteSounds = true, showErrors = true, announceKeys = true },
   tooltip    = { usedBy = true, compare = true },
   quickSlots = { enabled = true },
-  bar        = { shown = false, vertical = false, showBackground = true, combatAlpha = 1.0 },
+  bar        = { shown = false, vertical = false, showBackground = true, combatAlpha = 1.0,
+                 layout = { perLine = 0, padding = 4, spacing = 5, growH = "auto", growV = "auto" },
+                 icons  = { size = 32, borderShow = true, borderStyle = "Solid", borderSize = 1,
+                            borderColor = { r = 0, g = 0, b = 0, a = 1 }, useClassColorBorder = false,
+                            borderStyleFromSkin = true, borderColorFromSkin = true },
+                 worn   = { style = "both" },                                       -- mark | border | both | none
+                 labels = { show = true, font = "Ka0s Prototype", fontSize = 11,
+                            fontColor = { r = 1, g = 0.82, b = 0, a = 1 }, useClassColorFont = false,
+                            fontFlags = "@skin", fontShadow = false, fontFromSkin = true,
+                            fontColorFromSkin = true, fontShadowFromSkin = true },
+                 bgColor = { r = 0.06, g = 0.06, b = 0.08, a = 0.9 }, useClassColorBg = false,
+                 bgFromSkin = true,
+                 frame  = { borderShow = true, borderStyle = "Solid", borderSize = 1,
+                            borderColor = { r = 0, g = 0, b = 0, a = 1 }, useClassColorBorder = false,
+                            borderStyleFromSkin = true, borderColorFromSkin = true } },
   windows    = { bar = { point = "TOPLEFT", x = 200, y = -200 }, dialogs = {} },     -- named non-setting state
   skin       = { source = "ka0s", skin = "ka0s", ignorePanel = true, ignoreFonts = false,
                  font = "", texture = "", outline = "hud", pickerSeen = false },
@@ -43,6 +57,11 @@ global = { schemaVersion = 0, minimap = { hide = false }, skinNotice = {} },
   choice is read with `== nil` (savedvariables-§5).
 - **`global.schemaVersion = 0`** is never the current version, because AceDB strips a value equal to
   its default.
+- **The bar's colors follow the skin** (skinning-§6): every swatch (`icons.borderColor`,
+  `labels.fontColor`, `bgColor`, `frame.borderColor`) has a FromSkin companion, default on, and a
+  class-color companion, default off; the stored value is what a player turns the companion off to
+  get. `bar.layout.growH`/`growV` other than `auto` pin the corner `bar.position` is saved at.
+  The smoke round 2 rows are new keys with defaults, so no migration step was needed.
 - **Session-only state stays out:** `NS.State.debug`, `NS.State.testMode`, `NS.State.legacyLoaded`
   (`core/State.lua`) are reset by every `/reload`.
 
@@ -87,8 +106,10 @@ Special rows: `global.minimap.shown` (`NS.MINIMAP_PATH`) reads and writes LibDBI
 and is exempt from every reset; `state.debugConsole` and `state.testMode` are session rows with no
 storage; `writeThrough = { "enabled", "locked", "auto.enabled" }`. `bar.position` is closure-backed:
 its storage is `profile.windows.bar` (`{ point, x, y }`, encoded as `POINT X Y`), so every writer goes
-through the seam: the bar's drag stop (`NS.Bar.SavePosition`), `/or set|reset bar.position` and
-Reset position (`NS.ApplyDefault`), each decoding into a new table, never the default itself.
+through the seam: the bar's drag stop on its header (`NS.Bar.SavePosition`, at the corner the grow
+direction pins, or the nearest one on Automatic; a place stored at another corner is re-saved there
+on the next draw), `/or set|reset bar.position` and Reset position (`NS.ApplyDefault`, from the
+Display tab or Master controls), each decoding into a new table, never the default itself.
 
 ## Outfit and item records
 
@@ -111,6 +132,9 @@ Reset position (`NS.ApplyDefault`), each decoding into a new table, never the de
   link = "|cnIQ4:|Hitem:…|h[…]|h|r", name = "…", invType = "INVTYPE_HEAD", quality = 4, level = 639 }
 ```
 
+- `icon` nil is the default: `NS.OutfitIcon` computes what draws (a seeded `SPEC_<n>` outfit's spec
+  icon, the trigger's, the item rungs, else fileID 132724) and never stores it, so changing the
+  default needs no migration. The seed never writes `icon` on an Equipment Manager mirror.
 - `trigger.disabled` is the one Disabled flag: the trigger is inactive, the outfit is hidden from the
   bar and dimmed in the list, and a manual wear clears it.
 - `NS.Outfits.Get` answers nil for any id not matching `^o%d+$`, so test mode's `preview:<n>`

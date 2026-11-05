@@ -110,8 +110,9 @@ LibKa0s-Slash), behind a host routing wrapper that runs macro conditionals throu
 | `version` | Print the addon version |
 
 The outfit verbs (`show`, `hide`, `wear`, `unwear`, `toggle`, `update`, the bank verbs, `auto`,
-`zone`, `iteminfo`, `test`, `lock`, `unlock`, `deleteall` and the rest) follow `version`, with their
-handlers in `modules/Commands.lua`. The live-while-disabled rules, the macro-conditional routing and
+`zone`, `iteminfo`, `test`, `bar`, `lock`, `unlock`, `deleteall` and the rest) follow `version`, with
+their handlers in `modules/Commands.lua` (`bar show|hide|toggle` writes `bar.shown` in
+`settings/Slash.lua`; the *Toggle outfit bar* key runs it). The live-while-disabled rules, the macro-conditional routing and
 the full verb set are in [`slash-dispatch.md`](slash-dispatch.md).
 
 ## Public API
@@ -176,12 +177,17 @@ The full table and the pipeline from event to equipped item are in [`data-flow.m
 Every strata and level comes from `NS.Constants.LAYERS` (`core/Constants.lua`, frame-layering-§5);
 there is no strata literal anywhere. The two docked surfaces take their layer from the character
 sheet: the outfit window copies the sheet holder's strata and sits `LAYERS.LEVEL.DOCK_OVER_HOST`
-above it, and the slot checkboxes take `CharacterFrame`'s strata, one level above the highest frame
-under it, so they beat the item buttons and any addon drawing over them. Both re-sync from the
-window's follow tick, because raising the sheet changes its level. Neither ever gets a fixed strata,
-which would poke it through a window that covers the sheet (the fork's lesson, kept). The bar is
-`HUD`, the dialogs and the icon browser `MODAL` (the browser in a band over the dialogs), the menus
-`POPUP` and the compare tooltips `CURSOR`. The full stack
+above it. The slot checkboxes take the **host strata**, the highest among `CharacterFrame` and its 18
+`Character<Slot>` buttons (ranked by `LAYERS.STRATA_ORDER`; ChonkyCharacterSheet lifts the slot
+buttons to `HIGH` under a `MEDIUM` sheet, EllesmereUI lifts the sheet itself), and one level above
+the highest frame **of that strata** under the sheet, capped at `LAYERS.LEVEL.MAX` (smoke round 2
+design G3). So they beat the item buttons and any addon drawing over them, and a high level in a
+lower strata no longer inflates theirs. Both re-sync from the window's follow tick, on a level or a
+strata change, because raising the sheet changes its level. Neither ever gets a fixed strata, which
+would poke it through a window that covers the sheet (the fork's lesson, kept). The bar is `HUD`
+(its header band, test strip and labels ride its own levels; the separate drag handle is retired),
+the dialogs and the icon browser `MODAL` (the browser in a band over the dialogs), the menus `POPUP`
+(each cascading level of a menu in the same strata) and the compare tooltips `CURSOR`. The full stack
 is in the design's §7.1 and the limitations it leaves are in [`known-limitations.md`](known-limitations.md).
 
 ## Taint Notes
@@ -191,8 +197,12 @@ combat lockdown, otherwise it waits (latest per key) and replays on `PLAYER_REGE
 (events-frames-taint-§2). Nothing is written into a Blizzard frame or table (skinning-§7): hooks are
 `hooksecurefunc` or `HookScript`, and every hook body checks the stand-down latch first. The outfit
 list's secure item buttons make the window protected, so it hides for the length of combat and is
-moved rather than its rows re-anchored. The full notes, with each secure surface and the client checks
-still owed: [`taint.md`](taint.md).
+moved rather than its rows re-anchored. While the outfit window is shown, every slot's own popout
+arrow is shown per button (never `EquipmentFlyoutPopoutButton_ShowAll`/`HideAll`, which write
+`flyoutLocked`), re-shown after Blizzard's `HideAll` through a post-hook, and a character-sheet
+slot's horizontal flyout is re-anchored level with its slot; all of it out of lockdown only and put
+back when the window goes. The full notes, with each secure surface and the client checks still
+owed: [`taint.md`](taint.md).
 
 ## Known Limitations
 
@@ -203,6 +213,9 @@ still owed: [`taint.md`](taint.md).
   does not hold its triggers (O2).
 - The six translations carry only what the fork translated; a string the port rewrote or added shows
   in English on those clients.
+- The sheet button copies each host sheet's tab, so it inherits that sheet's quirks: Chonky's tab row
+  sits about 18 px right-heavy with it, and the EllesmereUI label takes EllesmereUI's face when it is
+  placed, not when EllesmereUI changes it.
 
 The full list, with the client checks still owed: [`known-limitations.md`](known-limitations.md).
 
@@ -264,13 +277,14 @@ player-facing document, documentation-§1), and its slash-command table was a se
 | Rule | What differs | Why | Decided | Re-check trigger |
 |---|---|---|---|---|
 | `versioning-git` (the semver line) | The release is 1.1.0, although the public API (the `Outfitter_*` globals are gone, H3) and the saved-data format (a fresh `OutfitterRebornDB`) both break, which would call for a MAJOR | D1. Owner ruling 2026-11-03 (the plan's Version decision): 1.1.0 continues the fork's numbering on CurseForge project 1698220. The consumers that lose globals are named in the Version History (design §5.16) | 2026-11-03 | The next MAJOR release |
-| `standalone-windows` (plain non-secure window, movable, saved position, Lock/Reset, toplevel; the `UISpecialFrames` MUST is honored) | The main window is a protected frame: each outfit row carries a `SecureActionButtonTemplate` child (`modules/Window_Rows.lua`). It is docked to the character sheet: not movable, no saved position, no Lock or Reset, strata and level copied from `OutfitterRebornSheetHolder`, not toplevel. It is hidden for the length of combat and returns at `PLAYER_REGEN_ENABLED`. Its dialogs stay open through that combat suspend. Escape closes it through `UISpecialFrames` | D2. Owner ruling R5 (H4). The outfit list's secure item buttons make every in-combat Show, Hide or SetPoint on the window a blocked action (fork `Outfitter.lua:1326-1331, 8448-8494`). Closing dialogs in combat would lose input (O30) | 2026-11-03 | Blizzard ships a docking API, or the list stops needing secure buttons |
+| `standalone-windows` (plain non-secure window, movable, saved position, Lock/Reset, toplevel; the `UISpecialFrames` MUST is honored) | The main window is a protected frame: each outfit row carries a `SecureActionButtonTemplate` child (`modules/Window_Rows.lua`). It is docked to the character sheet: not movable, no saved position, no Lock or Reset, strata and level copied from `OutfitterRebornSheetHolder`, not toplevel. It is hidden for the length of combat and returns at `PLAYER_REGEN_ENABLED`. Its dialogs stay open through that combat suspend. Escape closes it through `UISpecialFrames`. **Test mode** (D10): while the session-only test mode is on and the sheet is closed, the window stands alone beside where a stock sheet would open (`NS.Sheet.AloneCorner`, through the dock's one `TOPLEFT` point and `Dock.Refresh`, never in lockdown), listing the sample outfits under a test strip; it is still not movable and stores nothing (no position, no outfit). X or Escape hides it for the rest of that test session without ending test mode, which still ends only on its own switch, combat or Reset all (preview-mode); opening the sheet docks it as usual | D2. Owner ruling R5 (H4). The outfit list's secure item buttons make every in-combat Show, Hide or SetPoint on the window a blocked action (fork `Outfitter.lua:1326-1331, 8448-8494`). Closing dialogs in combat would lose input (O30). The test-mode clause is D10 of the [2026-11-05 design](superpowers/specs/2026-11-05-smoke-round-2-design.md) (owner ruling 2026-11-05): the player places and skins the window without opening the sheet, as PGFE's test mode does; it reverses H17 ("the window shows real data"), marked so at H17 in the 2026-11-03 design | 2026-11-03; test clause 2026-11-05 | Blizzard ships a docking API, or the list stops needing secure buttons; for the test clause, preview-mode gains a rule for docked windows |
 | `standalone-windows` (explicit window verbs `show` / `hide` / `toggle`, a SHOULD) | `/or show` and `/or hide` open and close the window, but there is no window `toggle` verb: `/or toggle <outfit>` stays the outfit verb. The key binding and the sheet button toggle the window | C35. `toggle` has been the outfit verb in players' macros since before this fork, and taking it for the window would break them. The reason is also at the comment above `NS.COMMANDS` (`settings/Slash.lua`) and in [`slash-dispatch.md`](slash-dispatch.md) | 2026-11-03 | `toggle` retires as an outfit verb, or the standard names a different window-toggle verb |
 | `localization-§4` | The IN_ZONES subzone list matches `GetMinimapZoneText()` strings captured on the player's own client | D3. No API exposes the current areaID; zones match on uiMapID (H9) | 2026-11-03 | Blizzard exposes the current areaID |
 | `localization-§4` | LOCKPICKING matches the lockbox tooltip line against `LOCKED_WITH_SPELL` + `GetTradeSkillDisplayName(633)`, and falls back to `L["Requires Lockpicking"]` when that does not reproduce the line | D4. No GlobalString for the line is confirmed (O22); without the fallback the trigger is dead on any client where the composed form differs | 2026-11-03 | The client check confirms the composed GlobalString form on every shipped locale, after which the `L` fallback and this row go |
 | `documentation-§1` | The README has no screenshots of the 1.1.0 UI | D6. They need a client capture of the reskinned docked window and settings pages after the smoke test; stale shots would mislead (H22) | 2026-11-03 | The first client capture of 1.1.0 |
 | `localization-§4` | `Inv.SlotItemActive` (the TRINKET_QUEUE skip-while-active rule) parses the item's use-duration tooltip line with the `cUseDurationTooltipLineFormat*` patterns kept in `L` | D8. No GlobalString or ID route gives an active use effect's remaining duration yet (O15) | 2026-11-03 | `C_Item.GetItemSpell` plus spell-duration data (or an aura read) covers it, after which the `L` keys and this row go |
 | `launcher-§1` | A second LibDataBroker object, `OutfitterRebornOutfits` (type `data source`, `modules/Broker.lua`), carries the old addon's outfit switcher; the launcher object is unchanged, and the second object is never put on the minimap | Owner ruling 2026-11-04: players used the old broker plugin to switch outfits, and the launcher's clicks and logo are fixed by launcher-§2/§4 | 2026-11-04 | The standard allows a feature data source next to the launcher |
+| `skinning-§1`/`skinning-§9` (`DEV-SKIN-SHEET-BUTTON`) | The sheet button (`OutfitterRebornSheetButton`, `modules/Dock.lua`) draws the host sheet's tab look, not the Ka0s skin: on the stock sheet and ChonkyCharacterSheet a hand-built copy of Blizzard's `PaperDollSidebarTabTemplate` (TabBg, icon, Hider and Highlight from `Interface\PaperDollInfoFrame\PaperDollSidebarTabs` with the template's texcoords, selected while the window shows); on EllesmereUI a text tab, `L["Outfits"]`, in EllesmereUI's tab style (its face at size 10, white at 0.6 idle, 1.0 on hover, `EllesmereUI.ELLESMERE_GREEN` while the window shows). No `NS.Skin` call paints it, it left `Kit.skinSwitch.surfaces` (`tests/skin_surfaces.lua`), and its three typed values are `Kit.skinValues` rows citing this id (`tests/run.lua`) | Smoke round 2 design D3/D4 (G2), [2026-11-05](superpowers/specs/2026-11-05-smoke-round-2-design.md): the way in sits in the host's own tab row, and a skinned button there read as bolted on; matching the neighboring tabs is the point, so the skin must not reach it | 2026-11-05 owner ruling | The standard gains a host-matched ingress exception, or a host changes its tabs (Blizzard's sidebar tab art, Chonky's tab row, EllesmereUI's tab style) |
 | `localization-§4` | The gathering triggers (GATHER_HERBALISM, GATHER_MINING) match the node tooltip's line against `C_TradeSkillUI.GetTradeSkillDisplayName(skillLine)`, the client's own localized name for an ID, not a GlobalString constant | D10. Tooltip data exposes no skill line for a node; the name is never hardcoded or put in `L`, so the match is correct on every locale | 2026-11-03 | `TooltipDataProcessor` exposes the node's skill line |
 
 One more row is conditional (the design's §10): **D7** (`localization-§7`, CJK and Cyrillic text

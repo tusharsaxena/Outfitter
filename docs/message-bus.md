@@ -52,7 +52,7 @@ reads state when it is drawn (the launcher tooltip, `/or diagnostics`) is not on
 | `TOOLTIP_SHOWN` | `modules/States.lua` | none | Trigger binder |
 | `TOOLTIP_HIDDEN` | `modules/States.lua` | none | Trigger binder |
 | `TRIGGERS_REBOUND` | `modules/Triggers_Binder.lua` | `(count)` | Window (row badges) |
-| `PREVIEW_CHANGED` | `modules/Preview.lua` | `(active)` | Bar |
+| `PREVIEW_CHANGED` | `modules/Preview.lua` | `(active)` | Bar (the samples and its strip), Window (the sample list), Dock (the window shown alone or docked, the selection cleared), slot checkboxes (none while it is on) |
 
 The four outfit-record messages are per kind on purpose: a receiver needs to know whether an outfit
 was added, deleted, edited or renamed, and `NS.Outfits` stays their only sender.

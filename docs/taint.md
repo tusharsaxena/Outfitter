@@ -25,7 +25,7 @@ level and parent on the outfit window (events-frames-taint-§2).
   never a replaced function. None can be unhooked, so every hook body checks `NS.IsStoodDown()` first.
 - **Prefixed names.** Frames are `OutfitterReborn*` and popups `OUTFITTERREBORN_*`, so a legacy
   install's `OutfitterFrame`, `OutfitterItem0..13` and `OUTFITTER_*` never collide.
-- **Key bindings are insecure.** The 14 binding buttons are plain hidden buttons with `CLICK`
+- **Key bindings are insecure.** The 15 binding buttons are plain hidden buttons with `CLICK`
   bindings; a press refuses through `NS.StoodDownRefusal()` before anything else.
 
 ## The secure surfaces
@@ -45,39 +45,69 @@ anchors, so in combat:
   `Outfitter._ListItem:disableSecureActions`, kept).
 - The rows' secure attributes are disarmed before the window hides and rearmed through the queue.
 
-### The window's layer
+### The window's layer and test mode
 
 `Dock.ApplyLayers` copies the sheet holder's strata and level onto the window through
 `NS.SecureQueue.Run("dock.layers", …)`, because the window has secure children. The slot checkboxes
-hold no secure frames and may restack in combat.
+hold no secure frames and may restack in combat, to the host strata (the highest among
+`CharacterFrame` and its slot buttons).
+
+Test mode's alone window is the same protected frame. It is shown, placed (the one `TOPLEFT` point,
+at `NS.Sheet.AloneCorner`) and dressed (`Window.SetTestMode`) only through `Dock.Refresh`, never in
+lockdown: `/or test` is refused in combat, and combat ends test mode at `PLAYER_REGEN_DISABLED`,
+before lockdown, hiding the alone window with it. The sample rows arm no secure button: the list
+carries no item section in test mode, and every row handler refuses a `preview:` id.
+
+### The sheet button
+
+`OutfitterRebornSheetButton` is a plain, insecure button that copies the host's tab art; it is
+anchored and repainted out of the stand-down only, which is allowed in combat. It inherits no
+Blizzard template (`PaperDollSidebarTabTemplate`'s OnLoad indexes `PAPERDOLL_SIDEBARS` by id) and
+never moves Blizzard's or another addon's tabs.
 
 ### The equipment flyout (the quick slots and the outward drawer)
 
 `modules/QuickSlots.lua` meets Blizzard's equipment flyout through post-hooks only: `HookScript`
 PreClick and PostClick on the paper doll's 18 slot buttons (`Character<Slot>`), `hooksecurefunc` on
-its `flyoutSettings.getItemsFunc` and `postGetItemsFunc`, and `hooksecurefunc` on the globals `EquipmentFlyout_UpdateItems` and
-`EquipmentFlyoutPopoutButton_SetReversed`
-(wow-ui-source@297d7aa:Interface/AddOns/Blizzard_FrameXML/EquipmentFlyout.lua:238, :633). A missing
-global is skipped, never hooked.
+its `flyoutSettings.getItemsFunc` and `postGetItemsFunc`, and `hooksecurefunc` on the globals
+`EquipmentFlyout_UpdateItems`, `EquipmentFlyoutPopoutButton_SetReversed` and
+`EquipmentFlyoutPopoutButton_HideAll`
+(wow-ui-source@297d7aa:Interface/AddOns/Blizzard_FrameXML/EquipmentFlyout.lua:238, :598, :633). A
+missing global is skipped, never hooked.
 
 While the outfit window is on screen (visible, not just shown: a window parked in the sheet holder
-keeps its shown flag when the sheet hides it), the left column's drawer opens outward (design G8):
+keeps its shown flag when the sheet hides it), the drawer is the window's (design 2026-11-04 G8,
+2026-11-05 G3):
 
+- **Every slot's arrow is shown.** Blizzard's popout template is hidden, and only the Equipment
+  Manager pane shows the arrows (its OnShow and OnHide call `EquipmentFlyoutPopoutButton_ShowAll`
+  and `_HideAll`, PaperDollFrame.lua:2316-2319, 2345-2346). `DrawerSync` shows each slot's own
+  `button.popoutButton`, weapons included, **per button with Show and Hide**, and never calls
+  `ShowAll` or `HideAll`, which write `flyoutLocked` from this context. When the window goes it hides
+  them again, unless the Equipment Manager pane is shown (those arrows are Blizzard's); a locked
+  flyout is closed through `EquipmentFlyout_Hide` first, so none outlives its arrow. Alpha is never
+  touched, so EllesmereUI's *Hide Slot Flyout Arrows* keeps working.
+- **The `HideAll` post-hook** shows them again while the window still wants them (leaving the
+  Equipment Manager tab with the window open). It only shows arrows; it never reopens a flyout.
 - Each left-column popout arrow is re-anchored `RIGHT` to its slot's `LEFT` and its coords mirrored.
   Blizzard anchors it once, `LEFT` to the slot's `RIGHT` (-8, 0)
   (wow-ui-source@297d7aa:Interface/AddOns/Blizzard_UIPanels_Game/Mainline/PaperDollFrame.lua:1529-1532).
-- After `EquipmentFlyout_UpdateItems` anchors `buttonFrame` `TOPLEFT` to the arrow's `TOPRIGHT`
-  (EquipmentFlyout.lua:334-338), the post-hook clears it and anchors it `TOPRIGHT` to the arrow's
-  `TOPLEFT`, for a left-column slot only. A flyout this file moved is put back on Blizzard's anchor,
-  read off the button's own host's `flyoutSettings`, so the Item Upgrade, Item Interaction and
-  Runeforge frames that share the flyout keep theirs.
+- **The flyout is re-anchored to its slot.** After `EquipmentFlyout_UpdateItems` anchors
+  `buttonFrame` `TOPLEFT` to the arrow's `TOPRIGHT` (EquipmentFlyout.lua:334-338), the post-hook
+  clears it and, for a character-sheet slot's horizontal flyout, anchors it to the slot itself past
+  the arrow's visible 8 px: right column `TOPLEFT` to the slot's `TOPRIGHT` (8, y), left column
+  `TOPRIGHT` to the slot's `TOPLEFT` (-8, y), with `y = BORDERWIDTH - (slot height - EFITEM_HEIGHT) / 2`,
+  so the first item is level with the slot. The weapons' vertical flyouts keep Blizzard's anchor. A
+  flyout this file moved is put back on Blizzard's anchor the next time it is not wanted, read off
+  the button's own host's `flyoutSettings`, so the Item Upgrade, Item Interaction and Runeforge
+  frames that share the flyout keep theirs.
 - `EquipmentFlyoutPopoutButton_SetReversed`'s post-hook re-mirrors a moved arrow's coords.
 
-These are anchor and texcoord writes on the arrows and `buttonFrame`, which are not protected. Every
-one is **out of combat only** (each hook and `QuickSlots.DrawerSync` return in lockdown), and each hook
-reads the stand-down first. The window's OnShow and OnHide, the sheet's OnHide and the stand-down all
-call `DrawerSync`, which puts Blizzard's anchors and coords back when the window is gone. No Blizzard
-function is replaced and no Blizzard table is written.
+These are Show, Hide, anchor and texcoord writes on the arrows and `buttonFrame`, which are not
+protected. Every one is **out of combat only** (each hook and `QuickSlots.DrawerSync` return in
+lockdown), and each hook reads the stand-down first. The window's OnShow and OnHide, the sheet's
+OnHide and the stand-down all call `DrawerSync`, which puts Blizzard's arrows, anchors and coords
+back when the window is gone. No Blizzard function is replaced and no Blizzard table is written.
 
 ### Combat-gated acts
 

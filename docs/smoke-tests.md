@@ -4,7 +4,8 @@ The in-game checks no headless run can reach: real rendering, layering, taint, a
 the design could not measure ahead of time (audit-review-history). The owner runs them end to end
 before a release. Each row has a pass criterion, and every row can run on the 1.1.0 build; section 10 maps what the headless gate leaves unverified to the
 rows that verify it. Section 11 is the sheet, window and broker round of 2026-11-04, the owner's CP4
-pass.
+pass; section 12 is smoke round 2 of 2026-11-05 (the sheet button, slots, flyouts, menus, the
+outfit bar and test mode), the owner's CP5 pass.
 
 ## Sign-off
 
@@ -38,7 +39,7 @@ pass.
 | S2 | General | Tabs in order: Master controls, Behavior, Tooltips, Skin, Keybindings |
 | S3 | Master controls | Every row reads and writes; Reset all asks first, and resets the profile only |
 | S4 | Skin | Choosing a skin repaints the panel; the choice survives `/reload` |
-| S5 | Keybindings | The Show window binding is listed under the addon's own header |
+| S5 | Keybindings | The Toggle outfit window binding is listed first under the addon's own header, then Toggle outfit bar |
 | S6 | Profiles | The note above AceDBOptions says outfits are per character; switching profiles applies the new profile's skin |
 | S7 | Outfit Bar | Every row reacts at once on the bar |
 
@@ -99,8 +100,8 @@ pass.
 
 | # | Check | Pass when |
 |---|---|---|
-| B1 | Show the outfit bar; drag; lock; vertical | Position saved; opacity in combat applies |
-| B2 | Test mode | The bar fills with sample outfits under a Test mode strip; nothing is worn |
+| B1 | Show the outfit bar; drag it by its header; lock; vertical | Position saved; opacity in combat applies |
+| B2 | Test mode | The bar and the window fill with sample outfits under a Test mode strip each; nothing is worn |
 | B3 | Bank open: deposit, withdraw, `missing` | Items move; the missing list is right |
 | B4 | An item's tooltip | Lists the outfits that use it; comparisons draw (O34, O41) |
 | B5 | Click an empty slot | The flyout opens, sorted |
@@ -122,7 +123,7 @@ checked by eye in the client.
 
 | # | Check | Pass when |
 |---|---|---|
-| SK1 | Open the window with an outfit selected, the outfit bar, the icon browser, and each dialog in turn (outfit, trigger with a field of each type, rebuild, the optimize progress); switch the skin from the Skin tab | Every one repaints at once with no `/reload`: the sheet button, the window and its scroll bar, a category, outfit and item row, the slot checkboxes in all three states, the footer buttons, the dialogs and their error line, the icon browser, the bar, a bar button and its worn mark, the drag handle and the test strip |
+| SK1 | Open the window with an outfit selected, the outfit bar, the icon browser, and each dialog in turn (outfit, trigger with a field of each type, rebuild, the optimize progress); switch the skin from the Skin tab | Every one repaints at once with no `/reload`: the window and its scroll bar, a category, outfit and item row, the slot checkboxes in all three states and their accent edge, the footer buttons, the dialogs and their error line, the icon browser, the bar with its header band, labels, a button, its edge and its worn mark, and the test strips. The sheet button does **not** change: it wears the sheet's own tab (deviation `DEV-SKIN-SHEET-BUTTON`) |
 | SK2 | Hover an item that an outfit holds, with comparisons on | The compare tooltips wear the skin; the stock comparison tooltips beside them keep Blizzard's look |
 | SK3 | The character sheet under each skin | The sheet itself keeps Blizzard's look; only this addon's frames change |
 | SK4 | Item icons in the list, the icon browser and the bar | Cropped with no art border showing; a 1 px edge in the window and in the icon browser, the HUD edge on the bar |
@@ -139,9 +140,12 @@ this list. Each is checked by the rows named beside it; an O-number is a design 
 |---|---|---|
 | Real equips | The mock moves items by the plan; the client's swap timing, item locks and bag-full refusals are its own | T1, T2, T3, T10 |
 | The unique-equip error path | The mock ranks unique keys from captured fixtures; the client's error and `GetItemUniquenessByID`'s 12.x shape are not mocked (O17) | T10, X4 |
-| Docked layout, anchoring and strata against real CharacterFrame children | The layer mock records levels; it cannot see Blizzard's or another addon's frames redrawn over the sheet (O29, O31) | W1, W2, W5, W6, W7, SK6, ST1-ST9, EU1-EU7, CH1-CH7, WC1-WC3 |
-| EllesmereUI's and ChonkyCharacterSheet's live frames | The harness stands in for the frames their sources build; their timing and their own hooks are theirs | EU1-EU7, CH1-CH7 |
-| The outward drawer against Blizzard's flyout | The flyout is a recorded stand-in; the real arrow, flyout and hosts that share it are the client's | ST6-ST9, EU6, EU7, CH7 |
+| Docked layout, anchoring and strata against real CharacterFrame children | The layer mock records levels; it cannot see Blizzard's or another addon's frames redrawn over the sheet (O29, O31) | W1, W2, W5, W6, W7, SK6, ST1-ST9, EU1-EU7, CH1-CH7, WC1-WC3, RS1-RS5, RE1-RE5, RC1-RC5 |
+| EllesmereUI's and ChonkyCharacterSheet's live frames | The harness stands in for the frames their sources build; their timing and their own hooks are theirs | EU1-EU7, CH1-CH7, RE1-RE5, RC1-RC5 |
+| The outward drawer against Blizzard's flyout | The flyout is a recorded stand-in; the real arrow, flyout and hosts that share it are the client's | ST6-ST9, EU6, EU7, CH7, RS4, RS5, RE5, RC5 |
+| How the host-matched sheet button and the bar's window look are drawn | The harness records textures, coords and colors, never the pixels; whether a tab reads like its neighbors is the eye's | RS1, RS2, RE1, RE2, RC1, RC2, RB2-RB8 |
+| Cascading menus on a real screen | Screen edges, the client's menu and the strata of what a row opens are the client's | RM1-RM4 |
+| Test mode's alone window | The stock sheet's spot and the UI scale are the client's | RT1-RT5 |
 | Broker displays | LibDataBroker's object is real; how a display draws its text, icon tint, menu and tooltip is the display's | BR1-BR6 |
 | The combat hide and restore of the window | Lockdown is a flag in the mock; implicit protection of the rows is assumed worst-case (O4, O11) | W3 |
 | Refusals of secure rows and bindings in combat | The client's `ADDON_ACTION_BLOCKED` and binding protection are not emulated (O8, O11, O44) | K6, W8, T9 |
@@ -171,6 +175,12 @@ The sheet and window feedback round (design
 CP4 pass. Sections 11.1 to 11.3 are one pass per sheet; play each in its own session so that only
 that sheet's addon is enabled. Sections 11.4 and 11.5 run once, on any sheet.
 
+Since section 12 (2026-11-05), the sheet button wears the host sheet's own tab and its icon is the
+chest-armor icon (132724), the arrows show on every slot only while the window is open (otherwise
+Blizzard's rule holds: only with the Equipment Manager pane), and a flyout's first item lines up with
+its slot. The rows below are worded for the current build; where a look differs, section 12 is the
+check.
+
 Before each sheet pass:
 
 - `/reload` with only that sheet's addon enabled: none for 11.1; **EllesmereUI** and
@@ -184,9 +194,9 @@ Before each sheet pass:
 
 | # | Do | See |
 |---|---|---|
-| ST1 | Press `C` to open the sheet on the Character tab | Three square tab icons at the top right of the character pane (stats, titles, Equipment Manager), then a gold coat hanger just to the right of the Equipment Manager one, the same size, with no border; on the stock sheet the button was missing before this round. It is not next to the close X |
-| ST2 | Hover the coat hanger, click it, click it again | The tooltip reads *Toggle the Outfitter window*; the first click opens the outfit window, the second closes it |
-| ST3 | Open the window, then pick the Reputation tab, the Currency tab, then Character again | The coat hanger and the window leave with the Character pane and both come back with it |
+| ST1 | Press `C` to open the sheet on the Character tab | Three square tab icons at the top right of the character pane (stats, titles, Equipment Manager), then the outfit tab just to the right of the Equipment Manager one, the same size (its look: RS1); on the stock sheet the button was missing before this round. It is not next to the close X |
+| ST2 | Hover the outfit tab, click it, click it again | The tooltip reads *Toggle the Outfitter window*; the first click opens the outfit window, the second closes it |
+| ST3 | Open the window, then pick the Reputation tab, the Currency tab, then Character again | The outfit tab and the window leave with the Character pane and both come back with it |
 | ST4 | Window open: compare the window's top and left edges with the sheet's; if a mover addon is loaded, drag the sheet | The window's top is level with the sheet's top edge, no 30 px drop, and its left edge touches the sheet's right edge; a dragged sheet takes the window with it |
 | ST5 | Select an outfit in the window and look at the slot boxes | Small boxes (14 px, about half the old size): the left column's on each slot's top-right corner, the right column's on the top-left, both weapons' on the top-right. Each item's icon stays readable |
 | ST6 | Window open: hover the Head slot and click its arrow; then the Hands slot's; then the Main Hand's | Head: the arrow sits on the slot's left side, pointing left, and the flyout opens to the left of the slot, over the empty space, not over the right column. Hands: arrow on the right, flyout to the right, as Blizzard has it. Main Hand: arrow below, flyout downward, as Blizzard has it. No `ADDON_ACTION_BLOCKED` |
@@ -201,9 +211,9 @@ With it off, the sheet is the stock one and section 11.1 applies.
 
 | # | Do | See |
 |---|---|---|
-| EU1 | In a fresh session, press `C` for the first time | The text tabs Character, Titles, Equipment at the top; the coat hanger (20 px) sits just after **Equipment**, not over the close X. It is there on this first open, not only on the second |
-| EU2 | Close and reopen the sheet; then `/reload` and open it again | The button keeps its place after Equipment each time |
-| EU3 | Open the window; pick Reputation, then Currency, then Character | The coat hanger and the window leave with the Character tab and come back with it; on Reputation and Currency no coat hanger floats over the tab strip |
+| EU1 | In a fresh session, press `C` for the first time | The text tabs Character, Titles, Equipment at the top; the *Outfits* text tab sits directly above **Equipment** (RE1), not over the close X. It is there on this first open, not only on the second |
+| EU2 | Close and reopen the sheet; then `/reload` and open it again | The button keeps its place above Equipment each time |
+| EU3 | Open the window; pick Reputation, then Currency, then Character | The *Outfits* tab and the window leave with the Character tab and come back with it; on Reputation and Currency no *Outfits* tab floats over the tab strip |
 | EU4 | Window open: compare its top and left edges with EllesmereUI's sheet frame; move the sheet | Top flush with the sheet's top, left edge on the sheet's right edge, and it follows the sheet |
 | EU5 | Select an outfit | The small boxes sit on the same corners as on the stock sheet (left column top-right, right column top-left, weapons top-right), over EllesmereUI's square slot art, not under it |
 | EU6 | Window open: open the Head, Hands and Main Hand flyouts | Head opens left with the arrow on its left, in EllesmereUI's flat flyout skin; Hands opens right, Main Hand down. The skin and our position both hold: the flyout is flat **and** on the left |
@@ -213,7 +223,7 @@ With it off, the sheet is the stock one and section 11.1 applies.
 
 | # | Do | See |
 |---|---|---|
-| CH1 | Out of combat, press `C` | Chonky's wide sheet with its row of tab icons above the item-level readout; the coat hanger sits right after the last tab icon, the same size, borderless |
+| CH1 | Out of combat, press `C` | Chonky's wide sheet with its row of tab icons above the item-level readout; the outfit tab sits right after the last tab icon, the same size, in the same tab art (RC1) |
 | CH2 | Enter combat (a training dummy), leave it, then open the sheet for the first time in a fresh session; repeat with a Mythic+ key running if one is at hand | While Chonky has not built its backdrop yet the button sits after the stock Equipment Manager tab; once Chonky's sheet shows, it is after Chonky's last tab icon. It never sits on the close X |
 | CH3 | Pick Reputation, Currency, then Character, with the window open | The button and the window leave with the Character tab and come back with it |
 | CH4 | Window open, Chonky's side panels all closed | The window's top is flush with Chonky's sheet top (its dark backdrop, not Blizzard's smaller frame) and its left edge touches the backdrop's right edge |
@@ -227,7 +237,7 @@ With it off, the sheet is the stock one and section 11.1 applies.
 |---|---|---|
 | WC1 | Look at the window's header; click the X | An X sits beside the gear and closes the window. The gear, the scroll buttons and the New outfit mark are flat, with no bevel; New outfit… and Slots: All / None keep their button frames |
 | WC2 | Look at an outfit row, then click its Equipment Manager icon twice | Left to right: worn box, outfit icon, Equipment Manager icon, name, then the lightning and the gear at the right edge, all flat. The EM icon is full color for an outfit in the Equipment Manager and dimmed otherwise; each click toggles it, and the sheet's Equipment Manager list gains and loses the set |
-| WC3 | Find an outfit with no icon and no trigger (make a new empty one) | Its icon is the white coat hanger, whole, with no edge and no crop. An outfit with an item's icon shows it edged and cropped like an item. The outfit bar and the broker object (11.5) show the same icons |
+| WC3 | Find an outfit with no icon and no trigger (make a new empty one) | Its icon is the game's chest-armor icon (132724), untinted and cropped like an item's. An outfit with an item's icon shows it edged and cropped like an item. The outfit bar and the broker object (11.5) show the same icons |
 | WC4 | On a native outfit, gear menu, *Change icon…*: visit Recommended, Equipped and bags, Game icons, Glyphs; type in the search; pick a glyph with a color and Choose; then reopen and Cancel | There is no Markers tab. Search filters the open tab. The chosen glyph shows in its color on the row, on the bar and on the broker object; Cancel changes nothing |
 | WC5 | On an Equipment Manager outfit: Change icon… pick a glyph; then a game icon; then *Outfitter chooses* | Glyph: the row, bar and broker show it, while the sheet's Equipment Manager list keeps the set's own icon. Game icon: it becomes the set's icon there too. Outfitter chooses: back to the trigger's icon, else an item's |
 
@@ -237,9 +247,90 @@ Needs a broker display (Titan Panel, ChocolateBar, Bazooka or similar).
 
 | # | Do | See |
 |---|---|---|
-| BR1 | Add *Ka0s Outfitter Reborn: Outfits* to the display; wear an outfit, then take it off | The text is the worn outfit's name with its icon; with none worn, the brand with the gold coat hanger. The minimap still has one Outfitter Reborn button |
+| BR1 | Add *Ka0s Outfitter Reborn: Outfits* to the display; wear an outfit, then take it off | The text is the worn outfit's name with its icon; with none worn, the brand with the chest-armor icon, untinted. The minimap still has one Outfitter Reborn button |
 | BR2 | Left-click it | A menu: the brand as the title, *Open outfit window*, *Automatic changes* with a tick when on, then each category with its visible outfits, each with its icon and a tick when worn. An outfit with missing items reads red, a banked one blue. Hidden outfits are not listed |
 | BR3 | In the menu: click an Accessory, click it again, then click a Complete outfit other than the worn one | The Accessory goes on and gets its tick; it comes off; the new Complete outfit goes on and the old one's tick goes. The menu stays open throughout |
 | BR4 | Shift-click an outfit; then click *Open outfit window*, once with the window shut and once with it open | Shift-click closes the menu and the set-current prompt asks. Open outfit window opens the sheet and the window when shut, and leaves them open when they already are; it never closes either |
 | BR5 | Right-click the object; hover it | Right-click toggles the window. The tooltip shows the brand, the current outfit and both click hints |
 | BR6 | `/or disable`, look at the object and open its menu; `/or enable` | Disabled: the text is the brand; the outfit rows and Open outfit window are grayed and a click prints the one refusal line; Automatic changes still toggles. Enabled: everything is back |
+
+## 12. Smoke round 2 (2026-11-05)
+
+The smoke round 2 pass (design
+[2026-11-05](superpowers/specs/2026-11-05-smoke-round-2-design.md), G1 to G7, D1 to D10), the owner's
+CP5 pass. Sections 12.1 to 12.3 are one pass per sheet, set up as section 11's are (one sheet addon
+enabled per session, at least one outfit, a head or shoulder item and a hands or ring item in the
+bags). Sections 12.4 to 12.7 run once, on any sheet. `/fstack` names what is under the cursor:
+`OutfitterRebornSheetButton`, `OutfitterRebornWindow`, `OutfitterRebornBar`.
+
+### 12.1 The stock sheet
+
+| # | Do | See |
+|---|---|---|
+| RS1 | Press `C`; look at the tab row at the top right of the character pane, then hover each tab | After the Equipment Manager tab, a fourth tab drawn exactly like the three beside it: the same 33x35 size, the same dark tab background and the strip under it, its bottom on the same line, and the chest-armor icon inside. Hovering it lights it as hovering a Blizzard tab does. It overlaps nothing |
+| RS2 | Click the outfit tab; click it again | Window open: the tab looks selected, as a selected Blizzard tab does (the lighter background, no strip, no hover light). Window closed: it is back to unselected. Blizzard's own tabs keep their own selection throughout |
+| RS3 | Open the window and select an outfit | A box on every one of the 18 slots, visible at a glance: 14 px, with an edge in the skin's accent, over each item's icon and not under it |
+| RS4 | Window open: look at every slot; close the window; open the window, click the Equipment Manager tab, then the stats tab | Window open: a flyout arrow on every slot, the weapons' included (left column on the slot's left, pointing left; right column on its right; weapons below). Window closed: no arrows. Leaving the Equipment Manager tab with the window open: the arrows stay |
+| RS5 | Window open: open the Head flyout, then the Hands flyout, then the Main Hand flyout; close the window and open the Head flyout again (click it while holding an item, or with the slot empty) | Head: opens to the left, its first item level with the slot (same top), 8 px of arrow between them. Hands: opens to the right, first item level with the slot, about 11 px away. Main Hand: opens downward where Blizzard puts it. Window closed: Blizzard's place. No `ADDON_ACTION_BLOCKED` |
+
+### 12.2 EllesmereUI
+
+Its Character Sheet skin must be on, as in section 11.2.
+
+| # | Do | See |
+|---|---|---|
+| RE1 | In a fresh session, press `C`; look at the text tabs, then hover the *Outfits* label | An *Outfits* text tab stacked directly above **Equipment** and centered on it: the same face and size (10) as Character, Titles and Equipment, no background, no border, white at about 60 % at rest and full white on hover, as its neighbors are. It is there on the first open |
+| RE2 | Click *Outfits*; click it again; with the window open change EllesmereUI's accent color | Window open: the label in EllesmereUI's accent (green by default), as the selected text tab is drawn; closed: back to dim white. After an accent change the label takes the new accent on its next paint (hover it or reopen the window) |
+| RE3 | Change EllesmereUI's font, then close and reopen the sheet | The *Outfits* label takes the new face once the sheet reopens (it copies the face when it is placed, a known limitation) |
+| RE4 | Open the window and select an outfit | The boxes show on every slot, over EllesmereUI's square slot art, with the accent edge |
+| RE5 | Window open: look at every slot, then open the Head, Hands and Main Hand flyouts; then turn on EllesmereUI's *Hide Slot Flyout Arrows* and look again | Arrows on every slot while the window is open; Head opens left and Hands right, each first item level with its slot, in EllesmereUI's flat flyout skin; Main Hand down, untouched. With *Hide Slot Flyout Arrows* on: no arrow anywhere, and a modified hover still opens a flyout where described |
+
+### 12.3 ChonkyCharacterSheet
+
+| # | Do | See |
+|---|---|---|
+| RC1 | Out of combat, press `C`; look at Chonky's tab row | The outfit tab right after the last tab icon, in the same tab art and size. The row sits about 18 px right-heavy (accepted: Chonky centers its row for its own tabs, and this addon never moves them) |
+| RC2 | Look closely at the strip under the tabs: Blizzard's tabs, Chonky's purple transmog tab at the left, and the outfit tab | The outfit tab carries Blizzard's Hider strip under it; Chonky's own extra tab has none. **Owner to judge** which reads better; record the call (keep the strip, or drop it on Chonky) |
+| RC3 | Click the outfit tab; click it again | Selected while the window is open, unselected after, as on stock |
+| RC4 | Open the window and select an outfit; open and close Chonky's stats, Mythic+, raid and GearFinder panels | The boxes are visible on every slot (before this round Chonky's slots, in a higher strata, covered them) and stay visible with a panel open; `/fstack` over a slot names the box above the slot button |
+| RC5 | Window open: look at every slot; open the Head, Hands and Main Hand flyouts; close the window | As RS4 and RS5: arrows on every slot while the window is open, the left column opening left and the right column right, each first item level with its slot, Main Hand untouched; window closed: no arrows, Blizzard's place. No `ADDON_ACTION_BLOCKED` |
+
+### 12.4 Icons and the window header (any sheet)
+
+| # | Do | See |
+|---|---|---|
+| RI1 | Make a new empty outfit; show the bar; with nothing worn, look at the Outfits broker object | The outfit's icon is the game's chest-armor icon (132724), untinted and cropped like an item icon, on its row and its bar button. The broker shows the brand with the same icon, untinted. No gold coat hanger anywhere |
+| RI2 | On a character with the seeded spec outfits (a new character, or after `/or deleteall`): look at each spec outfit; on one, *Change icon...*, pick a game icon, then reopen and pick *Outfitter chooses* | Each spec outfit shows its specialization's icon. The picked icon replaces it; *Outfitter chooses* brings the spec icon back. An Equipment Manager outfit keeps its set's icon |
+| RG1 | Look at the window's header; hover the gear, then the X | The gear and the X are drawn at the same size and the same tint at rest, and both brighten the same way on hover. The gear still opens the settings |
+
+### 12.5 Cascading menus (any sheet)
+
+| # | Do | See |
+|---|---|---|
+| RM1 | Right-click an outfit; hover *Automation*, then a category; then hover *Key binding* | Each submenu opens beside its row, and every parent stays drawn. Hovering *Key binding* closes the Automation levels and opens its own |
+| RM2 | Drag the outfit bar to the right edge of the screen; right-click a bar button and open *Automation*, then a category | Near the right edge a submenu opens to the left of its parent instead, and every level stays fully on screen |
+| RM3 | In the menu: pick *Outfit 3* under *Key binding*; pick a title under *Title*; pick a trigger with no settings (no "..."); toggle *Show in outfit bar* and *Turn trigger off* | The menu stays open after each: the tick moves to the new choice, the key's old holder is renamed, and the parent row's label follows (*Automation:* the new trigger) |
+| RM4 | In the menu, in turn: *Rename...*, *Delete*, *Update to current items*, *Rebuild for...*, *Trigger settings...*, *Change icon...*, a trigger with settings ("..."), and with the bank open a *Bank* move; then open a menu and click outside every level | Each closes every level, and the dialog, popup or window it opens is on top, never under a menu. A click outside closes them all; a click inside any level does not. Right-clicking a bar button, then `/or bar hide`, closes that menu; a menu the window opened stays when the bar hides |
+
+### 12.6 The outfit bar (any sheet)
+
+| # | Do | See |
+|---|---|---|
+| RB1 | `/or bar show`, `/or bar hide`, `/or bar toggle` twice, `/or bar`, `/or bar foo`; bind *Toggle outfit bar* and press it; click the bar header's X | Show and hide do; toggle and the bare verb flip it; `foo` prints *bar takes show, hide or toggle*. The key flips it. The X hides it and *Show outfit bar* unticks on the Outfit Bar page |
+| RB2 | Look at the bar; drag it by its header; click the header's lock, try to drag; right-click the header | A Ka0s window: the skin's background, edge and title band, *Outfits* on the left of the band, a lock and an X on the right, each category's row labeled (*Complete outfits*, *Accessories*). The header drags it. Locked, it does not move and *Lock frame* on General → Master controls is ticked. The right-click opens the Outfit Bar page. There is no separate handle above the bar |
+| RB3 | Outfit Bar → Display: each *Worn outfit highlight* value while wearing an outfit; *Opacity in combat* at 50 % and fight; *Reset position* here and on Master controls | Mark and border: the corner check and an accent edge; Corner mark and Border: one each; None: neither. In combat the bar draws at half its opacity. Both Reset buttons put the bar back at its start |
+| RB4 | Layout: *Vertical layout*; *Per row or column* 2; *Padding* 0 then 20; *Spacing* 0 then 20; each *Grow* direction; with both on *Automatic*, drag the bar to each screen corner and add an outfit | Vertical stands each category in a column; 2 wraps every two icons; padding and spacing move as named; an explicit direction grows that way and a drag never makes the bar jump or flip; on Automatic the bar grows away from the nearest screen edges |
+| RB5 | Icons: *Icon size* 16, then 64; the Border block with *Use the skin's border* and *Use the skin's color* off: show off and on, a style, a thickness, a color, *Use class color* | Every icon resizes and the bar fits them. With the skin's border and color on the edge is the skin's HUD icon edge; off, each Border row changes it as named |
+| RB6 | Labels: *Show category labels* off and on; the Font block: face, size, outline, shadow, color and *Use class color*, each with its *Use the skin's ...* companion off; then the vertical layout | Each part changes as named only with its companion off; off, the labels go and the rows close up. Vertical: each label sits over its column, truncated to its width |
+| RB7 | Frame: *Show background* off and on; *Use the skin's background* off, then a *Background color*, *Use class color*, and the Border block | Background off: no chrome, the buttons alone. Skin's background off: the bar draws in the picked color with the picked border; on, it is a Ka0s window again |
+| RB8 | Switch the skin with the bar showing | The band, the background, the edges, the labels and the worn highlight all repaint at once |
+
+### 12.7 Test mode (any sheet)
+
+| # | Do | See |
+|---|---|---|
+| RT1 | With the character sheet closed, `/or test` | The outfit window shows **alone**, where it sits beside a stock character sheet, with *Test mode: sample outfits, nothing equipped* under its title. Five samples: one worn (its box ticked), one with a trigger (the lightning), one with a spec icon, one in the Equipment Manager (its mark), one red for missing items with the default icon; no item sections. The bar shows the samples under its band with its own strip. It cannot be dragged |
+| RT2 | Click each sample, its worn box, its EM mark, its gear; hover it; try *New outfit...*; open the sheet and look at the slots | Nothing is worn and nothing changes (the worn box keeps its drawn state); the tooltip says *Sample outfit (test mode). Nothing is equipped.*; *New outfit...* is disabled; no sample is selected, so no slot box and no *Slots* button shows |
+| RT3 | Press `C`, then `C` again | The sheet opens and the window docks beside it as usual, still with the samples and the strip; closing the sheet puts it back alone |
+| RT4 | Click the window's X; open the sheet; click the outfit tab; close everything and press Escape on the alone window in a new test session (`/or test` twice) | The X hides it and test mode stays on (the bar keeps its strip; the minimap menu's *Test mode* is ticked). Opening the sheet does not bring it back; the outfit tab does, docked. Escape hides it the same way |
+| RT5 | With test mode on and the window alone, attack a training dummy | Test mode ends with one chat line, the alone window goes before combat locks it, and the bar shows real outfits again. `/or test` in combat refuses with a line |

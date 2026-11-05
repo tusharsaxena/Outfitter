@@ -103,9 +103,27 @@ NS.Equip.Batch(function()  NS.Stack.Wear / Remove (layer, byTrigger)  end) â—„â”
   wear asked for in combat is queued exactly as theirs is.
 - **The sheet and the window.** `NS.Sheet` reads which character sheet is up (stock, EllesmereUI,
   ChonkyCharacterSheet) and where its button and right edge are; `NS.Dock` asks it on every sheet
-  show and from its 0.05 s follow. The window's show and hide, and the sheet's hide, call
-  `NS.QuickSlots.DrawerSync`, which turns the left column's equipment drawer outward only while the
-  window is visible ([`taint.md`](taint.md)).
+  show and from its 0.05 s follow, places the sheet button in that sheet's tab look (Blizzard's
+  sidebar tab on stock and Chonky, EllesmereUI's text tab; re-placed on the next frame when the
+  sheet kind changes) and paints it selected while the window shows. The window's show and hide, and
+  the sheet's hide, call `NS.QuickSlots.DrawerSync`, which, only while the window is visible, shows
+  every slot's popout arrow, turns the left column's drawer outward, and lines a horizontal flyout up
+  with its slot ([`taint.md`](taint.md)). The slot checkboxes restack from the same follow when the
+  host's strata or level moves.
+- **Test mode.** `NS.Preview` flips the session-only `NS.State.testMode` and sends `PREVIEW_CHANGED`.
+  The bar draws `Preview.Source` (the samples of `defaults/PreviewOutfits.lua`) under its test strip;
+  the dock clears the selection and calls `Dock.Refresh`, which shows the window with the samples
+  under its own strip, beside the sheet when it is open or alone at `NS.Sheet.AloneCorner` when it is
+  not, never in lockdown. X or Escape sets `testDismissed` for that test session. Every row action
+  refuses a `preview:` id, so nothing reaches `NS.Outfits` or `NS.Stack`. Combat
+  (`PLAYER_STATE_CHANGED "combat"`, before lockdown), its own switch, Reset all and the stand-down
+  end it, and `PREVIEW_CHANGED false` puts both surfaces back on live data.
+- **The outfit bar.** `NS.Bar` renders on a coalesced 0 s flag (outfit messages, a `bar.*` or Master
+  `SETTINGS_CHANGED`, `PREVIEW_CHANGED`, `PROFILE_CHANGED`, a skin change): `NS.Bar.Layout` computes
+  the geometry from the Layout and Icons rows, `Bar.PaintChrome` dresses the header band, plate,
+  labels and test strip, and the pooled buttons are set from `NS.OutfitIcon`. `/or bar`, the *Toggle
+  outfit bar* key and the header's close all write `bar.shown`; every path that hides the bar closes
+  the outfit menu it opened (`NS.CloseMenuFrom`), and only that one.
 - **Matching uses IDs, never names.** Maps by uiMapID or instance mapID, spells and auras by spellID,
   items by itemID, NPCs by creatureID, professions by skillLine. The documented exceptions are rows
   D3, D4, D8 and D10 in `ARCHITECTURE.md`.

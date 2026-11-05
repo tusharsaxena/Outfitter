@@ -25,8 +25,38 @@ change is test-first and ends with the green gate ([testing.md](testing.md)). Ev
    it refuses while the addon is stood down.
 2. A verb that must answer while disabled (read-only, or one setting) goes in `HOST_LIVE_VERBS`.
 3. Outfit-verb handlers live in `modules/Commands.lua`; the dispatcher stays in `settings/`.
-4. Pin it in `tests/test_slash.lua`; `/or help` and the landing page list it automatically, and the
-   tables in [slash-dispatch.md](slash-dispatch.md) and `ARCHITECTURE.md` gain the row.
+4. A feature noun with its own words (`/or bar show|hide|toggle`) is one verb whose handler parses
+   `rest`; it writes its setting through the CLI's row write, never the store.
+5. Pin it in `tests/test_slash.lua`; `/or help` and the landing page list it automatically, and the
+   tables in [slash-dispatch.md](slash-dispatch.md) and `ARCHITECTURE.md` gain the row, with the
+   verb count in `ARCHITECTURE.md`'s Overview and `module-map.md`.
+
+## Add a key binding
+
+1. Add a `Binding` line to `Bindings.xml` (a `CLICK` on a new, permanent `OutfitterReborn<Name>`
+   button, the addon's category, no header) at its place in the order.
+2. Add the button's row to `BUTTONS` in `core/LauncherSetup.lua`, in the same order: `name`,
+   `handler` (reach a verb through `NS.RunVerb` so key and verb are one handler), `label` and
+   `tooltip` through `L[...]`. The refusal while stood down is the button's, already.
+3. Pin it in `tests/test_keybinds.lua`; the General page's Keybindings tab lists it from
+   `NS.BINDINGS`. Update the binding count in `ARCHITECTURE.md`, `taint.md` and `module-map.md`.
+   Never rename a shipped button: the client stores the player's key against the name.
+
+## Add an outfit-bar option
+
+1. The default goes under `bar.*` in `defaults/Profile.lua`; the row goes on its tab in
+   `settings/OutfitBar.lua` (Display, Layout, Icons, Labels or Frame). No `onChange`: the bar
+   re-renders on `SETTINGS_CHANGED` for any `bar.*` path.
+2. A color comes with its FromSkin companion, default on, and its class-color companion
+   (skinning-§6); prefer the library's composed blocks (`H.BorderGroup`, `H.FontGroup`,
+   `H.ColorPair`) over hand-built rows.
+3. Geometry is arithmetic in `modules/Bar_Layout.lua`, pinned without a client; the header, plate,
+   labels and strip are `modules/Bar_Chrome.lua`; a button's look is `modules/Bar_Buttons.lua`.
+   Keep `Bar.Render` at CCN 15 or below by putting new work in those files.
+4. A lock, reset, scale or combat-hide switch is the Master controls' already (options-ui-§15): point
+   to it, never add a second one.
+5. Pin it in `tests/test_bar.lua` (and `tests/test_settings.lua`), then update
+   [settings-panel.md](settings-panel.md), [schema.md](schema.md) and the smoke rows.
 
 ## Add a bus message
 
