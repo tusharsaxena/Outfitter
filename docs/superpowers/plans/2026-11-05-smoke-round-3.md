@@ -64,6 +64,22 @@ survive a restart without bloating git: `/home/tushar/.claude/projects/-mnt-d-Pr
   radio rows (the current state ticked, LibKa0s v1.87.0 `submenu`/`radio`/`selected`), keep-open, doing
   exactly what the mark's click does (same code path). In test mode (E4) the rows are disabled.
 
+### Owner rulings on the held items (2026-11-05, after R6)
+
+- **E1 ruled: deviation, skin border.** Record `DEV-SKIN-FLYOUT-TINT` (`skinning-§7`) in
+  `docs/ARCHITECTURE.md` -> Documented deviations: while the outfit window is open (when this addon
+  holds the flyout), tint the paper-doll `EquipmentFlyoutFrame`'s border textures with the skin's
+  **window border** color (`win.border`), accepting a near-black rim under Ka0s Default; restore
+  Blizzard's own color when the window closes, the flyout is opened by another host (Item Upgrade,
+  Item Interaction, Runeforge…), on stand-down and on Suspend; re-apply on a skin change; never in
+  lockdown. Tint only (vertex color, desaturate if needed for the hue), no new art, no reparenting.
+- **E12(2) ruled: one click toggles.** A click on the EM mark always saves the outfit to, or removes it
+  from, the Equipment Manager, whether or not the outfit is selected (no wear/select first). Its tooltip
+  gives the true state and the click hint; the gear-menu On/Off (E12(3)) uses the same code path. E12(1)
+  and (3) as written above.
+- **E7 ruled: follow the standard.** Frame > Show border is disabled (dimmed, with a tooltip saying why)
+  while "Use the skin's border" is on, and governs the border once that is off. No deviation.
+
 ## Global Constraints
 
 Round 2's plan constraints all apply (standard; green gate per commit — `lua tests/run.lua` and
@@ -84,7 +100,8 @@ only the E3 amendment of the D10 clause. Anything else: stop and flag.
 | R4 | Task 4: test mode placement and menu — E3, E4 | done (2300bef..4c3660a; the alone window opens centered (Dock.AloneSpot) and drags for the session, user-placed flag cleared, never docked or in lockdown; the bar starts 8 px left of it (st.testPlace) until dragged, which saves; the sample gear opens a browse-only OutfitMenu, data rows disabled no-ops with L["Not available in test mode"]; Sheet.AloneCorner retired; the D10 row's E3 amendment is already in docs/ARCHITECTURE.md; new suite test_preview_place) |
 | R5 | Task 5: Outfit window settings page — E11; Equipment Manager tooltip and menu — E12 | done (702e299..702e299; E11: page `window`, "Outfit Window", between Outfit Bar and Profiles: Character sheet tab (sheet button, slot check boxes, flyout-arrow drawer, dock gap 0-40 px) and List tab (Odds 'n ends / Warbound / Unopened sections, EM and automation marks), each surface following a window.* write and a profile switch; new suite test_window_settings. E12 NOT done and its box left open: this run's brief was E11 only, and E12(2) needs a ruling first: the EM mark's click on an unselected, not-stored outfit wears and selects it, and only a second click saves (INV §3.5), so "Click to save in the Equipment Manager" is not yet what one click does) |
 | R6 | Task 6: docs, D10 amendment, smoke §13, whole-branch review, bundle, push | done (f77ceb0..24e79cd; bundle 20261105-125130 green; pushed) |
-| R7 | Owner's in-game pass of smoke §13 | **next — handed to the owner** |
+| R6b | Task 7: the ruled items — E1 tint (DEV-SKIN-FLYOUT-TINT), E12 in full (one-click toggle), E7 disabled while following the skin; review, docs, bundle, push | todo |
+| R7 | Owner's in-game pass of smoke §13 | todo |
 | R8 | Owner go-ahead -> merge all rounds in order (see round 2 plan CP6, plus this branch last), delete branches | todo |
 
 ## Tasks
