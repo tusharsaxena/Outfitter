@@ -238,7 +238,7 @@ With it off, the sheet is the stock one and section 11.1 applies.
 | # | Do | See |
 |---|---|---|
 | WC1 | Look at the window's header; click the X | An X sits beside the gear and closes the window. The gear, the scroll buttons and the New outfit mark are flat, with no bevel; New outfit… and Slots: All / None keep their button frames |
-| WC2 | Look at an outfit row, then click its Equipment Manager icon twice | Left to right: worn box, outfit icon, Equipment Manager icon, name, then the lightning and the gear at the right edge, all flat. The EM icon is full color for an outfit in the Equipment Manager and dimmed otherwise; each click toggles it, and the sheet's Equipment Manager list gains and loses the set |
+| WC2 | Look at an outfit row, then click its Equipment Manager icon twice | Left to right: worn box, outfit icon, Equipment Manager icon, name, then the lightning and the gear at the right edge, all flat. The EM icon is full color for an outfit in the Equipment Manager and dimmed otherwise; each click toggles it, selected or not (R3M2), and the sheet's Equipment Manager list gains and loses the set |
 | WC3 | Find an outfit with no icon and no trigger (make a new empty one) | Its icon is the game's chest-armor icon (132724), untinted and cropped like an item's. An outfit with an item's icon shows it edged and cropped like an item. The outfit bar and the broker object (11.5) show the same icons |
 | WC4 | On a native outfit, gear menu, *Change icon…*: visit Recommended, Equipped and bags, Game icons, Glyphs; type in the search; pick a glyph with a color and Choose; then reopen and Cancel | There is no Markers tab. Search filters the open tab. The chosen glyph shows in its color on the row, on the bar and on the broker object; Cancel changes nothing |
 | WC5 | On an Equipment Manager outfit: Change icon… pick a glyph; then a game icon; then *Outfitter chooses* | Glyph: the row, bar and broker show it, while the sheet's Equipment Manager list keeps the set's own icon. Game icon: it becomes the set's icon there too. Outfitter chooses: back to the trigger's icon, else an item's |
@@ -340,10 +340,10 @@ Its Character Sheet skin must be on, as in section 11.2.
 
 ## 13. Smoke round 3 (2026-11-05)
 
-The smoke round 3 pass ([plan](superpowers/plans/2026-11-05-smoke-round-3.md), decisions E1 to E11),
+The smoke round 3 pass ([plan](superpowers/plans/2026-11-05-smoke-round-3.md), decisions E1 to E12),
 the owner's R7 pass. It supersedes two rows of section 12: RB7's *Show background* is gone (E6), and
 RT1's placement is now the screen center, draggable (E3). Sections 13.1 to 13.3 are one pass per sheet,
-set up as section 12's are; sections 13.4 to 13.6 run once, on any sheet. Run 13.4's border rows under
+set up as section 12's are; sections 13.4 to 13.7 run once, on any sheet. Run 13.4's border rows under
 Ka0s Default and under one other skin. E1 is held for an owner ruling, so its rows check that nothing
 changed and record the ruling.
 
@@ -402,3 +402,17 @@ changed and record the ruling.
 | R3W2 (E11) | List: untick *Show Odds 'n ends*, *Show Warbound until equipped* and *Show Unopened*, each with the window open | Each section leaves the list at once; ticked again, it returns |
 | R3W3 (E11) | List: untick *Show the Equipment Manager mark*, then *Show the automation mark* | The EM icon goes and the name starts where it was; the lightning goes from outfits with a trigger. Ticked again, both return |
 | R3W4 (E11) | Change a few rows, then switch to another profile and back | Each surface (the tab, the boxes, the arrows, the gap, the sections, the marks) follows the profile at once |
+
+### 13.7 The Equipment Manager mark and menu (any sheet)
+
+E12, built to the owner's ruling: one click saves or removes, whether or not the outfit is selected.
+The client saves a set from the gear worn at the moment, so a save wears the outfit first and makes
+the set once the swap lands.
+
+| # | Do | See |
+|---|---|---|
+| R3M1 (E12) | Hover the EM icon of an outfit not in the Equipment Manager, then of one that is | Not stored: *Not stored in the Equipment Manager*, then *Click to save in the Equipment Manager*. Stored: *Stored in the Equipment Manager*, then *Click to remove from the Equipment Manager* |
+| R3M2 (E12) | With no outfit selected, click the dimmed EM icon of an outfit you are not wearing; then click its full icon | One click: the outfit is worn, and a moment later its icon is full and the sheet's Equipment Manager list has the set with that gear. The second click: the icon dims and the set leaves the list, the outfit kept as an Outfitter outfit |
+| R3M3 (E12) | Open an outfit's gear menu | *Save in equipment manager* sits directly below *Rename...*; its submenu has *On* and *Off*, the outfit's state ticked. Pick the other one: the menu stays open, the change is the same as R3M2's click, and the tick moves once the save lands |
+| R3M4 (E12) | Attack a training dummy; in combat, click an EM icon, then pick On or Off in the menu | Refused with *Outfits can't be changed in combat.*; nothing is worn and the Equipment Manager is unchanged. A full Equipment Manager shows its popup before anything is worn |
+| R3M5 (E12) | `/or test`: hover sample 4's EM icon and another sample's; open a sample's gear menu, then *Save in equipment manager* | The tooltip gives the sample's drawn state and *Not available in test mode*. The submenu opens, and *On* and *Off* are grayed |
