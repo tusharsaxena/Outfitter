@@ -9,7 +9,7 @@ local addonName, NS = ...
 --                           OnLooksChanged. Every surface that draws reads its colors here.
 --   NS.SkinChoice()         the stored (source, skin) pair, read through NS.GetSetting; "ka0s",
 --                           "ka0s" until the profile store and settings/Schema.lua's seams exist.
---   NS.WriteSkinChoice(s,k,i,m) the write seam: every half through NS.SetByPath, the one seam `/of set`
+--   NS.WriteSkinChoice(s,k,i,m) the write seam: every half through NS.SetByPath, the one seam `/or set`
 --                           and the panel write through (architecture-§5); `i`, the Scope's
 --                           `{ panel, fonts }`, writes the two exceptions, and `m`, the Font and
 --                           texture section's `{ font, texture }`, the two overrides ("" for false);
@@ -45,7 +45,7 @@ local addonName, NS = ...
 --   NS.HideSkinPicker()     takes a shown or queued picker down WITHOUT marking it seen (the
 --                           stand-down, a profile event) and drops a held combat start.
 --   NS.SkinPickerSpec()     the spec MaybeShowSkinPicker hands O.SkinPicker.
---   NS.RunSkinVerb()        the reserved `/of skin` verb's act (O.SkinVerb): the picker a new profile
+--   NS.RunSkinVerb()        the reserved `/or skin` verb's act (O.SkinVerb): the picker a new profile
 --                           shows, whatever `skin.pickerSeen` says.
 --
 -- ── WHERE IT LOADS ───────────────────────────────────────────────────────────────────────────
@@ -70,7 +70,7 @@ local addonName, NS = ...
 -- would apply the half-written one in between: a second repaint, to a skin the player never picked.
 -- Applying only the row's own half against the applied choice makes each write a no-op (SetChoice is
 -- idempotent), so a pick is ONE effective SetChoice and one repaint, while a bare
--- `/of set skin.skin obsidian` still repaints.
+-- `/or set skin.skin obsidian` still repaints.
 --
 -- Nothing skin-related keys off SETTINGS_CHANGED. A surface that has to rebuild on a skin change
 -- (markup built once, a pooled row) subscribes to NS.Skin.OnLooksChanged, which fires after the new
@@ -124,6 +124,9 @@ NS.SKIN_TOKENS = {
     ["of.slot.unknown"]    = { default = { 1, 0.82, 0, 1 }, follow = "sem.statusWarn" },
     -- The outfit bar's worn mark over a button whose outfit is on.
     ["of.bar.worn"]        = { default = { 1, 0.82, 0, 1 }, follow = "icon.hot" },
+    -- The sheet button's coat hanger (sheet and window feedback design G1): the accent, not the rows'
+    -- white. Ka0s gold under Ka0s Default (NS.Constants.SHEET_BUTTON_TINT), each skin's accent else.
+    ["of.sheet.button"]    = { default = NS.Constants.SHEET_BUTTON_TINT, follow = "text.accent" },
     -- A dialog's error line (a duplicate name, an invalid trigger parameter).
     ["of.dialog.error"]    = { default = { 1, 0.33, 0.33, 1 }, follow = "sem.bad" },
 }
@@ -255,7 +258,7 @@ end
 --
 -- PREVIEW. A pick only previews; `set` (NS.WriteSkinChoice) runs on Apply, the gear or Apply to all,
 -- and the close control and Escape put back the stored choice the library reads through `get`. The
--- eye turns test mode on (modules/Preview.lua, the path `/of test` takes), so the outfit bar shows
+-- eye turns test mode on (modules/Preview.lua, the path `/or test` takes), so the outfit bar shows
 -- its sample outfits in the skin.
 --
 -- QUEUED. One picker is up at a time across every Ka0s addon: while another addon's is up,
@@ -377,7 +380,7 @@ function NS.MaybeShowSkinNotice()
             NS.MaybeShowSkinNotice()
         end
         -- On NS.addon's AceTimer, so the stand-down's CancelAllTimers takes it (slash-commands-§7: no
-        -- timer outlives /of disable). C_Timer.After only when NS.addon carries no AceTimer (never in
+        -- timer outlives /or disable). C_Timer.After only when NS.addon carries no AceTimer (never in
         -- the shipped build, which bundles Ace3): nothing can cancel it, but the retry it fires is
         -- gated on NS.IsStoodDown() and shows nothing while stood down.
         local addon = NS.addon
@@ -399,7 +402,7 @@ function NS.MaybeShowSkinPicker()
     return pickerFirstRun()
 end
 
---- The reserved `/of skin` verb's act (O.SkinVerb) with the spec the first-run start builds, so it
+--- The reserved `/or skin` verb's act (O.SkinVerb) with the spec the first-run start builds, so it
 --- shows the picker a new profile shows whatever skin.pickerSeen says, and writes nothing itself
 --- (the player's close marks it seen, as for the first-run picker). The library prints its own lines
 --- (combat on every call, queued, unavailable); without LibKa0s the Options stub answers nil,
@@ -413,7 +416,7 @@ function NS.RunSkinVerb()
         local L = NS.L or {}
         local line = L["%s is unavailable: the LibKa0s library did not load."]
             or "%s is unavailable: the LibKa0s library did not load."
-        NS.Print(line:format((NS.SLASH or "/of") .. " skin"))
+        NS.Print(line:format((NS.SLASH or "/or") .. " skin"))
     end
     return win, why
 end

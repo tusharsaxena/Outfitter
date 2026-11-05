@@ -5,7 +5,12 @@ local _, NS = ...
 -- FIXED AND VIRTUALIZED. All 14 rows are built once, in Rows.Build, which runs only from Dock.Refresh
 -- and so only out of combat. Scrolling binds another entry to the same row; a row is never re-anchored,
 -- re-parented, shown or hidden after build, and a blank row is one whose `entry` is nil. Its regions
--- (the chevron, the name, the checkboxes, the marks) are shown and hidden per kind: none is protected.
+-- (the chevron, the name, the worn box, the icons, the marks) are shown and hidden per kind: none is
+-- protected.
+--
+-- AN OUTFIT ROW (sheet and window feedback design G4), left to right: the worn box, the outfit's icon,
+-- the Equipment Manager mark (that tab's own icon, full when the outfit is stored there, dimmed when
+-- not; a click toggles it), the name, the automation lightning and the gear that opens the menu.
 --
 -- THE SECURE CHILD. Each row owns `<row>Secure`, a SecureActionButtonTemplate button covering it, so
 -- an item-targeting spell (Disenchant) lands on a secure frame (UseContainerItem is protected). Its
@@ -20,7 +25,8 @@ local _, NS = ...
 --
 -- CALLS (at call time; design §12): NS.Window.MarkDirty/ToggleCollapsed, NS.Stack.Wear/Remove/IsWorn/
 -- Select/Selected, NS.Outfits.Get/IsEM, NS.EM.StoreOnServer/StoreLocally, NS.OutfitMenu.Open,
--- NS.OutfitTooltip.Show, NS.Compat (pickup, use, sell cursor, item icon).
+-- NS.OutfitTooltip.Show, NS.OutfitIcon (the one icon resolver), NS.Compat (pickup, use, sell
+-- cursor, item icon).
 
 local Rows = { rows = {}, built = false, COUNT = 14, ROW_H = 18, ROW_W = 228 }
 NS.WindowRows = Rows
@@ -35,6 +41,18 @@ Rows.STATUS_TOKEN = STATUS_TOKEN
 
 local DIM_ALPHA = 0.4
 local BUYBACK_TAB = 2
+
+-- The Equipment Manager mark's alpha for an outfit the Equipment Manager does not hold (design G4).
+local EM_DIM_ALPHA = 0.35
+-- The sheet's sidebar tab whose icon the mark draws: the Equipment Manager's, third in
+-- PAPERDOLL_SIDEBARS (wow-ui-source@297d7aa:Interface/AddOns/Blizzard_UIPanels_Game/Mainline/
+-- PaperDollFrame.lua:79, :97-100). Read when the rows are built, so the client's art is the art drawn.
+local EM_SIDEBAR_TAB = 3
+
+-- An outfit's icon -> texture, r, g, b: the one resolver the bar and the broker draw too (plan Task 3.5).
+local function outfitIcon(rec)
+    return NS.OutfitIcon(rec)
+end
 
 local function locked() return NS.Compat.InCombatLockdown() end
 
@@ -134,36 +152,31 @@ local function onWornClick(row)
     NS.Window.MarkDirty(true)
 end
 
--- The EM box (INV §3.5 OutfitServerButton): the first check on an outfit that is not selected only
--- selects it; a check on the selected one stores it on the server; an uncheck stores it locally.
-local function emChecked(id, cb)
+-- The EM mark (INV §3.5 OutfitServerButton): the first click on an outfit that is not selected only
+-- selects it; a click on the selected one stores it on the server. A click on the full mark (an
+-- outfit the Equipment Manager holds) stores it locally.
+local function storeOnServer(id)
     local St = NS.Stack
     if St.Selected() ~= id then
         St.Wear(id, { hw = true, clearDisabled = true })
         St.Select(id)
-        cb:SetChecked(false)
         return
     end
     local ok, popupKey = NS.EM.StoreOnServer(id)
-    if not ok then
-        if popupKey then StaticPopup_Show(popupKey) end
-        cb:SetChecked(false)
-    end
+    if not ok and popupKey then StaticPopup_Show(popupKey) end
 end
 
 local function onEmClick(row)
-    local e, cb = row.entry, row.em
+    local e = row.entry
     if NS.IsStoodDown() or not (e and e.kind == "outfit") then return end
-    local isEM = NS.Outfits.IsEM(e.id)
     if locked() then
         NS.Print(L["Outfits can't be changed in combat."])
-        cb:SetChecked(isEM)
         return
     end
-    if cb:GetChecked() then
-        if not isEM then emChecked(e.id, cb) end
-    elseif isEM then
+    if NS.Outfits.IsEM(e.id) then
         NS.EM.StoreLocally(e.id)
+    else
+        storeOnServer(e.id)
     end
     NS.Window.MarkDirty(true)
 end
@@ -207,7 +220,8 @@ end
 
 -- ── render ────────────────────────────────────────────────────────────────────────────────────
 
-local REGIONS = { "chevron", "label", "name", "itemName", "icon", "worn", "em", "trig", "menu" }
+local REGIONS = { "chevron", "label", "name", "itemName", "icon", "outfitIcon", "outfitArt", "worn", "em", "trig",
+                  "menu" }
 
 local RENDER = {}
 function RENDER.category(row, e)
@@ -222,7 +236,13 @@ function RENDER.outfit(row, e)
     if not rec then return end
     row.worn:SetChecked(NS.Stack.IsWorn(e.id))
     row.worn:Show()
-    row.em:SetChecked(O.IsEM(e.id))
+    -- A fileID is Blizzard art, drawn edged and cropped; a glyph (the coat hanger by default) whole.
+    local tex, r, g, b = outfitIcon(rec)
+    local icon = type(tex) == "number" and row.outfitArt or row.outfitIcon
+    icon:SetTexture(tex)
+    icon:SetVertexColor(r, g, b)
+    icon:Show()
+    row.em:SetAlpha(O.IsEM(e.id) and 1 or EM_DIM_ALPHA)
     row.em:Show()
     local name = type(rec.name) == "string" and rec.name or ""
     if e.status == "disabled" then name = L["%s (Disabled)"]:format(name) end
@@ -286,13 +306,23 @@ local function regions(row)
     row.label:SetJustifyH("LEFT")
     S.Text(row.label, "heading")
     row.name = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-    row.name:SetPoint("LEFT", row, "LEFT", 50, 0)
+    row.name:SetPoint("LEFT", row, "LEFT", 68, 0)
     row.name:SetPoint("RIGHT", row, "RIGHT", -38, 0)
     row.name:SetJustifyH("LEFT")
     row.icon = row:CreateTexture(nil, "ARTWORK")
     row.icon:SetSize(16, 16)
     row.icon:SetPoint("LEFT", row, "LEFT", 14, 0)
     S.IconBorder(row.icon, { fromSkin = true })
+    -- An outfit's icon, in one of two textures at one place: a catalog glyph (the default coat hanger,
+    -- or a browser pick) drawn whole and borderless, as the sheet button draws it; a fileID, Blizzard
+    -- art, edged and zoom-cropped as the item's icon is. RENDER.outfit shows the one that fits.
+    row.outfitIcon = row:CreateTexture(nil, "ARTWORK")
+    row.outfitIcon:SetSize(16, 16)
+    row.outfitIcon:SetPoint("LEFT", row, "LEFT", 32, 0)
+    row.outfitArt = row:CreateTexture(nil, "ARTWORK")
+    row.outfitArt:SetSize(16, 16)
+    row.outfitArt:SetPoint("LEFT", row, "LEFT", 32, 0)
+    S.IconBorder(row.outfitArt, { fromSkin = true })
     row.itemName = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     row.itemName:SetPoint("LEFT", row, "LEFT", 34, 0)
     row.itemName:SetPoint("RIGHT", row, "RIGHT", -4, 0)
@@ -304,30 +334,52 @@ local function regions(row)
     S.Mark(row.trig, { token = "of.row.trigger" })
 end
 
-local function controls(row)
-    row.worn = checkbox(row, "Worn", 14)
-    row.worn:SetScript("OnClick", function() onWornClick(row) end)
-    row.em = checkbox(row, "EM", 32)
-    row.em:SetScript("OnClick", function() onEmClick(row) end)
-    row.em:SetScript("OnEnter", function(cb)
-        GameTooltip:SetOwner(cb, "ANCHOR_RIGHT")
+-- The Equipment Manager mark: a plain button drawing that sidebar tab's icon, unskinned (it is the
+-- tab's own art, a sprite sheet, never cropped or edged as an item icon is).
+local function emMark(row)
+    local em = CreateFrame("Button", row.__rowName .. "EM", row)
+    em:SetSize(16, 16)
+    em:SetPoint("LEFT", row, "LEFT", 50, 0)
+    em.icon = em:CreateTexture(nil, "ARTWORK")
+    em.icon:SetAllPoints(em)
+    local tabs = _G.PAPERDOLL_SIDEBARS
+    local tab = type(tabs) == "table" and tabs[EM_SIDEBAR_TAB]
+    if type(tab) == "table" then
+        em.icon:SetTexture(tab.icon)
+        if type(tab.texCoords) == "table" then em.icon:SetTexCoord(unpack(tab.texCoords)) end
+    end
+    em:SetScript("OnClick", function() onEmClick(row) end)
+    em:SetScript("OnEnter", function(b)
+        GameTooltip:SetOwner(b, "ANCHOR_RIGHT")
         GameTooltip:SetText(L["Stored in the Equipment Manager"])
         GameTooltip:Show()
     end)
-    row.em:SetScript("OnLeave", Rows.OnLeave)
+    em:SetScript("OnLeave", Rows.OnLeave)
+    return em
+end
+
+-- The menu control: a borderless gear (design G4, G10).
+local function gearMenu(row)
     local menu = CreateFrame("Button", row.__rowName .. "Menu", row)
-    menu:SetSize(16, 16)
-    menu:SetPoint("RIGHT", row, "RIGHT", -2, 0)
+    menu:SetSize(14, 14)
+    menu:SetPoint("RIGHT", row, "RIGHT", -4, 0)
     menu.icon = menu:CreateTexture(nil, "ARTWORK")
     menu.icon:SetAllPoints(menu)
-    menu.icon:SetTexture(NS.Icon("ellipses"))
-    NS.Skin.Button(menu)
+    menu.icon:SetTexture(NS.Icon("ph:gear-six"))
+    NS.Skin.Button(menu, { noBg = true, noBorder = true })
     menu:SetScript("OnClick", function()
         local e = row.entry
         if NS.IsStoodDown() or not (e and e.kind == "outfit") then return end
         NS.OutfitMenu.Open(menu, e.id)
     end)
-    row.menu = menu
+    return menu
+end
+
+local function controls(row)
+    row.worn = checkbox(row, "Worn", 14)
+    row.worn:SetScript("OnClick", function() onWornClick(row) end)
+    row.em = emMark(row)
+    row.menu = gearMenu(row)
 end
 
 -- The secure child: SetAllPoints at birth, its hooks wired to the row's handlers, hidden.

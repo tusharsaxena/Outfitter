@@ -26,6 +26,7 @@ NS.defaults = {
         stack       = {},                                 -- array of StackEntry, bottom -> top
         recent      = {},                                 -- Complete-outfit ids, most recent LAST
         emPreserved = nil,                                -- [lowerName] = OutfitRecord while the EM reports zero sets
+        emIcons     = {},                                 -- [setID] = { icon = glyph path, color = "rrggbb"|nil }
     },
     -- `schemaVersion = 0` is never the current version, because AceDB strips a value equal to its default.
     global = { schemaVersion = 0, minimap = { hide = false }, skinNotice = {} },

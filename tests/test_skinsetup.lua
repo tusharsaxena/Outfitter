@@ -27,6 +27,8 @@ local TOKENS = {
     ["of.slot.unknown"]    = { { 1, 0.82, 0, 1 }, "sem.statusWarn" },
     ["of.bar.worn"]        = { { 1, 0.82, 0, 1 }, "icon.hot" },
     ["of.dialog.error"]    = { { 1, 0.33, 0.33, 1 }, "sem.bad" },
+    -- Sheet and window feedback design G1: the sheet button's coat hanger, in the accent.
+    ["of.sheet.button"]    = { { 1, 0.82, 0, 1 }, "text.accent" },
 }
 
 local function near(a, b) return math.abs((a or 1) - (b or 1)) < 1e-6 end
@@ -335,13 +337,13 @@ test("skin seam: a choice written through the seam is stored and worn", function
     assertEqual(select(2, Skin:GetChoice(OWNER)), "obsidian", "the row's onChange applied it")
 end)
 
-test("skin seam: /of skin without the library prints the library-absent line", function()
+test("skin seam: /or skin without the library prints the library-absent line", function()
     local NS = T.load({ libFiles = {} }).NS
     local said
     NS.Print = function(line) said = line end
     local win, why = NS.RunSkinVerb()
     assertEqual(win, nil); assertEqual(why, "absent")
-    assertEqual(said, "/of skin is unavailable: the LibKa0s library did not load.")
+    assertEqual(said, "/or skin is unavailable: the LibKa0s library did not load.")
 end)
 
 -- ── without the library ──────────────────────────────────────────────────────────────────────────

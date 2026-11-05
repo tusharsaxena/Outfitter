@@ -1,5 +1,5 @@
 local _, NS = ...
--- modules/States_Zone.lua — the zone producer, its derived tables and /of zone info (design §6.5).
+-- modules/States_Zone.lua — the zone producer, its derived tables and /or zone info (design §6.5).
 --
 -- THE ONE ZONE SOURCE is defaults/Zones.lua's rows. What the legacy addon kept by hand in lockstep is
 -- derived here at load, and nowhere else:
@@ -15,7 +15,7 @@ local _, NS = ...
 --
 -- IDS, NEVER NAMES (H9). The instance type gives the generics, so a map Blizzard ships tomorrow
 -- still sets them; the instance map id gives the specifics. GetZoneText() is read only as a change
--- detector in the early-out, and GetInstanceInfo's name only for /of zone's report.
+-- detector in the early-out, and GetInstanceInfo's name only for /or zone's report.
 --
 -- CALLS (at call time, no nil guard; design §12): NS.Equip.Batch around the emission; NS.States.Set,
 -- whose first sighting of a state reads NS.Triggers.ForState and NS.Stack.IsWorn.
@@ -140,7 +140,7 @@ function S.InPvPInstance()
     return itype == "pvp" or itype == "arena"
 end
 
---- What the zone detection sees, as lines for /of zone (ShowZoneInfo, Outfitter.lua:5017-5049): the
+--- What the zone detection sees, as lines for /or zone (ShowZoneInfo, Outfitter.lua:5017-5049): the
 --- instance with its map id, a missing table entry, and the zone ids in force. The equipment bracket's
 --- own lines (Equip.Diagnostic) follow them in the command.
 --- @return string[]

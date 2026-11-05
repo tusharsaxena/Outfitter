@@ -12,10 +12,10 @@ the build order is
 
 Ka0s Outfitter Reborn is an equipment manager for Retail (Midnight, 12.x). A player builds named
 outfits, wears them by hand from a window docked to the character sheet, from an outfit bar, from key
-bindings or from `/of`, and lets **native triggers** wear and remove them automatically: fishing,
+bindings or from `/or`, and lets **native triggers** wear and remove them automatically: fishing,
 gathering, a battleground or arena by map, a druid form, a spec, a mount, and about seventy more
 (77 in all). It is a rewrite of the community fork of Outfitter by John Stephen (mundocani), MIT
-licensed, as an Ace3 addon in the standard's modular layout, on the vendored `LibKa0s` v1.85.0.
+licensed, as an Ace3 addon in the standard's modular layout, on the vendored `LibKa0s` v1.86.0.
 
 Three ideas carry the design:
 
@@ -49,7 +49,8 @@ In outline: `core/` holds the seams, each a lease on one `LibKa0s` major with a 
 profile defaults, the item and zone tables, the trigger catalog and its ID tables, the test-mode
 outfits; `defaults/Profile.lua` is the only place a default is hardcoded); `modules/` holds, in load
 order, the engine (`PlayerState` through `Companion`), the triggers and their state producers
-(`Triggers_*`, `States`, `States_Zone`), then the UI (`Commands` through `Preview`), the public API
+(`Triggers_*`, `States`, `States_Zone`), then the UI (`Commands` through `Preview`, with `Sheet`
+reading which character sheet is up for the dock, and `Broker` the Outfits data source), the public API
 (`Api`) and the diagnostics sections; `settings/` holds the schema, the slash dispatcher and the
 pages, last.
 
@@ -87,7 +88,7 @@ Every message with its sender, payload and receivers: [`message-bus.md`](message
 
 ## Slash Commands
 
-`/of` is the command and `/outfitter` its alias; both reach one dispatcher (`settings/Slash.lua`, on
+`/or` is the command and `/outfitterreborn` its alias; both reach one dispatcher (`settings/Slash.lua`, on
 LibKa0s-Slash), behind a host routing wrapper that runs macro conditionals through
 `SecureCmdOptionParse` (H25). `NS.COMMANDS` opens with the reserved verbs:
 
@@ -99,13 +100,13 @@ LibKa0s-Slash), behind a host routing wrapper that runs macro conditionals throu
 | `enable` | Turn the addon on |
 | `disable` | Turn the addon off without unloading it |
 | `list` | List every setting |
-| `get` | Read one setting: `/of get path` |
-| `set` | Write one setting: `/of set path value` |
-| `reset` | Reset one setting: `/of reset path` |
+| `get` | Read one setting: `/or get path` |
+| `set` | Write one setting: `/or set path value` |
+| `reset` | Reset one setting: `/or reset path` |
 | `resetall` | Reset every setting (asks first) |
 | `debug` | Debug console; `on`/`off` set logging, `diagnostics` writes the report |
 | `diagnostics` | Write the diagnostics report to the debug console |
-| `perf` | Performance capture; try `/of perf help` |
+| `perf` | Performance capture; try `/or perf help` |
 | `version` | Print the addon version |
 
 The outfit verbs (`show`, `hide`, `wear`, `unwear`, `toggle`, `update`, the bank verbs, `auto`,
@@ -152,7 +153,7 @@ The legacy `Outfitter_*` globals are gone and are not shimmed (H3, deviation row
 
 Game events are registered on module-local AceEvent targets through `NS.SafeRegisterEvent` (and a
 player-only unit event through `NS.SafeRegisterUnitEvent` on a unit-filtered frame), so a name the
-client rejects lands in `NS.rejectedEvents` and `/of diagnostics` instead of raising. The addon
+client rejects lands in `NS.rejectedEvents` and `/or diagnostics` instead of raising. The addon
 object registers none: each module registers its own in its `Resume()` and drops them in its
 `Suspend()`. In outline:
 
@@ -179,7 +180,8 @@ above it, and the slot checkboxes take `CharacterFrame`'s strata, one level abov
 under it, so they beat the item buttons and any addon drawing over them. Both re-sync from the
 window's follow tick, because raising the sheet changes its level. Neither ever gets a fixed strata,
 which would poke it through a window that covers the sheet (the fork's lesson, kept). The bar is
-`HUD`, the dialogs `MODAL`, the icon chooser `POPUP` and the compare tooltips `CURSOR`. The full stack
+`HUD`, the dialogs and the icon browser `MODAL` (the browser in a band over the dialogs), the menus
+`POPUP` and the compare tooltips `CURSOR`. The full stack
 is in the design's §7.1 and the limitations it leaves are in [`known-limitations.md`](known-limitations.md).
 
 ## Taint Notes
@@ -263,11 +265,12 @@ player-facing document, documentation-§1), and its slash-command table was a se
 |---|---|---|---|---|
 | `versioning-git` (the semver line) | The release is 1.1.0, although the public API (the `Outfitter_*` globals are gone, H3) and the saved-data format (a fresh `OutfitterRebornDB`) both break, which would call for a MAJOR | D1. Owner ruling 2026-11-03 (the plan's Version decision): 1.1.0 continues the fork's numbering on CurseForge project 1698220. The consumers that lose globals are named in the Version History (design §5.16) | 2026-11-03 | The next MAJOR release |
 | `standalone-windows` (plain non-secure window, movable, saved position, Lock/Reset, toplevel; the `UISpecialFrames` MUST is honored) | The main window is a protected frame: each outfit row carries a `SecureActionButtonTemplate` child (`modules/Window_Rows.lua`). It is docked to the character sheet: not movable, no saved position, no Lock or Reset, strata and level copied from `OutfitterRebornSheetHolder`, not toplevel. It is hidden for the length of combat and returns at `PLAYER_REGEN_ENABLED`. Its dialogs stay open through that combat suspend. Escape closes it through `UISpecialFrames` | D2. Owner ruling R5 (H4). The outfit list's secure item buttons make every in-combat Show, Hide or SetPoint on the window a blocked action (fork `Outfitter.lua:1326-1331, 8448-8494`). Closing dialogs in combat would lose input (O30) | 2026-11-03 | Blizzard ships a docking API, or the list stops needing secure buttons |
-| `standalone-windows` (explicit window verbs `show` / `hide` / `toggle`, a SHOULD) | `/of show` and `/of hide` open and close the window, but there is no window `toggle` verb: `/of toggle <outfit>` stays the outfit verb. The key binding and the sheet button toggle the window | C35. `toggle` has been the outfit verb in players' macros since before this fork, and taking it for the window would break them. The reason is also at the comment above `NS.COMMANDS` (`settings/Slash.lua`) and in [`slash-dispatch.md`](slash-dispatch.md) | 2026-11-03 | `toggle` retires as an outfit verb, or the standard names a different window-toggle verb |
+| `standalone-windows` (explicit window verbs `show` / `hide` / `toggle`, a SHOULD) | `/or show` and `/or hide` open and close the window, but there is no window `toggle` verb: `/or toggle <outfit>` stays the outfit verb. The key binding and the sheet button toggle the window | C35. `toggle` has been the outfit verb in players' macros since before this fork, and taking it for the window would break them. The reason is also at the comment above `NS.COMMANDS` (`settings/Slash.lua`) and in [`slash-dispatch.md`](slash-dispatch.md) | 2026-11-03 | `toggle` retires as an outfit verb, or the standard names a different window-toggle verb |
 | `localization-§4` | The IN_ZONES subzone list matches `GetMinimapZoneText()` strings captured on the player's own client | D3. No API exposes the current areaID; zones match on uiMapID (H9) | 2026-11-03 | Blizzard exposes the current areaID |
 | `localization-§4` | LOCKPICKING matches the lockbox tooltip line against `LOCKED_WITH_SPELL` + `GetTradeSkillDisplayName(633)`, and falls back to `L["Requires Lockpicking"]` when that does not reproduce the line | D4. No GlobalString for the line is confirmed (O22); without the fallback the trigger is dead on any client where the composed form differs | 2026-11-03 | The client check confirms the composed GlobalString form on every shipped locale, after which the `L` fallback and this row go |
 | `documentation-§1` | The README has no screenshots of the 1.1.0 UI | D6. They need a client capture of the reskinned docked window and settings pages after the smoke test; stale shots would mislead (H22) | 2026-11-03 | The first client capture of 1.1.0 |
 | `localization-§4` | `Inv.SlotItemActive` (the TRINKET_QUEUE skip-while-active rule) parses the item's use-duration tooltip line with the `cUseDurationTooltipLineFormat*` patterns kept in `L` | D8. No GlobalString or ID route gives an active use effect's remaining duration yet (O15) | 2026-11-03 | `C_Item.GetItemSpell` plus spell-duration data (or an aura read) covers it, after which the `L` keys and this row go |
+| `launcher-§1` | A second LibDataBroker object, `OutfitterRebornOutfits` (type `data source`, `modules/Broker.lua`), carries the old addon's outfit switcher; the launcher object is unchanged, and the second object is never put on the minimap | Owner ruling 2026-11-04: players used the old broker plugin to switch outfits, and the launcher's clicks and logo are fixed by launcher-§2/§4 | 2026-11-04 | The standard allows a feature data source next to the launcher |
 | `localization-§4` | The gathering triggers (GATHER_HERBALISM, GATHER_MINING) match the node tooltip's line against `C_TradeSkillUI.GetTradeSkillDisplayName(skillLine)`, the client's own localized name for an ID, not a GlobalString constant | D10. Tooltip data exposes no skill line for a node; the name is never hardcoded or put in `L`, so the match is correct on every locale | 2026-11-03 | `TooltipDataProcessor` exposes the node's skill line |
 
 One more row is conditional (the design's §10): **D7** (`localization-§7`, CJK and Cyrillic text

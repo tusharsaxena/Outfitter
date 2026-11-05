@@ -17,9 +17,36 @@ local _, NS = ...
 -- cannot be removed, so a stand-down leaves them installed and every body reads the gate first: the
 -- latch, then the profile's `quickSlots.enabled` (H26). QuickSlots owns no frames, events or timers.
 --
+-- THE OUTWARD DRAWER (sheet and window feedback design G8; owner ruling: only while the outfit window
+-- shows). The left column's arrows and flyouts open left, away from the sheet, the way the right
+-- column's already open right. Verified at wow-ui-source@297d7aa (`live`):
+--   * the arrow is anchored once, in PaperDollItemSlotButton_OnLoad, `LEFT` -> slot `RIGHT` (-8, 0), with
+--     the unreversed coords (Blizzard_UIPanels_Game/Mainline/PaperDollFrame.lua:1515-1534); nothing
+--     re-anchors it, so DrawerSync moves the left column's to `RIGHT` -> slot `LEFT` (+8, 0), mirrored,
+--     when the window shows, and puts Blizzard's exact anchor and coords back when it hides or the addon
+--     stands down;
+--   * EquipmentFlyoutPopoutButton_SetReversed sets the arrow's coords on every open and close
+--     (Blizzard_FrameXML/EquipmentFlyout.lua:633-651); its post-hook mirrors a left-column arrow's;
+--   * EquipmentFlyout_UpdateItems places the items, anchoring `flyout.buttonFrame` `TOPLEFT` -> the arrow's
+--     `TOPRIGHT` + (anchorX, anchorY) without clearing it first (EquipmentFlyout.lua:331-339;
+--     PaperDollItemsFrame.flyoutSettings, PaperDollFrame.lua:343-354); its post-hook re-anchors a
+--     left-column flyout `TOPRIGHT` -> the arrow's `TOPLEFT` (-anchorX, anchorY). The flyout's background
+--     textures hang off buttonFrame (:345-400), so they follow. A moved buttonFrame is cleared and given
+--     Blizzard's own point back the next time it is not wanted, so Blizzard's TOPLEFT never joins ours.
+-- Blizzard's flyoutSettings table is never written, the weapons (vertical flyouts) and the right column
+-- are never touched, and nothing is written in combat lockdown: the window hides at
+-- PLAYER_REGEN_DISABLED, before lockdown, and its hide restores the drawer (modules/Dock.lua). None of
+-- these frames is protected. The drawer's gate is the stand-down latch and the window, not
+-- `quickSlots.enabled`, which is the flyout's lists and clicks only. Each global hook is installed only
+-- when the client has the function.
+--
 -- CLIENT READS beyond this file's luacheck stanza go through `_G` by name, read at call time:
--- CursorHasItem, EquipmentFlyoutFrame and the ITEM_INVENTORY_LOCATION_* bits (each with the client's
--- value as its fallback). Every link is read through NS.Compat, which hands a secret one back as nil.
+-- CursorHasItem, EquipmentFlyoutFrame, EquipmentFlyout_UpdateItems,
+-- EquipmentFlyoutPopoutButton_SetReversed and the ITEM_INVENTORY_LOCATION_* bits (each with the
+-- client's value as its fallback). Every link is read through NS.Compat, which hands a secret one back
+-- as nil.
+--
+-- CALLS (at call time; design §12): NS.Dock.IsVisible, NS.SlotEnables.COLUMN.
 
 local QS = {}
 NS.QuickSlots = QS
@@ -120,6 +147,139 @@ local function hookFlyout(settings, name, fn)
     hooksecurefunc(settings, name, fn)
 end
 
+-- ── the outward drawer ──────────────────────────────────────────────────────────────────────────
+
+-- Blizzard's horizontal arrow coords, unreversed and reversed, in SetTexCoord's eight-value corner
+-- order (EquipmentFlyout.lua:643-649; the unreversed pair is also PaperDollFrame.lua:1527-1528).
+local ARROW = {
+    [false] = { normal = { 0.15625, 0.5, 0.84375, 0.5, 0.15625, 0, 0.84375, 0 },
+                highlight = { 0.15625, 1, 0.84375, 1, 0.15625, 0.5, 0.84375, 0.5 } },
+    [true] = { normal = { 0.15625, 0, 0.84375, 0, 0.15625, 0.5, 0.84375, 0.5 },
+               highlight = { 0.15625, 0.5, 0.84375, 0.5, 0.15625, 1, 0.84375, 1 } },
+}
+local ARROW_INSET = 8             -- PaperDollFrame.lua:1532, the arrow's overlap of its slot
+
+local arrowsOut = false           -- the left column's arrows are on the slot's left
+local flyoutMoved = false         -- buttonFrame carries this file's TOPRIGHT, not Blizzard's TOPLEFT
+
+local function locked() return Compat.InCombatLockdown() end
+
+-- The drawer opens outward: standing up and the outfit window on screen. Visible, not shown: a
+-- window parked in the sheet holder keeps its shown flag when the sheet hides it.
+local function drawerWanted()
+    return not NS.IsStoodDown() and NS.Dock.IsVisible() == true
+end
+
+local function leftColumn(button)
+    local slot = button and slotOf[button]
+    return slot ~= nil and NS.SlotEnables.COLUMN[slot] == "LEFT"
+end
+
+-- A texture's coords, mirrored left to right: the upper and lower right corners trade with the left.
+local function setCoords(texture, c, mirrored)
+    if not texture then return end
+    if mirrored then
+        texture:SetTexCoord(c[5], c[6], c[7], c[8], c[1], c[2], c[3], c[4])
+    else
+        texture:SetTexCoord(c[1], c[2], c[3], c[4], c[5], c[6], c[7], c[8])
+    end
+end
+
+local function paintArrow(popout, reversed, mirrored)
+    local c = ARROW[reversed == true]
+    setCoords(popout.GetNormalTexture and popout:GetNormalTexture(), c.normal, mirrored)
+    setCoords(popout.GetHighlightTexture and popout:GetHighlightTexture(), c.highlight, mirrored)
+end
+
+-- One left-column arrow out (on the slot's left, mirrored) or back to Blizzard's anchor and coords.
+local function placeArrow(button, out)
+    local popout = button.popoutButton
+    if not popout or button.verticalFlyout then return end
+    popout:ClearAllPoints()
+    if out then
+        popout:SetPoint("RIGHT", button, "LEFT", ARROW_INSET, 0)
+    else
+        popout:SetPoint("LEFT", button, "RIGHT", -ARROW_INSET, 0)
+    end
+    paintArrow(popout, popout.flyoutLocked == true, out)
+end
+
+-- The button's own host's settings, as Blizzard reads them (EquipmentFlyout.lua:244): the Item
+-- Upgrade, Item Interaction and Runeforge frames share this flyout with their own (20, -8).
+local function hostSettings(button)
+    local host = button.GetParent and button:GetParent()
+    if type(host) == "table" and type(host.flyoutSettings) == "table" then return host.flyoutSettings end
+    return PaperDollItemsFrame and PaperDollItemsFrame.flyoutSettings or {}
+end
+
+-- Anchor the cleared item frame to `button` by its host's settings: below a vertical flyout, else
+-- beside it, outward when `out`. True when the frame now carries this file's TOPRIGHT.
+local function anchorFlyout(frame, button, out)
+    local settings = hostSettings(button)
+    local rel = button.popoutButton or button
+    if button.verticalFlyout then
+        frame:SetPoint("TOPLEFT", rel, "BOTTOMLEFT", NS.SafeNumber(settings.verticalAnchorX, 0),
+            NS.SafeNumber(settings.verticalAnchorY, 0))
+        return false
+    end
+    local x, y = NS.SafeNumber(settings.anchorX, 0), NS.SafeNumber(settings.anchorY, 0)
+    if out then
+        frame:SetPoint("TOPRIGHT", rel, "TOPLEFT", -x, y)
+        return true
+    end
+    frame:SetPoint("TOPLEFT", rel, "TOPRIGHT", x, y)
+    return false
+end
+
+-- The flyout's item frame: outward for a left-column slot while wanted, else Blizzard's own point,
+-- written back only when this file moved it.
+local function placeFlyout()
+    local flyout = _G.EquipmentFlyoutFrame
+    local frame = flyout and flyout.buttonFrame
+    if not frame then return end
+    local button = flyout.button
+    local out = button ~= nil and not button.verticalFlyout and drawerWanted() and leftColumn(button)
+    if not out and not flyoutMoved then return end
+    frame:ClearAllPoints()
+    flyoutMoved = false
+    if not button then return end
+    flyoutMoved = anchorFlyout(frame, button, out)
+end
+
+-- EquipmentFlyout_UpdateItems' post-hook.
+local function onFlyoutUpdate()
+    if locked() then return end
+    placeFlyout()
+end
+
+-- EquipmentFlyoutPopoutButton_SetReversed's post-hook: a moved arrow keeps pointing outward.
+local function onSetReversed(popout, reversed)
+    if not arrowsOut or locked() or type(popout) ~= "table" or not popout.GetParent then return end
+    if leftColumn(popout:GetParent()) then paintArrow(popout, reversed == true, true) end
+end
+
+--- Bring the drawer in line with the window: the left column's arrows out while the window shows,
+--- Blizzard's back otherwise, and an open flyout with them. Dock's window OnShow / OnHide call it;
+--- so does the stand-down. Never in combat lockdown.
+function QS.DrawerSync()
+    if not installed or locked() then return end
+    local out = drawerWanted()
+    if out ~= arrowsOut then
+        for button, slot in pairs(slotOf) do
+            if NS.SlotEnables.COLUMN[slot] == "LEFT" then placeArrow(button, out) end
+        end
+        arrowsOut = out
+    end
+    placeFlyout()
+end
+
+-- Post-hook the client global `name` with `fn` when the client has it (hooksecurefunc raises on a
+-- missing one).
+local function hookGlobal(name, fn)
+    if type(_G[name]) ~= "function" then return end
+    hooksecurefunc(name, fn)
+end
+
 -- ── the lifecycle ─────────────────────────────────────────────────────────────────────────────
 
 --- Build the hooks: once per session, however often the addon stands up.
@@ -134,16 +294,20 @@ function QS.Install()
             button:HookScript("PostClick", postClick)
         end
     end
+    if type(hooksecurefunc) ~= "function" then return end
+    hookGlobal("EquipmentFlyout_UpdateItems", onFlyoutUpdate)
+    hookGlobal("EquipmentFlyoutPopoutButton_SetReversed", onSetReversed)
     local settings = PaperDollItemsFrame and PaperDollItemsFrame.flyoutSettings
-    if type(settings) ~= "table" or type(hooksecurefunc) ~= "function" then return end
+    if type(settings) ~= "table" then return end
     hookFlyout(settings, "getItemsFunc", filterItems)
     hookFlyout(settings, "postGetItemsFunc", sortItems)
 end
 
 --- The lifecycle's stand-down (design §5.12): the hooks stay installed and their bodies read the
---- latch; only the clicked slot is forgotten.
+--- latch; the clicked slot is forgotten and the drawer goes back to Blizzard's.
 function QS.Suspend()
     currentSlot = nil
+    QS.DrawerSync()
 end
 
 --- The lifecycle's stand-up: builds the hooks the first time.

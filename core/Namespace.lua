@@ -11,8 +11,8 @@ NS.name = addonName
 NS.BRAND = "Ka0s Outfitter Reborn"
 
 -- The primary slash and its long alias, both registered on the one dispatcher (settings/Slash.lua).
-NS.SLASH = "/of"
-NS.SLASH_LONG = "/outfitter"
+NS.SLASH = "/or"
+NS.SLASH_LONG = "/outfitterreborn"
 
 -- What NS.version reads when the TOC cannot be asked (a library-absent load, the headless harness
 -- without metadata). core/EnvSetup.lua replaces NS.version with the TOC's own value at load.

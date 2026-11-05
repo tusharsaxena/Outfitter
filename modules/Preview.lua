@@ -9,7 +9,7 @@ local _, NS = ...
 -- NS.Outfits or NS.Stack, and the one flag is the session-only NS.State.testMode.
 --
 -- Session-only and on until turned off. It ENDS on its own switch (the General row, the launcher's
--- entry, `/of test`), on combat (PLAYER_STATE_CHANGED "combat", which PlayerState sends on
+-- entry, `/or test`), on combat (PLAYER_STATE_CHANGED "combat", which PlayerState sends on
 -- PLAYER_REGEN_DISABLED: one line, NS.SayTestModeEnded), on Reset all (the row's default, false) and,
 -- silently, on the stand-down. Re-locking the bar does not end it. A start is refused in combat with
 -- one line, and is silent while stood down.
@@ -28,7 +28,7 @@ local function debug(fmt, ...) NS.Debug("Test", fmt, ...) end
 
 -- The General row's Test mode checkbox reads IsActive() only when a refresher runs: every start and
 -- stop repaints an open panel in place (options-ui-§15), whoever turned it (the launcher, the strip,
--- the skin picker's eye, combat, the stand-down, `/of test`). NS.Helpers is resolved at call time.
+-- the skin picker's eye, combat, the stand-down, `/or test`). NS.Helpers is resolved at call time.
 local function repaintPanel()
     local H = NS.Helpers
     if H and type(H.RefreshScalars) == "function" then H.RefreshScalars() end
@@ -79,7 +79,7 @@ function Preview.Stop(reason)
     return true
 end
 
---- Flip test mode (the launcher's entry and `/of test`).
+--- Flip test mode (the launcher's entry and `/or test`).
 --- @return boolean on
 function Preview.Toggle()
     if Preview.active then

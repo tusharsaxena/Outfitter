@@ -12,17 +12,17 @@ local L = NS.L
 NS.Print = NS.Util.print
 
 -- ── the legacy guard (design §4.7; owner ruling 2026-11-03: warn only) ─────────────────────────────
--- The original Outfitter loaded beside this addon: both change gear and both own /outfitter. The
+-- The original Outfitter loaded beside this addon: both change gear. The
 -- guard WARNS and holds nothing: triggers bind and run as usual (test_trigger_binder pins that).
 
 --- Read once at login (OnEnable runs at PLAYER_LOGIN). The flag is set even while the addon stands
---- down, because `/of diagnostics` answers then too; the warning is printed only when standing up: a
+--- down, because `/or diagnostics` answers then too; the warning is printed only when standing up: a
 --- disabled addon changes no gear, prints nothing, and its premise ("both change your gear") is false.
 local function checkLegacy()
     if not NS.Compat.IsAddOnLoaded("Outfitter") then return end
     NS.State.legacyLoaded = true
     if NS.IsStoodDown() then return end
-    NS.Print(L["The old Outfitter addon is also loaded. Disable it: both change your gear and both own /outfitter."])
+    NS.Print(L["The old Outfitter addon is also loaded. Disable it: both change your gear."])
 end
 
 --- Test mode's one line when combat ends it (modules/Preview.lua; as DpsRace's core/DpsRace.lua).

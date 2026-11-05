@@ -27,8 +27,12 @@
 -- the finding.
 --
 -- CEILINGS. Measured 2026-11-04 on Lua 5.1, identical over repeat runs and in both halves of every
--- pair bar an occasional one-off in an off window (Scenes.PAIR_WINDOW_BYTES): equipPlan 224208, zoneFlips 118023, triggerFanout 104748, tooltips 138494, gaGeneration
--- 468127 bytes/iter. Each ceiling is about 2% over its figure. zoneFlips (149134) and triggerFanout
+-- pair bar an occasional one-off in an off window (Scenes.PAIR_WINDOW_BYTES): equipPlan 229584, zoneFlips 118023, triggerFanout 106104, tooltips 138494, gaGeneration
+-- 468127 bytes/iter. Each ceiling is about 2% over its figure. equipPlan (224208, ceiling 229000) and
+-- triggerFanout (104748) were re-measured 2026-11-05 after the Outfits broker (modules/Broker.lua)
+-- registered six bus messages. The addon's own bytes did not move: the rise is the recorder's.
+-- M.__fire (tests/_kit/mock_record.lua) builds M.__registrations(), one row per live registration,
+-- for every game event it fires, so each of the six adds 896 bytes to an equipPlan step. zoneFlips (149134) and triggerFanout
 -- (119534) were re-measured when the Equip bracket stopped allocating: each zone flip and each binding
 -- dispatch runs through E.Batch, so the old vararg table and two xpcall closures were in every call. The figures are large because a step
 -- is a whole path on the real addon (an equipment update builds its change list and moves items
@@ -63,7 +67,7 @@ local ITERS = { equipPlan = 500, zoneFlips = 50, triggerFanout = 100, tooltips =
 
 -- Per scenario: the bytes/iter ceiling and the bracket notes/iter it is pinned at.
 local BYTE_CEILING = {
-    equipPlanCaptureOff = 229000, equipPlanCaptureOn = 229000,
+    equipPlanCaptureOff = 234000, equipPlanCaptureOn = 234000,      -- re-pinned 2026-11-05: the recorder's survey (header)
     zoneFlipsCaptureOff = 120500, zoneFlipsCaptureOn = 120500,         -- red under: run()'s vararg table and xpcall closures
     triggerFanoutCaptureOff = 107000, triggerFanoutCaptureOn = 107000, -- red under: the same
     tooltipsCaptureOff = 141000, tooltipsCaptureOn = 141000, tooltipsAbsent = 141000,

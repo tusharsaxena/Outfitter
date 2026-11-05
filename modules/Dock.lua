@@ -9,6 +9,23 @@ local _, NS = ...
 -- at the sheet's right and top (no ClearAllPoints), re-issued from a 0.05 s follow on an owned driver
 -- frame only when the corner moved (Outfitter.lua:1355-1488). If the client refuses even that anchor,
 -- the window parks in the holder: usable, but the sheet is pinned (the old fallback, :1477-1488).
+-- The corner is NS.Sheet.DockRight(): the right edge of the visible sheet (CharacterFrame, or
+-- Chonky's backdrop) or of an open Chonky side panel, and the sheet's top. The window's top is flush
+-- with the sheet's (Y_OFFSET 0; sheet and window feedback design G3).
+--
+-- THE SHEET BUTTON sits right of the Equipment Manager tab (NS.Sheet.ButtonAnchor; design G1),
+-- re-anchored on every sheet show, since the sheet kind can change with another addon. It is parented
+-- to CharacterFrame and set above the close button's level: in the sheet holder it shared
+-- PaperDollFrame's level (useParentLevel), and the frame's NineSlice (500) and close button (510)
+-- drew over it, which hid it on the stock sheet. It is a plain button: no secure frame is touched.
+--
+-- THE PAPER-DOLL PANE. The button and the window belong to the Character tab: the Reputation and
+-- Currency tabs hide PaperDollFrame but not CharacterFrame, the button's parent, so the doll's OnHide
+-- hides the button (and the window, which needs the doll shown) and its OnShow re-resolves the sheet
+-- kind and re-anchors. A sheet addon may build its frames after the doll's OnShow (EllesmereUI builds
+-- its tabs from a CharacterFrame OnShow hook on the first open, EllesmereUIBlizzardSkin_
+-- CharacterSheet.lua:4907, :3171), so the sheet show looks again on the next frame and re-anchors
+-- only when the kind moved.
 --
 -- THE ONLY SHOW AND HIDE. Dock.Refresh is the one place this addon shows or hides
 -- `OutfitterRebornWindow`. It never does so in combat lockdown (design §7.0 rule 2): the window hides
@@ -26,10 +43,12 @@ local _, NS = ...
 -- stand-up (Resume), and stay; a stand-down drops the events and the follow and hides the window.
 --
 -- CALLS (at call time; design §12): NS.Window, NS.WindowRows.DisarmSecure, NS.SlotEnables.MaybeRestack,
--- NS.Stack.Select, NS.Dialogs.CloseAll, NS.IconChooser.Close, NS.CloseMenu, NS.SecureQueue.
+-- NS.Stack.Select, NS.Dialogs.CloseAll, NS.IconBrowser.Close, NS.CloseMenu, NS.SecureQueue,
+-- NS.Sheet.Refresh/Kind/DockRight/Frame/ButtonAnchor, NS.QuickSlots.DrawerSync (the window's show and
+-- hide turn the left column's equipment drawer outward and back; modules/QuickSlots.lua).
 
 local Dock = { wanted = false, suspended = false, followDisabled = false, built = false,
-               Y_OFFSET = -30, FOLLOW_INTERVAL = 0.05 }
+               Y_OFFSET = 0, FOLLOW_INTERVAL = 0.05 }
 NS.Dock = Dock
 
 local L = NS.L
@@ -39,6 +58,7 @@ local Perf = NS.Perf
 local WINDOW_NAME = "OutfitterRebornWindow"
 
 local holder, button, driver, win, events
+local placedKind -- the sheet kind the button was last anchored for
 local installed = false
 local sinceTick = 0
 local toldCombat = false
@@ -48,9 +68,16 @@ local function locked() return NS.Compat.InCombatLockdown() end
 --- @return table|nil the sheet holder, `OutfitterRebornSheetHolder`, once installed
 function Dock.Holder() return holder end
 
---- @return boolean the window is on screen
+--- @return boolean the window's own shown flag is set
 function Dock.IsShown()
     return win ~= nil and win:IsShown() == true
+end
+
+--- The window is on screen: shown, and every parent too. A window parked in the sheet holder
+--- (Dock.Attach's fallback) keeps its shown flag when the sheet hides it.
+--- @return boolean
+function Dock.IsVisible()
+    return win ~= nil and win:IsVisible() == true
 end
 
 --- Whether the window should be up: wanted, not suspended for combat, standing up, the sheet showing.
@@ -61,9 +88,7 @@ end
 
 -- ── position and layers ───────────────────────────────────────────────────────────────────────
 
-local function corner()
-    return NS.SafeNumber(PaperDollFrame:GetRight(), nil), NS.SafeNumber(PaperDollFrame:GetTop(), nil)
-end
+local function corner() return NS.Sheet.DockRight() end
 
 -- The one SetPoint, at the sheet's corner times the anchor-to-own scale ratio.
 local function positionWindow()
@@ -75,7 +100,7 @@ local function positionWindow()
         return
     end
     local scale = NS.SafeNumber(win:GetEffectiveScale(), 1)
-    local hostScale = NS.SafeNumber(PaperDollFrame:GetEffectiveScale(), 1)
+    local hostScale = NS.SafeNumber(NS.Sheet.Frame():GetEffectiveScale(), 1)
     if scale <= 0 then scale = 1 end
     Dock.followRight, Dock.followTop = right, top
     win:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", right * hostScale / scale, top * hostScale / scale + Dock.Y_OFFSET)
@@ -132,11 +157,14 @@ local function onWindowShow()
     sinceTick = 0
     driver:Show()
     driver:SetScript("OnUpdate", followTick)
+    NS.QuickSlots.DrawerSync()
 end
 
 local function onWindowHide()
     driver:SetScript("OnUpdate", nil)
     driver:Hide()
+    -- The outward drawer is for the open window only (sheet and window feedback design G8).
+    NS.QuickSlots.DrawerSync()
     -- Escape (UISpecialFrames) hides it behind the dock's back: that is a close, unless combat did it.
     -- A close takes the Name and Rebuild dialogs with it (Outfitter.lua:1491-1504); the combat
     -- suspend keeps them (O30).
@@ -146,7 +174,7 @@ local function onWindowHide()
     end
     NS.Stack.Select(nil)
     NS.CloseMenu()
-    NS.IconChooser.Close("opener")
+    NS.IconBrowser.Close("opener")
 end
 
 -- ── the show model ────────────────────────────────────────────────────────────────────────────
@@ -210,17 +238,44 @@ end
 
 -- ── hooks and events ──────────────────────────────────────────────────────────────────────────
 
+-- Re-anchor the sheet button where the current sheet wants it, over the close button. Out of the
+-- stand-down only; a plain button, so allowed in combat.
+local function placeButton()
+    local point, rel, relPoint, x, y, size = NS.Sheet.ButtonAnchor()
+    button:ClearAllPoints()
+    button:SetPoint(point, rel, relPoint, x, y)
+    button:SetSize(size, size)
+    local close = CharacterFrameCloseButton
+    local base = close and NS.SafeNumber(close:GetFrameLevel(), 0) or NS.SafeNumber(CharacterFrame:GetFrameLevel(), 0)
+    button:SetFrameLevel(base + LEVEL.SHEET_BUTTON_OVER_CLOSE)
+    button:Show()
+    placedKind = NS.Sheet.Kind()
+end
+
+-- The next frame's look: a sheet addon that built its frames after the doll's OnShow moves the button.
+local function recheckSheet()
+    if NS.IsStoodDown() or PaperDollFrame:IsVisible() ~= true then return end
+    if NS.Sheet.Kind() ~= placedKind then placeButton() end
+end
+
 local function onSheetShow()
     if NS.IsStoodDown() then return end
+    NS.Sheet.Refresh()
+    placeButton()
+    if events then events:ScheduleTimer(recheckSheet, 0) end
     Dock.Refresh()
 end
 
 -- "Doesn't reappear next open" (Outfitter.lua:1500-1504).
 local function onSheetHide()
     if NS.IsStoodDown() then return end
+    button:Hide()
     local wasShown = Dock.IsShown()
     Dock.wanted = false
     Dock.Refresh()
+    -- A window parked in the holder was hidden with the sheet, so its own Hide above fired no OnHide:
+    -- the drawer is put back here as well (design G8).
+    NS.QuickSlots.DrawerSync()
     NS.CloseMenu()
     -- A shown window's own OnHide closed the dialogs; this covers a window hidden for combat (O30).
     if not wasShown then NS.Dialogs.CloseAll("host") end
@@ -247,14 +302,13 @@ local function buildSheet()
     holder = CreateFrame("Frame", "OutfitterRebornSheetHolder", PaperDollFrame)
     holder:SetAllPoints(PaperDollFrame)
     holder:EnableMouse(false)
-    button = CreateFrame("Button", "OutfitterRebornSheetButton", holder)
-    button:SetSize(22, 22)
-    button:SetPoint("RIGHT", CharacterFrameCloseButton, "LEFT", -2, 0)
+    button = CreateFrame("Button", "OutfitterRebornSheetButton", CharacterFrame)
+    button:Hide()
     button.icon = button:CreateTexture(nil, "ARTWORK")
     button.icon:SetAllPoints(button)
-    button.icon:SetTexture(NS.Constants.LOGO_128)
-    NS.Skin.Button(button)
-    NS.Skin.SquareIcon(button, { crop = true })
+    button.icon:SetTexture(NS.Constants.DEFAULT_OUTFIT_ICON)
+    -- Borderless, like the tab icons beside it; the glyph in the accent token, which follows the skin.
+    NS.Skin.Button(button, { noBg = true, noBorder = true, tokens = { icon = "of.sheet.button" } })
     button:SetScript("OnClick", function() if not NS.IsStoodDown() then Dock.Toggle() end end)
     button:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
@@ -285,7 +339,7 @@ local function onEvent(event) EVENTS[event]() end
 --- window closes (queued past lockdown, since it holds secure children).
 function Dock.Suspend()
     Dock.wanted, toldCombat = false, false
-    if events then events:UnregisterAllEvents() end
+    if events then events:UnregisterAllEvents(); events:CancelAllTimers() end
     if driver then driver:SetScript("OnUpdate", nil) end
     if button then button:Hide() end
     if not (win and win:IsShown()) then return end
@@ -299,10 +353,13 @@ end
 --- The stand-up: the hooks (once), the two combat events, the button.
 function Dock.Resume()
     Dock.Install()
-    if not events then events = LibStub("AceEvent-3.0"):Embed({}) end
+    if not events then events = LibStub("AceTimer-3.0"):Embed(LibStub("AceEvent-3.0"):Embed({})) end
     events:UnregisterAllEvents()
     for event in pairs(EVENTS) do NS.SafeRegisterEvent(events, event, onEvent, NS.rejectedEvents) end
-    button:Show()
+    if PaperDollFrame:IsVisible() == true then
+        NS.Sheet.Refresh()
+        placeButton()
+    end
     Dock.suspended = false
     Dock.Refresh()
 end

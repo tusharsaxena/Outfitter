@@ -117,7 +117,7 @@ function P.ShowSetCurrent(id)
     return StaticPopup_Show("OUTFITTERREBORN_CONFIRM_SET_CURRENT", name, nil, id) or false
 end
 
---- Ask before deleting every outfit (`/of deleteall`, General > Behavior). Refused, with the line
+--- Ask before deleting every outfit (`/or deleteall`, General > Behavior). Refused, with the line
 --- printed, in combat and while stood down (design §3.6).
 --- @return table|false popup, string|nil why
 function P.ShowDeleteAll()

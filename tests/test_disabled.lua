@@ -64,7 +64,7 @@ local function eventTargets(inst)
 end
 
 local function refusalLine(inst)
-    return inst.mocks.LibStub("LibKa0s-Slash-1.0").DISABLED_LINE_FORMAT:format("Ka0s Outfitter Reborn", "/of enable")
+    return inst.mocks.LibStub("LibKa0s-Slash-1.0").DISABLED_LINE_FORMAT:format("Ka0s Outfitter Reborn", "/or enable")
 end
 
 --- The printed lines, with the chat tag stripped, so a line compares against its bare text.
@@ -101,6 +101,7 @@ local function scene(opts)
     local inst = T.load({ libFiles = opts.libFiles, mutate = function(M)
         installPaint(M)
         M.__gear:load("geared")
+        if opts.mutate then opts.mutate(M) end
     end })
     local NS, M = inst.NS, inst.mocks
     M.__now = 100
@@ -407,7 +408,7 @@ test("Disabled 7: every verb answers while disabled; a feature verb answers one 
     assertTrue(NS.SetByPath("enabled", false))
 
     NS.Slash:OnSlash("")
-    assertEqual(opened, 1, "bare /of opens the panel while disabled")
+    assertEqual(opened, 1, "bare /or opens the panel while disabled")
 
     local refusal = refusalLine(inst)
     assertTrue(verbsWhileDisabled(NS, M, refusal) >= 2, "skin and the probe were not both exercised")
@@ -510,7 +511,7 @@ test("Disabled 8: launcher clicks and the key binding write nothing and show not
     assertEqual(#M.__svWrites(), 0, "a key press wrote SavedVariables")
     assertEqual(#M.__shownFrames(), shownBefore, "a key press showed a frame")
     -- red under: a binding OnClick in core/LauncherSetup.lua without its NS.StoodDownRefusal() read
-    -- (AutoOff then runs `/of auto off`, a live verb, and writes auto.enabled while disabled).
+    -- (AutoOff then runs `/or auto off`, a live verb, and writes auto.enabled while disabled).
     assertEqual(NS.GetSetting("auto.enabled"), auto, "an auto press changed auto.enabled while disabled")
 
     -- Enabled again, the perf hold alone: the capture line, never the disabled one, and no handler.
@@ -526,6 +527,47 @@ test("Disabled 8: launcher clicks and the key binding write nothing and show not
         assertEqual(opened, before, name .. " ran its handler under the perf hold")
     end
     NS.Lifecycle:Release(NS.HOLD_PERF)
+end)
+
+test("disabled: the broker shows the brand and refuses outfit clicks", function()
+    -- The Outfits data source (modules/Broker.lua, plan Task 3.8): the object stays, its text goes
+    -- back to the brand, its menu's outfit rows are grayed and refuse with the one line, and its
+    -- right-click shows nothing. Its menu is drawn through NS.OpenMenu, so W.ContextMenu is recorded.
+    local inst, NS, M, S = scene()
+    local obj = M.LibStub("LibDataBroker-1.1"):GetDataObjectByName("OutfitterRebornOutfits")
+    assertEqual(obj.text, "Dungeon", "the worn outfit is not on the broker; nothing below can fail")
+    assertTrue(NS.SetByPath("enabled", false))
+    -- red under: a Broker.Suspend that leaves the outfit's name up.
+    assertEqual(obj.text, NS.BRAND, "the stood-down broker still names the outfit")
+    assertEqual(obj.icon, NS.Constants.DEFAULT_OUTFIT_ICON)
+
+    local menus = {}
+    M.LibStub("LibKa0s-Widgets-1.0").ContextMenu = function(_, rows) menus[#menus + 1] = rows; return {} end
+    M.__resetSvWrites()
+    M.__resetPrinted()
+    local shownBefore = #M.__shownFrames()
+    obj.OnClick(M.UIParent, "LeftButton")
+    assertEqual(#menus, 1, "left-click opened no menu")
+    local row
+    for _, r in ipairs(menus[1]) do
+        if r.label and r.label:find("Dungeon", 1, true) then row = r end
+    end
+    assertTrue(row ~= nil, "the outfit is not in the menu")
+    assertTrue(row.disabled, "an outfit row is live while disabled")
+    row.onClick()
+    local refusal = refusalLine(inst)
+    assertEqual(table.concat(printedBare(M), "\n"), refusal, "the outfit click did not refuse with the one line")
+    assertTrue(NS.Stack.IsWorn(S.outfit), "a stood-down click changed the stack")
+
+    M.__resetPrinted()
+    obj.OnClick(M.UIParent, "RightButton")
+    assertEqual(table.concat(printedBare(M), "\n"), refusal, "the right-click did not refuse")
+    assertEqual(#M.__svWrites(), 0, "a broker click wrote SavedVariables")
+    assertEqual(#M.__shownFrames(), shownBefore, "a broker click showed a frame")
+
+    assertTrue(NS.SetByPath("enabled", true))
+    settle(M)
+    assertEqual(obj.text, "Dungeon", "the stand-up did not bring the outfit back")
 end)
 
 --- How many registrations `target` holds.
@@ -574,7 +616,7 @@ test("Disabled 10: releasing ONE hold does not resurrect an addon the other hold
 end)
 
 test("Disabled 10 (degraded): the library-absent latch holds the same order", function()
-    -- The stub latch in core/LifecycleSetup.lua, written through `/of enable` and `/of disable`: on
+    -- The stub latch in core/LifecycleSetup.lua, written through `/or enable` and `/or disable`: on
     -- this arm a written-through `enabled` runs no onChange, and the verb takes the hold itself.
     local inst, NS = scene{ libFiles = {} }
     T.assertLatchHoldOrder{
@@ -721,6 +763,22 @@ test("Disabled (Outfitter): the tooltip, compare, pet, quick-slot and PaperDoll 
     for what, acted in pairs(down) do assertFalse(acted, what .. " acted while down") end
     assertEqual(#M.__svWrites(), 0, "a hook body wrote SavedVariables while down")
     assertEqual(#M.__printed(), 0, "a hook body printed while down")
+end)
+
+test("Disabled (Outfitter): the outward drawer goes back to Blizzard's at stand-down and stays there", function()
+    -- The head slot's popout arrow, a recorder: Blizzard anchors it `LEFT` -> slot `RIGHT` (-8, 0)
+    -- (wow-ui-source@297d7aa:Interface/AddOns/Blizzard_UIPanels_Game/Mainline/PaperDollFrame.lua:1532).
+    local arrow = { pts = {} }
+    function arrow:ClearAllPoints() self.pts = {} end
+    function arrow:SetPoint(...) self.pts[#self.pts + 1] = { ... } end
+    local _, NS, M = scene({ mutate = function(M) M.__slotButtons.HeadSlot.popoutButton = arrow end })
+    assertEqual(arrow.pts[1] and arrow.pts[1][1], "RIGHT", "the open window did not turn the drawer outward")
+    assertTrue(NS.SetByPath("enabled", false))
+    -- red under: drop the QuickSlots.DrawerSync() call from QuickSlots.Suspend.
+    assertEqual(arrow.pts[1] and arrow.pts[1][1], "LEFT", "the stand-down left the arrow outward")
+    M.OutfitterRebornWindow:__fire("OnShow")
+    assertEqual(#arrow.pts, 1)
+    assertEqual(arrow.pts[1][1], "LEFT", "a window show while down turned the drawer outward")
 end)
 
 test("Disabled (Outfitter): the LoadPass timer and the Pawn/WeightsWatcher watch are canceled", function()

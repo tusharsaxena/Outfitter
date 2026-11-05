@@ -1,5 +1,5 @@
 local addonName, NS = ...
--- core/WidgetsSetup.lua — NS.MakeDropdown / NS.OpenMenu / NS.CloseMenu / NS.MakeSearchBox / NS.MakeTestStrip / NS.MakeDragHandle from LibKa0s-Widgets-1.0 (BP §6.13).
+-- core/WidgetsSetup.lua — NS.MakeDropdown / NS.OpenMenu / NS.CloseMenu / NS.MakeTestStrip / NS.MakeDragHandle from LibKa0s-Widgets-1.0 (BP §6.13).
 --
 -- A seam, nothing else (library-stack-§7): one file leases the major, so the art the controls draw
 -- is resolved once, here, and every control is handed this addon's skin owner. The library is
@@ -16,7 +16,7 @@ local addonName, NS = ...
 -- Every non-click close path of a window that opens a menu calls NS.CloseMenu(): the character
 -- sheet's OnHide, the outfit window's OnHide and each dialog's OnHide (design §7.2, §7.3, §7.6).
 --
--- DEGRADED (the library absent): NS.MakeDropdown, NS.MakeSearchBox and NS.MakeTestStrip answer nil, and the caller
+-- DEGRADED (the library absent): NS.MakeDropdown and NS.MakeTestStrip answer nil, and the caller
 -- draws no control rather than a dead one; NS.OpenMenu hands the same `fill` to the client's
 -- MenuUtil; NS.CloseMenu is a no-op, because no Ka0s menu can be open.
 
@@ -96,22 +96,26 @@ local function checkLabel(item)
     return item.label
 end
 
-local function checkRow(item, out)
+--- A toggle row. Its click may change other rows' state too (wearing a Complete outfit takes the
+--- others off), and the library repaints the open menu from the rows' labels, so every toggle row of
+--- the level (`checks`) is read again, as MenuUtil re-reads each checkbox.
+local function checkRow(item, out, checks)
     out.label, out.keepOpen = checkLabel(item), true
+    checks[#checks + 1] = { item = item, out = out }
     out.onClick = function()
         item.setSelected(item.data)
-        out.label = checkLabel(item)
+        for _, c in ipairs(checks) do c.out.label = checkLabel(c.item) end
     end
     return out
 end
 
 --- One W.ContextMenu row: a title, a divider, or a button with its click, a submenu's mark, its
---- disabled state and its tooltip.
-local function menuRow(anchor, item)
+--- disabled state and its tooltip. `checks` collects the level's toggle rows.
+local function menuRow(anchor, item, checks)
     if item.title then return { label = item.label, title = true } end
     if item.divider then return { divider = true } end
     local out = { disabled = item.enabled == false or nil, tooltip = tooltipText(item) }
-    if item.isSelected then return checkRow(item, out) end
+    if item.isSelected then return checkRow(item, out, checks) end
     local isSubmenu = #item.items > 0
     out.label = item.label
     if isSubmenu then out.label = out.label .. " " .. NS.Skin.MarkText(NS.Icon("chevron-right"), 0) end
@@ -122,8 +126,8 @@ end
 --- Open `level` at the cursor. The library hides the menu before a row's click, so a submenu's row
 --- may open the next level from its own callback.
 showLevel = function(anchor, level)
-    local rows = {}
-    for i, item in ipairs(level.items) do rows[i] = menuRow(anchor, item) end
+    local rows, checks = {}, {}
+    for i, item in ipairs(level.items) do rows[i] = menuRow(anchor, item, checks) end
     W.ContextMenu(anchor, rows, { owner = addonName, cursor = true })
 end
 
@@ -143,27 +147,20 @@ function NS.OpenMenu(anchor, fill)
     return true
 end
 
+--- An icon as inline markup for a line of text, cropped by the library's icon rule (W.IconText):
+--- the Outfits broker's menu rows. `size` 0 is the line's height. "" without the library or an icon.
+--- @param icon number|string|nil
+--- @param size number|nil
+--- @return string
+function NS.IconText(icon, size)
+    if not (W and W.IconText) or icon == nil then return "" end
+    return W.IconText(icon, size or 0)
+end
+
 --- Close the shared popup menu behind every dropdown and context menu in the process, if one is
 --- open. Safe when none ever opened, and a no-op on a degraded install.
 function NS.CloseMenu()
     if W then W.CloseMenu() end
-end
-
--- ── the search box ───────────────────────────────────────────────────────────────────────────────
-
---- The flat filter box (the library's W.SearchBox, owned by this addon's skin), or nil when the
---- library is absent: the caller then filters nothing. The icon chooser's (design §7.8).
---- @param parent table
---- @param width number|nil
---- @param opts table|nil W.SearchBox's opts (`hint`, `onChange`); `owner` is this addon
---- @return table|nil
-function NS.MakeSearchBox(parent, width, opts)
-    if not (W and W.SearchBox) then return nil end
-    local o = { owner = addonName }
-    if type(opts) == "table" then
-        for k, v in pairs(opts) do o[k] = v end
-    end
-    return W.SearchBox(parent, width, o)
 end
 
 -- ── the test-mode strip ──────────────────────────────────────────────────────────────────────────

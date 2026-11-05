@@ -67,19 +67,19 @@ BUTTONS[#BUTTONS + 1] = {
     name    = "OutfitterRebornAutoOn",
     handler = function() NS.RunVerb("auto", "on") end,
     label   = L["Turn on automatic outfit changes"],
-    tooltip = L["Lets outfits with a trigger equip themselves again, as /of auto on does."],
+    tooltip = L["Lets outfits with a trigger equip themselves again, as /or auto on does."],
 }
 BUTTONS[#BUTTONS + 1] = {
     name    = "OutfitterRebornAutoOff",
     handler = function() NS.RunVerb("auto", "off") end,
     label   = L["Turn off automatic outfit changes"],
-    tooltip = L["Stops every trigger, as /of auto off does. Outfits you wear by hand are unaffected."],
+    tooltip = L["Stops every trigger, as /or auto off does. Outfits you wear by hand are unaffected."],
 }
 BUTTONS[#BUTTONS + 1] = {
     name    = "OutfitterRebornUpdateOutfit",
     handler = function() NS.RunVerb("update", "") end,
     label   = L["Update outfit to equipped items"],
-    tooltip = L["Saves what you are wearing into the current Complete outfit, as /of update does."],
+    tooltip = L["Saves what you are wearing into the current Complete outfit, as /or update does."],
 }
 
 local function clickCommand(button) return "CLICK " .. button .. ":LeftButton" end

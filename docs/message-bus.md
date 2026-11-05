@@ -17,7 +17,7 @@ and isolates each handler with `xpcall`.
 - **Nothing before the LoadPass.** No message is dispatched before `OnEnable` and the first LoadPass.
 - **Every key has a receiver.** A message that nothing registers for and the public API does not
   relay is dropped, not kept: `STATS_CHANGED` and `LEGACY_DETECTED` went that way. The Rebuild
-  dialog reads `NS.Stats.Categories()` when it opens, and `/of diagnostics` reads
+  dialog reads `NS.Stats.Categories()` when it opens, and `/or diagnostics` reads
   `NS.State.legacyLoaded`.
 - **Stand-down.** `NS.BusStandDown()` stops delivery while the addon is stood down;
   `NS.BusStandUp()` resumes it.
@@ -26,7 +26,7 @@ and isolates each handler with `xpcall`.
 
 Each key's sender is its `Sender:` line in `core/Bus.lua`, which `tests/test_bus.lua` holds every call
 site to. A receiver is a module that registers for the key on its own bus target; a surface that only
-reads state when it is drawn (the launcher tooltip, `/of diagnostics`) is not one.
+reads state when it is drawn (the launcher tooltip, `/or diagnostics`) is not one.
 
 | Key | Sender | Payload | Receivers |
 |---|---|---|---|

@@ -391,7 +391,7 @@ end
 
 -- ── diagnostics ───────────────────────────────────────────────────────────────────────────────
 
---- The bracket's state for /of zone and the diagnostics dump (design §5.10): depth, whether an
+--- The bracket's state for /or zone and the diagnostics dump (design §5.10): depth, whether an
 --- update is wanted, when the next one runs, the last error, and the STUCK tripwire.
 --- @return string[]
 function E.Diagnostic()

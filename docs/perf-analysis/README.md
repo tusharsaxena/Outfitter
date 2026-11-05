@@ -1,6 +1,6 @@
 # Perf analysis: the in-game capture store
 
-**In-game captures only.** A person runs `/of perf` in a live client and copies the result out; no
+**In-game captures only.** A person runs `/or perf` in a live client and copies the result out; no
 script can produce one, which is why this store exists (performance-§8). **Offline** scenario runs
 come from `tests/perf.lua`, are driven by `tests/_kit/run-automated-tests.sh`, and live in that run's
 bundle under [`../automated-tests/`](../automated-tests/README.md) (automated-tests-§7). An offline
@@ -48,8 +48,8 @@ its children.
 
 ## How a capture is taken here
 
-`/of perf start [label]` → `/of perf measure a` → a fight → `/of perf measure b` → the same fight →
-`/of perf finish` → `/reload` → `/of perf report`. Copy the report and the JSON line, then run
+`/or perf start [label]` → `/or perf measure a` → a fight → `/or perf measure b` → the same fight →
+`/or perf finish` → `/reload` → `/or perf report`. Copy the report and the JSON line, then run
 `/dev-copilot:wow-perf-analysis` with both. The steps in full are in
 [../performance.md](../performance.md#taking-a-capture).
 

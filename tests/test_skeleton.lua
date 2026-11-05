@@ -4,7 +4,7 @@
 -- 5.1, and every literal debug tag the code writes is in docs/debug.md's register. The slash case
 -- is tests/test_slash.lua's (P3 C12). P4.27 adds the login: every module the latch walks has landed
 -- and the login resumes each one, and the legacy guard (design §4.7) warns once and flags the state
--- for /of diagnostics. It sends nothing on the bus: LEGACY_DETECTED had no receiver and was dropped.
+-- for /or diagnostics. It sends nothing on the bus: LEGACY_DETECTED had no receiver and was dropped.
 
 local T = _G.OUTFITTERREBORN_TEST
 local NS = T.NS
@@ -16,8 +16,8 @@ test("skeleton: the addon registers with AceAddon under its folder name", functi
     assertEqual(NS.addon, NS)
     assertEqual(NS.name, "OutfitterReborn")
     assertEqual(NS.BRAND, "Ka0s Outfitter Reborn")
-    assertEqual(NS.SLASH, "/of")
-    assertEqual(NS.SLASH_LONG, "/outfitter")
+    assertEqual(NS.SLASH, "/or")
+    assertEqual(NS.SLASH_LONG, "/outfitterreborn")
     assertEqual(NS.version, "1.1.0")
 end)
 
@@ -100,6 +100,11 @@ local function declaredIcons()
     f:close()
     local line = assert(text:match("LibKa0s icons: ([^\r\n]+)"), "CLAUDE.md has no `LibKa0s icons:` line")
     local names = {}
+    -- `all (icon browser).` declares the whole catalog: every name LibKa0s-Media enumerates.
+    if line:match("^all[%s%(]") then
+        for _, name in ipairs(T.mocks.LibStub("LibKa0s-Media-1.0").ICONS) do names[#names + 1] = name end
+        return names
+    end
     for name in line:gsub("%.%s*$", ""):gmatch("[^,%s]+") do names[#names + 1] = name end
     return names
 end
@@ -193,7 +198,7 @@ end)
 test("skeleton: every module the latch walks has landed, with Suspend and Resume", function()
     -- red under: a name in core/LifecycleSetup.lua's MODULES whose module publishes no NS table (the
     -- login walk itself raises on it, so every instance fails to load).
-    assertEqual(#NS.LIFECYCLE_MODULES, 20, "design §5.12's list")
+    assertEqual(#NS.LIFECYCLE_MODULES, 21, "design §5.12's list, and the broker (plan Task 3.8)")
     for _, name in ipairs(NS.LIFECYCLE_MODULES) do
         local m = NS[name]
         assertEqual(type(m), "table", "NS." .. name)
@@ -260,7 +265,7 @@ local function legacyLogin(opts)
     return ns, M
 end
 
-local LEGACY_LINE = "The old Outfitter addon is also loaded. Disable it: both change your gear and both own /outfitter."
+local LEGACY_LINE = "The old Outfitter addon is also loaded. Disable it: both change your gear."
 
 local function legacyLines(M)
     local n = 0
@@ -284,7 +289,7 @@ test("skeleton: a loaded legacy Outfitter is warned once and flagged, and the Lo
     assertTrue(ns.TriggerBinder.IsActive(), "the legacy guard held the trigger binder")
 end)
 
-test("skeleton: a disabled login flags the legacy addon for /of diagnostics and prints nothing", function()
+test("skeleton: a disabled login flags the legacy addon for /or diagnostics and prints nothing", function()
     -- red under: a checkLegacy that prints before its NS.IsStoodDown() read.
     local ns, M = legacyLogin({ disabled = true })
     assertTrue(ns.State.legacyLoaded, "the flag is set while stood down too")

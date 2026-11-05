@@ -167,7 +167,7 @@ local function itemLine(item)
     return item.link or item.name or ("item:" .. tostring(item.id))
 end
 
---- The /of missing report (Outfitter.lua:7718-7747): the intro and one line per missing item of every
+--- The /or missing report (Outfitter.lua:7718-7747): the intro and one line per missing item of every
 --- outfit (an item two outfits miss is listed twice, as the intro says), or the none-missing line.
 --- Nil and the refusal line while the bank is closed: a banked item would read as missing.
 --- @return string[]|nil lines

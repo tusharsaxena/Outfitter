@@ -272,9 +272,10 @@ end)
 
 -- ── the outfit instance (P4.6, design §3.5) ──────────────────────────────────────────────────────
 
--- The five outfit rows every later NS.SetByPath("outfit.*", v, id) writes through.
+-- The six outfit rows every later NS.SetByPath("outfit.*", v, id) writes through (`outfit.iconColor`
+-- from the sheet and window feedback round, plan Task 3.5).
 local OUTFIT_ROWS = { "outfit.trigger.id", "outfit.trigger.disabled", "outfit.trigger.combatDisabled",
-                      "outfit.icon", "outfit.bar.hide" }
+                      "outfit.icon", "outfit.iconColor", "outfit.bar.hide" }
 
 --- A fresh instance with one native outfit, and a fake trigger catalog that knows FISHING only.
 local function outfitScene()
@@ -285,7 +286,7 @@ local function outfitScene()
     return inst, NSi, id
 end
 
-test("schema: the outfit instance holds the five outfit rows, each on page outfit in group outfit", function()
+test("schema: the outfit instance holds the six outfit rows, each on page outfit in group outfit", function()
     local O = T.NS.OutfitSchema
     for _, path in ipairs(OUTFIT_ROWS) do
         local row = O.FindRow(path)
@@ -295,7 +296,7 @@ test("schema: the outfit instance holds the five outfit rows, each on page outfi
         assertTrue(T.NS.Schema.FindRow(path) == nil, path .. " is not on the settings instance")
     end
     -- The rest are NS.Triggers.Finalize's trigger.<TID>.<key> rows (P4.15; tests/test_triggers.lua).
-    assertEqual(#O.AllRows(), #OUTFIT_ROWS + #T.NS.Triggers.SchemaRows(), "the five, then the trigger rows")
+    assertEqual(#O.AllRows(), #OUTFIT_ROWS + #T.NS.Triggers.SchemaRows(), "the six, then the trigger rows")
 end)
 
 test("schema: the outfit instance's shape check is clean against { outfit = true } and the instance types", function()

@@ -482,3 +482,305 @@ test("quickslots: the stand-down owns nothing to tear down: no event, no timer, 
     -- red under: dropping `currentSlot = nil` from QuickSlots.Suspend.
     assertNil(QS(NS).CurrentSlot(), "the stand-down forgets the clicked slot")
 end)
+
+-- ── the outward drawer (sheet and window feedback design G8) ─────────────────────────────────────
+--
+-- THE CLIENT STAND-IN. Blizzard's flyout as the drawer meets it, at wow-ui-source@297d7aa: each slot
+-- button's popout arrow anchored once, `LEFT` -> slot `RIGHT` (-8, 0), with the unreversed coords
+-- (Blizzard_UIPanels_Game/Mainline/PaperDollFrame.lua:1527-1532; the weapons are vertical, :1517-1524);
+-- EquipmentFlyout_UpdateItems anchoring `flyout.buttonFrame` `TOPLEFT` -> arrow `TOPRIGHT` + (anchorX,
+-- anchorY) with no ClearAllPoints (Blizzard_FrameXML/EquipmentFlyout.lua:331-339); and
+-- EquipmentFlyoutPopoutButton_SetReversed's horizontal coord pairs (:633-651). Both functions are
+-- globals the instance's hooksecurefunc really post-hooks by name. The window is a recorded fake
+-- (`state.shown`, NS.Dock.IsShown; `state.visible`, NS.Dock.IsVisible): QuickSlots reads it at call
+-- time and owns no part of it.
+
+local ARROW_FWD = { 0.15625, 0.5, 0.84375, 0.5, 0.15625, 0, 0.84375, 0 }      -- PaperDollFrame.lua:1527
+local ARROW_BACK = { 0.15625, 0, 0.84375, 0, 0.15625, 0.5, 0.84375, 0.5 }     -- EquipmentFlyout.lua:644
+local HL_FWD = { 0.15625, 1, 0.84375, 1, 0.15625, 0.5, 0.84375, 0.5 }        -- PaperDollFrame.lua:1528
+local HL_BACK = { 0.15625, 0.5, 0.84375, 0.5, 0.15625, 1, 0.84375, 1 }       -- EquipmentFlyout.lua:645
+local LEFT_COLUMN = { "HeadSlot", "NeckSlot", "ShoulderSlot", "BackSlot", "ChestSlot", "ShirtSlot",
+                      "TabardSlot", "WristSlot" }
+
+-- A region that records its points and counts its writes.
+local function region(extra)
+    local r = { pts = {}, writes = 0 }
+    function r:ClearAllPoints() self.pts = {}; self.writes = self.writes + 1 end
+    function r:SetPoint(...) self.pts[#self.pts + 1] = { ... }; self.writes = self.writes + 1 end
+    for k, v in pairs(extra or {}) do r[k] = v end
+    return r
+end
+
+local function tex()
+    local t = {}
+    function t:SetTexCoord(...) self.coords = { ... } end
+    return t
+end
+
+local function sameCoords(got, want, msg)
+    assertEqual(table.concat(got or {}, ","), table.concat(want, ","), msg)
+end
+
+-- An instance with Blizzard's flyout stand-in and a fake window, the hooks built. `opts.drop` names
+-- client functions the instance does not have.
+local function drawerInstance(opts)
+    opts = opts or {}
+    local state = { shown = false, visible = false }
+    local inst = unitLoad({ mutate = function(M)
+        local fs = M.PaperDollItemsFrame.flyoutSettings
+        fs.anchorX, fs.anchorY, fs.verticalAnchorX, fs.verticalAnchorY = 0, -3, 0, 0
+        local flyout = M.CreateFrame("Frame", "EquipmentFlyoutFrame", M.UIParent)
+        flyout:Hide()
+        flyout.buttonFrame = region()
+        for name, b in pairs(M.__slotButtons) do
+            local vertical = name == "MainHandSlot" or name == "SecondaryHandSlot"
+            local normal, highlight = tex(), tex()
+            local popout = region({ GetNormalTexture = function() return normal end,
+                                    GetHighlightTexture = function() return highlight end,
+                                    GetParent = function() return b end })
+            b.verticalFlyout = vertical or nil
+            b.popoutButton = popout
+            if vertical then
+                popout:SetPoint("TOP", b, "BOTTOM", 0, 4)
+            else
+                popout:SetPoint("LEFT", b, "RIGHT", -8, 0)
+                normal:SetTexCoord(unpack(ARROW_FWD)); highlight:SetTexCoord(unpack(HL_FWD))
+            end
+            popout.writes = 0
+        end
+        M.EquipmentFlyoutPopoutButton_SetReversed = function(popout, reversed)
+            if popout:GetParent().verticalFlyout then return end
+            popout:GetNormalTexture():SetTexCoord(unpack(reversed and ARROW_BACK or ARROW_FWD))
+            popout:GetHighlightTexture():SetTexCoord(unpack(reversed and HL_BACK or HL_FWD))
+        end
+        M.EquipmentFlyout_UpdateItems = function()
+            local b = flyout.button
+            local rel = b.popoutButton or b
+            local hs = b:GetParent().flyoutSettings     -- the button's own host's (EquipmentFlyout.lua:244)
+            if b.verticalFlyout then
+                flyout.buttonFrame:SetPoint("TOPLEFT", rel, "BOTTOMLEFT", hs.verticalAnchorX, hs.verticalAnchorY)
+            else
+                flyout.buttonFrame:SetPoint("TOPLEFT", rel, "TOPRIGHT", hs.anchorX, hs.anchorY)
+            end
+        end
+        for _, name in ipairs(opts.drop or {}) do M[name] = nil end
+        -- hooksecurefunc by name, as the client does it, on the two globals this stand-in defines;
+        -- a missing global raises, as it does in the client.
+        local base = M.hooksecurefunc
+        M.hooksecurefunc = function(a, b, c)
+            if type(a) == "string" then
+                local orig = rawget(M, a)
+                if type(orig) ~= "function" then error("hooksecurefunc(): " .. a .. " is not a function", 2) end
+                rawset(M, a, function(...) orig(...); b(...) end)
+                M.__hooks[#M.__hooks + 1] = { target = M, name = a }
+                return
+            end
+            return base(a, b, c)
+        end
+    end })
+    local NS, M = inst.NS, inst.mocks
+    NS.Dock.IsShown = function() return state.shown end
+    NS.Dock.IsVisible = function() return state.visible end
+    QS(NS).Resume()
+    return NS, M, state
+end
+
+-- The client opening the flyout on `slot`: the arrow locks and reverses, then the items are placed.
+local function openFlyout(M, slot)
+    local b = M.__slotButtons[slot]
+    local flyout = M.EquipmentFlyoutFrame
+    flyout.button = b
+    flyout:Show()
+    b.popoutButton.flyoutLocked = true
+    M.EquipmentFlyoutPopoutButton_SetReversed(b.popoutButton, true)
+    M.EquipmentFlyout_UpdateItems()
+    return flyout.buttonFrame
+end
+
+-- The window opening or closing, as Dock's OnShow / OnHide hooks report it.
+local function setWindow(NS, state, shown)
+    state.shown, state.visible = shown, shown
+    QS(NS).DrawerSync()
+end
+
+test("drawer: with the window open a left-column flyout's buttonFrame is anchored TOPRIGHT to the arrow's TOPLEFT", function()
+    local NS, M, state = drawerInstance()
+    setWindow(NS, state, true)
+    local bf = openFlyout(M, "HeadSlot")
+    -- red under: no EquipmentFlyout_UpdateItems post-hook (Blizzard's TOPLEFT -> TOPRIGHT stays).
+    assertEqual(#bf.pts, 1, "the buttonFrame keeps one point, not Blizzard's and ours")
+    local p = bf.pts[1]
+    assertEqual(p[1], "TOPRIGHT"); assertEqual(p[2], M.__slotButtons.HeadSlot.popoutButton)
+    assertEqual(p[3], "TOPLEFT"); assertEqual(p[4], 0); assertEqual(p[5], -3)
+end)
+
+test("drawer: with the window open the left-column arrows sit on the slot's left, mirrored", function()
+    local NS, M, state = drawerInstance()
+    setWindow(NS, state, true)
+    for _, slot in ipairs(LEFT_COLUMN) do
+        local b = M.__slotButtons[slot]
+        local popout = b.popoutButton
+        assertEqual(#popout.pts, 1, slot)
+        local p = popout.pts[1]
+        assertEqual(p[1], "RIGHT", slot); assertEqual(p[2], b, slot); assertEqual(p[3], "LEFT", slot)
+        assertEqual(p[4], 8, slot); assertEqual(p[5], 0, slot)
+        sameCoords(popout:GetNormalTexture().coords, ARROW_BACK, slot .. ": the arrow points left")
+        sameCoords(popout:GetHighlightTexture().coords, HL_BACK, slot)
+    end
+end)
+
+test("drawer: a right-column flyout is left alone", function()
+    local NS, M, state = drawerInstance()
+    setWindow(NS, state, true)
+    local hands = M.__slotButtons.HandsSlot
+    assertEqual(hands.popoutButton.writes, 0, "a right-column arrow was moved")
+    local bf = openFlyout(M, "HandsSlot")
+    assertEqual(#bf.pts, 1)
+    assertEqual(bf.pts[1][1], "TOPLEFT"); assertEqual(bf.pts[1][3], "TOPRIGHT")
+    assertEqual(bf.writes, 1, "the drawer wrote to a right-column flyout")
+    sameCoords(hands.popoutButton:GetNormalTexture().coords, ARROW_BACK, "Blizzard's own reversed arrow")
+end)
+
+test("drawer: the weapons' flyout opens down as Blizzard has it", function()
+    local NS, M, state = drawerInstance()
+    setWindow(NS, state, true)
+    local bf = openFlyout(M, "MainHandSlot")
+    assertEqual(bf.writes, 1)
+    assertEqual(bf.pts[1][1], "TOPLEFT"); assertEqual(bf.pts[1][3], "BOTTOMLEFT")
+    assertEqual(M.__slotButtons.MainHandSlot.popoutButton.writes, 0, "the drawer moved a weapon's arrow")
+end)
+
+test("drawer: a right-column flyout after a left one drops the left one's anchor", function()
+    local NS, M, state = drawerInstance()
+    setWindow(NS, state, true)
+    openFlyout(M, "HeadSlot")
+    local bf = openFlyout(M, "HandsSlot")
+    -- red under: no restore of a moved buttonFrame (Blizzard's TOPLEFT would join our TOPRIGHT).
+    assertEqual(#bf.pts, 1, "two points stretch the flyout")
+    assertEqual(bf.pts[1][1], "TOPLEFT"); assertEqual(bf.pts[1][2], M.__slotButtons.HandsSlot.popoutButton)
+end)
+
+test("drawer: another host's flyout after a left-column one keeps that host's own anchor", function()
+    -- The Item Upgrade frame shares EquipmentFlyoutFrame with its own flyoutSettings (20, -8)
+    -- (wow-ui-source@297d7aa:Interface/AddOns/Blizzard_ItemUpgradeUI/Mainline/Blizzard_ItemUpgradeUI.lua:917-922),
+    -- read off the button's parent (Blizzard_FrameXML/EquipmentFlyout.lua:244).
+    local NS, M, state = drawerInstance()
+    setWindow(NS, state, true)
+    openFlyout(M, "HeadSlot")
+    local host = M.CreateFrame("Frame", nil, M.UIParent)
+    host.flyoutSettings = { anchorX = 20, anchorY = -8 }
+    local upgrade = M.CreateFrame("Button", nil, host)
+    local flyout = M.EquipmentFlyoutFrame
+    flyout.button = upgrade
+    M.EquipmentFlyout_UpdateItems()
+    local bf = flyout.buttonFrame
+    -- red under: the restore reading PaperDollItemsFrame.flyoutSettings (0, -3) for every button.
+    assertEqual(#bf.pts, 1, "two points stretch the flyout")
+    assertEqual(bf.pts[1][1], "TOPLEFT"); assertEqual(bf.pts[1][2], upgrade); assertEqual(bf.pts[1][3], "TOPRIGHT")
+    assertEqual(bf.pts[1][4], 20); assertEqual(bf.pts[1][5], -8)
+end)
+
+test("drawer: SetReversed on a left-column arrow mirrors its coords", function()
+    local NS, M, state = drawerInstance()
+    setWindow(NS, state, true)
+    local popout = M.__slotButtons.ChestSlot.popoutButton
+    M.EquipmentFlyoutPopoutButton_SetReversed(popout, true)
+    -- red under: no SetReversed post-hook (Blizzard's reversed coords, pointing right, would stay).
+    sameCoords(popout:GetNormalTexture().coords, ARROW_FWD, "reversed and mirrored points right")
+    sameCoords(popout:GetHighlightTexture().coords, HL_FWD)
+    M.EquipmentFlyoutPopoutButton_SetReversed(popout, false)
+    sameCoords(popout:GetNormalTexture().coords, ARROW_BACK, "unreversed and mirrored points left")
+    local legs = M.__slotButtons.LegsSlot.popoutButton
+    M.EquipmentFlyoutPopoutButton_SetReversed(legs, true)
+    sameCoords(legs:GetNormalTexture().coords, ARROW_BACK, "a right-column arrow keeps Blizzard's coords")
+end)
+
+test("drawer: with the window closed the flyout keeps Blizzard's anchors", function()
+    local _, M = drawerInstance()
+    local bf = openFlyout(M, "HeadSlot")
+    -- red under: drop the window check from the drawer's gate.
+    assertEqual(bf.writes, 1, "the drawer moved the flyout with the window closed")
+    assertEqual(bf.pts[1][1], "TOPLEFT")
+    local popout = M.__slotButtons.HeadSlot.popoutButton
+    assertEqual(popout.writes, 0)
+    sameCoords(popout:GetNormalTexture().coords, ARROW_BACK, "Blizzard's own reversed arrow")
+end)
+
+test("drawer: closing the window restores the left-column arrows and an open flyout", function()
+    local NS, M, state = drawerInstance()
+    setWindow(NS, state, true)
+    local bf = openFlyout(M, "HeadSlot")
+    setWindow(NS, state, false)
+    for _, slot in ipairs(LEFT_COLUMN) do
+        local b = M.__slotButtons[slot]
+        local p = b.popoutButton.pts
+        assertEqual(#p, 1, slot)
+        assertEqual(p[1][1], "LEFT", slot); assertEqual(p[1][2], b, slot); assertEqual(p[1][3], "RIGHT", slot)
+        assertEqual(p[1][4], -8, slot); assertEqual(p[1][5], 0, slot)
+    end
+    local head = M.__slotButtons.HeadSlot.popoutButton
+    sameCoords(head:GetNormalTexture().coords, ARROW_BACK, "the open flyout's arrow is Blizzard's reversed one")
+    sameCoords(M.__slotButtons.NeckSlot.popoutButton:GetNormalTexture().coords, ARROW_FWD, "a closed one, unreversed")
+    assertEqual(#bf.pts, 1)
+    assertEqual(bf.pts[1][1], "TOPLEFT"); assertEqual(bf.pts[1][2], head); assertEqual(bf.pts[1][3], "TOPRIGHT")
+    assertEqual(bf.pts[1][4], 0); assertEqual(bf.pts[1][5], -3)
+end)
+
+-- A window parked in the sheet holder (Dock.Attach's refused-anchor fallback) is hidden through its
+-- parent when the sheet closes: its OnHide runs while its own shown flag is still set.
+test("drawer: a window hidden through its parent restores the drawer", function()
+    local NS, M, state = drawerInstance()
+    setWindow(NS, state, true)
+    local bf = openFlyout(M, "HeadSlot")
+    state.visible = false
+    QS(NS).DrawerSync()
+    -- red under: a drawer gate that reads the window's shown flag (NS.Dock.IsShown), not its visibility.
+    local head = M.__slotButtons.HeadSlot.popoutButton
+    assertEqual(head.pts[1][1], "LEFT", "the arrow stayed outward under a hidden parent")
+    assertEqual(bf.pts[1][1], "TOPLEFT", "the flyout stayed outward under a hidden parent")
+end)
+
+test("drawer: stood down nothing is moved", function()
+    local NS, M, state = drawerInstance()
+    NS.ApplyEnabled(false)
+    setWindow(NS, state, true)
+    local bf = openFlyout(M, "HeadSlot")
+    M.EquipmentFlyoutPopoutButton_SetReversed(M.__slotButtons.HeadSlot.popoutButton, false)
+    assertEqual(bf.writes, 1, "the stood-down drawer moved the flyout")
+    for _, slot in ipairs(LEFT_COLUMN) do
+        assertEqual(M.__slotButtons[slot].popoutButton.writes, 0, slot)
+    end
+    sameCoords(M.__slotButtons.HeadSlot.popoutButton:GetNormalTexture().coords, ARROW_FWD)
+end)
+
+test("drawer: a stand-down with the window open puts Blizzard's drawer back", function()
+    local NS, M, state = drawerInstance()
+    setWindow(NS, state, true)
+    openFlyout(M, "HeadSlot")
+    -- red under: drop the drawer restore from QuickSlots.Suspend.
+    NS.ApplyEnabled(false)
+    local head = M.__slotButtons.HeadSlot.popoutButton
+    assertEqual(head.pts[1][1], "LEFT")
+    assertEqual(M.EquipmentFlyoutFrame.buttonFrame.pts[1][1], "TOPLEFT")
+end)
+
+test("drawer: in combat lockdown nothing is moved", function()
+    local NS, M, state = drawerInstance()
+    M.__lockdown = true
+    setWindow(NS, state, true)
+    local bf = openFlyout(M, "HeadSlot")
+    assertEqual(bf.writes, 1, "the drawer moved the flyout in lockdown")
+    assertEqual(M.__slotButtons.HeadSlot.popoutButton.writes, 0, "the drawer moved an arrow in lockdown")
+end)
+
+test("drawer: a missing Blizzard function installs nothing and errors nothing", function()
+    local NS, M, state = drawerInstance({ drop = { "EquipmentFlyout_UpdateItems",
+                                                   "EquipmentFlyoutPopoutButton_SetReversed" } })
+    -- red under: an unguarded hooksecurefunc by name (the stand-in raises on a missing global).
+    for _, h in ipairs(M.__hooks) do
+        assertTrue(h.name ~= "EquipmentFlyout_UpdateItems" and h.name ~= "EquipmentFlyoutPopoutButton_SetReversed",
+            "hooked a missing function")
+    end
+    setWindow(NS, state, true)
+    setWindow(NS, state, false)
+end)

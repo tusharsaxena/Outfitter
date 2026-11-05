@@ -92,6 +92,7 @@ modules\PlayerState.lua
 modules\ItemInfo.lua
 modules\Inventory.lua
 modules\Inventory_Lists.lua
+modules\IconBrowserSetup.lua
 modules\Outfits.lua
 modules\Outfits_Seed.lua
 modules\Outfits_Schema.lua
@@ -124,6 +125,7 @@ modules\Popups.lua
 modules\Tooltips.lua
 modules\Tooltips_Compare.lua
 modules\OutfitTooltip.lua
+modules\Sheet.lua
 modules\Dock.lua
 modules\Window.lua
 modules\Window_ListModel.lua
@@ -136,9 +138,9 @@ modules\Dialog_Trigger.lua
 modules\Dialog_TriggerFields.lua
 modules\Dialog_Rebuild.lua
 modules\Dialog_Progress.lua
-modules\IconChooser.lua
 modules\Bar.lua
 modules\Bar_Buttons.lua
+modules\Broker.lua
 modules\QuickSlots.lua
 modules\QuickSlots_Sort.lua
 modules\Preview.lua

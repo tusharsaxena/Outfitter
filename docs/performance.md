@@ -37,15 +37,15 @@ the window's follow tick exists only while the window is shown. The poll's cost 
 
 ## Taking a capture
 
-All in game, through the reserved `perf` verb (`/of perf help` lists the words):
+All in game, through the reserved `perf` verb (`/or perf help` lists the words):
 
-- `/of perf start [label]`: begin a run; records who and where you are.
-- `/of perf measure a`: arm experiment A, the addon active. It records only while combat lasts.
+- `/or perf start [label]`: begin a run; records who and where you are.
+- `/or perf measure a`: arm experiment A, the addon active. It records only while combat lasts.
 - Fight, then leave combat.
-- `/of perf measure b`: arm experiment B, the same with the addon suspended through the latch's
+- `/or perf measure b`: arm experiment B, the same with the addon suspended through the latch's
   `perf` hold.
 - Fight the same way for about as long, then leave combat.
-- `/of perf finish`, `/reload`, then `/of perf report`: prints the summary and the one JSON line.
+- `/or perf finish`, `/reload`, then `/or perf report`: prints the summary and the one JSON line.
 
 Run both arms back to back, in the same place, with the same outfits and triggers. While suspended the
 addon is inert: every registration is dropped, and its feature verbs refuse.
@@ -92,6 +92,15 @@ noise), and the arm must note nothing with capture on, which proves the strip to
 
 A ceiling is raised only by re-measuring and saying why. The runs are kept in
 [`automated-tests/`](automated-tests/README.md), not in `perf-analysis/`.
+
+**Re-pinned 2026-11-05: `equipPlan` 229000 → 234000.** The scenario rose from 224208 to 229584
+bytes a step when the Outfits broker (`modules/Broker.lua`) registered its six bus messages. None of
+those bytes are the addon's. A line-level allocation profile of the step, with and without the six
+registrations, puts the whole 5376 bytes on one line of the vendored recorder. For every game event
+it fires, `M.__fire` (`tests/_kit/mock_record.lua`) builds `M.__registrations()`, one row per live
+registration, so each registration costs 896 bytes a step whether or not its message is ever sent.
+The client's own dispatch has no such cost. `triggerFanout` rose from 104748 to 106104 for the same
+reason and stays under its 107000 ceiling.
 
 ## Measured costs
 

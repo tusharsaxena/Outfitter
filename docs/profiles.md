@@ -18,13 +18,13 @@ and character.
 ## Consequences worth knowing
 
 - **Automatic outfit changes are per profile** (`auto.enabled`, O35). On the shared Default profile,
-  `/of auto off` stops triggers on every character that uses it. A character that needs its own switch
+  `/or auto off` stops triggers on every character that uses it. A character that needs its own switch
   needs its own profile.
 - **The minimap button is global.** Its show/hide state is LibDBIcon's own key under `global`, so it
   is the same on every profile, and no reset touches it.
 - **Reset Profile** is Reset all settings: the active profile only, after the confirmation popup.
   It leaves every outfit alone. Deleting outfits is the separate Delete all outfits… act
-  (`/of deleteall`, General › Behavior).
+  (`/or deleteall`, General › Behavior).
 
 ## What happens on a change
 

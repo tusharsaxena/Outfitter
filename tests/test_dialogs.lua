@@ -1,7 +1,7 @@
 -- tests/test_dialogs.lua — P4.21 (design §7.6, §7.8, INV §7.9): the dialogs' shared chrome
 -- (modules/UIDialogs.lua), the new-outfit and rename dialog (modules/Dialog_Outfit.lua), the rebuild
 -- and progress dialogs (modules/Dialog_Rebuild.lua, modules/Dialog_Progress.lua), the popups
--- (modules/Popups.lua), the row's EM box against them, and the icon chooser (modules/IconChooser.lua).
+-- (modules/Popups.lua), the row's EM box against them, and the icon browser (modules/IconBrowserSetup.lua).
 --
 -- Every module here has landed and runs for real; tests/dialog_scene.lua records the frames' inputs.
 
@@ -219,28 +219,28 @@ local function rowFor(NS, id)
     return nil
 end
 
-test("popups: the row EM box selects first, stores on the second check, says the EM is full, and unstores", function()
+test("popups: the row EM mark selects first, stores on the second click, says the EM is full, and unstores", function()
     local NS, M = scene({ dock = true })
     local id = NS.Outfits.Create("Spare", { HeadSlot = { id = 0 } })
     local row = rowFor(NS, id)
     assertTrue(row ~= nil, "no row for the outfit")
     NS.Stack.Select(nil)
-    row.em:SetChecked(true); row.em:__fire("OnClick")
-    assertEqual(NS.Stack.Selected(), id, "the first check did not select")
-    assertTrue(NS.Stack.IsWorn(id), "the first check did not wear")
+    row.em:__fire("OnClick")
+    assertEqual(NS.Stack.Selected(), id, "the first click did not select")
+    assertTrue(NS.Stack.IsWorn(id), "the first click did not wear")
     assertEqual(NS.Outfits.Get(id).kind, "native")
     local cap = M.MAX_EQUIPMENT_SETS_PER_PLAYER
     M.MAX_EQUIPMENT_SETS_PER_PLAYER = 0
-    row.em:SetChecked(true); row.em:__fire("OnClick")
+    row.em:__fire("OnClick")
     assertEqual(M.__popups[#M.__popups].which, "OUTFITTERREBORN_EM_FULL")
     assertTrue(M.StaticPopupDialogs.OUTFITTERREBORN_EM_FULL.text ~= nil)
     M.MAX_EQUIPMENT_SETS_PER_PLAYER = cap
-    row.em:SetChecked(true); row.em:__fire("OnClick")
+    row.em:__fire("OnClick")
     local emId = NS.Stack.Selected()
-    assertEqual(NS.Outfits.Get(emId).kind, "em", "the second check did not store on the server")
+    assertEqual(NS.Outfits.Get(emId).kind, "em", "the second click did not store on the server")
     row = rowFor(NS, emId)
-    row.em:SetChecked(false); row.em:__fire("OnClick")
-    assertEqual(NS.Outfits.Get(NS.Outfits.FindByName("Spare")).kind, "native", "the uncheck did not store locally")
+    row.em:__fire("OnClick")
+    assertEqual(NS.Outfits.Get(NS.Outfits.FindByName("Spare")).kind, "native", "the click on the full mark did not store locally")
 end)
 
 -- ── the rebuild and progress dialogs ──────────────────────────────────────────────────────────
@@ -291,126 +291,190 @@ test("progress: OPTIMIZE_* drive it, High speed sets the job's, and Cancel cance
     assertFalse(Pg.IsOpen())
 end)
 
--- ── the icon chooser ──────────────────────────────────────────────────────────────────────────
+-- ── the icon browser (modules/IconBrowserSetup.lua over LibKa0s-IconBrowser-1.0) ────────────────
 
-test("icons: the wildcard saves nil, a pick writes outfit.icon, Cancel discards, an EM outfit sets its set", function()
+local WILDCARD = 134400
+
+local function tabKeys(IB)
+    local out = {}
+    for i, t in ipairs(IB.Browser().tabs) do out[i] = t.key end
+    return table.concat(out, ",")
+end
+
+local function tab(IB, key)
+    for _, t in ipairs(IB.Browser().tabs) do if t.key == key then return t end end
+    return nil
+end
+
+local function holds(list, v)
+    for _, x in ipairs(list) do if x == v then return true end end
+    return false
+end
+
+test("browser: Change icon opens on Recommended with the outfit's icon selected", function()
     local NS = scene()
-    local O, IC = NS.Outfits, NS.IconChooser
+    local IB = NS.IconBrowser
+    local ride = NS.Triggers.Get("RIDING").icon
+    local id = NS.Outfits.Create("Ride", {}, { trigger = "RIDING" })
+    NS.SetByPath("outfit.icon", ride, id)
+    assertTrue(IB.Open(id))
+    assertTrue(IB.IsOpen())
+    local st = IB.Browser():State()
+    -- red under: the outfit's stored icon not handed to the library as req.icon.
+    assertEqual(st.tab, "recommended")
+    assertEqual(st.selected, ride)
+    local rec = tab(IB, "recommended")
+    local icons = rec.list("all")
+    assertEqual(icons[1], WILDCARD, "the wildcard leads Recommended")
+    assertEqual(rec.name(WILDCARD), NS.L["Outfitter chooses"])
+    assertTrue(holds(icons, ride), "no trigger icon in Recommended")
+    assertEqual(rec.label, NS.L["Recommended"])
+    IB.Close("test")
+    -- An outfit with no icon of its own opens with "Outfitter chooses" selected.
+    assertTrue(IB.Open(NS.Outfits.Create("Plain", {})))
+    st = IB.Browser():State()
+    assertEqual(st.tab, "recommended")
+    assertEqual(st.selected, WILDCARD)
+    IB.Close("test")
+end)
+
+test("browser: Equipped and bags lists the carried items' icons, named and searchable", function()
+    local NS = scene()
+    local IB = NS.IconBrowser
+    assertTrue(IB.Open(NS.Outfits.Create("Pretty", {})))
+    local eq = tab(IB, "equipped")
+    assertEqual(eq.label, NS.L["Equipped and bags"])
+    local icons = eq.list("all")
+    assertTrue(#icons > 0, "nothing carried")
+    local info = NS.Inventory.Cache().all[1]
+    local icon = NS.Compat.ItemIcon(info.id)
+    assertTrue(holds(icons, icon))
+    assertEqual(eq.name(icon), info.name)
+    IB.Browser():SetTab("equipped")
+    IB.Browser():SetSearch("zzzz no such item")
+    assertEqual(IB.Browser():State().count, 0)
+    IB.Browser():SetSearch("")
+    IB.Close("test")
+end)
+
+test("browser: no Markers tab", function()
+    local NS = scene()
+    local IB = NS.IconBrowser
+    assertTrue(IB.Open(NS.Outfits.Create("Pretty", {})))
+    -- red under: the browser built without hide = { markers = true }.
+    assertEqual(tabKeys(IB), "recommended,equipped,game,glyphs")
+    IB.Browser():SetTab("markers")
+    assertEqual(IB.Browser():State().tab, "recommended", "a hidden tab was shown")
+    IB.Close("test")
+end)
+
+test("browser: choosing a glyph writes icon and color", function()
+    local NS = scene()
+    local IB, O = NS.IconBrowser, NS.Outfits
     local id = O.Create("Pretty", { HeadSlot = { id = 0 } }, { icon = 111 })
-    IC.Open(id, {})
-    IC.Pick(222)
-    IC.Close("cancel")
-    assertEqual(O.Get(id).icon, 111, "Cancel wrote the pick")
-    IC.Open(id, {})
-    IC.Pick(222)
-    IC.Accept()
+    local path = assert(NS.Icon("ph:sword"))
+    IB.Open(id)
+    local b = IB.Browser()
+    b:SetTab("glyphs")
+    b:Select(path)
+    b:SetColor("ff8000")
+    assertTrue(b:Choose())
+    assertFalse(IB.IsOpen())
+    assertEqual(O.Get(id).icon, path)
+    assertEqual(O.Get(id).iconColor, "ff8000")
+    -- It opens again on the glyph, in its color.
+    IB.Open(id)
+    assertEqual(b:State().tab, "glyphs")
+    assertEqual(b:State().selected, path)
+    assertEqual(b:State().color, "ff8000")
+    -- A game icon clears the color; Cancel discards a pick; the wildcard stores none.
+    b:Select(222); assertTrue(b:Choose())
     assertEqual(O.Get(id).icon, 222)
-    assertFalse(IC.IsOpen())
-    IC.Open(id, {})
-    IC.Pick(134400)
-    IC.Accept()
-    -- red under: Accept storing rec.icon itself, past the outfit.icon row (the wildcard's fileID is kept).
+    assertNil(O.Get(id).iconColor)
+    IB.Open(id); b:Select(333); IB.Close("cancel")
+    assertEqual(O.Get(id).icon, 222, "Cancel wrote the pick")
+    IB.Open(id); b:Select(WILDCARD); assertTrue(b:Choose())
     assertNil(O.Get(id).icon)
-    local em = T.fake(NS, "EM", { SetIcon = true, Items = function(r) return r.items end, Suspend = true,
-                                  Resume = true })
-    O.Get(id).kind, O.Get(id).setID = "em", 7
-    IC.Open(id, {})
-    IC.Pick(333)
-    IC.Accept()
-    local set
-    for _, c in ipairs(em.__calls) do if c[1] == "SetIcon" then set = c end end
-    -- red under: Accept writing an EM outfit's icon through outfit.icon (the mirror ignores rec.icon).
-    assertEqual(em.__count("SetIcon"), 1)
-    assertEqual(set[3], 333)
 end)
 
-test("icons: the sets, the search on named sets only, and the 6x5 grid", function()
+test("browser: an Equipment Manager outfit opens on its glyph and a game icon goes to its set", function()
     local NS = scene()
-    local IC = NS.IconChooser
-    local id = NS.Outfits.Create("Pretty", {}, { trigger = "RIDING" })
-    IC.Open(id, {})
-    local rec = IC.Entries()
-    assertEqual(rec[1].icon, 134400, "the wildcard leads Recommended")
-    local found = false
-    for _, e in ipairs(rec) do if e.icon == NS.Triggers.Get("RIDING").icon then found = true end end
-    assertTrue(found, "no trigger icon in Recommended")
-    assertEqual(#IC.Frame().buttons, 30)
-    IC.SetSet("equipped")
-    local all = #IC.Entries()
-    assertTrue(all > 0)
-    local first = IC.Entries()[1].name
-    IC.SetFilter(first:sub(1, 4))
-    assertTrue(#IC.Entries() >= 1 and #IC.Entries() <= all)
-    IC.SetFilter("zzzz no such item")
-    assertEqual(#IC.Entries(), 0)
-    IC.SetSet("item")
-    -- red under: the search left enabled on a fileID-only set (O33).
-    assertFalse(IC.Frame().search:IsEnabled())
-    assertEqual(#IC.Entries(), #NS.Compat.MacroIcons("item"))
+    local IB, O = NS.IconBrowser, NS.Outfits
+    local id = O.Create("Pretty", { HeadSlot = { id = 0 } })
+    local em = T.fake(NS, "EM", { SetIcon = true, Icon = function() return 444 end,
+                                  Items = function(r) return r.items end, Suspend = true, Resume = true })
+    O.Get(id).kind, O.Get(id).setID = "em", 7
+    IB.Open(id)
+    -- red under: an EM outfit opening on rec.icon (the set's icon is the stored one).
+    assertEqual(IB.Browser():State().selected, 444)
+    local path = assert(NS.Icon("ph:sword"))
+    IB.Browser():Select(path); IB.Browser():SetColor("00ff00"); IB.Browser():Choose()
+    assertEqual(em.__count("SetIcon"), 0, "a glyph was written to the set")
+    IB.Open(id)
+    assertEqual(IB.Browser():State().selected, path)
+    assertEqual(IB.Browser():State().color, "00ff00")
+    IB.Browser():Select(555); IB.Browser():Choose()
+    assertEqual(em.__count("SetIcon"), 1)
 end)
 
-test("icons: it closes on an outside press but not its own, on Escape, on stand-down and with its opener", function()
+test("browser: in combat Choose refuses with one line and writes nothing", function()
     local NS, M = scene()
-    local IC = NS.IconChooser
+    local IB, O = NS.IconBrowser, NS.Outfits
+    local id = O.Create("Pretty", {}, { icon = 111 })
+    IB.Open(id)
+    IB.Browser():Select(222)
+    M.__world:setCombat(true)
+    M.__resetPrinted()
+    local ok, why = IB.Browser():Choose()
+    assertFalse(ok); assertEqual(why, "combat")
+    assertTrue(IB.IsOpen())
+    assertEqual(O.Get(id).icon, 111)
+    assertTrue(printed(M, "cannot choose an icon during combat"))
+    M.__world:setCombat(false)
+    assertTrue(IB.Browser():Choose())
+    assertEqual(O.Get(id).icon, 222)
+end)
+
+test("browser: Escape closes the browser only, the outfit window back in UISpecialFrames after", function()
+    local NS, M = scene({ dock = true })
+    local IB = NS.IconBrowser
+    assertTrue(special(M, "OutfitterRebornWindow"), "the open window is not an Escape target")
+    IB.Open(NS.Outfits.Create("Pretty", {}))
+    -- red under: no `lift` (Escape would close the outfit window under the browser too).
+    assertFalse(special(M, "OutfitterRebornWindow"), "the window stayed an Escape target")
+    IB.Close("escape")
+    M.__fireTimers()
+    assertTrue(special(M, "OutfitterRebornWindow"), "the window's Escape entry was not put back")
+end)
+
+test("browser: deleting the outfit it edits makes Choose close it unwritten", function()
+    local NS = scene()
+    local IB = NS.IconBrowser
     local id = NS.Outfits.Create("Pretty", {})
-    IC.Open(id, {})
-    local f = IC.Frame()
-    assertTrue(special(M, f.__name), "not in UISpecialFrames")
-    f.__over = true
-    f:__fire("OnEvent", "GLOBAL_MOUSE_DOWN", "LeftButton")
-    assertTrue(IC.IsOpen(), "a press on the chooser closed it")
-    f.__over = false
-    f:__fire("OnEvent", "GLOBAL_MOUSE_DOWN", "LeftButton")
-    -- red under: no GLOBAL_MOUSE_DOWN handler.
-    assertFalse(IC.IsOpen())
-    local opener = M.CreateFrame("Button", nil, M.UIParent)
-    IC.Open(id, opener)
-    opener:Hide()
-    assertFalse(IC.IsOpen(), "the opener's hide left it open")
-    IC.Open(id, {})
+    IB.Open(id)
+    IB.Browser():Select(222)
+    NS.Outfits.Delete(id)
+    local ok, why = IB.Browser():Choose()
+    assertFalse(ok); assertEqual(why, "notOpen")
+    assertFalse(IB.IsOpen())
+end)
+
+test("browser: stood down, it cannot open", function()
+    local NS = scene()
+    local IB = NS.IconBrowser
+    local id = NS.Outfits.Create("Pretty", {})
+    IB.Open(id)
     NS.SetByPath("enabled", false)
-    assertFalse(IC.IsOpen(), "a stand-down left it open")
-    assertFalse(f:IsEventRegistered("GLOBAL_MOUSE_DOWN"), "the press watch outlived the chooser")
+    -- red under: no IconBrowser in the lifecycle walk (the browser outlived the stand-down).
+    assertFalse(IB.IsOpen(), "a stand-down left it open")
+    assertFalse(IB.Open(id))
+    assertFalse(IB.IsOpen())
+    NS.SetByPath("enabled", true)
+    assertTrue(IB.Open(id), "the stand-up did not let it open again")
+    IB.Close("test")
 end)
 
 -- ── group J review fixes ──────────────────────────────────────────────────────────────────────
-
-test("icons: a redraw that hides and re-shows the pooled opener keeps it open; its surface closing closes it", function()
-    local NS, M = scene()
-    local IC = NS.IconChooser
-    local id = NS.Outfits.Create("Pretty", {})
-    local surface = M.CreateFrame("Frame", nil, M.UIParent)
-    local row = M.CreateFrame("Button", nil, surface)
-    local mark = M.CreateFrame("Button", nil, row)
-    IC.Open(id, mark)
-    mark:Hide(); mark:Show()                          -- what Rows.Bind and Pool.ReleaseAll do
-    -- red under: watching the pooled control itself (the redraw closed the chooser, the pick lost).
-    assertTrue(IC.IsOpen(), "a redraw of the opener closed the chooser")
-    surface:Hide()
-    assertFalse(IC.IsOpen(), "the opener's surface closing left it open")
-end)
-
-test("icons: a second click on the set dropdown closes its menu, and the next outside press closes the chooser", function()
-    local NS = scene()
-    local IC = NS.IconChooser
-    IC.Open(NS.Outfits.Create("Pretty", {}), {})
-    local f = IC.Frame()
-    local function press(over)
-        f.set.__over = over
-        f:__fire("OnEvent", "GLOBAL_MOUSE_DOWN", "LeftButton")
-    end
-    press(true); f.set:__fire("OnClick")              -- opens the menu
-    press(true); f.set:__fire("OnClick")              -- closes it
-    press(false)
-    -- red under: the OnClick hook setting the flag on every click (the closing click armed it again).
-    assertFalse(IC.IsOpen(), "an outside press after the menu closed was swallowed")
-    IC.Open(NS.Outfits.Create("Pretty2", {}), {})
-    press(true); f.set:__fire("OnClick")              -- opens the menu
-    f.__over = true; press(false); f.__over = false   -- a press on the chooser dismisses it
-    press(false)
-    -- red under: a press on the chooser itself leaving the menu flag set.
-    assertFalse(IC.IsOpen(), "the press after a dismissing press on the chooser was swallowed")
-end)
 
 test("popups: Delete all accepted in combat refuses before it closes any dialog", function()
     local NS, M = scene()

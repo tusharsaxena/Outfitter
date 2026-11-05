@@ -27,7 +27,7 @@ local _, NS = ...
 -- slot edit to the outfit, and by a stand-down.
 --
 -- CALLS (at call time, no nil guard; design §12): NS.Outfits.Get/Create/Delete/Changed/Items/BindingOf/
--- SetBinding, NS.Stack.Wear/Select, NS.Inventory.IsBankBag and NS.ItemInfo.
+-- SetBinding/SetIcon/EMGlyph/MoveEMGlyphs, NS.Stack.Wear/Select, NS.Inventory.IsBankBag and NS.ItemInfo.
 
 local EM = {}
 NS.EM = EM
@@ -331,8 +331,9 @@ local function restoreOrStub(setID, name)
     return NS.Outfits.Create(name, saved and saved.items or {}, opts)
 end
 
--- Match one set; false when the set cannot be read (its name is not plain).
-local function adoptSet(setID, unused)
+-- Match one set; false when the set cannot be read (its name is not plain). A mirror matched to a
+-- new set id is listed in `moves`, its glyph override re-keyed once the sync is done.
+local function adoptSet(setID, unused, moves)
     local info = Compat.EMSetInfo(setID)
     if not info then return false end
     local id, rec = findByName(unused, info.name:lower())
@@ -341,6 +342,8 @@ local function adoptSet(setID, unused)
         return true
     end
     unused[id] = nil
+    -- A glyph override is keyed by the set id, so it follows the mirror to its new set.
+    if rec.setID ~= setID then moves[#moves + 1] = { from = rec.setID, to = setID } end
     rec.setID = setID
     NS.Outfits.Changed(id, "items")
     return true
@@ -358,10 +361,10 @@ local function pruneUnused(unused)
     end
 end
 
-local function adoptAll(ids, unused)
+local function adoptAll(ids, unused, moves)
     local readable = true
     for _, setID in ipairs(ids) do
-        if not adoptSet(setID, unused) then readable = false end
+        if not adoptSet(setID, unused, moves) then readable = false end
     end
     return readable
 end
@@ -373,13 +376,16 @@ end
 function EM.Sync()
     if st.saving > 0 or Compat.GetTime() < st.ignoreUntil then return false end
     synced = true
-    local unused, ids = mirrors(), Compat.EMSetIDs()
+    local unused, ids, moves = mirrors(), Compat.EMSetIDs(), {}
     if #ids == 0 then
         preserveAll(unused)
-    elseif adoptAll(ids, unused) then
+    elseif adoptAll(ids, unused, moves) then
         pruneUnused(unused)
         store().emPreserved = nil
     end
+    -- After the prune, all at once: two mirrors that traded ids keep their own glyphs, and a pruned
+    -- mirror's Delete cannot clear the id a matched one just moved to.
+    if #moves > 0 then NS.Outfits.MoveEMGlyphs(moves) end
     NS.SendBus(NS.MSG.EM_SYNCED)
     return true
 end
@@ -411,7 +417,7 @@ local function nameTaken(id, name)
 end
 
 --- Store a native outfit on the server: a set from its slots (the name cut to 31 bytes, the icon its
---- own or 134400), mirrored by an em outfit that carries its settings (B17) and binding, worn and
+--- own fileID, else 134400 with a glyph kept as the mirror's override), mirrored by an em outfit that carries its settings (B17) and binding, worn and
 --- selected; then the native outfit is deleted. Refused at the client's cap with the EM-full popup,
 --- and with a line when a set or another mirror already holds the cut name (O.Rename's rule).
 --- @param id string
@@ -427,23 +433,32 @@ function EM.StoreOnServer(id)
         return false
     end
     EM.SetSlotsFromItems(O.Items(rec))
-    withSaving(Compat.EMCreateSet, name, rec.icon or NO_ICON)
+    -- A set takes a fileID only: a glyph icon creates the set on the wildcard and stays the
+    -- mirror's, as its per-character override (NS.Outfits.SetIcon).
+    local glyph = type(rec.icon) == "string" and rec.icon or nil
+    withSaving(Compat.EMCreateSet, name, (not glyph and rec.icon) or NO_ICON)
     local setID = Compat.EMSetID(name)
     if not setID then return false end
     local newId = O.Create(name, {}, { kind = "em", setID = setID, fields = fieldsOf(rec) })
+    if glyph then O.SetIcon(newId, glyph, rec.iconColor) end
     replace(id, newId)
     return true, nil, newId
 end
 
---- Store an em outfit locally: a native outfit with the set's resolved items, its icon, settings and
---- binding, worn and selected; then the mirror and its set are deleted.
+--- Store an em outfit locally: a native outfit with the set's resolved items, its icon (its glyph
+--- override when it has one), settings and binding, worn and selected; then the mirror and its set
+--- are deleted.
 --- @param id string
 --- @return string|nil newId
 function EM.StoreLocally(id)
     local O = NS.Outfits
     local rec = O.Get(id)
     if not rec or rec.kind ~= "em" then return nil end
-    local newId = O.Create(rec.name, EM.Items(rec), { icon = EM.Icon(rec), fields = fieldsOf(rec) })
+    -- A glyph override is the outfit's icon, and becomes the local copy's own, with its color.
+    local glyph, color = O.EMGlyph(rec)
+    local fields = fieldsOf(rec)
+    fields.iconColor = glyph and color or nil
+    local newId = O.Create(rec.name, EM.Items(rec), { icon = glyph or EM.Icon(rec), fields = fields })
     replace(id, newId)
     return newId
 end

@@ -63,7 +63,7 @@ The libraries load first, each in its own folder under `libs/`, and are vendored
 | `core/Bus.lua` | `NS.MSG`, `NS.NewBusTarget`, `NS.SendBus`, `NS.BusStandDown`/`BusStandUp` (LibKa0s-Bus; [message-bus.md](message-bus.md)) |
 | `core/PoolSetup.lua` | `NS.Pool`, the array and keyed widget pools (LibKa0s-Pool) |
 | `core/ItemSetup.lua` | `NS.Item`: `ItemIDFromLink`, `BonusIDsFromLink` on plain links only (LibKa0s-Item) |
-| `core/WidgetsSetup.lua` | `NS.MakeDropdown`, `NS.OpenMenu`, `NS.CloseMenu`, `NS.MakeSearchBox`, `NS.MakeTestStrip`, `NS.TEST_STRIP_HEIGHT`, `NS.MakeDragHandle` (LibKa0s-Widgets) |
+| `core/WidgetsSetup.lua` | `NS.MakeDropdown`, `NS.OpenMenu`, `NS.CloseMenu`, `NS.IconText`, `NS.MakeTestStrip`, `NS.TEST_STRIP_HEIGHT`, `NS.MakeDragHandle` (LibKa0s-Widgets) |
 | `core/SecureQueue.lua` | `NS.SecureQueue`: a protected write runs now or waits out combat lockdown, latest per key |
 | `core/LifecycleSetup.lua` | `NS.lifecycle`, the one stand-down latch with its `disabled` and `perf` holds, `NS.ApplyEnabled`, `NS.IsStoodDown`, `NS.StoodDownRefusal` (LibKa0s-Lifecycle) |
 | `core/PerfSetup.lua` | `NS.Perf`, the performance harness over `OutfitterRebornPerfDB` with its ten fixed buckets (LibKa0s-Perf; [performance.md](performance.md)) |
@@ -96,14 +96,15 @@ the diagnostics sections.
 | `modules/ItemInfo.lua` | `NS.ItemInfo`: link parse, item identity and comparison |
 | `modules/Inventory.lua` | `NS.Inventory`: the bag and equipment scan, its cache and the bank-open rules |
 | `modules/Inventory_Lists.lua` | The missing, unused, BoE, warbound, in-use and cooldown lists and their sections (extends `NS.Inventory`) |
-| `modules/Outfits.lua` | `NS.Outfits`: the outfit store and its one writer API |
+| `modules/IconBrowserSetup.lua` | `NS.Glyph`: the glyph helpers (`IsGlyph`, `ValidColor`, `Tint`) from LibKa0s-IconBrowser, with a library-absent stub; `NS.IconBrowser` (`Open(id)`, `Close`, `IsOpen`, `Browser`): Change icon...'s library browser, tabs Recommended and Equipped and bags ahead of Game icons and Glyphs, no Markers |
+| `modules/Outfits.lua` | `NS.Outfits`: the outfit store and its one writer API; `NS.OutfitIcon`, the one outfit icon resolver, and `NS.Outfits.SetIcon` |
 | `modules/Outfits_Seed.lua` | The LoadPass: store repair, the built-in outfits' seed and the 1 s timer that runs the first one (extends `NS.Outfits`) |
 | `modules/Outfits_Schema.lua` | `NS.OutfitSchema`: the per-outfit instance rows, `outfit.*` and `trigger.<TID>.*` |
 | `modules/OutfitStack.lua` | `NS.Stack`: wear, remove, toggle, layers, recents, selection and title |
 | `modules/OutfitStack_Watch.lua` | The inventory watch: the temporary outfit, window-open recording and `SWAP_COMPLETE` (extends `NS.Stack`) |
 | `modules/Equip.lua` | `NS.Equip`: the bracket that cannot strand, its gates, execution and the muted SFX |
 | `modules/Equip_Changes.lua` | `NS.Changes`: the pure change-list builder, unique-equip order and the optimize rules |
-| `modules/Equip_Moves.lua` | `NS.Moves`: pickup, a move to an empty bag slot, the empty-slot lists and `/of unequip` |
+| `modules/Equip_Moves.lua` | `NS.Moves`: pickup, a move to an empty bag slot, the empty-slot lists and `/or unequip` |
 | `modules/EquipmentManager.lua` | `NS.EM`: the Blizzard Equipment Manager mirror |
 | `modules/Bank.lua` | `NS.Bank`: deposit, withdraw and the missing-items report |
 | `modules/ItemStats.lua` | `NS.Stats`: the stats the optimizer scores items by |
@@ -125,7 +126,7 @@ the diagnostics sections.
 | `modules/Triggers.lua` | `NS.Triggers`: the trigger registry, the `PSEUDO` table and the schema rows |
 | `modules/Triggers_Binder.lua` | `NS.TriggerBinder`: bind, unbind, dispatch and apply |
 | `modules/States.lua` | `NS.States`: auras, forms, the 0.5 s mounted and swimming poll, Dining, Spirit and the tooltip hooks |
-| `modules/States_Zone.lua` | The zone producer, its derived tables and `/of zone`'s zone half |
+| `modules/States_Zone.lua` | The zone producer, its derived tables and `/or zone`'s zone half |
 
 **UI, API and diagnostics**
 
@@ -136,6 +137,7 @@ the diagnostics sections.
 | `modules/Tooltips.lua` | `NS.Tooltips`: the "Used by outfits" line on item tooltips |
 | `modules/Tooltips_Compare.lua` | `NS.Compare`: up to five comparison tooltips with the items your outfits use in the hovered slot |
 | `modules/OutfitTooltip.lua` | `NS.OutfitTooltip`: an outfit's tooltip, for the window's rows and the bar's buttons |
+| `modules/Sheet.lua` | `NS.Sheet`: which character sheet is up (stock, EllesmereUI, ChonkyCharacterSheet) and where on it the sheet button and the window go; reads only, anchors nothing |
 | `modules/Dock.lua` | `NS.Dock`: the sheet holder and button, the window's show model, its follow and its layer sync |
 | `modules/Window.lua` | `NS.Window`: the outfit window's chrome, list body, scroll bar, footer and render |
 | `modules/Window_ListModel.lua` | `NS.WindowListModel`: what the outfit list shows, in order |
@@ -148,14 +150,14 @@ the diagnostics sections.
 | `modules/Dialog_TriggerFields.lua` | `NS.TriggerFields`: the trigger parameter editors, nine field types |
 | `modules/Dialog_Rebuild.lua` | `NS.RebuildDialog`: the multi-stat rebuild dialog |
 | `modules/Dialog_Progress.lua` | `NS.ProgressDialog`: the optimizer's progress window |
-| `modules/IconChooser.lua` | `NS.IconChooser`: the outfit icon picker |
 | `modules/Bar.lua` | `NS.Bar`: the outfit bar |
 | `modules/Bar_Buttons.lua` | The outfit bar's pooled buttons |
-| `modules/QuickSlots.lua` | `NS.QuickSlots`: the equipment flyout hooks |
+| `modules/Broker.lua` | `NS.Broker`: the `OutfitterRebornOutfits` LibDataBroker data source, the old addon's outfit switcher (a second object beside the launcher; [ARCHITECTURE.md](ARCHITECTURE.md#documented-deviations)) |
+| `modules/QuickSlots.lua` | `NS.QuickSlots`: the equipment flyout hooks, and the left column's drawer turned outward while the window shows |
 | `modules/QuickSlots_Sort.lua` | The flyout's upgrade-track sort (extends `NS.QuickSlots`) |
 | `modules/Preview.lua` | `NS.Preview`: test mode |
 | `modules/Api.lua` | The public API, `NS.API.v1`, published as `OutfitterReborn.API.v1` ([ARCHITECTURE.md](ARCHITECTURE.md#public-api)) |
-| `modules/Diagnostics.lua` | This addon's sections of `/of diagnostics` (debug-logging-§14) |
+| `modules/Diagnostics.lua` | This addon's sections of `/or diagnostics` (debug-logging-§14) |
 
 ## settings/
 

@@ -1,6 +1,6 @@
 # Slash dispatch
 
-How `/of` and `/outfitter` reach a handler (documentation-§3, Tier 2: eight or more commands). The
+How `/or` and `/outfitterreborn` reach a handler (documentation-§3, Tier 2: eight or more commands). The
 dispatcher is LibKa0s-Slash, built from the descriptor in `settings/Slash.lua`; the command list is
 `NS.COMMANDS`, passed in and never owned by the library.
 
@@ -13,10 +13,10 @@ second dispatcher:
   through `SecureCmdOptionParse`. A nil result (no clause matched) is a silent no-op, as in a Blizzard
   macro. The chosen clause then goes to the dispatcher.
 - An outfit verb whose **argument** opens with `[` passes that argument alone through
-  `SecureCmdOptionParse` (`NS.Slash.ParseArgument`, called by `NS.Commands.ResolveOutfit`), so `/of wear [spec:1] Tank; DPS` wears "Tank" in spec 1 and "DPS"
+  `SecureCmdOptionParse` (`NS.Slash.ParseArgument`, called by `NS.Commands.ResolveOutfit`), so `/or wear [spec:1] Tank; DPS` wears "Tank" in spec 1 and "DPS"
   otherwise. A `;` after a verb belongs to that verb's argument.
 
-The help header reads `[OR] v1.1.0 — slash commands (/outfitter is an alias for /of)`.
+The help header reads `[OR] v1.1.0 — slash commands (/outfitterreborn is an alias for /or)`.
 
 ## The reserved verbs
 
@@ -31,17 +31,17 @@ them (slash-commands-§2).
 | `enable` | Turn the addon on | answers |
 | `disable` | Turn the addon off without unloading it | answers |
 | `list` | List every setting | answers |
-| `get` | Read one setting: `/of get path` | answers |
-| `set` | Write one setting: `/of set path value` | answers |
-| `reset` | Reset one setting: `/of reset path` | answers |
+| `get` | Read one setting: `/or get path` | answers |
+| `set` | Write one setting: `/or set path value` | answers |
+| `reset` | Reset one setting: `/or reset path` | answers |
 | `resetall` | Reset every setting (asks first) | answers |
 | `debug` | Debug console; `on`/`off` set logging, `diagnostics` writes the report | answers |
 | `diagnostics` | Write the diagnostics report to the debug console | answers |
-| `perf` | Performance capture; try `/of perf help` | answers |
+| `perf` | Performance capture; try `/or perf help` | answers |
 | `version` | Print the addon version | answers |
 
 A refused verb prints the library's one line: `[OR] Ka0s Outfitter Reborn is disabled — enable it
-with /of enable`. The `list`, `get`, `set` and `reset` verbs reach settings only, never outfits
+with /or enable`. The `list`, `get`, `set` and `reset` verbs reach settings only, never outfits
 (slash-commands-§3): the per-outfit rows are on `NS.OutfitSchema`, which the CLI does not read.
 
 `NS.RunVerb(verb, rest)` runs one verb's handler by name, so the launcher's Enabled entry and the
@@ -83,7 +83,7 @@ means the current Complete outfit; a name that matches nothing prints "Couldn't 
 …". Every wear, unwear, toggle and update counts as a hardware event, so the outfit's title is set
 the way a click sets it. Only a key binding also clears the outfit's trigger Disabled flag.
 
-**Old verbs** map onto the new surface: `sound on|off` → `/of set equip.muteSounds false|true`,
-`errors on|off` → `/of set equip.showErrors …`, `reset bar` → `/of reset bar.position`, the old
+**Old verbs** map onto the new surface: `sound on|off` → `/or set equip.muteSounds false|true`,
+`errors on|off` → `/or set equip.showErrors …`, `reset bar` → `/or reset bar.position`, the old
 `reset` → `deleteall`, the old `enable`/`disable` (automatic changes) → `auto on|off`; `summary`,
 `rating`, `itemstats` and the bare `/unequip` are gone.

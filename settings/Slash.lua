@@ -1,6 +1,6 @@
 local _, NS = ...
 -- settings/Slash.lua — the ordered NS.COMMANDS table, the LibKa0s-Slash-1.0 descriptor and the macro-
--- conditional routing wrapper (H25); `/of` and `/outfitter` both reach the one dispatcher.
+-- conditional routing wrapper (H25); `/or` and `/outfitterreborn` both reach the one dispatcher.
 
 NS.Slash = NS.Slash or {}
 local Sl = NS.Slash
@@ -30,8 +30,8 @@ end
 -- Declined SHOULD (standalone-windows :52): `show` and `hide` exist, but there is no window-toggle verb,
 -- because `toggle` has been the outfit verb in players' macros since before this fork (C35;
 -- docs/slash-dispatch.md; a row in docs/ARCHITECTURE.md's deviation register). The old verbs map as
--- design §4.3.2's table says: `sound` and `errors` are `/of set equip.muteSounds|equip.showErrors`,
--- `reset bar` is `/of reset bar.position`, the old `reset` is `deleteall`, the old automation
+-- design §4.3.2's table says: `sound` and `errors` are `/or set equip.muteSounds|equip.showErrors`,
+-- `reset bar` is `/or reset bar.position`, the old `reset` is `deleteall`, the old automation
 -- `enable`/`disable` is `auto on|off`; `summary`, `rating`, `itemstats` and the bare `/unequip` are
 -- gone (INV §18, H5).
 NS.COMMANDS = {
@@ -44,15 +44,15 @@ NS.COMMANDS = {
     { "enable",      L["Turn the addon on"],                       function() doEnabled(true) end },
     { "disable",     L["Turn the addon off without unloading it"], function() doEnabled(false) end },
     { "list",        L["List every setting"],                      function() cli:CliList() end },
-    { "get",         L["Read one setting: /of get path"],          function(rest) cli:CliGet(rest) end },
-    { "set",         L["Write one setting: /of set path value"],   function(rest) cli:CliSet(rest) end },
-    { "reset",       L["Reset one setting: /of reset path"],       function(rest) cli:CliReset(rest) end },
+    { "get",         L["Read one setting: /or get path"],          function(rest) cli:CliGet(rest) end },
+    { "set",         L["Write one setting: /or set path value"],   function(rest) cli:CliSet(rest) end },
+    { "reset",       L["Reset one setting: /or reset path"],       function(rest) cli:CliReset(rest) end },
     { "resetall",    L["Reset every setting (asks first)"],        function() NS.ShowResetAll() end },
     { "debug",       L["Debug console; on/off set logging, diagnostics writes the report"],
                                                                    function(rest) doDebug(rest) end },
     { "diagnostics", L["Write the diagnostics report to the debug console"],
                                                                    function() NS.DebugLog:RunDiagnostics() end },
-    { "perf",        L["Performance capture; try /of perf help"], function(rest) doPerf(rest) end },
+    { "perf",        L["Performance capture; try /or perf help"], function(rest) doPerf(rest) end },
     { "version",     L["Print the addon version"],                 function() cli:CliVersion() end },
     { "show",        L["Show the outfit window on the character sheet"], feature(function() NS.Dock.Open() end) },
     { "hide",        L["Hide the outfit window"],                  feature(function() NS.Dock.Close() end) },
@@ -80,11 +80,11 @@ NS.COMMANDS = {
     { "updatetitle", L["Re-apply the title of the outfit you are wearing"],
                                                                    feature(function() NS.Stack.UpdateTitle(true) end) },
     -- Live (HOST_LIVE_VERBS): one setting, as `set` is; the key bindings refuse it themselves.
-    { "auto",        L["Automatic outfit changes: /of auto on, off, or no word to see the state"],
+    { "auto",        L["Automatic outfit changes: /or auto on, off, or no word to see the state"],
                                                                    function(rest) doAuto(rest) end },
     { "zone",        L["Show what Outfitter knows about where you are"], function() NS.Commands.Zone() end },
     { "iteminfo",    L["Print an item link's fields"], function(rest) NS.Commands.ItemInfo(rest) end },
-    { "test",        L["Sample outfits on the outfit bar: /of test"], feature(function() NS.Preview.Toggle() end) },
+    { "test",        L["Sample outfits on the outfit bar: /or test"], feature(function() NS.Preview.Toggle() end) },
     -- slash-commands-§8: the Lock frame row's path, through the one seam.
     { "lock",        L["Lock the outfit bar in place"],            feature(function() writeRow("locked", true) end) },
     { "unlock",      L["Unlock the outfit bar to move it"],        feature(function() writeRow("locked", false) end) },
@@ -120,7 +120,7 @@ local SlashLib = LibStub and LibStub("LibKa0s-Slash-1.0", true)
 local degraded = false
 
 if not SlashLib then
-    -- Degrade, never error: `/of` is registered unconditionally, so something must answer it. The
+    -- Degrade, never error: `/or` is registered unconditionally, so something must answer it. The
     -- host verbs keep working; the schema CLI names the missing library. The ONE library string this
     -- stub carries is DISABLED_LINE_FORMAT, pinned by tests/test_slash.lua against the live major;
     -- every other line below is the stub's own plain wording, never a copy of the library's.
@@ -235,7 +235,7 @@ function doEnabled(want)
     writeRow("enabled", want, NS.ApplyEnabled)
 end
 
--- `/of auto` words: on/off, with the old verbs' `enable`/`disable` as synonyms (design §4.3.2).
+-- `/or auto` words: on/off, with the old verbs' `enable`/`disable` as synonyms (design §4.3.2).
 local AUTO_WORDS = { on = true, enable = true, off = false, disable = false }
 
 --- `auto`: write `auto.enabled`, or read it back with no word.
@@ -271,7 +271,7 @@ function Sl:DisabledLine() return cli:DisabledLine() end
 -- ── Macro conditionals (H25) ─────────────────────────────────────────────────────────────────────
 -- The old addon took `/outfitter wear [combat] Tank; Normal` from macros. The client's own option
 -- parser decides the clause, then the one dispatcher runs what it chose: host ROUTING ahead of the
--- library, not a second dispatcher. A message carrying a hyperlink (`|h`, as `/of iteminfo <link>`
+-- library, not a second dispatcher. A message carrying a hyperlink (`|h`, as `/or iteminfo <link>`
 -- does) is never parsed, because an item name may hold `[` or `;`.
 --
 -- Only a message OPENING with `[` is parsed at the top level. A `;` after a verb belongs to that
@@ -298,7 +298,7 @@ function Sl.Route(msg)
 end
 
 --- An outfit verb's argument (modules/Commands.lua, P4.24): one starting with `[` is decided alone,
---- so `/of wear [spec:1] Tank; DPS` wears Tank on the first spec and DPS otherwise. Answers the
+--- so `/or wear [spec:1] Tank; DPS` wears Tank on the first spec and DPS otherwise. Answers the
 --- chosen text, or nil when no clause matched.
 function Sl.ParseArgument(rest)
     rest = tostring(rest or "")

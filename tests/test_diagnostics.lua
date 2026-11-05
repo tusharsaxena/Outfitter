@@ -1,7 +1,7 @@
 -- tests/test_diagnostics.lua — P4.26 (design §12 row P4.26, §6.5 ZoneInfo, §5.10 Diagnostic, INV §4,
--- INV §16 quirk 4): what `/of zone` and `/of diagnostics` show.
+-- INV §16 quirk 4): what `/or zone` and `/or diagnostics` show.
 --
--- `NS.States.ZoneInfo()` and `NS.Equip.Diagnostic()` are called directly here; the `/of zone` route
+-- `NS.States.ZoneInfo()` and `NS.Equip.Diagnostic()` are called directly here; the `/or zone` route
 -- (Commands.Zone printing one after the other) is test_slash's, P4.24. The rest pins this addon's
 -- sections of the diagnostics report (modules/Diagnostics.lua): the zone producer's view, the
 -- equipment bracket's lines with the STUCK tripwire, the faulted and unavailable trigger bindings,
@@ -79,7 +79,7 @@ local function mentions(lines, needle)
     return false
 end
 
--- ── /of zone: the two producers, called directly ─────────────────────────────────────────────
+-- ── /or zone: the two producers, called directly ─────────────────────────────────────────────
 
 test("diagnostics: ZoneInfo gives the instance line and the active zone outfits", function()
     local s = scene()
@@ -129,7 +129,7 @@ test("diagnostics: Equip.Diagnostic carries the STUCK line only while depth outr
     assertEqual(lines[#lines], STUCK)
 end)
 
--- ── /of diagnostics: this addon's sections ───────────────────────────────────────────────────
+-- ── /or diagnostics: this addon's sections ───────────────────────────────────────────────────
 
 test("diagnostics: the report's sections, in order", function()
     local names = {}

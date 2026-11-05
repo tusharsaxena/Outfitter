@@ -74,6 +74,9 @@ files["core/SkinSetup.lua"] = { read_globals = { "ITEM_QUALITY_COLORS" } }
 -- The degraded context menu hands its `fill` to the client's own menu (core/WidgetsSetup.lua).
 files["core/WidgetsSetup.lua"] = { read_globals = { "MenuUtil" } }
 
+-- The Outfits broker's modifier-click asks to set the outfit to the worn items (plan Task 3.8).
+files["modules/Broker.lua"] = { read_globals = { "IsShiftKeyDown", "IsControlKeyDown", "IsAltKeyDown" } }
+
 -- A queued protected write that raises goes to the client's error handler, and the next one runs.
 files["core/SecureQueue.lua"] = { read_globals = { "geterrorhandler" } }
 
@@ -134,7 +137,7 @@ for _, f in ipairs({ "modules/Tooltips.lua", "modules/Tooltips_Compare.lua", "mo
 end
 
 -- The dock, the window and the slot checkboxes sit on the character sheet and stack with it.
-for _, f in ipairs({ "modules/Dock.lua", "modules/Window.lua", "modules/Window_ListModel.lua",
+for _, f in ipairs({ "modules/Sheet.lua", "modules/Dock.lua", "modules/Window.lua", "modules/Window_ListModel.lua",
                      "modules/Window_Rows.lua", "modules/SlotEnables.lua" }) do
     files[f] = {
         read_globals = {
@@ -157,8 +160,8 @@ for _, f in ipairs({ "modules/QuickSlots.lua", "modules/QuickSlots_Sort.lua" }) 
     }
 end
 
--- The bar and the icon chooser take a dropped spell, item or macro as an icon.
-for _, f in ipairs({ "modules/Bar.lua", "modules/Bar_Buttons.lua", "modules/IconChooser.lua" }) do
+-- The bar takes a dropped spell, item or macro as an icon.
+for _, f in ipairs({ "modules/Bar.lua", "modules/Bar_Buttons.lua" }) do
     files[f] = {
         read_globals = {
             "GetCursorInfo", "C_Spell", "C_Item", "GetMacroInfo", "IsAltKeyDown",

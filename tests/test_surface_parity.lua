@@ -42,7 +42,7 @@ end
 
 -- ── the degraded load, and the seams that landed before C14 ──────────────────────────────────
 
-test("parity: the degraded load still initializes, enables and answers /of version", function()
+test("parity: the degraded load still initializes, enables and answers /or version", function()
     -- red under: any stub above that raises at load or in OnInitialize (the instance never gets a db)
     local _, d = pair()
     assertNil(d.mocks.LibStub("LibKa0s-Core-1.0", true), "the library is not absent")
@@ -52,7 +52,7 @@ test("parity: the degraded load still initializes, enables and answers /of versi
     d.mocks.__resetPrinted()
     d.NS.Slash:OnSlash("version")
     local said = table.concat(d.mocks.__printed(), "\n")
-    assertTrue(said:find("1.1.0", 1, true) ~= nil, "/of version answered: " .. said)
+    assertTrue(said:find("1.1.0", 1, true) ~= nil, "/or version answered: " .. said)
 end)
 
 --- Form two against an INSTANCE: the stub mirrors what `lib:New(descriptor)` returned, so the
@@ -157,6 +157,47 @@ test("parity: the Media seam answers on both arms, nil being a real answer", fun
     local _, d = pair()
     assertNil(d.NS.Icon("close"), "the stub invented an icon path")
     assertNil(d.NS.MediaFont("any"), "the stub invented a font path")
+end)
+
+test("parity: the IconBrowser seam's glyph helpers answer on both arms, the stub drawing no glyph", function()
+    -- members from: grep -rhoE "NS\.Glyph\.[A-Za-z]+" modules/ settings/ core/
+    bothArms("NS.Glyph", function(NS) return NS.Glyph end,
+        { IsGlyph = "function", ValidColor = "function", Tint = "function" })
+    local l, d = pair()
+    local lib = l.mocks.LibStub("LibKa0s-IconBrowser-1.0")
+    local path = l.NS.Icon("ph:sword")
+    assertEqual(l.NS.Glyph.IsGlyph(path), lib.IsGlyph(path))
+    assertEqual(l.NS.Glyph.IsGlyph(path), "ph:sword")
+    assertNil(l.NS.Glyph.IsGlyph(135349), "a fileID is not a glyph")
+    -- red under: a stub that reads any string as a glyph (a stored glyph would draw blank).
+    assertNil(d.NS.Glyph.IsGlyph(path), "the stub read a glyph with no library")
+    for arm, NS in pairs({ live = l.NS, degraded = d.NS }) do
+        assertTrue(NS.Glyph.ValidColor(nil), arm .. ": none is a color")
+        assertFalse(NS.Glyph.ValidColor(false), arm .. ": false is not stored")
+        assertFalse(NS.Glyph.ValidColor("red"), arm)
+        local r, g, b = NS.Glyph.Tint(nil)
+        assertTrue(r == 1 and g == 1 and b == 1, arm .. ": no color is white")
+    end
+    assertTrue(l.NS.Glyph.ValidColor("ff8000"))
+    local r, g, b = d.NS.Glyph.Tint("ff0000")
+    assertTrue(r == 1 and g == 1 and b == 1, "the stub tints nothing")
+end)
+
+test("parity: the IconBrowser seam's browser answers on both arms, the stub opening nothing", function()
+    -- members from: grep -rhoE "NS\.IconBrowser\.[A-Za-z]+" modules/ settings/ core/
+    bothArms("NS.IconBrowser", function(NS) return NS.IconBrowser end,
+        { Open = "function", Close = "function", IsOpen = "function", Browser = "function",
+          Suspend = "function", Resume = "function" })
+    local l, d = pair()
+    local id = d.NS.Outfits.Create("Pretty", {})
+    -- red under: a stub Open that answers true (the menu would think a browser is up).
+    assertFalse(d.NS.IconBrowser.Open(id), "the stub opened a browser with no library")
+    assertFalse(d.NS.IconBrowser.IsOpen())
+    assertNil(d.NS.IconBrowser.Browser())
+    d.NS.IconBrowser.Close("test")
+    assertTrue(l.NS.IconBrowser.Open(l.NS.Outfits.Create("Pretty", {})))
+    l.NS.IconBrowser.Close("test")
+    assertFalse(l.NS.IconBrowser.IsOpen())
 end)
 
 test("parity: the Env seam answers the TOC's version on both arms", function()

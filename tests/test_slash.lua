@@ -1,8 +1,8 @@
--- tests/test_slash.lua — the slash descriptor's reserved part (design §4.3): the verb table, bare /of,
+-- tests/test_slash.lua — the slash descriptor's reserved part (design §4.3): the verb table, bare /or,
 -- help and the landing rows, enable/disable through the seam, the debug and perf verbs, the schema
 -- CLI, resetall, both chat commands, the H25 macro-conditional routing and the library-absent
 -- dispatcher; then (P4.24) the outfit verbs of design §4.3.2 on the real modules: their order, their
--- parity with /of help, the README's Usage pointing at /of help instead of carrying a command list
+-- parity with /or help, the README's Usage pointing at /or help instead of carrying a command list
 -- (documentation-§1 item 5), the live set on both arms, the
 -- outfit-argument rules, the lines legacy printed (fixtures/legacy/commands.lua), the old-verb table
 -- and each verb's route. NS.Popups lands with P4.21 (parallel, group J): the deleteall case fakes it
@@ -38,7 +38,7 @@ test("slash: the reserved verbs open NS.COMMANDS, in the DpsRace order", functio
     assertEqual(table.concat(names, ",", 1, #RESERVED), table.concat(RESERVED, ","))
 end)
 
-test("slash: bare /of opens the settings panel", function()
+test("slash: bare /or opens the settings panel", function()
     local inst = T.load()
     local opened = 0
     inst.NS.OpenOptionsPanel = function() opened = opened + 1 end
@@ -53,7 +53,7 @@ test("slash: help lists every COMMANDS verb, in order", function()
     local text = table.concat(inst.mocks.__printed(), "\n")
     local last = 0
     for _, row in ipairs(inst.NS.COMMANDS) do
-        local at = text:find("/of " .. row[1], 1, true)
+        local at = text:find("/or " .. row[1], 1, true)
         assertTrue(at ~= nil, "help names " .. row[1])
         assertTrue(at > last, row[1] .. " is in COMMANDS order")
         last = at
@@ -128,11 +128,11 @@ test("slash: `resetall` asks first, through the one popup", function()
     assertEqual(shown[1], "OUTFITTERREBORN_RESET_ALL")
 end)
 
-test("slash: /of and /outfitter both reach the dispatcher", function()
+test("slash: /or and /outfitterreborn both reach the dispatcher", function()
     local inst = T.load()
     local M = inst.mocks
     local console = M.LibStub("AceConsole-3.0")
-    for _, command in ipairs({ "of", "outfitter" }) do
+    for _, command in ipairs({ "or", "outfitterreborn" }) do
         assertTrue(console.commands[command] ~= nil, "/" .. command .. " is not registered")
         M.__resetPrinted()
         console:__slash(command, "version")
@@ -149,7 +149,7 @@ test("slash: `skin` is refused with the enable line while disabled; the live ver
     local out = bare(M)
     assertEqual(#out, 1)
     assertEqual(out[1], NS.Slash:DisabledLine())
-    assertEqual(out[1], "Ka0s Outfitter Reborn is disabled \226\128\148 enable it with |cFFFFFF00/of enable|r",
+    assertEqual(out[1], "Ka0s Outfitter Reborn is disabled \226\128\148 enable it with |cFFFFFF00/or enable|r",
         "the library's DISABLED_LINE_FORMAT")
     M.__resetPrinted()
     NS.Slash:OnSlash("version")
@@ -193,7 +193,7 @@ test("slash H25: a message carrying a hyperlink is never parsed", function()
 end)
 
 test("slash H25: an outfit verb's argument is decided alone", function()
-    -- `/of wear [spec:1] Tank; DPS`: the message opens with a verb, so the top level passes it whole
+    -- `/or wear [spec:1] Tank; DPS`: the message opens with a verb, so the top level passes it whole
     -- and the argument carries its own; modules/Commands.lua (P4.24) decides it here.
     local inst = T.load()
     local Sl, M = inst.NS.Slash, inst.mocks
@@ -228,7 +228,7 @@ test("slash H25: both chat commands are registered on the routing wrapper", func
     local console = M.LibStub("AceConsole-3.0")
     M.InCombatLockdown = function() return true end
     M.__resetPrinted()
-    console:__slash("outfitter", "[nocombat] help; version")
+    console:__slash("outfitterreborn", "[nocombat] help; version")
     assertTrue(anyLine(M, "1.1.0"), "the conditional was not routed through the parser")
 end)
 
@@ -239,7 +239,7 @@ test("slash: the stub's refusal format is byte-equal to the live library's", fun
     T.assertLibraryConstant(degraded.NS.Slash.__stubFormat, "LibKa0s-Slash-1.0", "DISABLED_LINE_FORMAT")
 end)
 
-test("slash: library absent, /of still answers, and enable/disable still land", function()
+test("slash: library absent, /or still answers, and enable/disable still land", function()
     local inst = T.load{ libFiles = {} }
     local NS, M = inst.NS, inst.mocks
     M.__resetPrinted()
@@ -352,22 +352,22 @@ test("slash: the outfit verbs follow the reserved ones, in design §4.3.2's orde
     assertEqual(table.concat(names, ","), table.concat(OUTFIT_VERBS, ","))
 end)
 
-test("slash: every verb is in /of help, and the README's Usage points at it rather than listing them", function()
+test("slash: every verb is in /or help, and the README's Usage points at it rather than listing them", function()
     -- red under: a help printer that stops at the reserved verbs
     local inst = T.load()
     inst.mocks.__resetPrinted()
     inst.NS.Slash:OnSlash("help")
     local help = table.concat(inst.mocks.__printed(), "\n") .. "\n"
     for _, row in ipairs(inst.NS.COMMANDS) do
-        local want = "/of " .. row[1]
+        local want = "/or " .. row[1]
         assertTrue(help:find(want .. "[^%w]") ~= nil, "help lacks " .. want)
     end
     -- documentation-§1 item 5: Usage closes on the help verb and carries no command list, since
-    -- /of help already prints NS.COMMANDS (the authority, slash-commands-§4).
-    -- red under: restore a `- \`/of verb\`` bullet list to the README's Usage
+    -- /or help already prints NS.COMMANDS (the authority, slash-commands-§4).
+    -- red under: restore a `- \`/or verb\`` bullet list to the README's Usage
     local usage = section("README.md", "Usage")
-    assertTrue(usage:find("`/of help`", 1, true) ~= nil, "README Usage points at /of help")
-    assertFalse(usage:find("\n%- `/of ") ~= nil, "README Usage carries a command list")
+    assertTrue(usage:find("`/or help`", 1, true) ~= nil, "README Usage points at /or help")
+    assertFalse(usage:find("\n%- `/or ") ~= nil, "README Usage carries a command list")
 end)
 
 test("slash: auto, zone and iteminfo answer while disabled on both arms; wear is refused", function()
@@ -489,7 +489,7 @@ test("slash: wear, wear <unknown> and zone print the lines legacy printed (fixtu
     end
 end)
 
-test("slash: /of zone routes to Commands.Zone: the zone lines, then the equipment bracket's", function()
+test("slash: /or zone routes to Commands.Zone: the zone lines, then the equipment bracket's", function()
     local NS, M = scene()
     local zone = spy(NS.Commands, "Zone")
     NS.Slash:OnSlash("zone")

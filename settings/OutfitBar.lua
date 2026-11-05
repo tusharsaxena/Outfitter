@@ -5,7 +5,7 @@ local _, NS = ...
 -- (options-ui-§16).
 --
 -- The bar re-renders on SETTINGS_CHANGED for any `bar.*` path (modules/Bar.lua), so no row here needs
--- an onChange: the panel, `/of set` and a reset all reach the bar the same way.
+-- an onChange: the panel, `/or set` and a reset all reach the bar the same way.
 
 local L = NS.L
 local D = NS.defaults.profile
@@ -14,7 +14,7 @@ local DISPLAY = L["Display"]
 
 -- ── bar.position ────────────────────────────────────────────────────────────────────────────────
 -- A string row whose storage is `profile.windows.bar` (`{ point, x, y }`, design §3.4), so the bar's
--- drag stop and `/of get|set|reset bar.position` reach the bar's place through the one write seam (the
+-- drag stop and `/or get|set|reset bar.position` reach the bar's place through the one write seam (the
 -- old `reset bar`, H5). Its default is the defaults tree's, encoded, and every write decodes into a
 -- NEW table, so a reset copies the default and never aliases it (the legacy aliased it:
 -- OutfitterBar.lua:107-115).

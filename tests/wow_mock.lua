@@ -31,6 +31,51 @@ local installBindings = dofile(root .. "/tests/_kit/mock_bindings.lua")
 -- (core/Constants.lua LAYERS), and the base alone answers GetFrameLevel with the frame itself.
 local installLayers = dofile(root .. "/tests/_kit/mock_layers.lua")
 
+-- The three character sheets modules/Sheet.lua tells apart (sheet and window feedback design G1-G3).
+-- The stock sheet's Equipment Manager tab is on every build: PaperDollSidebarTab3, 33 x 35 from
+-- PaperDollSidebarTabTemplate (wow-ui-source@297d7aa:Interface/AddOns/Blizzard_UIPanels_Game/
+-- Mainline/PaperDollFrame.xml:393-394, :475-503). The sheet addons' frames are built only when a case
+-- asks, as the client has them only when the addon built them:
+--   M.__sheets.eui()                         EllesmereUI's Equipment text tab, EUI_CharSheet_Equipment
+--   M.__sheets.chonky()                      Chonky's backdrop, CharacterFrameBgbg
+--   M.__sheets.chonkyPanel(name, right, top) a Chonky side panel (CCSf, ccsm_sf, ccsrf_sf, ccsgf_sf)
+--   M.__sheets.place(frame, right, top)      lay a frame out: its GetRight / GetTop answer these
+-- Each answers the frame, shown. Marking the addon loaded is the case's (M.__loadedAddOns).
+-- CharacterFrameCloseButton is on every build too, at UIPanelCloseButtonNoScripts' frameLevel 510,
+-- over the frame's NineSlice at 500 (wow-ui-source@297d7aa:Interface/AddOns/Blizzard_SharedXML/
+-- Mainline/SharedUIPanelTemplates.xml:134, :381, :680; CharacterFrame is a ButtonFrameTemplate,
+-- Blizzard_UIPanels_Game/Mainline/CharacterFrame.xml:147).
+local CLOSE_BUTTON_LEVEL = 510
+local function installSheets(M)
+    local function place(f, right, top)
+        rawset(f, "GetRight", function() return right end)
+        rawset(f, "GetTop", function() return top end)
+        return f
+    end
+    local tabs = M.CreateFrame("Frame", "PaperDollSidebarTabs", M.PaperDollFrame)
+    local tab3 = M.CreateFrame("Button", "PaperDollSidebarTab3", tabs)
+    rawset(tab3, "GetSize", function() return 33, 35 end)
+    local close = M.CreateFrame("Button", "CharacterFrameCloseButton", M.CharacterFrame)
+    close:SetFrameLevel(CLOSE_BUTTON_LEVEL)
+    -- The sheet's sidebar tabs, as PaperDollFrame.lua declares them: the third is the Equipment
+    -- Manager's, whose icon an outfit row draws (wow-ui-source@297d7aa:Interface/AddOns/
+    -- Blizzard_UIPanels_Game/Mainline/PaperDollFrame.lua:79, :97-100).
+    local SIDEBAR_TABS = "Interface\\PaperDollInfoFrame\\PaperDollSidebarTabs"
+    M.PAPERDOLL_SIDEBARS = {
+        { icon = nil, texCoords = { 0.109375, 0.890625, 0.09375, 0.90625 } },
+        { icon = SIDEBAR_TABS, texCoords = { 0.01562500, 0.53125000, 0.32421875, 0.46093750 } },
+        { icon = SIDEBAR_TABS, texCoords = { 0.01562500, 0.53125000, 0.46875000, 0.60546875 } },
+    }
+    M.__sheets = {
+        place  = place,
+        eui    = function() return M.CreateFrame("Frame", "EUI_CharSheet_Equipment", M.CharacterFrame) end,
+        chonky = function() return M.CreateFrame("Frame", "CharacterFrameBgbg", M.CharacterFrame) end,
+        chonkyPanel = function(name, right, top)
+            return place(M.CreateFrame("Frame", name, M.CharacterFrame), right, top)
+        end,
+    }
+end
+
 local function build()
     local M = base()
     local libs = M.__libs
@@ -237,6 +282,7 @@ local function build()
     Gear.install(M, { items = Fixtures.items, inventories = Fixtures.inventories, secret = Secrets.secret,
                     sets = GearSets })
     World.install(M, { isSecret = Secrets.isSecret, gear = Gear })
+    installSheets(M)
 
     return M
 end

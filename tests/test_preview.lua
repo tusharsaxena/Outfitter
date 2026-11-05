@@ -327,7 +327,7 @@ test("preview: every start and stop, from any source, repaints an open settings 
     local NS, M = scene()
     local paints = 0
     NS.Helpers.RefreshScalars = function() paints = paints + 1 end
-    NS.Preview.Toggle()                               -- the launcher's entry and `/of test`
+    NS.Preview.Toggle()                               -- the launcher's entry and `/or test`
     -- red under: a Start that does not call NS.Helpers.RefreshScalars
     assertEqual(paints, 1, "a start did not repaint the panel")
     NS.Preview.Stop("switch")                          -- the strip's right-click

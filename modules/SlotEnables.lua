@@ -23,9 +23,18 @@ NS.SlotEnables = SE
 
 local LEVEL = NS.Constants.LAYERS.LEVEL
 
--- The boxes that anchor at the slot button's TOPRIGHT: the right-hand column and the weapons.
-local RIGHT_SIDE = { Finger0Slot = true, Finger1Slot = true, Trinket0Slot = true, Trinket1Slot = true,
-                     MainHandSlot = true, SecondaryHandSlot = true }
+-- The sheet's three slot columns (sheet and window feedback design G8). Each box sits on the slot's
+-- inner corner: LEFT and BOTTOM boxes at TOPRIGHT, RIGHT boxes at TOPLEFT. NS.QuickSlots reads the LEFT
+-- column at call time for the outward drawer.
+local COLUMN = {
+    HeadSlot = "LEFT", NeckSlot = "LEFT", ShoulderSlot = "LEFT", BackSlot = "LEFT", ChestSlot = "LEFT",
+    ShirtSlot = "LEFT", TabardSlot = "LEFT", WristSlot = "LEFT",
+    HandsSlot = "RIGHT", WaistSlot = "RIGHT", LegsSlot = "RIGHT", FeetSlot = "RIGHT", Finger0Slot = "RIGHT",
+    Finger1Slot = "RIGHT", Trinket0Slot = "RIGHT", Trinket1Slot = "RIGHT",
+    MainHandSlot = "BOTTOM", SecondaryHandSlot = "BOTTOM",
+}
+SE.COLUMN = COLUMN
+local BOX_SIZE, BOX_INSET = 14, 2
 local MAX_DEPTH = 12
 
 local frame
@@ -146,12 +155,12 @@ end
 
 local function newBox(slot)
     local cb = CreateFrame("CheckButton", "OutfitterRebornEnable" .. slot, frame)
-    cb:SetSize(24, 24)
+    cb:SetSize(BOX_SIZE, BOX_SIZE)
     local anchor = _G["Character" .. slot]
-    if RIGHT_SIDE[slot] then
-        cb:SetPoint("TOPRIGHT", anchor, "TOPRIGHT", 4, 4)
+    if COLUMN[slot] == "RIGHT" then
+        cb:SetPoint("TOPLEFT", anchor, "TOPLEFT", -BOX_INSET, BOX_INSET)
     else
-        cb:SetPoint("TOPLEFT", anchor, "TOPLEFT", -4, 4)
+        cb:SetPoint("TOPRIGHT", anchor, "TOPRIGHT", BOX_INSET, BOX_INSET)
     end
     cb.slot = slot
     NS.Skin.Checkbox(cb, { hover = true })

@@ -6,10 +6,10 @@
 -- THE DESIGN §9.5 BUILDERS (P4.30), one per painted object: the sheet button, the window, a row of
 -- each of the three kinds, a slot checkbox in each of the three states, the footer buttons, the
 -- outfit, trigger, rebuild and progress dialogs, a trigger field of each of the nine types, the icon
--- chooser, the bar and a bar button, the drag handle, the test strip and a compare tooltip. Beside
+-- browser, the bar and a bar button, the drag handle, the test strip and a compare tooltip. Beside
 -- them, the controls P4.19 to P4.21 handed this task to check: the window's scroll bar and settings
 -- button, a row's trigger mark and an item row's name, the dialogs' error line, the progress fill,
--- the bar's worn mark, the icon chooser's grid button and scroll bar, and a list editor's remove mark.
+-- the bar's worn mark, the icon browser's selected cell and dim, and a list editor's remove mark.
 --
 -- THE GRAIN IS ONE PAINTED OBJECT. The kit spies on what `build` answers and on its regions and
 -- children, and a surface passes when anything under it changes, so each entry answers the object
@@ -75,6 +75,13 @@ return function(T)
     local function bar()
         live()
         return assert(NS.Bar.Frame(), "the bar was never rendered")
+    end
+
+    -- The library's icon browser, open on the hero outfit (built on its first Open).
+    local function browser()
+        live()
+        if not NS.IconBrowser.IsOpen() then assert(NS.IconBrowser.Open(hero), "the browser did not open") end
+        return NS.IconBrowser.Browser()
     end
 
     local function barButton()
@@ -166,9 +173,8 @@ return function(T)
         for _, s in ipairs(list) do surfaces[#surfaces + 1] = s end
     end
     for _, s in ipairs({
-        { name = "the icon chooser's shell", build = function() live(); return NS.IconChooser.Frame() end },
-        { name = "an icon chooser grid button", build = function() live(); return NS.IconChooser.Frame().buttons[1] end },
-        { name = "the icon chooser's scroll bar", build = function() return named("OutfitterRebornIconChooserScroll") end },
+        { name = "the icon browser's selected cell", build = function() return browser().cells[1].selected end },
+        { name = "the icon browser's dim", build = function() return browser().catcher end },
         { name = "the bar's backplate", build = function() return bar().bg end },
         { name = "a bar button", build = barButton },
         { name = "a bar button's worn mark", build = function() return barButton().worn end },

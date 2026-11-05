@@ -15,11 +15,11 @@ local DOCK_OVER_HOST = 1
 -- The fake sheet re-strataed by the host: a host value, never one of ours (C.LAYERS).
 local RAISED_HOST_STRATA = "HIGH"
 
--- The scene with the sheet laid out at (right 300, top 500) and the window open on it.
+-- The scene with the sheet (CharacterFrame, the stock sheet's NS.Sheet.Frame()) laid out at
+-- (right 300, top 500) and the window open on it.
 local function opened()
     local NS, M, fakes = scene()
-    rawset(M.PaperDollFrame, "GetRight", function() return 300 end)
-    rawset(M.PaperDollFrame, "GetTop", function() return 500 end)
+    M.__sheets.place(M.CharacterFrame, 300, 500)
     M.__world:openCharacter()
     NS.Dock.Open()
     return NS, M, fakes, M.OutfitterRebornWindow
@@ -51,14 +51,13 @@ test("dock: NS.Dock is published with the §7.2 surface", function()
                          "Attach", "Holder", "Install", "Suspend", "Resume" }) do
         assertEqual(type(D[k]), "function", k)
     end
-    assertEqual(D.Y_OFFSET, -30); assertEqual(D.FOLLOW_INTERVAL, 0.05)
+    assertEqual(D.Y_OFFSET, 0); assertEqual(D.FOLLOW_INTERVAL, 0.05)
 end)
 
 test("dock: the holder fills the sheet, and the sheet button toggles the window", function()
     local NS, M = scene()
     local holder, button = M.OutfitterRebornSheetHolder, M.OutfitterRebornSheetButton
     assertEqual(holder:GetParent(), M.PaperDollFrame)
-    assertEqual(button:GetParent(), holder)
     assertEqual(NS.Dock.Holder(), holder)
     M.__world:openCharacter()
     assertFalse(NS.Dock.IsShown(), "the window opens only when asked")
@@ -168,17 +167,38 @@ test("dock: the window takes ONE UIParent-relative SetPoint, and falls back to t
     assertEqual(#win.__pts, 1, "one SetPoint per attach")
     local p = win.__pts[1]
     assertEqual(p[1], "TOPLEFT"); assertEqual(p[2], M.UIParent); assertEqual(p[3], "BOTTOMLEFT")
-    assertEqual(p[4], 300); assertEqual(p[5], 500 + NS.Dock.Y_OFFSET)
+    assertEqual(p[4], 300); assertEqual(p[5], 500)
     -- The corner did not move: the follow re-issues nothing.
     M.OutfitterRebornDockDriver:__fire("OnUpdate", 0.05)
     assertEqual(#win.__pts, 1)
     -- The client refuses the anchor (a protected child): the window parks in the holder, follow off.
     rawset(win, "SetPoint", function() error("Cannot anchor protected frames to regions") end)
-    rawset(M.PaperDollFrame, "GetRight", function() return 320 end)
+    rawset(M.CharacterFrame, "GetRight", function() return 320 end)
     M.OutfitterRebornDockDriver:__fire("OnUpdate", 0.05)
     -- red under: call PositionWindow without pcall in Dock.Attach (the tick raises).
     assertTrue(NS.Dock.followDisabled)
     assertEqual(win:GetParent(), M.OutfitterRebornSheetHolder)
+end)
+
+-- The drawer follows the window (modules/QuickSlots.lua). A window parked in the holder is hidden by
+-- its parent, after which its own Hide fires nothing in the client, so the sheet's OnHide syncs too.
+test("dock: closing the sheet syncs the drawer after the window is gone", function()
+    local NS, M, _, win = opened()
+    local seen = {}
+    local real = NS.QuickSlots.DrawerSync
+    NS.QuickSlots.DrawerSync = function(...)
+        seen[#seen + 1] = win:IsVisible() == true
+        return real(...)
+    end
+    -- The client's hide through the parent: the window's OnHide runs, its own shown flag still set.
+    win:__fire("OnHide")
+    rawset(win, "Hide", function(self) rawset(self, "__shown", false) end)
+    M.__world:closeCharacter()
+    NS.QuickSlots.DrawerSync = real
+    -- red under: no DrawerSync in the sheet's OnHide (the window's own hide fired nothing).
+    assertTrue(#seen >= 2, "the sheet's hide did not sync the drawer")
+    assertFalse(seen[#seen], "the last sync ran while the window was still visible")
+    assertFalse(NS.Dock.IsVisible(), "Dock.IsVisible answers a window under a hidden sheet")
 end)
 
 test("dock: a sheet that was never laid out parks the window at the UIParent TOPLEFT", function()
@@ -194,7 +214,7 @@ test("dock: the follow runs every 0.05 s on the driver frame, only while shown a
     local NS, M, _, win = opened()
     local driver = M.OutfitterRebornDockDriver
     assertTrue(driver.__scripts.OnUpdate ~= nil, "the follow is armed while the window is shown")
-    rawset(M.PaperDollFrame, "GetRight", function() return 350 end)
+    rawset(M.CharacterFrame, "GetRight", function() return 350 end)
     driver:__fire("OnUpdate", 0.03)
     -- red under: drop the FOLLOW_INTERVAL throttle in the driver's OnUpdate.
     assertEqual(#win.__pts, 1, "the follow ran before 0.05 s")
@@ -267,7 +287,7 @@ test("dock: a stood-down tick returns before it reads the sheet (the latch first
     local driver = M.OutfitterRebornDockDriver
     local tick = driver.__scripts.OnUpdate
     local reads = 0
-    rawset(M.PaperDollFrame, "GetRight", function() reads = reads + 1; return 300 end)
+    rawset(M.CharacterFrame, "GetRight", function() reads = reads + 1; return 300 end)
     NS.lifecycle:Hold("test")
     -- red under: drop the `if NS.IsStoodDown() then return end` from the driver's OnUpdate.
     tick(driver, 1)
@@ -322,16 +342,29 @@ test("dock: closing the window (Close, Escape) closes the dialogs; only the comb
     assertTrue(M.PaperDollFrame:IsShown(), "Escape closed the window only")
 end)
 
-test("dock: the window's OnHide clears the selection and closes the menu and the icon chooser", function()
+test("dock: the window's OnHide clears the selection and closes the menu and the icon browser", function()
     local NS, M, fakes = opened()
     local id = NS.Outfits.Create("Hat", { HeadSlot = { id = 0 } })
     NS.Stack.Select(id)
     NS.Dock.Close()
     assertNil(NS.Stack.Selected())
-    assertEqual(fakes.IconChooser.__count("Close"), 1)
-    assertEqual(fakes.IconChooser.__calls[1][2], "opener")
+    assertEqual(fakes.IconBrowser.__count("Close"), 1)
+    assertEqual(fakes.IconBrowser.__calls[1][2], "opener")
     assertFalse(NS.Dock.IsShown())
     assertTrue(M.PaperDollFrame:IsShown(), "closing the window closed the sheet")
+end)
+
+test("browser: closing the window or the sheet closes the browser", function()
+    local NS, M = opened()
+    local id = NS.Outfits.Create("Hat", { HeadSlot = { id = 0 } })
+    assertTrue(NS.IconBrowser.Open(id))
+    NS.Dock.Close()
+    -- red under: onWindowHide without NS.IconBrowser.Close (a browser over a closed window).
+    assertFalse(NS.IconBrowser.IsOpen(), "closing the window left the browser open")
+    NS.Dock.Open()
+    assertTrue(NS.IconBrowser.Open(id))
+    M.__world:closeCharacter()
+    assertFalse(NS.IconBrowser.IsOpen(), "closing the sheet left the browser open")
 end)
 
 test("dock: a stand-down hides the window and the sheet button; a stand-up shows the button", function()
@@ -371,4 +404,251 @@ test("dock: no file in modules/ names a strata literal (frame-layering-§5)", fu
     end
     -- red under: write win:SetFrameStrata("MEDIUM") anywhere in modules/.
     assertEqual(#hits, 0, table.concat(hits, "\n"))
+end)
+
+-- ── the sheet button and the flush dock (sheet and window feedback design G1-G3, plan Task 3.2) ──
+
+-- The last SetPoint the sheet button was given.
+local function buttonPoint(M)
+    local pts = M.OutfitterRebornSheetButton.__pts
+    return pts[#pts]
+end
+
+-- Record the last SetSize `frame` is given (the base mock keeps no size; fidelity rule 2).
+local function recordSize(frame)
+    local sized = {}
+    rawset(frame, "SetSize", function(_, w, h) sized.w, sized.h = w, h end)
+    return sized
+end
+
+test("dock: the sheet button sits right of the Equipment Manager tab", function()
+    local _, M = scene()
+    local sized = recordSize(M.OutfitterRebornSheetButton)
+    M.__world:openCharacter()
+    local p = buttonPoint(M)
+    -- red under: keep the old anchor, RIGHT of CharacterFrameCloseButton -2 (G1: it sat by the close X).
+    assertEqual(p[1], "LEFT"); assertEqual(p[2], M.PaperDollSidebarTab3); assertEqual(p[3], "RIGHT")
+    assertEqual(p[4], 4); assertEqual(p[5], 0)
+    assertEqual(sized.w, 33); assertEqual(sized.h, 33)
+end)
+
+test("dock: on EllesmereUI the button follows the Equipment label", function()
+    local _, M = scene()
+    local tab = M.__sheets.eui()
+    M.__loadedAddOns.EllesmereUIBlizzardSkin = true
+    local sized = recordSize(M.OutfitterRebornSheetButton)
+    -- red under: anchor the button once at build instead of on every sheet show (the kind is re-read).
+    M.__world:openCharacter()
+    local p = buttonPoint(M)
+    assertEqual(p[1], "LEFT"); assertEqual(p[2], tab); assertEqual(p[3], "RIGHT")
+    assertEqual(p[4], 2); assertEqual(p[5], 0)
+    assertEqual(sized.w, 20); assertEqual(sized.h, 20)
+end)
+
+test("dock: the button is parented to CharacterFrame and above the close button's level", function()
+    local _, M = scene()
+    M.__world:openCharacter()
+    local button = M.OutfitterRebornSheetButton
+    -- red under: parent it to the sheet holder (PaperDollFrame shares CharacterFrame's level, and the
+    -- frame's NineSlice at 500 and the close button at 510 draw over it: the stock-sheet bug of G1).
+    assertEqual(button:GetParent(), M.CharacterFrame)
+    assertTrue(button:GetFrameLevel() > M.CharacterFrameCloseButton:GetFrameLevel(),
+        "the button sits under the close button's level")
+end)
+
+test("dock: the button shows with the paper doll and hides with it", function()
+    local _, M = scene()
+    local button = M.OutfitterRebornSheetButton
+    M.__world:openCharacter()
+    assertTrue(button:IsShown())
+    -- The Reputation or Currency tab hides PaperDollFrame but not CharacterFrame, the button's parent.
+    -- red under: drop the button's Hide from the sheet's OnHide hook.
+    M.PaperDollFrame:Hide(); M.PaperDollFrame:__fire("OnHide")
+    assertFalse(button:IsShown(), "the button stayed up off the paper doll")
+    M.PaperDollFrame:Show(); M.PaperDollFrame:__fire("OnShow")
+    assertTrue(button:IsShown())
+end)
+
+test("dock: the button's icon is the coat hanger, tinted, with no border", function()
+    local NS, M = scene()
+    M.__world:openCharacter()
+    local button = M.OutfitterRebornSheetButton
+    local hanger = NS.Icon("ph:coat-hanger")
+    assertTrue(hanger ~= nil, "ph:coat-hanger is not a shipped icon (the LibKa0s icons: line)")
+    assertEqual(NS.Constants.DEFAULT_OUTFIT_ICON, hanger)
+    -- red under: keep NS.Constants.LOGO_128 on the button.
+    assertEqual(button.icon:GetTexture(), hanger)
+    local tint = NS.Constants.SHEET_BUTTON_TINT
+    local r, g, b = button.icon:GetVertexColor()
+    -- red under: drop the icon token remap from the button's Skin.Button (the icon is drawn btn.icon gray).
+    assertEqual(r, tint[1]); assertEqual(g, tint[2]); assertEqual(b, tint[3])
+    -- No box and no border: tests/test_skin.lua holds the Skin.Button options (noBg, noBorder).
+end)
+
+test("dock: the window's top is flush with the sheet's top", function()
+    local NS, M, _, win = opened()
+    assertEqual(NS.Dock.Y_OFFSET, 0)
+    local p = win.__pts[#win.__pts]
+    -- red under: Y_OFFSET back at -30 (the window hung 30 px below the sheet's top).
+    assertEqual(p[4], 300); assertEqual(p[5], 500)
+    -- The sheet at another scale: its edges are converted into the window's units.
+    rawset(M.CharacterFrame, "GetEffectiveScale", function() return 0.8 end)
+    M.OutfitterRebornDockDriver:__fire("OnUpdate", 0.05)
+    rawset(M.CharacterFrame, "GetTop", function() return 510 end)
+    M.OutfitterRebornDockDriver:__fire("OnUpdate", 0.05)
+    p = win.__pts[#win.__pts]
+    assertEqual(p[4], 300 * 0.8); assertEqual(p[5], 510 * 0.8)
+end)
+
+test("dock: an open Chonky side panel pushes the window right", function()
+    local NS, M = scene()
+    local bg = M.__sheets.place(M.__sheets.chonky(), 400, 520)
+    local mplus = M.__sheets.chonkyPanel("ccsm_sf", 700, 520)
+    M.__loadedAddOns.ChonkyCharacterSheet = true
+    M.__world:openCharacter()
+    NS.Dock.Open()
+    local win = M.OutfitterRebornWindow
+    local p = win.__pts[#win.__pts]
+    -- red under: positionWindow reading PaperDollFrame's corner instead of NS.Sheet.DockRight().
+    assertEqual(p[4], 700, "the window sits on top of the open M+ panel")
+    assertEqual(p[5], 520)
+    -- The panel closes: the follow brings the window back to the backdrop's edge.
+    mplus:Hide()
+    M.OutfitterRebornDockDriver:__fire("OnUpdate", 0.05)
+    p = win.__pts[#win.__pts]
+    assertEqual(p[4], 400)
+    assertEqual(bg:IsShown(), true)
+end)
+
+test("dock: stood down, a sheet show neither shows nor re-anchors the button", function()
+    local NS, M = scene()
+    M.__world:openCharacter()
+    local button = M.OutfitterRebornSheetButton
+    local before = #button.__pts
+    NS.SetByPath("enabled", false)
+    M.__world:closeCharacter(); M.__world:openCharacter()
+    -- red under: drop the latch from the sheet's OnShow hook.
+    assertFalse(button:IsShown(), "the button came up while stood down")
+    assertEqual(#button.__pts, before, "the button was re-anchored while stood down")
+end)
+
+-- ── the window's header chrome (sheet and window feedback design G10, plan Task 3.3) ──────────────
+
+test("window: the close button is anchored at the header's top right", function()
+    -- G10: NS.MakeCloseButton makes the x but anchors nothing, so a close with no point never drew.
+    -- red under: drop the close's SetPoint from modules/Window.lua's titleStrip.
+    local _, M, _, win = opened()
+    local close = win.close
+    assertTrue(close ~= nil, "the window keeps no close button (win.close)")
+    local p = close.__pts[#close.__pts]
+    assertTrue(p ~= nil, "the close button was never anchored")
+    assertEqual(p[1], "TOPRIGHT"); assertEqual(p[2], win); assertEqual(p[3], "TOPRIGHT")
+    assertEqual(p[4], -6); assertEqual(p[5], -5)
+    assertTrue(M.OutfitterRebornWindowSettings ~= close, "the close is the settings button")
+end)
+
+test("window: the gear sits left of the close button", function()
+    -- Both 18 px, both TOPRIGHT-anchored to the window: the gear's right edge (-28) clears the
+    -- close's left edge (-6 - 18 = -24). red under: the gear moved onto the close's -6.
+    local _, M, _, win = opened()
+    local gear, close = M.OutfitterRebornWindowSettings, win.close
+    local g, c = gear.__pts[#gear.__pts], close.__pts[#close.__pts]
+    assertEqual(g[1], "TOPRIGHT"); assertEqual(g[2], win); assertEqual(g[3], "TOPRIGHT")
+    assertEqual(g[4], -28); assertEqual(g[5], c[5])
+    local CLOSE_SIZE = 18
+    assertTrue(g[4] < c[4] - CLOSE_SIZE, "the gear overlaps the close button")
+end)
+
+-- ── the paper-doll pane across the sheet's tabs (review follow-up to Tasks 3.1-3.2) ──────────────
+-- The button and the window belong to the paper doll: the Reputation and Currency tabs hide
+-- PaperDollFrame, not CharacterFrame, and the Character tab shows it again.
+
+local function toTab(M, doll)
+    if doll then
+        M.PaperDollFrame:Show(); M.PaperDollFrame:__fire("OnShow")
+    else
+        M.PaperDollFrame:Hide(); M.PaperDollFrame:__fire("OnHide")
+    end
+end
+
+test("dock: switching to the Reputation tab on EllesmereUI does not re-anchor the button to stock", function()
+    local NS, M = scene()
+    local tab = M.__sheets.eui()
+    M.__loadedAddOns.EllesmereUIBlizzardSkin = true
+    -- EllesmereUI's tab dispatcher: its PaperDollFrame OnShow hook shows the text tabs again, and it is
+    -- installed at the first sheet open, after the dock's at login, so it runs second
+    -- (EllesmereUIBlizzardSkin_CharacterSheet.lua:1044-1047, :1079-1090, :4907).
+    M.PaperDollFrame:HookScript("OnShow", function() tab:Show() end)
+    M.__world:openCharacter()
+    NS.Dock.Open()
+    local button = M.OutfitterRebornSheetButton
+    assertEqual(buttonPoint(M)[2], tab)
+    -- The Reputation tab: the doll hides, and EllesmereUI hides its tabs with it.
+    toTab(M, false); tab:Hide()
+    assertFalse(button:IsShown(), "the button stayed up on the Reputation tab")
+    assertFalse(NS.Dock.IsShown(), "the window stayed up on the Reputation tab")
+    -- red under: detect the EllesmereUI sheet by its tab being shown (it read "stock" here).
+    assertEqual(NS.Sheet.Kind(), "eui")
+    -- Back to the Character tab: the dock's hook runs while the EllesmereUI tab is still hidden.
+    toTab(M, true)
+    assertTrue(button:IsShown())
+    local p = buttonPoint(M)
+    assertEqual(p[2], tab, "the button went to the stock Equipment Manager tab")
+    assertEqual(p[4], 2)
+end)
+
+test("dock: a sheet tab built after the paper doll's OnShow is picked up on the next frame", function()
+    local NS, M = scene()
+    M.__loadedAddOns.EllesmereUIBlizzardSkin = true
+    M.__world:openCharacter()
+    assertEqual(buttonPoint(M)[2], M.PaperDollSidebarTab3)
+    -- EllesmereUI builds its tabs from a CharacterFrame OnShow hook on the first open
+    -- (EllesmereUIBlizzardSkin_CharacterSheet.lua:4907, :3171), which may run after the doll's.
+    local tab = M.__sheets.eui()
+    -- red under: resolve the sheet kind only inside the doll's OnShow.
+    M.__fireTimers()
+    assertEqual(buttonPoint(M)[2], tab)
+    -- Nothing changed: the next frame's check does not re-anchor again.
+    local before = #M.OutfitterRebornSheetButton.__pts
+    M.__world:closeCharacter(); M.__world:openCharacter()
+    local after = #M.OutfitterRebornSheetButton.__pts
+    M.__fireTimers()
+    assertEqual(#M.OutfitterRebornSheetButton.__pts, after, "an unchanged kind was re-anchored")
+    assertTrue(after > before)
+    assertTrue(NS.Sheet.Kind() == "eui")
+end)
+
+test("dock: the next frame's sheet check does nothing once the doll is gone or stood down", function()
+    local NS, M = scene()
+    M.__loadedAddOns.EllesmereUIBlizzardSkin = true
+    M.__world:openCharacter()
+    local button = M.OutfitterRebornSheetButton
+    M.__sheets.eui()
+    toTab(M, false)
+    local before = #button.__pts
+    M.__fireTimers()
+    assertEqual(#button.__pts, before, "re-anchored off the paper doll")
+    assertFalse(button:IsShown(), "the check brought the button back off the paper doll")
+    toTab(M, true)
+    NS.SetByPath("enabled", false)
+    before = #button.__pts
+    M.__fireTimers()
+    assertEqual(#button.__pts, before, "re-anchored while stood down")
+    assertFalse(button:IsShown())
+end)
+
+test("dock: on Chonky the Reputation tab takes the button and window down, the Character tab brings them back", function()
+    local NS, M = scene()
+    M.__sheets.place(M.__sheets.chonky(), 400, 520)
+    M.__loadedAddOns.ChonkyCharacterSheet = true
+    M.__world:openCharacter()
+    NS.Dock.Open()
+    local button, win = M.OutfitterRebornSheetButton, M.OutfitterRebornWindow
+    toTab(M, false)
+    assertFalse(button:IsShown()); assertFalse(win:IsShown())
+    -- Chonky's backdrop is CharacterFrame's and stays up on every tab (core/styles.lua:1090-1099).
+    assertEqual(NS.Sheet.Kind(), "chonky")
+    toTab(M, true)
+    assertTrue(button:IsShown())
+    assertEqual(buttonPoint(M)[2], M.PaperDollSidebarTab3)
 end)
