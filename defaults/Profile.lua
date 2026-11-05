@@ -32,6 +32,12 @@ NS.defaults = {
                        frame  = { borderShow = true, borderStyle = "Solid", borderSize = 1,
                                   borderColor = { r = 0, g = 0, b = 0, a = 1 }, useClassColorBorder = false,
                                   borderStyleFromSkin = true, borderColorFromSkin = true } },
+        -- The docked outfit window and the sheet surfaces it brings (smoke round 3 E11): the sheet's
+        -- button, the slot check boxes, the outward drawer, the dock's gap, the item sections and the
+        -- row marks. Every switch on, gap 0: the window as it has always looked.
+        window     = { sheetButton = true, slotBoxes = true, drawer = true, dockGap = 0,
+                       sections = { unused = true, warbound = true, boe = true },
+                       marks = { em = true, trigger = true } },
         -- Named non-setting state (architecture-§5): the bar's dragged place, each dialog's.
         windows    = { bar = { point = "TOPLEFT", x = 200, y = -200 }, dialogs = {} },
         skin       = { source = "ka0s", skin = "ka0s", ignorePanel = true, ignoreFonts = false,

@@ -295,9 +295,13 @@ function Win.Install()
         bus:RegisterMessage(NS.MSG[key], function() Win.MarkDirty(true) end)
     end
     bus:RegisterMessage(NS.MSG.STACK_CHANGED, function() Win.MarkDirty(false) end)
+    -- auto.enabled dims the trigger marks; an Outfit Window row (smoke round 3 E11) changes the
+    -- sections or the marks the list draws.
     bus:RegisterMessage(NS.MSG.SETTINGS_CHANGED, function(_, path)
-        if path == "auto.enabled" then Win.MarkDirty(false) end
+        if path == "auto.enabled" or (type(path) == "string" and path:find("^window%.")) then
+            Win.MarkDirty(false)
+        end
     end)
-    -- A profile switch writes no row, so the new profile's auto.enabled reaches the trigger marks here.
+    -- A profile switch writes no row, so the new profile's auto.enabled and window.* reach the list here.
     bus:RegisterMessage(NS.MSG.PROFILE_CHANGED, function() Win.MarkDirty(false) end)
 end

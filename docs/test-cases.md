@@ -229,7 +229,7 @@ Total.
 ### test_schema.lua (25)
 
 - schema: the load-time shape check finds no error and every stored path resolves
-- schema: the settings pages are general, bar and profiles
+- schema: the settings pages are general, bar, window and profiles
 - schema: every stored row's default is the one in defaults/Profile.lua
 - schema: every P4.23 profile row is registered, on its page, with its stored default
 - schema: bar.position reads and writes profile.windows.bar as `POINT X Y`
@@ -257,7 +257,7 @@ Total.
 ### test_settings.lua (16)
 
 - settings: the parent category registers eagerly and every page body renders quietly
-- settings: the pages register General first, then Outfit Bar, and Profiles last
+- settings: the pages register General first, then Outfit Bar, Outfit Window, and Profiles last
 - settings: General's tabs are Master controls, Behavior, Tooltips, Skin, then Keybindings last
 - settings: Master controls is composed by the library, with the bar's notes
 - settings: Behavior holds the outfit changes, then the character sheet's one row
@@ -1465,6 +1465,21 @@ Total.
 - test place: test mode's end puts a bar the player had on back at its saved place
 - test place: Reset position in test mode moves the bar to its starting place, as it says
 
+### test_window_settings.lua (12)
+
+- window settings: the page holds the window's rows on two tabs, each with a tooltip
+- window settings: the page's Defaults puts every row back
+- window settings: Show the button on the character sheet hides and shows the sheet button in place
+- window settings: a profile switch carries the sheet button's row
+- window settings: the window still opens without the button
+- window settings: Show slot check boxes hides and shows the boxes for the selection
+- window settings: Show the flyout arrows turns the drawer off and on with the window open
+- window settings: the gap moves the docked window right of the sheet, on the follow's next tick
+- window settings: the alone test window takes no gap
+- window settings: each item section's row keeps it in the list or leaves it out
+- window settings: a section's row redraws the open window
+- window settings: the outfit row's marks follow their rows, the name taking the EM mark's place
+
 ### test_outfit_menu.lua (33)
 
 - menu: NS.OutfitMenu is published
@@ -1806,6 +1821,7 @@ Total.
 | test_triggers_parity.lua | 13 |
 | test_preview.lua | 35 |
 | test_preview_place.lua | 8 |
+| test_window_settings.lua | 12 |
 | test_outfit_menu.lua | 33 |
 | test_dialogs.lua | 24 |
 | test_trigger_dialog.lua | 11 |
@@ -1820,4 +1836,4 @@ Total.
 | test_lizard_sighted.lua | 8 |
 | test_prose.lua | 15 |
 | Skipped | 1 |
-| **Total** | **1506** |
+| **Total** | **1518** |

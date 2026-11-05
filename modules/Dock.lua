@@ -49,6 +49,12 @@ local _, NS = ...
 -- footer's Slots buttons never act on a real outfit while the samples show. A window parked in the
 -- holder (followDisabled) cannot stand alone; the bar still shows the samples.
 --
+-- THE OUTFIT WINDOW PAGE (smoke round 3 E11). `window.sheetButton` off keeps the sheet button hidden
+-- (still anchored, so turning it on shows it in place); `window.dockGap` moves the docked window that
+-- many sheet units right of the sheet's edge (never the alone test window); `window.drawer` is read by
+-- the drawer itself. A write of any `window.*` row or a profile switch re-shows the button and syncs
+-- the drawer here; the follow's corner compare picks up the gap.
+--
 -- THE ONLY SHOW AND HIDE. Dock.Refresh is the one place this addon shows or hides
 -- `OutfitterRebornWindow`. It never does so in combat lockdown (design §7.0 rule 2): the window hides
 -- inside PLAYER_REGEN_DISABLED, while protected calls are still allowed, and comes back at
@@ -133,14 +139,23 @@ function Dock.AloneSpot()
     return (right - w) / 2, (top + h) / 2
 end
 
--- The corner and the frame whose units it is in: the sheet's, or, standing alone in test mode with
--- the sheet closed, the alone spot, in UIParent's.
+-- The Outfit Window page's gap between the sheet and the window (smoke round 3 E11), in the sheet's
+-- units; 0 when the store answers nothing usable.
+local function dockGap()
+    local gap = NS.SafeNumber(NS.GetSetting("window.dockGap"), 0)
+    return gap > 0 and gap or 0
+end
+
+-- The corner and the frame whose units it is in: the sheet's, `window.dockGap` right of its edge, or,
+-- standing alone in test mode with the sheet closed, the alone spot, in UIParent's. The follow compares
+-- this corner, so a new gap re-docks the window on its next tick.
 local function corner()
     if PaperDollFrame:IsVisible() ~= true and Dock.TestWanted() then
         local x, top = Dock.AloneSpot()
         return x, top, UIParent
     end
     local x, top = NS.Sheet.DockRight()
+    if x then x = x + dockGap() end
     return x, top, NS.Sheet.Frame()
 end
 
@@ -439,8 +454,12 @@ end
 
 -- ── hooks and events ──────────────────────────────────────────────────────────────────────────
 
+-- The Outfit Window page's sheet-button switch (smoke round 3 E11).
+local function buttonWanted() return NS.GetSetting("window.sheetButton") ~= false end
+
 -- Re-anchor the sheet button where the current sheet wants it, over the close button, in that
--- sheet's look. Out of the stand-down only; a plain button, so allowed in combat.
+-- sheet's look, and show it unless the Outfit Window page turned it off (anchored either way, so the
+-- switch shows it in place). Out of the stand-down only; a plain button, so allowed in combat.
 local function placeButton()
     local point, rel, relPoint, x, y, w, h, look = NS.Sheet.ButtonAnchor()
     button:ClearAllPoints()
@@ -450,7 +469,7 @@ local function placeButton()
     local close = CharacterFrameCloseButton
     local base = close and NS.SafeNumber(close:GetFrameLevel(), 0) or NS.SafeNumber(CharacterFrame:GetFrameLevel(), 0)
     button:SetFrameLevel(base + LEVEL.SHEET_BUTTON_OVER_CLOSE)
-    button:Show()
+    button:SetShown(buttonWanted())
     placedKind = NS.Sheet.Kind()
 end
 
@@ -494,6 +513,21 @@ local function onPreviewChanged(_, on)
         NS.Stack.Select(nil)
     end
     Dock.Refresh()
+end
+
+-- An Outfit Window row's write or a profile switch (smoke round 3 E11): the sheet button shows or
+-- hides in place while the paper doll is up (a plain button, so in combat too), and the drawer follows
+-- `window.drawer` while the window is on screen (DrawerSync writes nothing in lockdown; the window's
+-- next show syncs it; off screen the drawer is already in). The gap is the follow's (corner), the
+-- list's sections and marks Window's own receiver.
+local function onWindowSettings()
+    if NS.IsStoodDown() then return end
+    if button and PaperDollFrame:IsVisible() == true then button:SetShown(buttonWanted()) end
+    if Dock.IsVisible() then NS.QuickSlots.DrawerSync() end
+end
+
+local function onSettingsChanged(_, path)
+    if type(path) == "string" and path:find("^window%.") then onWindowSettings() end
 end
 
 local function onRegenDisabled()
@@ -548,7 +582,11 @@ function Dock.Install()
     PaperDollFrame:HookScript("OnHide", onSheetHide)
     -- The bus record drops and replays this receiver across a stand-down.
     local bus = NS.NewBusTarget()
-    if bus then bus:RegisterMessage(NS.MSG.PREVIEW_CHANGED, onPreviewChanged) end
+    if bus then
+        bus:RegisterMessage(NS.MSG.PREVIEW_CHANGED, onPreviewChanged)
+        bus:RegisterMessage(NS.MSG.SETTINGS_CHANGED, onSettingsChanged)
+        bus:RegisterMessage(NS.MSG.PROFILE_CHANGED, onWindowSettings)
+    end
     NS.Window.Install()
 end
 

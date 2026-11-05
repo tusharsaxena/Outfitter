@@ -252,9 +252,9 @@ function NS.SchemaForPage(pageKey)
     return out
 end
 
--- The page keys a settings row may name, in their panel order (settings/General.lua first,
+-- The page keys a settings row may name (the panel order is the TOC's: settings/General.lua first,
 -- settings/Profiles.lua last). The outfit instance validates against { outfit = true } instead.
-NS.VALID_PAGES = { general = true, bar = true, profiles = true }
+NS.VALID_PAGES = { general = true, bar = true, window = true, profiles = true }
 
 -- The Minimap row declares no stored `shown`: it answers no root here, and its stored key
 -- (`global.minimap.hide`) is checked against the defaults by the suite instead (architecture-§5).

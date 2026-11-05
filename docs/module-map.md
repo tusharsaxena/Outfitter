@@ -170,6 +170,7 @@ the diagnostics sections.
 | `settings/OptionsSetup.lua` | The LibKa0s-Options descriptor (`NS.Helpers`), the tabbed-page helper and the global reset popup |
 | `settings/General.lua` | The General page (Master controls, Behavior, Tooltips, Skin, Keybindings) and the landing page spec, `NS.LANDING` |
 | `settings/OutfitBar.lua` | The Outfit Bar page, `bar` (tabs Display, Layout, Icons, Labels, Frame), registered between General and Profiles; `NS.EncodeBarPosition` |
+| `settings/OutfitWindow.lua` | The Outfit Window page, `window` (tabs Character sheet, List; smoke round 3 E11), registered between Outfit Bar and Profiles; `NS.WINDOW_PAGE` |
 | `settings/Profiles.lua` | The Profiles sub-page, registered last, under a line saying outfits are per character |
 
 ## locales/

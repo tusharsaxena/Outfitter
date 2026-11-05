@@ -28,11 +28,11 @@ test("schema: the load-time shape check finds no error and every stored path res
     assertEqual(missing, 0)
 end)
 
-test("schema: the settings pages are general, bar and profiles", function()
+test("schema: the settings pages are general, bar, window and profiles", function()
     local keys = {}
     for k in pairs(NS.VALID_PAGES) do keys[#keys + 1] = k end
     table.sort(keys)
-    assertEqual(table.concat(keys, ","), "bar,general,profiles")
+    assertEqual(table.concat(keys, ","), "bar,general,profiles,window")
     for _, row in ipairs(NS.Schema.AllRows()) do
         assertTrue(NS.VALID_PAGES[row.page] == true, tostring(row.path) .. " is on page " .. tostring(row.page))
         assertEqual(type(row.group), "string", tostring(row.path))

@@ -194,6 +194,7 @@ local SUITES = {
 
     { name = "test_preview" },
     { name = "test_preview_place" },
+    { name = "test_window_settings" },
 
     { name = "test_outfit_menu" },
     { name = "test_dialogs" },

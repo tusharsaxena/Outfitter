@@ -34,7 +34,7 @@ with its migration runner, the equipment engine (inventory scan, outfit store, s
 bracket, the Equipment Manager mirror, the bank verbs, the stat optimizer, the battle-pet companion),
 the native trigger catalog with its binder and state producers, the docked outfit window and its
 slot checkboxes, the outfit bar, the dialogs and menus, the tooltips and quick slots, test mode, the
-public API, three settings pages (General, Outfit Bar, Profiles), 36 slash verbs, 15 key bindings
+public API, four settings pages (General, Outfit Bar, Outfit Window, Profiles), 36 slash verbs, 15 key bindings
 and six translation overlays. What it does not do yet, and what a client has still to confirm, is
 under Known Limitations.
 
@@ -296,7 +296,7 @@ the design's §14 still owes are mapped to their rows in
 Not deviations, recorded for audit clarity: `UnitFactionGroup`'s first return is read with a comment,
 and the standard's defect is raised upstream (H10); the per-outfit trigger parameters are instance
 rows on LibKa0s-Schema v3, so no row is needed (H13); triggers translate onto AceEvent rather than a
-dispatcher (H14); no simulator ships, a MAY (H18); the options ship in the addon with three
+dispatcher (H14); no simulator ships, a MAY (H18); the options ship in the addon with four
 subcategories, below options-ui-§4's five-subpanel trigger, so this is compliance and is the comment in
 `settings/OptionsSetup.lua` (H21); the macro-conditional wrapper is host routing, not a dispatcher fork
 (H25); the quick slots' flyout post-hooks (`modules/QuickSlots.lua`) are not a skin path, since

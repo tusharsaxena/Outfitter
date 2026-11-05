@@ -34,6 +34,9 @@ local _, NS = ...
 -- THE EDGE. Each box carries a 1 px edge in the skin's accent (`text.accent`, through S.Mark, so a
 -- skin switch repaints it) over the skin's checkbox: the box alone is near-black on dark item icons.
 --
+-- THE SWITCH (smoke round 3 E11): the Outfit Window page's `window.slotBoxes`; off, no box shows for
+-- any selection, and a write of it or a profile switch shows or hides them for the current one.
+--
 -- TEST MODE (smoke round 2 design G7): the window shows sample outfits, so no box is shown for any
 -- selection while NS.Preview is on (the dock clears the selection as it starts; a wear's follow could
 -- still select a real outfit behind the samples' back), and they come back with the selection after.
@@ -310,10 +313,13 @@ function SE.Build()
     return frame
 end
 
---- Show the boxes for `id` (the selection), stacking them first.
+-- The Outfit Window page's switch for the boxes (smoke round 3 E11).
+local function wanted() return NS.GetSetting("window.slotBoxes") ~= false end
+
+--- Show the boxes for `id` (the selection), stacking them first; none while `window.slotBoxes` is off.
 --- @param id string
 function SE.Show(id)
-    if NS.IsStoodDown() or not id or NS.Preview.IsActive() then return SE.Hide() end
+    if NS.IsStoodDown() or not id or NS.Preview.IsActive() or not wanted() then return SE.Hide() end
     SE.Build()
     frame:Show()
     SE.Restack()
@@ -351,6 +357,11 @@ function SE.Install()
     if not bus then return end
     bus:RegisterMessage(NS.MSG.SELECTION_CHANGED, onSelection)
     bus:RegisterMessage(NS.MSG.PREVIEW_CHANGED, function() onSelection(nil, NS.Stack.Selected()) end)
+    -- `window.slotBoxes` written, or a profile switch: the boxes follow for the current selection.
+    bus:RegisterMessage(NS.MSG.SETTINGS_CHANGED, function(_, path)
+        if path == "window.slotBoxes" then onSelection(nil, NS.Stack.Selected()) end
+    end)
+    bus:RegisterMessage(NS.MSG.PROFILE_CHANGED, function() onSelection(nil, NS.Stack.Selected()) end)
     bus:RegisterMessage(NS.MSG.OUTFIT_EDITED, SE.Update)
     bus:RegisterMessage(NS.MSG.INVENTORY_CHANGED, SE.Update)
 end

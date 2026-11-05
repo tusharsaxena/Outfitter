@@ -53,8 +53,9 @@ local _, NS = ...
 -- hosts' (Item Upgrade, Item Interaction, Runeforge) keep Blizzard's anchor; and nothing is written
 -- in combat lockdown: the window hides at PLAYER_REGEN_DISABLED, before lockdown, and its hide
 -- restores the drawer (modules/Dock.lua). None of these frames is protected. The drawer's gate is the
--- stand-down latch and the window, not `quickSlots.enabled`, which is the flyout's lists and clicks
--- only. Each global hook is installed only when the client has the function.
+-- stand-down latch, the window and the Outfit Window page's `window.drawer` (smoke round 3 E11; Dock's
+-- receiver syncs a write or a profile switch), not `quickSlots.enabled`, which is the flyout's lists
+-- and clicks only. Each global hook is installed only when the client has the function.
 --
 -- CLIENT READS beyond this file's luacheck stanza go through `_G` by name, read at call time:
 -- CursorHasItem, EquipmentFlyoutFrame, EquipmentFlyout_UpdateItems,
@@ -184,10 +185,12 @@ local flyoutMoved = false         -- buttonFrame carries this file's point, not 
 
 local function locked() return Compat.InCombatLockdown() end
 
--- The drawer opens outward: standing up and the outfit window on screen. Visible, not shown: a
--- window parked in the sheet holder keeps its shown flag when the sheet hides it.
+-- The drawer opens outward: standing up, the Outfit Window page's `window.drawer` on (smoke round 3
+-- E11) and the outfit window on screen. Visible, not shown: a window parked in the sheet holder keeps
+-- its shown flag when the sheet hides it.
 local function drawerWanted()
-    return not NS.IsStoodDown() and NS.Dock.IsVisible() == true
+    if NS.IsStoodDown() or NS.GetSetting("window.drawer") == false then return false end
+    return NS.Dock.IsVisible() == true
 end
 
 local function leftColumn(button)

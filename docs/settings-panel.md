@@ -6,7 +6,7 @@ LibKa0s-Options, built from the rows in `NS.Schema`; categories are registered e
 game's **Settings → AddOns → Ka0s Outfitter Reborn**, from `/or config`, and from a left-click on
 the minimap button.
 
-The options stay in the addon: three subcategories, below options-ui-§4's five-subpanel threshold, so
+The options stay in the addon: four subcategories, below options-ui-§4's five-subpanel threshold, so
 there is no LoadOnDemand split (H21; the comment is in `settings/OptionsSetup.lua`).
 
 ## Pages
@@ -15,6 +15,7 @@ there is no LoadOnDemand split (H21; the comment is in `settings/OptionsSetup.lu
 |---|---|
 | General | Master controls, automatic outfit changes and equip behavior, tooltips, the skin, and key bindings |
 | Outfit Bar | Whether the bar shows and how it marks the worn outfit, opacity in combat; its layout, icons and their border, category labels, and its window frame (background and border) |
+| Outfit Window | The character sheet's button, slot check boxes and flyout arrows, the window's gap from the sheet; which item sections the list shows and which marks an outfit row draws |
 | Profiles | AceDB profiles: settings only; outfits belong to each character |
 
 ## Landing page
@@ -166,6 +167,39 @@ No row has an `onChange`: the bar re-renders on `SETTINGS_CHANGED` for any `bar.
 corner and two numbers, and decodes every write into a new table, so a reset copies the default. Its
 default is the defaults tree's `windows.bar`, encoded, and the load-time shape check skips it, since
 its own get/set are its storage.
+
+## Outfit Window
+
+`settings/OutfitWindow.lua`, page `window` (smoke round 3 E11): everything configurable about the
+docked outfit window and the sheet surfaces it brings. The Master controls govern the bar only, so
+the window takes no scale, opacity or lock here; General > Behavior's flyout row (`quickSlots.enabled`,
+the flyout's lists and clicks) is a different state from the drawer row and stays on General. Tabs in
+declaration order:
+
+### Character sheet
+
+| Path | Default | Label |
+|---|---|---|
+| `window.sheetButton` | `true` | Show the button on the character sheet: off, the button stays hidden (still anchored); the window opens from the minimap button, a key binding or `/or show` |
+| `window.slotBoxes` | `true` | Show slot check boxes: off, no box shows for any selection |
+| `window.drawer` | `true` | Show the flyout arrows while the window is open: off, the arrows and flyouts stay Blizzard's |
+| `window.dockGap` | `0` (0 to 40) | Gap from the character sheet (px): sheet units right of the dock's edge; never the alone test window |
+
+### List
+
+| Path | Default | Label |
+|---|---|---|
+| `window.sections.unused` | `true` | Show Odds 'n ends (*Item sections*) |
+| `window.sections.warbound` | `true` | Show Warbound until equipped |
+| `window.sections.boe` | `true` | Show Unopened |
+| `window.marks.em` | `true` | Show the Equipment Manager mark (*Outfit rows*): off, the name takes its place |
+| `window.marks.trigger` | `true` | Show the automation mark |
+
+No row has an `onChange`, and the page draws no color, font or border block, so no FromSkin companion
+or composed group is owed. Each surface follows a `window.*` write (`SETTINGS_CHANGED`) and a profile
+switch (`PROFILE_CHANGED`) itself: modules/Dock.lua (the button, the drawer; the gap through the
+follow's corner compare), modules/SlotEnables.lua (the boxes) and modules/Window.lua (the sections and
+marks, redrawn on the follow tick).
 
 ## Profiles
 

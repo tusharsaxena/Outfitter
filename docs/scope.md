@@ -32,7 +32,7 @@ each line is `superpowers/specs/2026-11-03-outfitter-feature-inventory.md` (INV)
 - **Tooltips.** An item's tooltip says which outfits use it, and items can be compared against what
   the outfits already use.
 - **Quick slots.** Clicking an empty slot, or dropping an item on one, opens the item flyout.
-- **Ka0s surfaces.** A settings panel (General, Outfit Bar, Profiles), a skin from LibKa0s-Skin, a
+- **Ka0s surfaces.** A settings panel (General, Outfit Bar, Outfit Window, Profiles), a skin from LibKa0s-Skin, a
   minimap button and LibDataBroker launcher, the debug console and the diagnostics report, a test mode
   that fills the outfit bar and the outfit window with sample outfits (the window alone when the sheet
   is closed), and a performance harness.

@@ -23,23 +23,25 @@ test("settings: the parent category registers eagerly and every page body render
     local inst = T.load()
     local M = inst.mocks
     assertTrue(M.__mainPanel ~= nil, "the parent category registered at OnInitialize")
-    for _, name in ipairs({ "General", "Outfit Bar", "Profiles" }) do
+    for _, name in ipairs({ "General", "Outfit Bar", "Outfit Window", "Profiles" }) do
         assertTrue(M.__subcategories[name] ~= nil, name .. " is not registered")
     end
     M.__resetPrinted()
     M.__mainPanel:__fire("OnShow")
     M.__subcategories["General"]:__fire("OnShow")
     M.__subcategories["Outfit Bar"]:__fire("OnShow")
+    M.__subcategories["Outfit Window"]:__fire("OnShow")
     M.__subcategories["Profiles"]:__fire("OnShow")
     assertEqual(#M.__printed(), 0, "a render printed: " .. tostring(M.__printed()[1]))
 end)
 
-test("settings: the pages register General first, then Outfit Bar, and Profiles last", function()
+test("settings: the pages register General first, then Outfit Bar, Outfit Window, and Profiles last", function()
     local inst = T.load()
     local order = {}
     for _, ctx in ipairs(inst.NS.Helpers.__pages()) do order[#order + 1] = ctx.pageKey or ctx.key end
-    -- red under: settings\OutfitBar.lua listed after settings\Profiles.lua in the TOC.
-    assertEqual(table.concat(order, ","), "general,bar,profiles")
+    -- red under: settings\OutfitBar.lua or settings\OutfitWindow.lua listed after settings\Profiles.lua
+    -- in the TOC.
+    assertEqual(table.concat(order, ","), "general,bar,window,profiles")
 end)
 
 test("settings: General's tabs are Master controls, Behavior, Tooltips, Skin, then Keybindings last", function()
@@ -269,7 +271,7 @@ end)
 
 test("settings: the H21 comment records why options are not split into LoadOnDemand", function()
     local text = readFile("settings/OptionsSetup.lua")
-    assertTrue(text:find("Options stay in-addon: three subcategories, below options-ui-§4's five-subpanel threshold (DpsRace\n-- precedent).", 1, true) ~= nil,
+    assertTrue(text:find("Options stay in-addon: four subcategories, below options-ui-§4's five-subpanel threshold (DpsRace\n-- precedent).", 1, true) ~= nil,
         "the H21 comment is missing from settings/OptionsSetup.lua")
 end)
 
