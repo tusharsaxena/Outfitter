@@ -53,7 +53,8 @@ local LEVEL, STRATA_RANK = LAYERS.LEVEL, LAYERS.STRATA_RANK
 
 -- The sheet's three slot columns (sheet and window feedback design G8). Each box sits on the slot's
 -- inner corner: LEFT and BOTTOM boxes at TOPRIGHT, RIGHT boxes at TOPLEFT. NS.QuickSlots reads the LEFT
--- column at call time for the outward drawer.
+-- column at call time for the outward drawer. The off-hand is the exception: its box sits at TOPLEFT
+-- (BOX_TOPLEFT, the owner's round-3 smoke pass), clear of the main hand's box beside it.
 local COLUMN = {
     HeadSlot = "LEFT", NeckSlot = "LEFT", ShoulderSlot = "LEFT", BackSlot = "LEFT", ChestSlot = "LEFT",
     ShirtSlot = "LEFT", TabardSlot = "LEFT", WristSlot = "LEFT",
@@ -62,6 +63,7 @@ local COLUMN = {
     MainHandSlot = "BOTTOM", SecondaryHandSlot = "BOTTOM",
 }
 SE.COLUMN = COLUMN
+local BOX_TOPLEFT = { SecondaryHandSlot = true }
 local BOX_SIZE, BOX_INSET = 14, 2
 local MAX_DEPTH = 12
 
@@ -281,7 +283,7 @@ local function newBox(slot)
     local cb = CreateFrame("CheckButton", "OutfitterRebornEnable" .. slot, frame)
     cb:SetSize(BOX_SIZE, BOX_SIZE)
     local anchor = _G["Character" .. slot]
-    if COLUMN[slot] == "RIGHT" then
+    if COLUMN[slot] == "RIGHT" or BOX_TOPLEFT[slot] then
         cb:SetPoint("TOPLEFT", anchor, "TOPLEFT", -BOX_INSET, BOX_INSET)
     else
         cb:SetPoint("TOPRIGHT", anchor, "TOPRIGHT", BOX_INSET, BOX_INSET)

@@ -13,7 +13,8 @@ local scene = dofile(T.root .. "/tests/dock_scene.lua")(T)
 local RAISED_HOST_STRATA = "HIGH"
 
 -- The sheet's three columns (sheet and window feedback design G7-G8): each box sits on the slot's
--- inner corner, so LEFT and BOTTOM boxes anchor TOPRIGHT (+2, +2) and RIGHT boxes TOPLEFT (-2, +2).
+-- inner corner, so LEFT and BOTTOM boxes anchor TOPRIGHT (+2, +2) and RIGHT boxes TOPLEFT (-2, +2);
+-- the off-hand's box is the exception, at TOPLEFT (round-3 smoke pass).
 local LEFT = { "HeadSlot", "NeckSlot", "ShoulderSlot", "BackSlot", "ChestSlot", "ShirtSlot", "TabardSlot",
                "WristSlot" }
 local RIGHT = { "HandsSlot", "WaistSlot", "LegsSlot", "FeetSlot", "Finger0Slot", "Finger1Slot", "Trinket0Slot",
@@ -60,7 +61,7 @@ test("slot enables: one 14x14 checkbox per slot, anchored to Character<Slot> (ol
         local p = cb.__pts[1]
         assertTrue(p ~= nil, slot .. " is not anchored")
         assertEqual(p[2], M["Character" .. slot], slot .. " is not anchored to its slot button")
-        if IS_RIGHT[slot] then
+        if IS_RIGHT[slot] or slot == "SecondaryHandSlot" then
             assertEqual(p[1], "TOPLEFT", slot); assertEqual(p[3], "TOPLEFT", slot)
             assertEqual(p[4], -2, slot); assertEqual(p[5], 2, slot)
         else
