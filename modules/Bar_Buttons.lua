@@ -276,7 +276,9 @@ function Bar.NewButton(parent)
     btn.worn:SetSize(14, 14)
     btn.worn:SetPoint("TOPRIGHT", btn, "TOPRIGHT", -1, -1)
     btn.worn:Hide()
-    S.SquareIcon(btn, { crop = true })
+    -- The art's own border trimmed by hand: S.SquareIcon would also hang a permanent edge in the
+    -- window outline on the button, one Show border never reaches (smoke round 3 E5).
+    btn.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
     btn.skinEdge = CreateFrame("Frame", nil, btn)
     btn.skinEdge:SetAllPoints(btn)
     S.IconBorder(btn.skinEdge, { fromSkin = true, hud = true, icon = btn.icon })

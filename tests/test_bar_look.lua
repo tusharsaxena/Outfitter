@@ -136,3 +136,41 @@ test("bar: a button's edges, worn edge and worn mark stand on named rungs, the m
     assertEqual(rawget(btn.overlay, "__mouse"), false, "the overlay passes the mouse through")
     assertTrue(btn.worn:IsShown() and btn.wornEdge:IsShown(), "both show for a worn outfit")
 end)
+
+--- Whether the library drew a shown edge ring on `frame` (its record's holder and top edge).
+local function libEdgeShown(Skin, frame)
+    local rec = Skin.painted[frame]
+    local h = rec and rec.regions.holder
+    local top = rec and rec.regions.edgeTop
+    return h ~= nil and h:IsShown() == true and top ~= nil and top:IsShown() == true
+end
+
+test("bar: Icons > Show border draws the skin's icon edge when on and no edge at all when off, in every skin", function()
+    -- Smoke round 3 E5 (screens 21-23): S.SquareIcon on the button drew a second, permanent edge in
+    -- the window outline (icon.outline) that Show border never reached, so off still showed a border
+    -- (Ka0s Default's gray outline: on looked off) and on drew one over it (every other skin: no change).
+    -- red under: modules/Bar_Buttons.lua's S.SquareIcon(btn, { crop = true }) back in NewButton.
+    local NS, M, Bar = scene()
+    accessory(NS, "Hat")
+    settle(M)
+    local Skin = M.LibStub("LibKa0s-Skin-1.0")
+    local keys = {}
+    for _, def in ipairs(Skin:Skins()) do keys[#keys + 1] = def.key end
+    assertTrue(#keys > 2, "too few shipped skins to switch through")
+    for _, key in ipairs(keys) do
+        NS.ApplySkinChoice("ka0s", key)
+        for _, on in ipairs({ true, false }) do
+            NS.SetByPath("bar.icons.borderShow", on)
+            settle(M)
+            local btn = Bar.Buttons()[1]
+            local what = key .. (on and " on" or " off")
+            assertFalse(libEdgeShown(Skin, btn), what .. ": an edge on the button outside the Border block")
+            assertEqual(btn.skinEdge:IsShown() == true, on, what .. ": the skin's icon edge")
+            assertTrue(libEdgeShown(Skin, btn.skinEdge), what .. ": the skin's edge is drawn on its frame")
+        end
+    end
+    NS.ApplySkinChoice("ka0s", "ka0s")
+    -- The art's own border stays trimmed without S.SquareIcon's crop.
+    local c = { Bar.Buttons()[1].icon:GetTexCoord() }
+    assertTrue(c[1] >= 0.07 and c[7] <= 0.93, "the icon is cropped")
+end)

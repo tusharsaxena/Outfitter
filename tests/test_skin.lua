@@ -230,7 +230,7 @@ end)
 
 test("skin: the bar's icons are HUD icons, cropped and edged from the skin", function()
     -- red under: modules/Bar_Buttons.lua's S.IconBorder(btn, { hud = true }) without fromSkin, or
-    -- without hud (the bar would wear a window's icon.outline), or S.SquareIcon without crop.
+    -- without hud (the bar would wear a window's icon.outline), or the icon left uncropped.
     local _, _, Skin, built = buildAll()
     local btn = built["a bar button"]
     -- On the button's own skin-edge frame, so the player's edge can stand in for it (G6).

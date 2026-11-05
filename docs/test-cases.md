@@ -1350,13 +1350,14 @@ Total.
 - bar: Suspend hides it and stops the rebuilds; the stand-down keeps it down
 - bar: test mode shows the sample outfits with the strip, even with the bar off, and they do nothing
 
-### test_bar_look.lua (5)
+### test_bar_look.lua (6)
 
 - bar: a label draws through S.HudFont with its font block, and its color follows the skin until told not to
 - bar: the player's plate and icon edge take the skin's border color while that companion stays on
 - bar: without the library test mode reserves no strip room, and the header title says test mode
 - bar: with Ignore fonts on a label draws its own stored face, the seam's answer
 - bar: a button's edges, worn edge and worn mark stand on named rungs, the mark on a mouse-off overlay
+- bar: Icons > Show border draws the skin's icon edge when on and no edge at all when off, in every skin
 
 ### test_outfit_icons.lua (17)
 
@@ -1781,7 +1782,7 @@ Total.
 | test_rows_secure.lua | 21 |
 | test_slot_enables.lua | 29 |
 | test_bar.lua | 44 |
-| test_bar_look.lua | 5 |
+| test_bar_look.lua | 6 |
 | test_outfit_icons.lua | 17 |
 | test_broker.lua | 13 |
 | test_triggers_parity.lua | 13 |
@@ -1800,4 +1801,4 @@ Total.
 | test_lizard_sighted.lua | 8 |
 | test_prose.lua | 15 |
 | Skipped | 1 |
-| **Total** | **1490** |
+| **Total** | **1491** |
