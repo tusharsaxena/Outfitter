@@ -1,6 +1,7 @@
 -- tests/test_bar_look.lua — the outfit bar's look (modules/Bar_Chrome.lua): the label's font and
 -- color through the skin seam, the border color's skin companion on the player's plate and icon edge,
--- and test mode without the library. Split out of tests/test_bar.lua by the smoke round 2 review
+-- test mode without the library, the icon and frame border switches and the Grouping row (smoke
+-- round 3 E5-E9). Split out of tests/test_bar.lua by the smoke round 2 review
 -- fixes, to keep that suite under the 1000-line file budget; it shares tests/bar_scene.lua.
 
 local T = _G.OUTFITTERREBORN_TEST
@@ -226,4 +227,58 @@ test("bar: Frame > Show border shows and hides the skin's window edge while the 
         end
     end
     NS.ApplySkinChoice("ka0s", "ka0s")
+end)
+
+-- ── the layout mode (smoke round 3 E9) ───────────────────────────────────────────────────────────
+
+test("bar: the Layout tab's Grouping row is Grouped or Collapsed, and Collapsed dims every label row", function()
+    -- red under: no bar.layout.mode row, or the label rows' disabledIf blind to it.
+    local NS = scene()
+    local row = NS.FindSchemaRow("bar.layout.mode")
+    assertTrue(row ~= nil, "no bar.layout.mode row")
+    assertEqual(row.group, "Layout")
+    assertEqual(row.default, "grouped")
+    assertEqual(NS.GetSetting("bar.layout.mode"), "grouped")
+    assertEqual(row.values.grouped, "Grouped")
+    assertEqual(row.values.collapsed, "Collapsed")
+    assertTrue(row.tooltip:find("Grouped", 1, true) ~= nil and row.tooltip:find("Collapsed", 1, true) ~= nil,
+        "the tooltip explains both")
+    local function dims(path) local r = NS.FindSchemaRow(path); return r.disabledIf ~= nil and r.disabledIf() == true end
+    NS.db.profile.bar.labels.fontFromSkin = false
+    assertFalse(dims("bar.labels.show"), "Grouped: the labels switch is live")
+    assertFalse(dims("bar.labels.fontSize"), "Grouped: the size is live")
+    NS.SetByPath("bar.layout.mode", "collapsed")
+    for _, path in ipairs({ "bar.labels.show", "bar.labels.font", "bar.labels.fontSize", "bar.labels.fontFlags",
+                            "bar.labels.fontShadow", "bar.labels.useClassColorFont", "bar.labels.fontFromSkin",
+                            "bar.labels.fontColorFromSkin", "bar.labels.fontShadowFromSkin" }) do
+        assertTrue(dims(path), path .. " is live while Collapsed")
+    end
+    T.assertNil(NS.FindSchemaRow("bar.labels.fontColor").disabledIf, "the swatch is never grayed")
+end)
+
+test("bar: Collapsed draws every shown outfit as one group with no labels; Grouped keeps a row per category", function()
+    -- red under: Bar.Render laying out one block per category whatever bar.layout.mode says.
+    local NS, M, Bar = scene()
+    complete(NS, "A"); accessory(NS, "B")
+    NS.db.profile.windows.bar = { point = "TOPLEFT", x = 0, y = 0 }
+    settle(M)
+    local P = NS.GetSetting("bar.layout.padding")
+    local _, y1 = H.at(Bar.Buttons()[1])
+    local _, y2 = H.at(Bar.Buttons()[2])
+    assertTrue(y1 ~= y2, "Grouped: two rows")
+    assertTrue(Bar.Label(1):IsShown(), "Grouped: the labels show")
+    NS.SetByPath("bar.layout.mode", "collapsed")
+    settle(M)
+    local btns = Bar.Buttons()
+    assertEqual(#btns, 2, "every outfit still drawn")
+    _, y1 = H.at(btns[1])
+    _, y2 = H.at(btns[2])
+    assertEqual(y1, y2, "Collapsed: one line")
+    assertEqual(y1, Bar.HeaderHeight() + P, "no label line above it")
+    assertEqual(Bar.LabelHeight(), 0, "no label height")
+    -- A label is its row frame's child: the second row frame hides with no outfits of its own.
+    local function visible(fs) return fs:IsShown() == true and fs:GetParent():IsShown() == true end
+    assertFalse(visible(Bar.Label(1)) or visible(Bar.Label(2)), "no label shows")
+    assertTrue(btns[1].outfit.category == "Complete" and btns[2].outfit.category == "Accessory",
+        "the categories in display order")
 end)

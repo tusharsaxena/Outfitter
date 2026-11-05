@@ -5,7 +5,8 @@ local _, NS = ...
 -- position Reset (BP §11). ONE container, `OutfitterRebornBar` (strata HUD, movable, clamped,
 -- toplevel), wears a Ka0s window's look with a header (modules/Bar_Chrome.lua: the Shell chrome or the
 -- player's plate, the title band with its title, lock and close, the drag strip and, in test mode,
--- the test strip under the band), and holds one row frame per category with shown outfits
+-- the test strip under the band), and holds one row frame per category with shown outfits (one for
+-- them all, unlabeled, while the Layout tab's Grouping is Collapsed: smoke round 3 E9)
 -- (`OutfitterRebornBarRow1..2`). The buttons are pooled per row (modules/Bar_Buttons.lua builds them):
 -- each render releases every row and acquires exactly one button per outfit, which fixes the legacy
 -- `_ButtonBar`'s extra button. Its colors each carry a FromSkin companion (skinning-§6).
@@ -292,13 +293,19 @@ local function placeRow(row, b, outfits, size, style)
     end
 end
 
---- The rows a source answers, without the empty ones, at most one per row frame.
+--- The rows a source answers, without the empty ones, at most one per row frame; while the bar is
+--- Collapsed, one row of them all, in display order (no label draws for it).
 local function shownRows(source)
     local out = {}
     for _, row in ipairs(source.Rows() or {}) do
         if #out < MAX_ROWS and type(row.outfits) == "table" and #row.outfits > 0 then out[#out + 1] = row end
     end
-    return out
+    if #out < 2 or not Bar.Collapsed() then return out end
+    local all = {}
+    for _, row in ipairs(out) do
+        for _, rec in ipairs(row.outfits) do all[#all + 1] = rec end
+    end
+    return { { categoryID = out[1].categoryID, outfits = all } }
 end
 
 --- Draw `source` (Bar.LiveSource or NS.Preview.Source): its rows, laid out by Bar_Layout from the

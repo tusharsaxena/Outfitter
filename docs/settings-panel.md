@@ -117,6 +117,7 @@ on the right, and the header drags it. Tabs in declaration order:
 
 | Path | Default | Label |
 |---|---|---|
+| `bar.layout.mode` | `grouped` (`grouped`, `collapsed`) | Grouping: Grouped is one block per category under its label; Collapsed is every shown outfit in one block with no labels, and every Labels row dims |
 | `bar.vertical` | `false` | Vertical layout |
 | `bar.layout.perLine` | `0` (0 to 20) | Per row or column (0 = one line) |
 | `bar.layout.growH` | `auto` (`auto`, `right`, `left`) | Grow horizontally |
@@ -137,7 +138,9 @@ edge.
 `bar.labels.show` (`true`, *Show category labels*), then the library's Font block (`H.FontGroup`,
 prefix `bar.labels.`): face, size, flags (From skin first), shadow, color and *Use class color*, with
 *Use the skin's font*, then this addon's *Use the skin's color* and *Use the skin's shadow*. The
-block's rows dim while the labels are off, the swatch excepted. One label per category, drawn as
+block's rows dim while the labels are off, the swatch excepted, and every row of the tab (the swatch
+again excepted) dims while the Layout tab's *Grouping* is Collapsed, since no label draws then.
+One label per category, drawn as
 HUD text through `S.HudFont`, its face resolved through `S.Resolve`: with *Ignore fonts* on, the
 labels draw the stored face whatever *Use the skin's font* says (skinning-§6).
 

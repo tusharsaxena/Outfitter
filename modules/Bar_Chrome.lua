@@ -263,9 +263,13 @@ end
 local LABEL = "bar.labels."
 local LABEL_LEADING = 4   -- the label line's height over its drawn size
 
---- Whether the category labels show.
+--- Whether the bar draws its outfits as one group (the Layout tab's Grouping, smoke round 3 E9).
 --- @return boolean
-function Bar.LabelsShown() return setting(LABEL .. "show") ~= false end
+function Bar.Collapsed() return setting("bar.layout.mode") == "collapsed" end
+
+--- Whether the category labels show: never while the bar is Collapsed.
+--- @return boolean
+function Bar.LabelsShown() return not Bar.Collapsed() and setting(LABEL .. "show") ~= false end
 
 local function labelFromSkin() return setting(LABEL .. "fontFromSkin") ~= false end
 

@@ -154,7 +154,7 @@ test("settings: the Outfit Bar page's tabs and rows, the position row never draw
     -- red under: a layout row registered on the Display tab
     assertEqual(table.concat(out, ","), "bar.shown=Display,bar.worn.style=Display,"
         .. "bar.combatAlpha=Display,bar.position=Display,"
-        .. "bar.vertical=Layout,bar.layout.perLine=Layout,bar.layout.growH=Layout,bar.layout.growV=Layout,"
+        .. "bar.layout.mode=Layout,bar.vertical=Layout,bar.layout.perLine=Layout,bar.layout.growH=Layout,bar.layout.growV=Layout,"
         .. "bar.layout.padding=Layout,bar.layout.spacing=Layout,"
         .. "bar.icons.size=Icons,bar.icons.borderShow=Icons,bar.icons.borderStyle=Icons,bar.icons.borderSize=Icons,"
         .. "bar.icons.borderColor=Icons,bar.icons.useClassColorBorder=Icons,bar.icons.borderStyleFromSkin=Icons,"

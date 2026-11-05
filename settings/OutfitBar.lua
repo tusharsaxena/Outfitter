@@ -126,8 +126,15 @@ NS.RegisterSchemaRows({
 -- corner the bar is saved at (modules/Bar.lua's SavePosition), so a drag never flips its growth.
 local GROW_H = { auto = L["Automatic"], right = L["Right"], left = L["Left"] }
 local GROW_V = { auto = L["Automatic"], down = L["Down"], up = L["Up"] }
+-- Grouped: one block per category under its label; Collapsed: one block, no labels (smoke round 3
+-- E9), so every Labels row dims while it is picked.
+local MODES = { grouped = L["Grouped"], collapsed = L["Collapsed"] }
 
 NS.RegisterSchemaRows({
+    { path = "bar.layout.mode", page = PAGE, group = LAYOUT, type = "string",
+      values = MODES, sorting = { "grouped", "collapsed" },
+      label = L["Grouping"], default = DB.layout.mode,
+      tooltip = L["Grouped: one row of icons per category (one column in the vertical layout), each under its label. Collapsed: every outfit the bar shows in a single group with no labels; the Labels tab is not used."] },
     { path = "bar.vertical", page = PAGE, group = LAYOUT, type = "bool",
       label = L["Vertical layout"], default = DB.vertical,
       tooltip = L["One column per category."] },
@@ -170,13 +177,15 @@ registerComposed(H.BorderGroup({
 
 -- ── Labels ─────────────────────────────────────────────────────────────────────────────────────
 -- One label per category, over its row (over its column, truncated, in the vertical layout), drawn
--- through S.HudFont (modules/Bar_Chrome.lua). The font block's rows dim while the labels are off,
+-- through S.HudFont (modules/Bar_Chrome.lua). Every row dims while the Layout tab's Grouping is
+-- Collapsed (no labels draw then). The font block's rows dim while the labels are off,
 -- the swatch excepted (it is never grayed, anti-pattern #74); a row the composer already governs by
 -- its skin companion dims for either (AuraMaster settings/Layout.lua:582-597's shape).
-local function labelsOff() return NS.GetSetting("bar.labels.show") == false end
+local function collapsed() return NS.GetSetting("bar.layout.mode") == "collapsed" end
+local function labelsOff() return collapsed() or NS.GetSetting("bar.labels.show") == false end
 
 NS.RegisterSchemaRows({
-    { path = "bar.labels.show", page = PAGE, group = LABELS, type = "bool",
+    { path = "bar.labels.show", page = PAGE, group = LABELS, type = "bool", disabledIf = collapsed,
       label = L["Show category labels"], default = DB.labels.show,
       tooltip = L["Names each row of the bar: Complete outfits, Accessories."] },
 })
