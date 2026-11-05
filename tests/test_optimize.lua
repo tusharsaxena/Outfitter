@@ -437,17 +437,22 @@ test("optimize: STARTED and DONE bracket the genetic search, and the finished jo
     local inst = unitLoad()
     local NS, M = inst.NS, inst.mocks
     fakeStats(NS, GA_SCORES)
-    local started, done = hear(NS, "OPTIMIZE_STARTED"), hear(NS, "OPTIMIZE_DONE")
-    local _, job = run(NS, "b", GA_CFG, gaInventory(), { rng = lcg(9) })
-    assertEqual(#started, 1)
-    assertTrue(started[1][1] == job)
-    assertEqual(job.statName, "Label A, Label B")
-    assertFalse(job.done == true, "the search is not running")
-    assertTrue(drain(M))
-    assertEqual(#done, 1)
-    assertTrue(done[1][1] == job and done[1][2] == true)
-    local held = setmetatable({ job }, { __mode = "v" })
-    job, started[1], done[1] = nil, nil, nil
+    local held = setmetatable({}, { __mode = "v" })
+    -- The search runs in its own call, so nothing on this case's stack holds the job afterwards.
+    local function search()
+        local started, done = hear(NS, "OPTIMIZE_STARTED"), hear(NS, "OPTIMIZE_DONE")
+        local _, job = run(NS, "b", GA_CFG, gaInventory(), { rng = lcg(9) })
+        assertEqual(#started, 1)
+        assertTrue(started[1][1] == job)
+        assertEqual(job.statName, "Label A, Label B")
+        assertFalse(job.done == true, "the search is not running")
+        assertTrue(drain(M))
+        assertEqual(#done, 1)
+        assertTrue(done[1][1] == job and done[1][2] == true)
+        started[1], done[1] = nil, nil
+        held[1] = job
+    end
+    search()
     collectgarbage("collect")
     collectgarbage("collect")
     assertNil(held[1], "the finished job is still held")
