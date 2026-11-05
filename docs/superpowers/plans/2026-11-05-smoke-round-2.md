@@ -43,8 +43,8 @@ both repos, and continues from the first row not `done`.
 | CP2c | Task 2.5: outfit bar as a Ka0s HUD window | OR | done (68ea99f..e11c4ea; Bar_Layout/Bar_Chrome split, header band with lock+close, labels, icon border + worn highlight, FromSkin on every color, /or bar + binding) |
 | CP2d | Task 2.6: test mode shows the window | OR | done (94324d3..e4751e6; samples listed with no item rows and every row action refused, alone at the stock sheet spot or docked, X/Escape dismiss for the session, own strip, New outfit off, selection cleared) |
 | CP3 | Task 3.1: re-vendor v1.87.0, cascading outfit menus (needs CP1) | OR | done (82baed2..a47d302; Widgets 22 -> 23, bundle docs/revendor/2026-11-05-v1.87.0/, whole tree as submenu rows, CreateRadio keep-open rows with ticks, MenuUtil Refresh only from keep-open rows) |
-| CP4 | Task 4.1: docs, deviation rows, smoke §12, whole-branch review, bundle, push | OR | todo |
-| CP5 | Owner's in-game pass of smoke §12 | all | todo |
+| CP4 | Task 4.1: docs, deviation rows, smoke §12, whole-branch review, bundle, push | OR | done (72421b4..e743bd2; bundle 20261105-070533 green; pushed) |
+| CP5 | Owner's in-game pass of smoke §12 | all | **next — handed to the owner** |
 | CP6 | Owner go-ahead -> merge both rounds in order, push, delete run branches/stashes/worktrees | all | todo |
 
 CP1 runs in parallel with CP2a-CP2d (different repo). CP2a-CP2d run in order on one tree.
@@ -155,7 +155,7 @@ CP1 runs in parallel with CP2a-CP2d (different repo). CP2a-CP2d run in order on 
   button look and selected state, selectors visible, arrows, flyout alignment both columns; menus;
   gear; bar options; test mode alone/docked.
 - [ ] Whole-branch adversarial review (both repos), fix confirmed defects, green gate.
-- [ ] `/dev-copilot:wow-automated-tests` bundle, target green; commit; push both branches. Ledger CP4.
+- [x] `/dev-copilot:wow-automated-tests` bundle, target green; commit; push both branches. Ledger CP4.
 
 ## CP5 — Owner's in-game pass
 
