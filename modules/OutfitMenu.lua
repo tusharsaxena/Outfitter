@@ -9,13 +9,14 @@ local _, NS = ...
 -- auto-hide.
 --
 -- KEEP-OPEN OR ACT-AND-CLOSE (design 2026-11-05 G4). A choice made in place keeps the menu open and
--- ticks the current one: the toggles (CreateCheckbox) and the radios (CreateRadio) of Key binding,
--- Title and a trigger without settings, after which every open level shows its new labels. A row
+-- ticks the current one: the toggles (CreateCheckbox) and the radios (CreateRadio) of Save in
+-- equipment manager, Key binding, Title and a trigger without settings, after which every open level shows its new labels. A row
 -- that opens a dialog, popup or window (Rename, Delete, Update, Rebuild, Trigger settings, Change
 -- icon, a trigger with settings) closes it, and so do the bank moves.
 --
 -- FOUR SECTIONS, legacy's rows less Void Storage and the script editor (H1):
---   General     the name; Rename...; Key binding (None, Outfit 1-10 with each key's holder); Title
+--   General     the name; Rename...; Save in equipment manager (On and Off: NS.EM.SetStored, the
+--               outfit row's EM mark's own path, smoke round 3 E12); Key binding (None, Outfit 1-10 with each key's holder); Title
 --               (None and the known titles, 30 a level and then More); Bank (each row disabled, with
 --               the reason, while the bank is closed); Unequip others (not on a Complete outfit);
 --               Ignore comparisons; Delete (asks first).
@@ -38,7 +39,8 @@ local _, NS = ...
 -- Every write goes through its owner's seam: the instance rows through NS.SetByPath with the id, the
 -- record flags and the binding through NS.Outfits.
 --
--- CALLS (at call time, no nil guard; design §12): NS.Outfits, NS.Stack.UpdateTitle, NS.Bank, NS.Stats,
+-- CALLS (at call time, no nil guard; design §12): NS.Outfits, NS.EM.SetStored/Current, NS.Stack.UpdateTitle,
+-- NS.Bank, NS.Stats,
 -- NS.Triggers, NS.Popups, NS.OutfitDialog, NS.RebuildDialog, NS.TriggerDialog, NS.IconBrowser,
 -- NS.Preview.IsActive, NS.PreviewOutfits.Get.
 
@@ -74,6 +76,22 @@ local NO_RECORD = {}
 local function recOf(id) return NS.Outfits.Get(id) or NO_RECORD end
 
 -- ── General ───────────────────────────────────────────────────────────────────────────────────
+
+-- Save in equipment manager: On and Off, the EM mark's click (NS.EM.SetStored). A store makes a new
+-- record, so both radios follow the outfit to it (NS.EM.Current) and tick its true state; a sample's
+-- tick is its drawn `em`.
+local function fillEM(root, rec)
+    local id = rec.id
+    local function stored()
+        local live = NS.Outfits.Get(NS.EM.Current(id))
+        if live then return live.kind == "em" end
+        return rec.em == true
+    end
+    local function set(on) NS.EM.SetStored(NS.EM.Current(id), on) end
+    local level = root:CreateButton(L["Save in equipment manager"])
+    level:CreateRadio(L["On"], stored, set, true)
+    level:CreateRadio(L["Off"], function() return not stored() end, set, false)
+end
 
 local function fillBinding(root, id)
     local O = NS.Outfits
@@ -156,6 +174,7 @@ local function fillGeneral(root, rec)
     local id = rec.id
     root:CreateTitle(tostring(rec.name or ""))
     root:CreateButton(L["Rename..."], function() NS.OutfitDialog.OpenRename(id) end)
+    fillEM(root, rec)
     fillBinding(root, id)
     fillTitles(root, id)
     fillBank(root, id)

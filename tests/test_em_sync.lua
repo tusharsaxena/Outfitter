@@ -105,7 +105,7 @@ test("em: NS.EM is published with the §5.13 surface", function()
     assertEqual(type(EM), "table")
     for _, k in ipairs({ "Sync", "Items", "Missing", "Save", "SetSlotsFromItems", "StoreOnServer", "StoreLocally",
                          "Rename", "Icon", "SetIcon", "DeleteSet", "SetItems", "SetItem", "ClearSlot",
-                         "TruncateName", "Suspend", "Resume" }) do
+                         "TruncateName", "Suspend", "Resume", "SetStored", "Current" }) do
         assertEqual(type(EM[k]), "function", k)
     end
 end)
@@ -494,6 +494,98 @@ test("em: StoreLocally clones the set into a native outfit with the same copy li
     -- red under: the set kept (the next sync mirrors a second "Tank" beside the local one).
     assertNil(after.Tank)
     assertEqual(n, 1)
+end)
+
+-- ── the one toggle: the EM mark and the menu's On/Off (smoke round 3 E12) ────────────────────────
+
+-- Let a wear's moves land: the store's 10 s cancel held off (the mock fires every timer at once).
+local function settle(M, EM)
+    if EM.__state.storeTimer then EM.__state.storeTimer.cancelled = true end
+    for _ = 1, 10 do M.__fireTimers(); M.__gear:deliver() end
+end
+
+test("em: SetStored stores an outfit not worn in one call, worn first and saved once the swap lands", function()
+    -- The owner's E12(2) ruling: one click saves, selected or not. The client's CreateEquipmentSet
+    -- saves the WORN gear, so the outfit is worn first and the set made on its SWAP_COMPLETE.
+    local NS, M, EM = scene()
+    EM.Sync()
+    NS.Stack.Resume()   -- the inventory watch, which sends SWAP_COMPLETE once moves land
+    local O = NS.Outfits
+    local hero = NS.ItemInfo.Snapshot(NS.ItemInfo.FromBag(0, 2))
+    local id = O.Create("Hero", { ChestSlot = hero })
+    NS.Stack.Select(nil)
+    assertFalse(NS.Stack.IsWorn(id))
+    assertTrue(EM.SetStored(id, true))
+    -- red under: a store made at once (the set would keep the chest worn now, not the outfit's).
+    assertEqual(calls(M, "CreateEquipmentSet"), 0, "the set was made before the outfit was worn")
+    settle(M, EM)
+    local setID = M.C_EquipmentSet.GetEquipmentSetID("Hero")
+    assertTrue(setID ~= nil, "no set after the swap")
+    local chest = M.__gear.sets[setID].items[NS.Compat.InventorySlotID("ChestSlot")]
+    assertEqual(chest and chest.key, "chest_hero", "the set holds the outfit's chest")
+    local by = mirrors(NS)
+    assertTrue(by.Hero ~= nil and O.Get(id) == nil, "the outfit is now the set's mirror")
+    assertEqual(EM.Current(id), by.Hero, "the old id follows to the mirror")
+    assertNil(EM.__state.store)
+    -- Off is the same path back: a native outfit again, the set gone, in one call.
+    assertTrue(EM.SetStored(by.Hero, false))
+    local back = O.FindByName("Hero")
+    assertEqual(O.Get(back).kind, "native")
+    assertEqual(EM.Current(id), back, "the chain follows both stores")
+    assertNil(M.C_EquipmentSet.GetEquipmentSetID("Hero"), "the set stayed")
+    -- Asking for the state it is already in changes nothing.
+    local creates = calls(M, "CreateEquipmentSet")
+    assertTrue(EM.SetStored(back, false))
+    assertEqual(calls(M, "CreateEquipmentSet"), creates)
+end)
+
+test("em: SetStored refuses in combat, at the cap and on a taken name, before anything is worn", function()
+    local NS, M, EM = scene()
+    EM.Sync()
+    local O = NS.Outfits
+    local id = O.Create("Spare", { ChestSlot = NS.ItemInfo.Snapshot(NS.ItemInfo.FromBag(0, 2)) })
+    M.__lockdown = true
+    M.__resetPrinted()
+    -- red under: no combat check in SetStored (the wear and the save would run in lockdown).
+    assertFalse(EM.SetStored(id, true))
+    assertTrue(printed(M, "Outfits can't be changed in combat."))
+    assertFalse(EM.SetStored(mirrors(NS).Tank, false), "a remove ran in combat")
+    assertTrue(O.Get(mirrors(NS).Tank) ~= nil)
+    M.__lockdown = false
+    assertFalse(NS.Stack.IsWorn(id), "worn in combat")
+    assertNil(EM.__state.store)
+    M.MAX_EQUIPMENT_SETS_PER_PLAYER = 2
+    -- red under: the cap checked only once the swap lands (the outfit worn for nothing).
+    assertFalse(EM.SetStored(id, true))
+    assertEqual(M.__popups[#M.__popups].which, "OUTFITTERREBORN_EM_FULL")
+    assertFalse(NS.Stack.IsWorn(id), "worn at the cap")
+    M.MAX_EQUIPMENT_SETS_PER_PLAYER = 10
+    local twin = O.Create("tank", { ChestSlot = { id = 0 } })
+    assertFalse(EM.SetStored(twin, true))
+    assertTrue(printed(M, "That name is already used"))
+    assertFalse(NS.Stack.IsWorn(twin), "worn under a taken name")
+    assertNil(EM.__state.store)
+end)
+
+test("em: a store waiting on its swap is dropped after 10 s with a line, and by a stand-down", function()
+    local NS, M, EM = scene()
+    EM.Sync()
+    local id = NS.Outfits.Create("Hero", { ChestSlot = NS.ItemInfo.Snapshot(NS.ItemInfo.FromBag(0, 2)) })
+    M.__resetPrinted()
+    assertTrue(EM.SetStored(id, true))
+    assertEqual(EM.__state.storeTimer.delay, 10)
+    EM.__state.storeTimer.callback()
+    -- red under: no cancel (a swap much later would save the abandoned store).
+    assertNil(EM.__state.store)
+    assertTrue(printed(M, "was not saved in the Equipment Manager"))
+    NS.SendBus(NS.MSG.SWAP_COMPLETE)
+    assertEqual(calls(M, "CreateEquipmentSet"), 0)
+    assertTrue(EM.SetStored(id, true))
+    EM.Suspend()
+    -- red under: a Suspend that keeps the waiting store.
+    assertNil(EM.__state.store)
+    NS.SendBus(NS.MSG.SWAP_COMPLETE)
+    assertEqual(calls(M, "CreateEquipmentSet"), 0)
 end)
 
 -- ── the rebuild path ──────────────────────────────────────────────────────────────────────────

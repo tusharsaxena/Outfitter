@@ -219,25 +219,27 @@ local function rowFor(NS, id)
     return nil
 end
 
-test("popups: the row EM mark selects first, stores on the second click, says the EM is full, and unstores", function()
+test("popups: one click on the row EM mark stores the outfit, the EM full says so, one more unstores", function()
+    -- The owner's E12(2) ruling: a click always saves or removes, selected or not.
     local NS, M = scene({ dock = true })
     local id = NS.Outfits.Create("Spare", { HeadSlot = { id = 0 } })
     local row = rowFor(NS, id)
     assertTrue(row ~= nil, "no row for the outfit")
     NS.Stack.Select(nil)
-    row.em:__fire("OnClick")
-    assertEqual(NS.Stack.Selected(), id, "the first click did not select")
-    assertTrue(NS.Stack.IsWorn(id), "the first click did not wear")
-    assertEqual(NS.Outfits.Get(id).kind, "native")
     local cap = M.MAX_EQUIPMENT_SETS_PER_PLAYER
     M.MAX_EQUIPMENT_SETS_PER_PLAYER = 0
     row.em:__fire("OnClick")
     assertEqual(M.__popups[#M.__popups].which, "OUTFITTERREBORN_EM_FULL")
     assertTrue(M.StaticPopupDialogs.OUTFITTERREBORN_EM_FULL.text ~= nil)
+    assertFalse(NS.Stack.IsWorn(id), "worn although the Equipment Manager is full")
     M.MAX_EQUIPMENT_SETS_PER_PLAYER = cap
     row.em:__fire("OnClick")
-    local emId = NS.Stack.Selected()
-    assertEqual(NS.Outfits.Get(emId).kind, "em", "the second click did not store on the server")
+    -- The save waits on the wear's swap (the mock fires every timer at once: its 10 s cancel held off).
+    NS.EM.__state.storeTimer.cancelled = true
+    for _ = 1, 10 do M.__fireTimers(); M.__gear:deliver() end
+    local emId = NS.EM.Current(id)
+    -- red under: the old two-step (the first click on an unselected outfit only wore and selected it).
+    assertEqual(NS.Outfits.Get(emId).kind, "em", "one click did not store on the server")
     row = rowFor(NS, emId)
     row.em:__fire("OnClick")
     assertEqual(NS.Outfits.Get(NS.Outfits.FindByName("Spare")).kind, "native", "the click on the full mark did not store locally")

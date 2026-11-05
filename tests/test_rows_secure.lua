@@ -345,31 +345,45 @@ test("rows: the EM mark is full for an EM outfit and dimmed otherwise", function
     NS.Outfits.IsEM = isEM
 end)
 
-test("rows: clicking the dimmed EM mark stores the outfit on the server, as the checkbox did", function()
-    -- INV §3.5 OutfitServerButton: the first click on an outfit that is not selected only selects it;
-    -- a click on the selected one stores it on the server, and a refusal shows the popup.
-    local NS, M = opened()
+test("rows: one click on the EM mark saves or removes the outfit through NS.EM.SetStored, selected or not", function()
+    -- The owner's E12(2) ruling: no wear or select first; the gear menu's On/Off is the same call.
+    local NS = opened()
     local row = rowOf(NS, "outfit")
     local id = row.entry.id
-    local stored, local_ = {}, {}
-    local store, keep = NS.EM.StoreOnServer, NS.EM.StoreLocally
-    NS.EM.StoreOnServer = function(i) stored[#stored + 1] = i; return false, "OUTFITTERREBORN_EM_FULL" end
-    NS.EM.StoreLocally = function(i) local_[#local_ + 1] = i end
+    local asked = {}
+    local setStored = NS.EM.SetStored
+    NS.EM.SetStored = function(i, on) asked[#asked + 1] = { i, on }; return true end
     NS.Stack.Select(nil)
     clickEM(row)
-    assertEqual(#stored, 0, "the first click only selects")
-    assertEqual(NS.Stack.Selected(), id)
-    clickEM(row)
-    assertEqual(#stored, 1); assertEqual(stored[1], id)
-    assertEqual(M.__popups[#M.__popups].which, "OUTFITTERREBORN_EM_FULL")
-    assertEqual(#local_, 0, "a native outfit's click stored it locally")
-    -- The full mark on an EM outfit stores it locally (the old uncheck).
+    -- red under: the INV §3.5 two-step (the first click on an unselected outfit only selected it).
+    assertEqual(#asked, 1, "one click did not save")
+    assertEqual(asked[1][1], id); assertTrue(asked[1][2] == true, "a dimmed mark's click is not a save")
+    assertNil(NS.Stack.Selected(), "the click selected the outfit")
+    -- The full mark (an EM outfit) removes it.
     local isEM = NS.Outfits.IsEM
     NS.Outfits.IsEM = function(i) return i == id or isEM(i) end
     clickEM(row)
-    assertEqual(#local_, 1); assertEqual(#stored, 1)
+    assertEqual(#asked, 2); assertTrue(asked[2][2] == false, "a full mark's click is not a remove")
     NS.Outfits.IsEM = isEM
-    NS.EM.StoreOnServer, NS.EM.StoreLocally = store, keep
+    NS.EM.SetStored = setStored
+end)
+
+test("rows: the EM mark's tooltip states the true state and what a click does", function()
+    -- E12(1)/(2): red under the old fixed text (an outfit not stored read "Stored in ...").
+    local NS, M = opened()
+    local row = rowOf(NS, "outfit")
+    local id = row.entry.id
+    local tip = M.GameTooltip
+    row.em:__fire("OnEnter")
+    assertEqual(tip.TextLeft1:GetText(), "Not stored in the Equipment Manager")
+    assertEqual(tip.TextLeft2:GetText(), "Click to save in the Equipment Manager")
+    row.em:__fire("OnLeave")
+    local isEM = NS.Outfits.IsEM
+    NS.Outfits.IsEM = function(i) return i == id or isEM(i) end
+    row.em:__fire("OnEnter")
+    assertEqual(tip.TextLeft1:GetText(), "Stored in the Equipment Manager")
+    assertEqual(tip.TextLeft2:GetText(), "Click to remove from the Equipment Manager")
+    NS.Outfits.IsEM = isEM
 end)
 
 test("rows: clicking the EM mark in combat refuses and changes nothing", function()
@@ -386,7 +400,7 @@ test("rows: clicking the EM mark in combat refuses and changes nothing", functio
     M.__resetPrinted()
     clickEM(row)
     M.__lockdown = false
-    -- red under: drop the `locked()` refusal from the EM click.
+    -- red under: drop the combat refusal from NS.EM.SetStored (the click's one path).
     assertEqual(calls, 0, "an EM store ran in combat")
     assertEqual(row.em:GetAlpha(), alpha, "the mark changed in combat")
     assertTrue(table.concat(M.__printed(), "\n"):find("Outfits can't be changed in combat.", 1, true) ~= nil)

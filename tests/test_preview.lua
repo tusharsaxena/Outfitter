@@ -477,6 +477,13 @@ test("preview window: every row handler refuses a sample quietly, the gear brows
         -- red under: an onWornClick that returns without putting the box back
         assertEqual(row.worn:GetChecked(), was, "the worn box kept the click")
         row.em:__fire("OnClick", "LeftButton")
+        -- The mark's tooltip gives the sample's drawn state and no click hint (smoke round 3 E12).
+        -- red under: a sample's mark offering the save its click refuses.
+        row.em:__fire("OnEnter")
+        assertEqual(M.GameTooltip.TextLeft1:GetText(), row.entry.rec.em and "Stored in the Equipment Manager"
+            or "Not stored in the Equipment Manager")
+        assertEqual(M.GameTooltip.TextLeft2:GetText(), "Not available in test mode")
+        row.em:__fire("OnLeave")
         row.menu:__fire("OnClick", "LeftButton")
         row:__fire("OnEnter")
         assertEqual(M.GameTooltip.TextLeft2:GetText(), SAMPLE_TIP)

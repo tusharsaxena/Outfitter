@@ -83,7 +83,7 @@ test("menu: the rows per section are legacy's, less Void Storage and the script 
     local acc, comp = outfits(NS)
     open(NS, ctl, acc)
     -- red under: fillGeneral without the Unequip others row (INV §7.7).
-    assertEqual(plainLabels(ctl), "Ride|Rename...|Key binding|Title|Bank|"
+    assertEqual(plainLabels(ctl), "Ride|Rename...|Save in equipment manager|Key binding|Title|Bank|"
         .. "On equip, unequip other Accessory outfits|Ignore in comparison tooltips|Delete|-|"
         .. "Update to current items|Rebuild for " .. NS.Stats.ConfigName({ { stat = "STA" } }) .. "|Rebuild for...|-|"
         .. "Automation: " .. NS.Triggers.Get("RIDING").name .. "|Trigger settings...|Turn trigger off|"
@@ -346,6 +346,40 @@ test("menu: Key binding picks are radios that keep the menu open, tick the key a
     assertEqual(#ctl.menus, 1 + 1, "the pick reopened the menu")
 end)
 
+test("menu: Save in equipment manager, below Rename..., is On/Off radios on the EM mark's own path", function()
+    -- Smoke round 3 E12(3): keep-open radios, the true state ticked, NS.EM.SetStored as the mark's click.
+    local NS, M, ctl = scene()
+    local acc = outfits(NS)
+    open(NS, ctl, acc)
+    local top = ctl.menus[#ctl.menus].rows
+    assertEqual(plain(top[3].label), "Save in equipment manager", "not directly below Rename...")
+    local calls = spy(NS, "EM", { "SetStored" })
+    click(ctl, "Save in equipment manager")
+    local rows = ctl.menus[#ctl.menus].rows
+    assertEqual(plainLabels(ctl), "On|Off")
+    for i, r in ipairs(rows) do
+        assertTrue(r.radio and r.keepOpen, "row " .. i .. " is not a keep-open radio")
+    end
+    -- red under: a tick predicate that does not read the outfit's kind.
+    assertFalse(rows[1].selected(rows[1]), "On is ticked on an outfit not stored")
+    assertTrue(rows[2].selected(rows[2]), "Off is not ticked on an outfit not stored")
+    click(ctl, "On")
+    assertEqual(calls.__count("SetStored"), 1)
+    assertEqual(calls.__calls[1][2], acc); assertTrue(calls.__calls[1][3] == true)
+    NS.EM.__state.storeTimer.cancelled = true   -- the mock fires every timer at once
+    for _ = 1, 10 do M.__fireTimers(); M.__gear:deliver() end
+    local emId = NS.EM.Current(acc)
+    assertEqual(NS.Outfits.Get(emId).kind, "em", "On did not store the outfit")
+    -- The store made a new record; the open level still answers for the outfit it was opened on.
+    -- red under: radios that read the menu's first id (gone after the store: Off stays ticked).
+    assertTrue(rows[1].selected(rows[1]), "On is not ticked once the outfit is stored")
+    assertFalse(rows[2].selected(rows[2]))
+    click(ctl, "Off")
+    assertEqual(calls.__calls[2][2], emId, "Off did not follow the outfit to its mirror")
+    assertEqual(NS.Outfits.Get(NS.EM.Current(acc)).kind, "native", "Off did not take it out")
+    assertTrue(rows[2].selected(rows[2]))
+end)
+
 test("menu: Title picks and a trigger without params keep the menu open; the parent's label follows", function()
     local NS, _, ctl = scene()
     local _, comp = outfits(NS)
@@ -575,7 +609,7 @@ test("menu: nothing in the sample's menu reaches a real outfit, whatever row is 
     local spies = {
         spy(NS, "OutfitDialog", { "OpenRename" }), spy(NS, "Popups", { "ShowDelete", "ShowSetCurrent", "ShowRebuild" }),
         spy(NS, "RebuildDialog", { "Open" }), spy(NS, "TriggerDialog", { "Open" }), spy(NS, "IconBrowser", { "Open" }),
-        spy(NS, "Outfits", { "SetFlag", "SetBinding" }),
+        spy(NS, "Outfits", { "SetFlag", "SetBinding" }), spy(NS, "EM", { "SetStored" }),
     }
     for n = 1, 5 do
         ctl.menus = {}

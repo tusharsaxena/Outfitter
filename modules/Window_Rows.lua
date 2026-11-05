@@ -10,7 +10,8 @@ local _, NS = ...
 --
 -- AN OUTFIT ROW (sheet and window feedback design G4), left to right: the worn box, the outfit's icon,
 -- the Equipment Manager mark (that tab's own icon, full when the outfit is stored there, dimmed when
--- not; a click toggles it), the name, the automation lightning and the gear that opens the menu. The
+-- not; one click saves or removes it, NS.EM.SetStored, and its tooltip says which state it is in and
+-- what a click does: smoke round 3 E12), the name, the automation lightning and the gear that opens the menu. The
 -- Outfit Window page can turn off the EM mark (the name then starts where it was) and the lightning
 -- (`window.marks.em`, `window.marks.trigger`; smoke round 3 E11).
 --
@@ -32,7 +33,7 @@ local _, NS = ...
 -- NS.OutfitMenu). Its tooltip is the bar's sample line. Only item rows arm, and test mode lists none.
 --
 -- CALLS (at call time; design §12): NS.Window.MarkDirty/ToggleCollapsed, NS.Stack.Wear/Remove/IsWorn/
--- Select/Selected, NS.Outfits.Get/IsEM, NS.EM.StoreOnServer/StoreLocally, NS.OutfitMenu.Open,
+-- Select/Selected, NS.Outfits.Get/IsEM, NS.EM.SetStored, NS.OutfitMenu.Open,
 -- NS.OutfitTooltip.Show, NS.OutfitIcon (the one icon resolver), NS.Compat (pickup, use, sell
 -- cursor, item icon).
 
@@ -163,33 +164,28 @@ local function onWornClick(row)
     NS.Window.MarkDirty(true)
 end
 
--- The EM mark (INV §3.5 OutfitServerButton): the first click on an outfit that is not selected only
--- selects it; a click on the selected one stores it on the server. A click on the full mark (an
--- outfit the Equipment Manager holds) stores it locally.
-local function storeOnServer(id)
-    local St = NS.Stack
-    if St.Selected() ~= id then
-        St.Wear(id, { hw = true, clearDisabled = true })
-        St.Select(id)
-        return
-    end
-    local ok, popupKey = NS.EM.StoreOnServer(id)
-    if not ok and popupKey then StaticPopup_Show(popupKey) end
-end
-
+-- The EM mark: one click saves the outfit to the Equipment Manager (the dimmed mark) or removes it
+-- (the full one), selected or not (the owner's E12(2) ruling, which retires INV §3.5's select-first
+-- click). NS.EM.SetStored is the one path, the gear menu's On/Off included; it refuses in combat.
 local function onEmClick(row)
     local e = row.entry
     if NS.IsStoodDown() or not (e and e.kind == "outfit") or e.placeholder then return end
-    if locked() then
-        NS.Print(L["Outfits can't be changed in combat."])
-        return
-    end
-    if NS.Outfits.IsEM(e.id) then
-        NS.EM.StoreLocally(e.id)
-    else
-        storeOnServer(e.id)
-    end
+    NS.EM.SetStored(e.id, not NS.Outfits.IsEM(e.id))
     NS.Window.MarkDirty(true)
+end
+
+-- The EM mark's tooltip: the state, then what a click does (a sample's click does nothing).
+local function emTooltip(mark, row)
+    local e = row.entry
+    if NS.IsStoodDown() or not (e and e.kind == "outfit") then return end
+    local stored
+    if e.placeholder then stored = e.rec.em == true else stored = NS.Outfits.IsEM(e.id) end
+    local hint = stored and L["Click to remove from the Equipment Manager"] or L["Click to save in the Equipment Manager"]
+    if e.placeholder then hint = L["Not available in test mode"] end
+    GameTooltip:SetOwner(mark, "ANCHOR_RIGHT")
+    GameTooltip:SetText(stored and L["Stored in the Equipment Manager"] or L["Not stored in the Equipment Manager"])
+    GameTooltip:AddLine(hint, nil, nil, nil, true)
+    GameTooltip:Show()
 end
 
 -- ── hover ─────────────────────────────────────────────────────────────────────────────────────
@@ -384,11 +380,7 @@ local function emMark(row)
         if type(tab.texCoords) == "table" then em.icon:SetTexCoord(unpack(tab.texCoords)) end
     end
     em:SetScript("OnClick", function() onEmClick(row) end)
-    em:SetScript("OnEnter", function(b)
-        GameTooltip:SetOwner(b, "ANCHOR_RIGHT")
-        GameTooltip:SetText(L["Stored in the Equipment Manager"])
-        GameTooltip:Show()
-    end)
+    em:SetScript("OnEnter", function(b) emTooltip(b, row) end)
     em:SetScript("OnLeave", Rows.OnLeave)
     return em
 end

@@ -930,7 +930,7 @@ Total.
 - stack: the persisted stack round-trips; Init drops unknown ids, keeps temps whole, sets expected
 - stack: Init absorbs worn gear the restored stack does not expect into the temporary outfit
 
-### test_em_sync.lua (24)
+### test_em_sync.lua (27)
 
 - em: NS.EM is published with the §5.13 surface
 - em: every set is mirrored as an em outfit, its items resolved from the set's locations
@@ -952,6 +952,9 @@ Total.
 - em: StoreOnServer refuses a name a set or another mirror already holds
 - em: StoreOnServer at the cap answers the EM-full popup and changes nothing
 - em: StoreLocally clones the set into a native outfit with the same copy list
+- em: SetStored stores an outfit not worn in one call, worn first and saved once the swap lands
+- em: SetStored refuses in combat, at the cap and on a taken name, before anything is worn
+- em: a store waiting on its swap is dropped after 10 s with a line, and by a stand-down
 - em: SetItems wears the items and saves them on SWAP_COMPLETE
 - em: a rebuild that moves nothing saves once its update has run
 - em: a pending save is dropped after 10 s, by a stand-down, and by a slot edit
@@ -1247,7 +1250,7 @@ Total.
 - list model: Status caches O.Status in the table it is handed, until that is wiped
 - list model: in test mode the list is the sample outfits under their headers, no item section
 
-### test_rows_secure.lua (21)
+### test_rows_secure.lua (22)
 
 - rows: NS.WindowRows is published with the secure surface
 - rows: fourteen rows and their secure children are created once, each SetAllPoints'd at birth
@@ -1263,7 +1266,8 @@ Total.
 - rows: an outfit row shows worn, icon, EM mark, name in that order
 - rows: a glyph outfit icon is drawn uncropped; a fileID one edged and cropped
 - rows: the EM mark is full for an EM outfit and dimmed otherwise
-- rows: clicking the dimmed EM mark stores the outfit on the server, as the checkbox did
+- rows: one click on the EM mark saves or removes the outfit through NS.EM.SetStored, selected or not
+- rows: the EM mark's tooltip states the true state and what a click does
 - rows: clicking the EM mark in combat refuses and changes nothing
 - rows: the menu control is a borderless gear that opens the outfit menu
 - rows: the lightning has no border
@@ -1496,7 +1500,7 @@ Total.
 - flyout tint: a skin change in lockdown writes nothing
 - flyout tint: once let go the rim is Blizzard's alone, and later updates write nothing to it
 
-### test_outfit_menu.lua (33)
+### test_outfit_menu.lua (34)
 
 - menu: NS.OutfitMenu is published
 - menu: the rows per section are legacy's, less Void Storage and the script editor
@@ -1509,6 +1513,7 @@ Total.
 - menu: Delete, Update and Rebuild ask through popups carrying the id; the dialogs open
 - menu: the whole tree goes to the library once, each nested level as a submenu row
 - menu: Key binding picks are radios that keep the menu open, tick the key and rename its holders
+- menu: Save in equipment manager, below Rename..., is On/Off radios on the EM mark's own path
 - menu: Title picks and a trigger without params keep the menu open; the parent's label follows
 - menu: rows that open a dialog, popup or window, and the bank moves, act and close
 - menu: on the client's MenuUtil only keep-open rows answer Refresh, the rest close
@@ -1543,7 +1548,7 @@ Total.
 - new outfit: a trigger fills an empty or auto-filled name, and one with params opens its settings
 - rename: the name field only, 140 px shorter, and Done renames
 - popups: every popup times out never, works dead, hides on Escape, and carries its id in data
-- popups: the row EM mark selects first, stores on the second click, says the EM is full, and unstores
+- popups: one click on the row EM mark stores the outfit, the EM full says so, one more unstores
 - rebuild: the rows give the §5.14 cfg, and Done keeps it on the outfit and rebuilds
 - progress: OPTIMIZE_* drive it, High speed sets the job's, and Cancel cancels that job
 - browser: Change icon opens on Recommended with the outfit's icon selected
@@ -1813,7 +1818,7 @@ Total.
 | test_equip_bracket.lua | 32 |
 | test_tooltips.lua | 18 |
 | test_stack.lua | 27 |
-| test_em_sync.lua | 24 |
+| test_em_sync.lua | 27 |
 | test_bank.lua | 14 |
 | test_optimize.lua | 30 |
 | test_triggers.lua | 21 |
@@ -1828,7 +1833,7 @@ Total.
 | test_sheet.lua | 18 |
 | test_dock.lua | 48 |
 | test_list_model.lua | 8 |
-| test_rows_secure.lua | 21 |
+| test_rows_secure.lua | 22 |
 | test_slot_enables.lua | 29 |
 | test_bar.lua | 45 |
 | test_bar_look.lua | 11 |
@@ -1839,7 +1844,7 @@ Total.
 | test_preview_place.lua | 8 |
 | test_window_settings.lua | 12 |
 | test_flyout_tint.lua | 12 |
-| test_outfit_menu.lua | 33 |
+| test_outfit_menu.lua | 34 |
 | test_dialogs.lua | 24 |
 | test_trigger_dialog.lua | 11 |
 | test_diagnostics.lua | 12 |
@@ -1853,4 +1858,4 @@ Total.
 | test_lizard_sighted.lua | 8 |
 | test_prose.lua | 15 |
 | Skipped | 1 |
-| **Total** | **1531** |
+| **Total** | **1536** |
