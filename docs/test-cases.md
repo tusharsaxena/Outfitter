@@ -1266,7 +1266,7 @@ Total.
 - rows: a profile switch redraws the trigger mark from the new profile's auto.enabled
 - rows: an item with no quality color is drawn muted, never in the previous item's color
 
-### test_slot_enables.lua (25)
+### test_slot_enables.lua (29)
 
 - slot enables: NS.SlotEnables is published with the §7.4 surface
 - slot enables: one 14x14 checkbox per slot, anchored to Character<Slot> (old test_xml:101-112)
@@ -1293,6 +1293,10 @@ Total.
 - slot enables: the level is capped under the client's ceiling
 - slot enables: MaybeRestack restacks on a strata-only change, and once
 - slot enables: each box carries an edge in the skin's accent
+- slot enables: the flyout open on a sheet slot lifts the boxes over it; its close restores
+- slot enables: the follow tick catches a flyout the hooks missed
+- slot enables: another host's flyout, or one opened in lockdown, lifts nothing
+- slot enables: the flyout's hooks do nothing while stood down
 
 ### test_bar.lua (44)
 
@@ -1770,7 +1774,7 @@ Total.
 | test_dock.lua | 45 |
 | test_list_model.lua | 8 |
 | test_rows_secure.lua | 21 |
-| test_slot_enables.lua | 25 |
+| test_slot_enables.lua | 29 |
 | test_bar.lua | 44 |
 | test_bar_look.lua | 5 |
 | test_outfit_icons.lua | 17 |
@@ -1791,4 +1795,4 @@ Total.
 | test_lizard_sighted.lua | 8 |
 | test_prose.lua | 15 |
 | Skipped | 1 |
-| **Total** | **1481** |
+| **Total** | **1485** |

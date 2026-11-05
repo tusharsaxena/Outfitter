@@ -22,6 +22,15 @@ local _, NS = ...
 -- allowed in combat. They are first stacked in Show, not at build: the sheet's level only means
 -- something once the sheet is shown.
 --
+-- OVER THE OPEN FLYOUT (smoke round 3 E2). Blizzard's EquipmentFlyoutFrame is HIGH
+-- (Blizzard_FrameXML/EquipmentFlyout.xml:38, re-set on every update at EquipmentFlyout.lua:330) one
+-- level under its slot button (:332), with its slot Highlight an OVERLAY on it (xml:41-50), so on the
+-- stock MEDIUM sheet it covered the slot's box. While it is open on one of the 18 sheet slots, out of
+-- lockdown, Restack takes the higher of the host's strata and the flyout's, and a level over the
+-- flyout's own frames too; its close (an OnHide post-hook) restacks to the host's again. The probe
+-- MaybeRestack compares carries the flyout's state, so the follow tick catches what a hook missed,
+-- and a flyout opened in combat is lifted once lockdown ends.
+--
 -- THE EDGE. Each box carries a 1 px edge in the skin's accent (`text.accent`, through S.Mark, so a
 -- skin switch repaints it) over the skin's checkbox: the box alone is near-black on dark item icons.
 --
@@ -31,7 +40,7 @@ local _, NS = ...
 --
 -- CALLS (at call time; design §12): NS.Dock.Holder, NS.Stack.Selected, NS.Outfits.SlotState/
 -- SetSlotEnabled/UnknownSlots, NS.Inventory.Cache, NS.Compat.PickupInventoryItem/InventorySlotID,
--- NS.Preview.IsActive.
+-- NS.Preview.IsActive, NS.Compat.InCombatLockdown; the client's EquipmentFlyoutFrame (read, post-hooked).
 
 local SE = {}
 NS.SlotEnables = SE
@@ -57,6 +66,7 @@ local frame
 local order = {}           -- the checkboxes, in SLOT_NAMES order
 local hostLevel, hostProbe  -- the sheet's level and strata probe at the last Restack
 local installed = false
+local sheetSlot = {}       -- Character<Slot> button -> true, filled on the first flyout read
 
 local function cursorHasItem()
     return type(CursorHasItem) == "function" and NS.Secrets.PlainTruth(CursorHasItem()) == true
@@ -134,22 +144,60 @@ function SE.HostStrata()
     return best
 end
 
+-- Whether `button` is one of the sheet's 18 slot buttons (the map is built once, on first use).
+local function isSheetSlot(button)
+    if next(sheetSlot) == nil then
+        for _, slot in ipairs(NS.ItemData.SLOT_NAMES) do
+            local b = _G["Character" .. slot]
+            if b then sheetSlot[b] = true end
+        end
+    end
+    return button ~= nil and sheetSlot[button] == true
+end
+
+--- Blizzard's equipment flyout while it is open on a sheet slot and out of lockdown, else nil.
+--- @return table|nil
+function SE.OpenFlyout()
+    local flyout = _G.EquipmentFlyoutFrame
+    if type(flyout) ~= "table" or NS.Compat.InCombatLockdown() then return nil end
+    local ok, shown = pcall(flyout.IsShown, flyout)
+    if not ok or NS.Secrets.PlainTruth(shown) ~= true then return nil end
+    if not isSheetSlot(flyout.button) then return nil end
+    return flyout
+end
+
 -- The cheap per-tick probe of the host's strata: the sheet's and one slot's (a host re-strataes its
--- slots together, Chonky core/utils.lua:2059).
+-- slots together, Chonky core/utils.lua:2059), and whether an open flyout lifts the boxes.
 local function strataProbe()
     return (strataOf(CharacterFrame) or "") .. "/" .. (strataOf(_G.CharacterHeadSlot) or "")
+        .. (SE.OpenFlyout() and "/flyout" or "")
+end
+
+-- The strata and level the boxes take: the host's, raised over an open flyout's when it sits higher.
+local function layers()
+    local holder = NS.Dock.Holder()
+    local strata = SE.HostStrata()
+    local level = SE.HighestLevel(CharacterFrame, holder, strata)
+    local flyout = SE.OpenFlyout()
+    local fs = flyout and strataOf(flyout)
+    if fs and (strata == nil or STRATA_RANK[fs] > STRATA_RANK[strata]) then
+        strata = fs
+        level = SE.HighestLevel(CharacterFrame, holder, strata)
+    end
+    if fs and fs == strata then level = math.max(level, SE.HighestLevel(flyout, nil, strata)) end
+    return strata, level
 end
 
 --- Take the host's strata and one level above its highest descendant of that strata, capped. A host
---- that answers no strata leaves the boxes the one they inherit, over every descendant's level.
+--- that answers no strata leaves the boxes the one they inherit, over every descendant's level. An
+--- open flyout on a sheet slot (SE.OpenFlyout) lifts them to its strata and over its frames too.
 function SE.Restack()
     if not frame then return end
     hostLevel = NS.SafeNumber(CharacterFrame:GetFrameLevel(), 0)
     hostProbe = strataProbe()
-    local strata = SE.HostStrata()
+    local strata, level = layers()
     if strata then frame:SetFrameStrata(strata) end
-    local level = SE.HighestLevel(CharacterFrame, NS.Dock.Holder(), strata) + LEVEL.SLOT_ENABLES_OVER_HOST
-    frame:SetFrameLevel(math.min(level, LEVEL.MAX))
+    frame:SetFrameLevel(math.min(level + LEVEL.SLOT_ENABLES_OVER_HOST, LEVEL.MAX))
     SE.Relevel()
 end
 
@@ -280,10 +328,25 @@ local function onSelection(_, id)
     if id then SE.Show(id) else SE.Hide() end
 end
 
---- The bus receivers, once per session.
+-- The flyout's open and close restack at once (the follow tick would, a beat later). A post-hook: the
+-- stand-down latch first.
+local function onFlyoutShown()
+    if NS.IsStoodDown() then return end
+    SE.MaybeRestack()
+end
+
+local function hookFlyout()
+    local flyout = _G.EquipmentFlyoutFrame
+    if type(flyout) ~= "table" or type(flyout.HookScript) ~= "function" then return end
+    flyout:HookScript("OnShow", onFlyoutShown)
+    flyout:HookScript("OnHide", onFlyoutShown)
+end
+
+--- The bus receivers and the flyout's hooks, once per session.
 function SE.Install()
     if installed then return end
     installed = true
+    hookFlyout()
     local bus = NS.NewBusTarget()
     if not bus then return end
     bus:RegisterMessage(NS.MSG.SELECTION_CHANGED, onSelection)
