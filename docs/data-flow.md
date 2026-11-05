@@ -113,8 +113,10 @@ NS.Equip.Batch(function()  NS.Stack.Wear / Remove (layer, byTrigger)  end) â—„â”
 - **Test mode.** `NS.Preview` flips the session-only `NS.State.testMode` and sends `PREVIEW_CHANGED`.
   The bar draws `Preview.Source` (the samples of `defaults/PreviewOutfits.lua`) under its test strip;
   the dock clears the selection and calls `Dock.Refresh`, which shows the window with the samples
-  under its own strip, beside the sheet when it is open or alone at `NS.Sheet.AloneCorner` when it is
-  not, never in lockdown. X or Escape sets `testDismissed` for that test session. Every row action
+  under its own strip, beside the sheet when it is open or alone in the screen center
+  (`Dock.AloneSpot`) when it is not, never in lockdown. Alone it drags for the session (`Dock.testSpot`,
+  never saved); the bar starts just left of it (`st.testPlace`) until the player drags the bar, which
+  saves as usual. X or Escape sets `testDismissed` for that test session. Every row action
   refuses a `preview:` id, so nothing reaches `NS.Outfits` or `NS.Stack`. Combat
   (`PLAYER_STATE_CHANGED "combat"`, before lockdown), its own switch, Reset all and the stand-down
   end it, and `PREVIEW_CHANGED false` puts both surfaces back on live data.

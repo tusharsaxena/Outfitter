@@ -68,7 +68,9 @@ return function(T)
         M.UIFrameFadeOut = function(f, secs, from, to) ctl.fades[#ctl.fades + 1] = { f, secs, from, to } end
         M.UIFrameFadeRemoveFrame = function() ctl.stops = ctl.stops + 1 end
         -- Both are in the latch's MODULES walk, so each answers Suspend and Resume too.
-        T.fake(NS, "Dock", { IsShown = function() return false end, Suspend = true, Resume = true })
+        -- AloneSpot answers nothing: the test bar draws at its saved place (test_preview_place pins the
+        -- place beside the real window).
+        T.fake(NS, "Dock", { IsShown = function() return false end, AloneSpot = true, Suspend = true, Resume = true })
         local preview = T.fake(NS, "Preview", { IsActive = function() return ctl.preview end, Suspend = true,
                                                 Resume = true })
         rawset(preview, "Source", { Rows = function() return ctl.previewRows end })

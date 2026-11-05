@@ -1416,7 +1416,7 @@ Total.
 - parity: the menu sorts as legacy's, and a renamed or refiled row by the same rule
 - parity: a class row is offered to its own class only, as the legacy menu filtered it
 
-### test_preview.lua (36)
+### test_preview.lua (35)
 
 - preview: NS.Preview publishes the §8 surface and starts off
 - preview: the placeholders are five Test Outfits in two rows, each stamped placeholder and preview:<n>
@@ -1434,8 +1434,7 @@ Total.
 - preview: every start and stop, from any source, repaints an open settings panel
 - preview window: the list is the five samples under their headers, no item section, nothing armed
 - preview window: every row handler refuses a sample quietly and nothing is written
-- preview window: with the sheet closed, test mode shows the window alone at the stock sheet's right
-- preview window: the alone corner reads the client's panel layout and the sheet's scale
+- preview window: with the sheet closed, test mode shows the window alone in the screen center
 - preview window: opening the sheet docks it, closing the sheet puts it back alone
 - preview window: with the sheet open, test mode shows the window docked
 - preview window: X and Escape hide it for the session without ending test mode
@@ -1454,6 +1453,16 @@ Total.
 - preview bar: show, toggle and the key bring a dismissed bar back, never writing bar.shown
 - preview bar: the dismissal ends with test mode; the bar follows bar.shown, and a new session shows it
 - preview bar: the dismissal ends with the General switch; a bar the player had on comes back
+
+### test_preview_place.lua (7)
+
+- test place: with the sheet closed, the test window opens alone in the screen center
+- test place: alone, the window drags; the drop holds for the session and nothing is saved
+- test place: docked beside the sheet, or in lockdown, the window does not move
+- test place: combat mid-drag stops the move before lockdown and ends test mode
+- test place: the bar starts just left of the window, and the saved place is left alone
+- test place: a drag of the test bar saves as usual, and test mode's end keeps it there
+- test place: test mode's end puts a bar the player had on back at its saved place
 
 ### test_outfit_menu.lua (30)
 
@@ -1791,7 +1800,8 @@ Total.
 | test_outfit_icons.lua | 17 |
 | test_broker.lua | 13 |
 | test_triggers_parity.lua | 13 |
-| test_preview.lua | 36 |
+| test_preview.lua | 35 |
+| test_preview_place.lua | 7 |
 | test_outfit_menu.lua | 30 |
 | test_dialogs.lua | 24 |
 | test_trigger_dialog.lua | 11 |
@@ -1806,4 +1816,4 @@ Total.
 | test_lizard_sighted.lua | 8 |
 | test_prose.lua | 15 |
 | Skipped | 1 |
-| **Total** | **1496** |
+| **Total** | **1502** |

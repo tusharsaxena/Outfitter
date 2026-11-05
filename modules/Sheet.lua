@@ -184,30 +184,3 @@ function Sheet.DockRight()
     end
     return right, top
 end
-
--- Where Blizzard's UI panel manager puts a "left" panel (CharacterFrame, UIPanelWindows.lua:9): TOPLEFT
--- at LEFT_OFFSET and TOP_OFFSET from UIParent's top left, divided by the panel's scale in its own
--- units, which is those offsets in UIParent's (wow-ui-source@297d7aa:Interface/AddOns/
--- Blizzard_UIParentPanelManager/Shared/UIParentPanelManager.lua:617-635; the defaults, 16 and -116,
--- UIPanelLayoutFrame.lua:1-9). With the paper doll up the stock sheet is CHARACTERFRAME_EXPANDED_WIDTH
--- (540) wide (Blizzard_UIPanels_Game/Mainline/CharacterFrame.lua:2).
-local LEFT_OFFSET, TOP_OFFSET, EXPANDED_WIDTH = 16, -116, 540
-
-local function layoutAttribute(name, fallback)
-    local get = GetUIPanelLayoutAttribute
-    return NS.SafeNumber(type(get) == "function" and get(name) or nil, fallback)
-end
-
---- Where the window stands alone while test mode shows it with the sheet closed (smoke round 2
---- design G7): the top right corner of a stock sheet that is not open, in UIParent's units. Computed,
---- never read off the hidden CharacterFrame, whose rect is unset before its first open and narrower on
---- the Reputation and Currency tabs. nil, nil while UIParent has no top.
---- @return number|nil x, number|nil top
-function Sheet.AloneCorner()
-    local screenTop = NS.SafeNumber(UIParent:GetTop(), nil)
-    if not screenTop then return nil, nil end
-    local scale = NS.SafeNumber(CharacterFrame:GetScale(), 1)
-    local width = NS.SafeNumber(CHARACTERFRAME_EXPANDED_WIDTH, EXPANDED_WIDTH)
-    local x = layoutAttribute("LEFT_OFFSET", LEFT_OFFSET) + width * scale
-    return x, screenTop + layoutAttribute("TOP_OFFSET", TOP_OFFSET)
-end

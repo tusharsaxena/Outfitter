@@ -193,6 +193,7 @@ local SUITES = {
     { name = "test_triggers_parity" },
 
     { name = "test_preview" },
+    { name = "test_preview_place" },
 
     { name = "test_outfit_menu" },
     { name = "test_dialogs" },

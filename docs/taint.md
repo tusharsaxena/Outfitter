@@ -53,8 +53,10 @@ hold no secure frames and may restack in combat, to the host strata (the highest
 `CharacterFrame` and its slot buttons).
 
 Test mode's alone window is the same protected frame. It is shown, placed (the one `TOPLEFT` point,
-at `NS.Sheet.AloneCorner`) and dressed (`Window.SetTestMode`) only through `Dock.Refresh`, never in
-lockdown: `/or test` is refused in combat, and combat ends test mode at `PLAYER_REGEN_DISABLED`,
+at `Dock.AloneSpot`, the screen center or the session's drop) and dressed (`Window.SetTestMode`) only
+through `Dock.Refresh`, never in lockdown. Its drag (smoke round 3 E3) starts only out of lockdown and
+only while it stands alone; the drop clears the client's user-placed flag and re-issues the one point,
+and the hide at `PLAYER_REGEN_DISABLED` stops a move in progress before lockdown: `/or test` is refused in combat, and combat ends test mode at `PLAYER_REGEN_DISABLED`,
 before lockdown, hiding the alone window with it. The sample rows arm no secure button: the list
 carries no item section in test mode, and every row handler refuses a `preview:` id.
 

@@ -130,6 +130,11 @@ local function ensureStrip()
     return frame.strip or nil
 end
 
+--- The window's size as this file set it, in its own units: the width and the height with the test
+--- strip's push. Read where the client's rect may not be laid yet (the dock's alone spot).
+--- @return number width, number height
+function Win.Size() return Win.WIDTH, Win.HEIGHT + (Win.push or 0) end
+
 --- Dress the window for test mode or take it off: the strip, the list's push, the height, New outfit
 --- and the degraded title. Dock.Refresh only (the list holds secure children: never in lockdown).
 --- @param on boolean
@@ -141,6 +146,7 @@ function Win.SetTestMode(on)
     local strip = on and ensureStrip()
     if strip then strip:Show() elseif frame.strip then frame.strip:Hide() end
     local push = strip and (NS.TEST_STRIP_HEIGHT + STRIP_GAP) or 0
+    Win.push = push
     list:SetPoint("TOPLEFT", frame, "TOPLEFT", 8, LIST_TOP - push)
     frame:SetHeight(Win.HEIGHT + push)
     frame.title:SetText((on and not strip) and L["Outfitter Reborn (test mode)"] or L["Outfitter Reborn"])

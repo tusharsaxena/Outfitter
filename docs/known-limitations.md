@@ -17,6 +17,7 @@ open issues (§14); a row here leaves when its check passes or its owner rules.
   window is a blocked action. Dialogs stay open through the suspend (O30). Recorded as deviation D2.
 - **The window is docked, not movable** (D2). It follows the character sheet and has no saved
   position. If following ever fails, it parents to the sheet instead, which works but pins the sheet.
+  Only test mode's alone window drags, out of combat and for that test session (smoke round 3 E3).
 - **No migration** (R4). 1.1.0 starts from a fresh store: outfits, options and scripts from the old
   addon are not read. Blizzard equipment sets come back as outfits.
 - **Key assignments are lost** (H11): the bindings have new names so they cannot collide with a

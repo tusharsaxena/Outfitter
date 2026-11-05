@@ -137,8 +137,8 @@ the diagnostics sections.
 | `modules/Tooltips.lua` | `NS.Tooltips`: the "Used by outfits" line on item tooltips |
 | `modules/Tooltips_Compare.lua` | `NS.Compare`: up to five comparison tooltips with the items your outfits use in the hovered slot |
 | `modules/OutfitTooltip.lua` | `NS.OutfitTooltip`: an outfit's tooltip, for the window's rows and the bar's buttons |
-| `modules/Sheet.lua` | `NS.Sheet`: which character sheet is up (stock, EllesmereUI, ChonkyCharacterSheet), where on it the sheet button and the window go, where a stock sheet would open (`AloneCorner`, test mode's alone window) and EllesmereUI's tab face and accent; reads only, anchors nothing |
-| `modules/Dock.lua` | `NS.Dock`: the sheet holder, the sheet button in the host's tab look (deviation `DEV-SKIN-SHEET-BUTTON`), the window's show model (test mode alone or docked included), its follow and its layer sync |
+| `modules/Sheet.lua` | `NS.Sheet`: which character sheet is up (stock, EllesmereUI, ChonkyCharacterSheet), where on it the sheet button and the window go, and EllesmereUI's tab face and accent; reads only, anchors nothing |
+| `modules/Dock.lua` | `NS.Dock`: the sheet holder, the sheet button in the host's tab look (deviation `DEV-SKIN-SHEET-BUTTON`), the window's show model (test mode alone or docked included; alone, centered and draggable for the session, `AloneSpot`), its follow and its layer sync |
 | `modules/Window.lua` | `NS.Window`: the outfit window's chrome (the gear at the close X's size and tint), list body, scroll bar, footer, test strip and render |
 | `modules/Window_ListModel.lua` | `NS.WindowListModel`: what the outfit list shows, in order; the sample outfits with no item section in test mode |
 | `modules/Window_Rows.lua` | `NS.WindowRows`: the list's 14 rows and the secure child each one owns |

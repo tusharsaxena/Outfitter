@@ -33,13 +33,17 @@ local _, NS = ...
 -- CharacterSheet.lua:4907, :3171), so the sheet show looks again on the next frame and re-anchors
 -- only when the kind moved.
 --
--- TEST MODE (smoke round 2 design G7, D9, D10). While NS.Preview is on, the window shows its sample
--- outfits under its own strip (NS.Window.SetTestMode) whether or not the player asked for it: beside
--- the sheet when the paper doll is up, else ALONE, where a stock sheet would open (NS.Sheet.
--- AloneCorner, in UIParent's units), through the same one TOPLEFT -> UIParent BOTTOMLEFT point and
--- the same Refresh, so never in lockdown (test mode is refused in combat and ends at
--- PLAYER_REGEN_DISABLED, before lockdown). The follow then reads the alone corner, not the hidden
--- sheet's. X, Escape or the sheet button's close hide it for the rest of that test session
+-- TEST MODE (smoke round 2 design G7, D9, D10; smoke round 3 E3). While NS.Preview is on, the window
+-- shows its sample outfits under its own strip (NS.Window.SetTestMode) whether or not the player asked
+-- for it: beside the sheet when the paper doll is up, else ALONE, in the screen center (Dock.AloneSpot,
+-- in UIParent's units), through the same one TOPLEFT -> UIParent BOTTOMLEFT point and the same
+-- Refresh, so never in lockdown (test mode is refused in combat and ends at PLAYER_REGEN_DISABLED,
+-- before lockdown). The follow then reads the alone spot, not the hidden sheet's. Alone, and only
+-- alone, the window DRAGS for the length of the test session (out of lockdown; the D10 clause as E3
+-- amends it): the drop becomes the session's alone spot, re-issued as the dock's one point, and is
+-- never saved (the client's user-placed flag is cleared after the drop, so layout-local.txt keeps
+-- nothing); the next session starts centered. Combat hides the window before lockdown, and the hide
+-- stops a move in progress. X, Escape or the sheet button's close hide it for the rest of that test session
 -- (`testDismissed`) without ending the mode, which still ends only on its own switch, combat or Reset
 -- all (preview-mode). Entering test mode clears the selection, so the sheet's slot boxes and the
 -- footer's Slots buttons never act on a real outfit while the samples show. A window parked in the
@@ -62,7 +66,7 @@ local _, NS = ...
 --
 -- CALLS (at call time; design §12): NS.Window, NS.WindowRows.DisarmSecure, NS.SlotEnables.MaybeRestack,
 -- NS.Stack.Select, NS.Dialogs.CloseAll, NS.IconBrowser.Close, NS.CloseMenu, NS.SecureQueue,
--- NS.Preview.IsActive, NS.Sheet.Refresh/Kind/DockRight/AloneCorner/Frame/ButtonAnchor, NS.QuickSlots.DrawerSync (the window's show and
+-- NS.Preview.IsActive, NS.Sheet.Refresh/Kind/DockRight/Frame/ButtonAnchor, NS.QuickSlots.DrawerSync (the window's show and
 -- hide turn the left column's equipment drawer outward and back; modules/QuickSlots.lua).
 
 local Dock = { wanted = false, suspended = false, followDisabled = false, built = false, testDismissed = false,
@@ -115,11 +119,25 @@ end
 
 -- ── position and layers ───────────────────────────────────────────────────────────────────────
 
+--- Where the window stands alone in test mode, in UIParent's units: the spot the player dropped it
+--- at this session, else its TOPLEFT with the window centered on the screen (smoke round 3 E3). The
+--- size is the one Window set, so the center holds before the client lays the window out. nil, nil
+--- while UIParent has no rect.
+--- @return number|nil x, number|nil top
+function Dock.AloneSpot()
+    local spot = Dock.testSpot
+    if spot then return spot[1], spot[2] end
+    local right, top = NS.SafeNumber(UIParent:GetRight(), nil), NS.SafeNumber(UIParent:GetTop(), nil)
+    if not (right and top) then return nil, nil end
+    local w, h = NS.Window.Size()
+    return (right - w) / 2, (top + h) / 2
+end
+
 -- The corner and the frame whose units it is in: the sheet's, or, standing alone in test mode with
--- the sheet closed, where a stock sheet would open, in UIParent's.
+-- the sheet closed, the alone spot, in UIParent's.
 local function corner()
     if PaperDollFrame:IsVisible() ~= true and Dock.TestWanted() then
-        local x, top = NS.Sheet.AloneCorner()
+        local x, top = Dock.AloneSpot()
         return x, top, UIParent
     end
     local x, top = NS.Sheet.DockRight()
@@ -166,6 +184,48 @@ function Dock.ApplyLayers()
         NS.Window.Relevel(level)
         Dock.lastStrata, Dock.lastLevel = strata, level
     end)
+end
+
+-- ── the test-mode drag (smoke round 3 E3) ─────────────────────────────────────────────────────
+
+-- Only the alone test window moves: docked, it follows the sheet; parked in the holder, it cannot
+-- stand alone; in lockdown its secure children make the move a blocked action.
+local function canDrag()
+    if locked() or NS.IsStoodDown() or Dock.followDisabled then return false end
+    return Dock.TestWanted() and PaperDollFrame:IsVisible() ~= true
+end
+
+local function onDragStart()
+    if not canDrag() then return end
+    Dock.moving = true
+    win:StartMoving()
+end
+
+--- End a move in progress: the drop is the session's alone spot (in UIParent's units), the client's
+--- user-placed flag is cleared so nothing is saved, and the dock's one point is issued again over
+--- whatever the move left. From the drop, and from a hide (combat's comes before lockdown).
+function Dock.EndDrag()
+    if not Dock.moving or locked() then return end
+    Dock.moving = false
+    win:StopMovingOrSizing()
+    win:SetUserPlaced(false)
+    local left, top = NS.SafeNumber(win:GetLeft(), nil), NS.SafeNumber(win:GetTop(), nil)
+    if left and top then
+        local ratio = NS.SafeNumber(win:GetEffectiveScale(), 1) / NS.SafeNumber(UIParent:GetEffectiveScale(), 1)
+        Dock.testSpot = { left * ratio, top * ratio }
+    end
+    win:ClearAllPoints()
+    Dock.Attach()
+end
+
+local function installDrag()
+    win:SetMovable(true)
+    win:SetClampedToScreen(true)
+    win:SetDontSavePosition(true)
+    win:EnableMouse(true)
+    win:RegisterForDrag("LeftButton")
+    win:SetScript("OnDragStart", onDragStart)
+    win:SetScript("OnDragStop", function() Dock.EndDrag() end)
 end
 
 -- ── the follow ────────────────────────────────────────────────────────────────────────────────
@@ -292,6 +352,7 @@ local function onWindowShow()
 end
 
 local function onWindowHide()
+    Dock.EndDrag()
     paintButton()
     driver:SetScript("OnUpdate", nil)
     driver:Hide()
@@ -322,6 +383,7 @@ function Dock.build()
     win = NS.Window.Build()
     win:HookScript("OnShow", onWindowShow)
     win:HookScript("OnHide", onWindowHide)
+    installDrag()
     table.insert(UISpecialFrames, WINDOW_NAME)
 end
 
@@ -421,10 +483,12 @@ local function onSheetHide()
     if not wasShown then NS.Dialogs.CloseAll("host") end
 end
 
--- Test mode on: a fresh session's window (not dismissed), and no selection for the samples to act on.
--- On or off, Refresh shows, re-docks or hides the window and swaps its chrome (never in lockdown).
+-- Test mode on: a fresh session's window (not dismissed, centered), and no selection for the samples
+-- to act on. On or off, Refresh shows, re-docks or hides the window and swaps its chrome (never in
+-- lockdown).
 local function onPreviewChanged(_, on)
     if NS.IsStoodDown() then return end
+    Dock.testSpot = nil
     if on then
         Dock.testDismissed = false
         NS.Stack.Select(nil)

@@ -76,7 +76,7 @@ test("bar: without the library test mode reserves no strip room, and the header 
     dofile(T.root .. "/tests/_kit/mock_paint.lua")(M)
     H.recordGeometry(M)
     local on = true
-    T.fake(NS, "Dock", { IsShown = function() return false end, Suspend = true, Resume = true })
+    T.fake(NS, "Dock", { IsShown = function() return false end, AloneSpot = true, Suspend = true, Resume = true })
     local preview = T.fake(NS, "Preview", { IsActive = function() return on end, Suspend = true, Resume = true })
     rawset(preview, "Source", { Rows = function() return { { categoryID = "Complete", outfits = {
         { id = "preview:1", name = "Test Outfit 1", icon = 132276, placeholder = true } } } } end })
