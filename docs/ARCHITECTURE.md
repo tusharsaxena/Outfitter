@@ -15,7 +15,7 @@ outfits, wears them by hand from a window docked to the character sheet, from an
 bindings or from `/or`, and lets **native triggers** wear and remove them automatically: fishing,
 gathering, a battleground or arena by map, a druid form, a spec, a mount, and about seventy more
 (77 in all). It is a rewrite of the community fork of Outfitter by John Stephen (mundocani), MIT
-licensed, as an Ace3 addon in the standard's modular layout, on the vendored `LibKa0s` v1.86.0.
+licensed, as an Ace3 addon in the standard's modular layout, on the vendored `LibKa0s` v1.87.0.
 
 Three ideas carry the design:
 
