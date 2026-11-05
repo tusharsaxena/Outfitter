@@ -37,12 +37,12 @@ both repos, and continues from the first row not `done`.
 | CP | Milestone / task | Repo | State |
 |---|---|---|---|
 | CP0 | Design, recon evidence and this plan committed | OR | done |
-| CP1 | LibKa0s v1.87.0: cascading menus (Task 1), released and pushed | LK | todo |
+| CP1 | LibKa0s v1.87.0: cascading menus (Task 1), released and pushed | LK | done (tag v1.87.0 = 758cbd4, branch pushed) |
 | CP2a | Tasks 2.1-2.3: default icon + spec rung, host-look sheet button, gear size | OR | done (3a062f8..66914ec; 132724 + SPEC_n rung, host tab/EUI label citing DEV-SKIN-SHEET-BUTTON, gear via S.CloseButton) |
 | CP2b | Task 2.4: slot selectors, flyout arrow, flyout alignment | OR | done (25f50ed..79db327; host-strata boxes + accent edge, arrows shown with the window, flyout level with its slot) |
 | CP2c | Task 2.5: outfit bar as a Ka0s HUD window | OR | done (68ea99f..e11c4ea; Bar_Layout/Bar_Chrome split, header band with lock+close, labels, icon border + worn highlight, FromSkin on every color, /or bar + binding) |
 | CP2d | Task 2.6: test mode shows the window | OR | done (94324d3..e4751e6; samples listed with no item rows and every row action refused, alone at the stock sheet spot or docked, X/Escape dismiss for the session, own strip, New outfit off, selection cleared) |
-| CP3 | Task 3.1: re-vendor v1.87.0, cascading outfit menus (needs CP1) | OR | todo |
+| CP3 | Task 3.1: re-vendor v1.87.0, cascading outfit menus (needs CP1) | OR | done (82baed2..a47d302; Widgets 22 -> 23, bundle docs/revendor/2026-11-05-v1.87.0/, whole tree as submenu rows, CreateRadio keep-open rows with ticks, MenuUtil Refresh only from keep-open rows) |
 | CP4 | Task 4.1: docs, deviation rows, smoke §12, whole-branch review, bundle, push | OR | todo |
 | CP5 | Owner's in-game pass of smoke §12 | all | todo |
 | CP6 | Owner go-ahead -> merge both rounds in order, push, delete run branches/stashes/worktrees | all | todo |
@@ -137,10 +137,10 @@ CP1 runs in parallel with CP2a-CP2d (different repo). CP2a-CP2d run in order on 
 
 ## Task 3.1 — Re-vendor v1.87.0 and cascading outfit menus — CP3 (after CP1)
 
-- [ ] Re-vendor LibKa0s from tag `v1.87.0` the standard way (`/dev-copilot:wow-revendor-libka0s`
+- [x] Re-vendor LibKa0s from tag `v1.87.0` the standard way (`/dev-copilot:wow-revendor-libka0s`
   semantics: copy `libs/LibKa0s/` and `tests/_kit/` whole, roll CLAUDE.md's provenance line, keep the
   icons line, revendor bundle `docs/revendor/<date>-v1.87.0/`).
-- [ ] `core/WidgetsSetup.lua` `NS.OpenMenu` builds the whole tree and uses `submenu`; classify rows
+- [x] `core/WidgetsSetup.lua` `NS.OpenMenu` builds the whole tree and uses `submenu`; classify rows
   keep-open (radio ticks) vs act-and-close per design G4; MenuUtil fallback returns Refresh only for
   keep-open. Tests in `test_outfit_menu`. Commit, ledger CP3 -> done, push.
 
