@@ -62,7 +62,7 @@ test("schema: every P4.23 profile row is registered, on its page, with its store
         ["auto.enabled"] = "general", ["equip.muteSounds"] = "general", ["equip.showErrors"] = "general",
         ["equip.announceKeys"] = "general", ["quickSlots.enabled"] = "general",
         ["tooltip.usedBy"] = "general", ["tooltip.compare"] = "general",
-        ["bar.shown"] = "bar", ["bar.vertical"] = "bar", ["bar.showBackground"] = "bar",
+        ["bar.shown"] = "bar", ["bar.vertical"] = "bar", ["bar.bgFromSkin"] = "bar",
         ["bar.combatAlpha"] = "bar", ["bar.position"] = "bar",
     }
     for path, page in pairs(want) do

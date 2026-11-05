@@ -14,7 +14,7 @@ NS.defaults = {
         -- The outfit bar (smoke round 2 design G6): 32 px icons 4 px apart, padding 8 from the edge
         -- (smoke round 3 E8); one line per category unless perLine wraps it; grow
         -- direction "auto" follows the saved corner.
-        bar        = { shown = false, vertical = false, showBackground = true, combatAlpha = 1.0,
+        bar        = { shown = false, vertical = false, combatAlpha = 1.0,
                        layout = { perLine = 0, padding = 8, spacing = 4, growH = "auto", growV = "auto" },
                        icons  = { size = 32, borderShow = true, borderStyle = "Solid", borderSize = 1,
                                   borderColor = { r = 0, g = 0, b = 0, a = 1 }, useClassColorBorder = false,

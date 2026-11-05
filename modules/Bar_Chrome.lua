@@ -9,8 +9,8 @@ local _, NS = ...
 -- is the host's own backdrop, the Background color (or the class color) under the Border block's
 -- edge, and shows while it is off. S.Shell records and replays its paint on every skin switch, so a
 -- player color painted onto the Shell frame would be overwritten: the two layers switch on
--- visibility instead, and Show background off hides both (DpsRace's race HUD is the model:
--- DpsRace@2e27c30 modules/Hud.lua:446-475).
+-- visibility instead, one of them always shown (DpsRace's race HUD is the model:
+-- DpsRace@2e27c30 modules/Hud.lua:446-475; smoke round 3 E6 removed Show background).
 --
 -- THE HEADER stands on the chrome's title band: LibKa0s's S.Band, laid by Shell at the skin's inset
 -- and `title.height` (flush and 25 px under EllesmereUI, NS.SkinBandGeometry), or a host holder 1 px
@@ -369,9 +369,8 @@ end
 --- Show the one background layer the settings ask for and paint the plate when it is that one.
 --- @param f table the bar
 function Bar.PaintChrome(f)
-    local shown = setting("bar.showBackground") ~= false
     local skin = setting("bar.bgFromSkin") ~= false
-    f.chrome:SetShown(shown and skin)
-    f.plate:SetShown(shown and not skin)
-    if shown and not skin then paintPlate(f.plate) end
+    f.chrome:SetShown(skin)
+    f.plate:SetShown(not skin)
+    if not skin then paintPlate(f.plate) end
 end

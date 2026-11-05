@@ -24,7 +24,7 @@ profile = {
   equip      = { muteSounds = true, showErrors = true, announceKeys = true },
   tooltip    = { usedBy = true, compare = true },
   quickSlots = { enabled = true },
-  bar        = { shown = false, vertical = false, showBackground = true, combatAlpha = 1.0,
+  bar        = { shown = false, vertical = false, combatAlpha = 1.0,
                  layout = { perLine = 0, padding = 8, spacing = 4, growH = "auto", growV = "auto" },
                  icons  = { size = 32, borderShow = true, borderStyle = "Solid", borderSize = 1,
                             borderColor = { r = 0, g = 0, b = 0, a = 1 }, useClassColorBorder = false,
@@ -53,7 +53,7 @@ global = { schemaVersion = 0, minimap = { hide = false }, skinNotice = {} },
 - **Master controls** (options-ui-§15) govern the outfit bar; the docked window has no geometry, so
   `scale`, `alpha` and `locked` apply to the bar only (O14).
 - **Positive phrasing.** The fork's inverted `Disable*` flags became positive rows (`auto.enabled`,
-  `equip.showErrors`, `tooltip.usedBy`, `bar.showBackground`). A default where a falsy value is a real
+  `equip.showErrors`, `tooltip.usedBy`). A default where a falsy value is a real
   choice is read with `== nil` (savedvariables-§5).
 - **`global.schemaVersion = 0`** is never the current version, because AceDB strips a value equal to
   its default.

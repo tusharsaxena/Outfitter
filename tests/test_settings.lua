@@ -162,7 +162,7 @@ test("settings: the Outfit Bar page's tabs and rows, the position row never draw
         .. "bar.labels.show=Labels,bar.labels.font=Labels,bar.labels.fontSize=Labels,bar.labels.fontColor=Labels,"
         .. "bar.labels.useClassColorFont=Labels,bar.labels.fontFlags=Labels,bar.labels.fontShadow=Labels,"
         .. "bar.labels.fontFromSkin=Labels,bar.labels.fontColorFromSkin=Labels,bar.labels.fontShadowFromSkin=Labels,"
-        .. "bar.showBackground=Frame,bar.bgColor=Frame,bar.useClassColorBg=Frame,bar.bgFromSkin=Frame,"
+        .. "bar.bgColor=Frame,bar.useClassColorBg=Frame,bar.bgFromSkin=Frame,"
         .. "bar.frame.borderShow=Frame,bar.frame.borderStyle=Frame,bar.frame.borderSize=Frame,"
         .. "bar.frame.borderColor=Frame,bar.frame.useClassColorBorder=Frame,bar.frame.borderStyleFromSkin=Frame,"
         .. "bar.frame.borderColorFromSkin=Frame")
@@ -210,7 +210,6 @@ test("settings: the Outfit Bar page's tabs and rows, the position row never draw
     assertEqual(NS.FindSchemaRow("bar.layout.growV").values.up, "Up")
     assertEqual(NS.FindSchemaRow("bar.shown").label, "Show outfit bar")
     assertEqual(NS.FindSchemaRow("bar.vertical").tooltip, "One column per category.")
-    assertEqual(NS.FindSchemaRow("bar.showBackground").label, "Show background")
     local ca = NS.FindSchemaRow("bar.combatAlpha")
     assertEqual(ca.label, "Opacity in combat (%)")
     -- options-ui-§15: no "hide in combat" of the bar's own; the row points at General visibility.

@@ -174,3 +174,21 @@ test("bar: Icons > Show border draws the skin's icon edge when on and no edge at
     local c = { Bar.Buttons()[1].icon:GetTexCoord() }
     assertTrue(c[1] >= 0.07 and c[7] <= 0.93, "the icon is cropped")
 end)
+
+test("bar: Frame > Show background is gone, and a stored false from round 2 hides nothing", function()
+    -- Smoke round 3 E6 (screen 24): the row, its default and its reader are removed; the bar always
+    -- draws one of its two background layers.
+    -- red under: the bar.showBackground row, its default, or PaintChrome's read of it kept.
+    local NS, M, Bar = scene()
+    accessory(NS, "Hat")
+    T.assertNil(NS.FindSchemaRow("bar.showBackground"), "the row is registered")
+    T.assertNil(NS.defaults.profile.bar.showBackground, "the default is kept")
+    NS.db.profile.bar.showBackground = false
+    NS.SetByPath("bar.vertical", true)
+    settle(M)
+    local f = Bar.Frame()
+    assertTrue(f.chrome:IsShown(), "the skin's chrome shows whatever a stale value says")
+    NS.SetByPath("bar.bgFromSkin", false)
+    settle(M)
+    assertTrue(f.plate:IsShown(), "the player's plate shows whatever a stale value says")
+end)

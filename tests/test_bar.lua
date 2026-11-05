@@ -318,10 +318,6 @@ test("bar: the window look: the skin's Shell while it follows the skin, the play
     NS.SetByPath("bar.frame.borderShow", false)
     settle(M)
     assertNil(f.plate:GetBackdrop().edgeFile, "Show border off draws no edge")
-    NS.SetByPath("bar.showBackground", false)
-    settle(M)
-    -- red under: PaintChrome ignoring bar.showBackground
-    assertFalse(f.plate:IsShown()); assertFalse(f.chrome:IsShown())
 end)
 
 test("bar: the header band is titled Outfits, carries close and lock, and the icons sit under it", function()

@@ -143,7 +143,7 @@ labels draw the stored face whatever *Use the skin's font* says (skinning-§6).
 
 ### Frame
 
-`bar.showBackground` (`true`, *Show background*), then the Background block (`H.ColorPair`,
+The Background block (`H.ColorPair`,
 `bar.bgColor` with `bar.useClassColorBg`) with this addon's *Use the skin's background*
 (`bar.bgFromSkin`), and the Border block (`H.BorderGroup`, prefix `bar.frame.`, on the skin's bar
 family) with *Use the skin's color*. While *Use the skin's background* is on, the bar is drawn

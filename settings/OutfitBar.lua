@@ -206,14 +206,10 @@ do
 end
 
 -- ── Frame ──────────────────────────────────────────────────────────────────────────────────────
--- Show background leads; then the Background block (a backdrop with no texture: a ColorPair,
--- options-ui-§16) and the Border block on the skin's bar family. While *Use the skin's background*
--- is on the bar is drawn exactly as a Ka0s window and these colors wait; off, they draw.
-NS.RegisterSchemaRows({
-    { path = "bar.showBackground", page = PAGE, group = FRAME, type = "bool",
-      label = L["Show background"], default = DB.showBackground,
-      tooltip = L["Draws the bar's window behind its buttons: its background, its border and its header band."] },
-})
+-- The Background block (a backdrop with no texture: a ColorPair, options-ui-§16) and the Border block
+-- on the skin's bar family. While *Use the skin's background* is on the bar is drawn exactly as a
+-- Ka0s window and these colors wait; off, they draw. The bar always draws one of the two (smoke
+-- round 3 E6 removed Show background; a stored `bar.showBackground` is never read).
 registerComposed(H.ColorPair({
     prefix = "bar.", page = PAGE, group = FRAME, subgroup = L["Background"], order = 100,
     key = "bgColor", companionKey = "useClassColorBg", label = L["Background color"], classColor = PLAYER_CLASS,
