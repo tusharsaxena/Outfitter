@@ -126,21 +126,6 @@ function R.RemoveRow(i)
     return true
 end
 
---- Set row `i`: its stat, its operator ("highest", "atMost", "atLeast") and its value.
-function R.SetRow(i, stat, op, value)
-    local row = st.rows[i]
-    if not row then return false end
-    row.stat, row.op, row.value = stat, op or "highest", value
-    render()
-    return true
-end
-
---- The "Complex" check: the genetic search even for one row.
-function R.SetComplex(on)
-    st.complex = on == true
-    render()
-end
-
 --- The §5.14 cfg the rows describe.
 --- @return table
 function R.GetConfig()
