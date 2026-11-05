@@ -207,7 +207,7 @@ function O.Changed(id, what)
     NS.SendBus(NS.MSG.OUTFIT_EDITED, id, what)
 end
 
--- ── create, duplicate, reorder ────────────────────────────────────────────────────────────────
+-- ── create ────────────────────────────────────────────────────────────────────────────────────
 
 local function triggerOf(t)
     if type(t) == "string" then return { id = t } end
@@ -263,51 +263,6 @@ function O.CreateFromItem(link)
     local slot = info and info.invType and ID.INVTYPE_TO_SLOT[info.invType]
     if not slot then return nil end
     return O.Create(info.name or "", { [slot.slot] = NS.ItemInfo.Snapshot(info) })
-end
-
---- A free name for a copy of `name`: "<name> 2", "<name> 3", ...
-local function freeName(name)
-    local n = 2
-    while O.FindByName(name .. " " .. n) do n = n + 1 end
-    return name .. " " .. n
-end
-
--- What a duplicate keeps of the record: every field but the identity, the seed key and the
--- trigger's persisted side-effect state (triggerState: CVar restores for a trigger the copy never ran).
-local DUPLICATE_SKIP = { id = true, name = true, builtin = true, category = true, kind = true, setID = true,
-                         items = true, triggerState = true }
-
---- A native copy of an outfit (an EM outfit's copy holds its resolved items), under a free name. The
---- copy is whole before OUTFIT_ADDED, so a copied trigger is bound at once (design §6.9).
---- @param id string
---- @return string|nil newId
-function O.Duplicate(id)
-    local rec = O.Get(id)
-    if not rec then return nil end
-    local dup = newRecord(freeName(rec.name or ""), O.Items(rec), {})
-    for k, v in pairs(rec) do
-        if not DUPLICATE_SKIP[k] then dup[k] = copy(v) end
-    end
-    return add(dup)
-end
-
---- Replace a category's display order. Refused unless `ids` is exactly the same set of ids.
---- @param category string
---- @param ids string[]
---- @return boolean
-function O.Reorder(category, ids)
-    local current = O.Ids(category)
-    if type(ids) ~= "table" or #ids ~= #current then return false end
-    local want = {}
-    for _, id in ipairs(current) do want[id] = true end
-    for _, id in ipairs(ids) do
-        if not want[id] then return false end
-        want[id] = nil
-    end
-    local list = {}
-    for i, id in ipairs(ids) do list[i] = id end
-    store().order[category] = list
-    return true
 end
 
 -- ── rename and delete ─────────────────────────────────────────────────────────────────────────

@@ -79,7 +79,7 @@ end
 test("states: NS.States publishes the §6.10 surface and the 13 state ids", function()
     local s = scene()
     for _, name in ipairs({ "Set", "IsActive", "Demand", "PlayerIsFull", "AuraRestricted", "PlayerHasSpell",
-                            "IsFeigning", "Suspend", "Resume", "InZone", "InPvPInstance", "ZoneInfo",
+                            "IsFeigning", "Suspend", "Resume", "InPvPInstance", "ZoneInfo",
                             "CurrentIds" }) do
         assertEqual(type(s.S[name]), "function", "NS.States." .. name)
     end

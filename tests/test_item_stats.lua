@@ -213,21 +213,6 @@ test("stats: Score is cached per job on a weak table; without a job nothing is k
     assertEqual(calls, 3, "a jobless score was cached")
 end)
 
-test("stats: OutfitScore sums an outfit's items, a dropped item adding nothing; MultiScore per row", function()
-    -- red under: let a nil (dropped) item score raise in the sum
-    local inst = T.load()
-    local NS, M = inst.NS, inst.mocks
-    M.UnitLevel = function() return 80 end
-    local items = { Head = info(NS, "head_plate"), Neck = info(NS, "neck_chain"),
-                    Finger0 = info(NS, "ring_plain_b"), Trinket0 = info(NS, "unusable_helm") }
-    assertEqual(NS.Stats.OutfitScore(items, NS.Stats.Get("STA")), 900 + 400 + 300)
-    assertEqual(NS.Stats.OutfitScore(items, "VER"), 500, "a stat ID resolves")
-    assertEqual(NS.Stats.OutfitScore(items, "NOPE"), 0, "an unknown stat scores 0")
-    local multi = NS.Stats.MultiScore(items, { { stat = "STA" }, { stat = "HAS", min = 100 } }, {})
-    assertEqual(multi[1], 1600)
-    assertEqual(multi[2], 600)
-end)
-
 test("stats: ConfigName joins the labels, and answers nil when any stat is missing", function()
     -- red under: skip the unknown stat instead of answering nil
     local NS = T.load().NS

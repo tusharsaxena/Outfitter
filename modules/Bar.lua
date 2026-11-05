@@ -188,9 +188,6 @@ function Bar.PlayerWants()
     return NS.GetSetting("bar.shown") == true
 end
 
---- @return boolean the bar is dismissed for the current test session
-function Bar.TestDismissed() return st.testDismissed end
-
 --- The player's show or hide while test mode is on (see the header): dismiss the bar for this test
 --- session, or bring it back, without writing `bar.shown` and without ending test mode. Outside test
 --- mode it does nothing and answers false, so the caller writes `bar.shown` as usual.

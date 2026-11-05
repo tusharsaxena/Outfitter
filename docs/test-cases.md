@@ -118,14 +118,14 @@ Total.
 - compat: ItemUniqueness answers a plain record, or nil when unreadable
 - compat: TooltipLines routes by location and drops what it cannot read
 - compat: TooltipInventoryUnit reads the primary info's getter and fails safe (O41)
-- compat: pet lookups compare plain names inside Compat and skip a secret one
+- compat: the pet lookup answers an owned pet's plain GUID and skips a secret one
 - compat: the hooks go through hooksecurefunc, and answer false when they cannot
 - compat: the Equipment Manager reads walk bounded and answer plain
 - compat: the Equipment Manager writes reach the client with their arguments
 - compat: KnownTitles lists known titles by a plain case-insensitive sort, a secret name skipped
 - compat: BankBagIDs reads the character bank tabs, else the bank and its bags
 - compat: pickups, uses and the cursor route by location and report the call
-- compat: macro icons, Pawn scales and values, dual wield and BitAnd
+- compat: Pawn scales and values, dual wield and BitAnd
 - secrets engine: a secret worn or carried link is an empty slot to the live scan
 - secrets engine: a secret player level lets an item through the live stats
 - secrets engine: tooltip, compare, quick slots and /or iteminfo refuse a secret link quietly
@@ -383,7 +383,7 @@ Total.
 - Disabled (Outfitter): an outfit's active IN_DUNGEON trigger holds no event and no timer while down
 - Disabled (Outfitter): the Equip bracket is zeroed, nothing is wanted and SFX is back, down and up
 - Disabled (Outfitter): PLAYER_EQUIPMENT_CHANGED while down leaves db.char unchanged
-- Disabled (Outfitter): the tooltip, compare, pet, quick-slot and PaperDoll hook bodies no-op while down
+- Disabled (Outfitter): the tooltip, compare, pet and PaperDoll hook bodies no-op while down
 - Disabled (Outfitter): the outward drawer goes back to Blizzard's at stand-down and stays there
 - Disabled (Outfitter): the LoadPass timer and the Pawn/WeightsWatcher watch are canceled
 - Disabled (Outfitter): the stand-up rebuilds: an outfit added while down binds on resume
@@ -607,7 +607,7 @@ Total.
 - inventory: OutfitsUsing pairs the rings, the trinkets and the weapons
 - inventory: Suspend drops every registration and the pending sync; Resume rebuilds them
 
-### test_outfits.lua (47)
+### test_outfits.lua (45)
 
 - outfits: NS.Outfits and NS.OutfitSchema are published
 - outfits: Create allocates o<N>, stores the record's shape, appends to the order, announces once
@@ -652,8 +652,6 @@ Total.
 - outfits: SetFlag takes the allow-list only, and stores a cleared flag as absent
 - outfits: SetBinding keeps one outfit per key, and a rebind moves the outfit's key
 - outfits: CreateFromItem names the outfit after the item and holds it in its slot
-- outfits: Duplicate copies a native outfit under a new id; Reorder takes only the same ids
-- outfits: a Duplicate is whole at OUTFIT_ADDED, so its trigger binds at once; triggerState stays behind
 - outfits: UsingItem reads the link into an item info, and answers the outfits that use it
 - outfits: the kind dispatch sends an EM outfit's items and slot edits to the EM
 
@@ -702,7 +700,7 @@ Total.
 - equip plan: UnequipByName takes a slot number or a case-insensitive name
 - equip plan: UnequipByName returns after a name it cannot find (INV §19)
 
-### test_item_stats.lua (23)
+### test_item_stats.lua (22)
 
 - stats: the built-in category holds the nine stats, TOTAL_STATS and ITEM_LEVEL in order
 - stats: labels are the client's GlobalStrings, so a deDE client reads its own names (B13)
@@ -715,7 +713,6 @@ Total.
 - stats: an item above the player's level is dropped (nil); at the level it scores
 - stats: a secret player level lets the item through (INV §3.6)
 - stats: Score is cached per job on a weak table; without a job nothing is kept
-- stats: OutfitScore sums an outfit's items, a dropped item adding nothing; MultiScore per row
 - stats: ConfigName joins the labels, and answers nil when any stat is missing
 - stats: RegisterCategory adds a category and sends nothing on the bus; a built-in is never replaced
 - sources: without Pawn or WeightsWatcher only the built-in category exists (fallback, H16)
@@ -731,12 +728,12 @@ Total.
 ### test_companion.lua (25)
 
 - companion: NS.Companion is published with the design's surface
-- companion: SummonByName matches the species name case-insensitively and summons now
-- companion: a nil, secret or unknown name answers false and never raises
+- companion: SummonByGUID summons now
+- companion: a nil or secret GUID answers false and never raises
 - companion: SummonBySpecies summons the first owned pet of the species
 - companion: summoning the pet already out calls nothing (the call would dismiss it)
 - companion: a delayed summon waits for its timer
-- companion: DismissByName dismisses the summoned pet; another pet out is left alone
+- companion: DismissByGUID dismisses the summoned pet; another pet out is left alone
 - companion: dismissing the pet of a pending summon cancels the summon
 - companion: the auto-summon watch dismisses the pet when the game brings it back
 - companion: the dismiss watch gives up at its 60 s deadline
@@ -998,7 +995,7 @@ Total.
 - optimize: the compound compare honors min and max as the legacy did
 - optimize: exact progress messages and summary lines
 - optimize: a zero elapsed time prints a finite rate (B16)
-- optimize: STARTED and DONE bracket the genetic search
+- optimize: STARTED and DONE bracket the genetic search, and the finished job is let go
 - optimize: Cancel ends the ticker and delivers nil, "canceled" once
 - optimize: a stand-down ends the search with nil, "stood-down"
 - optimize: a second search cancels the running one
@@ -1437,7 +1434,7 @@ Total.
 - preview: Reset all and the General row's switch both end it
 - preview: re-locking the bar does not end it, and Toggle flips it
 - preview: Start and Stop each announce PREVIEW_CHANGED once, and a repeat is a no-op
-- preview: Diagnose reports the mode, the bar it opened and the sample count
+- preview: Start records the mode and the bar it opened; the source answers the five samples
 - preview: every start and stop, from any source, repaints an open settings panel
 - preview window: the list is the five samples under their headers, no item section, nothing armed
 - preview window: every row handler refuses a sample quietly, the gear browses, and nothing is written
@@ -1810,10 +1807,10 @@ Total.
 | test_itemlink.lua | 42 |
 | test_item_match.lua | 20 |
 | test_inventory.lua | 24 |
-| test_outfits.lua | 47 |
+| test_outfits.lua | 45 |
 | test_reset.lua | 8 |
 | test_equip_plan.lua | 31 |
-| test_item_stats.lua | 23 |
+| test_item_stats.lua | 22 |
 | test_companion.lua | 25 |
 | test_states.lua | 29 |
 | test_secrets_states.lua | 6 |
@@ -1861,4 +1858,4 @@ Total.
 | test_lizard_sighted.lua | 8 |
 | test_prose.lua | 15 |
 | Skipped | 1 |
-| **Total** | **1539** |
+| **Total** | **1536** |

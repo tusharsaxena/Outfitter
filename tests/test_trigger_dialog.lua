@@ -21,15 +21,23 @@ local function same(a, b)
     return true
 end
 
--- The dialog's field for `key`, its value set or read through the field registry.
-local function setValue(TD, key, v)
-    local field = TD.Field(key)
-    assertTrue(field ~= nil, "no field " .. key)
-    TD.Fields().Set(field, v)
+-- The dialog's shown editor for param `key`, or nil: the field the player sees. A parked editor is
+-- hidden and has its param cleared (TF.ReleaseAll), so only the open trigger's fields answer.
+local function field(NS, key)
+    for _, ed in ipairs({ NS.TriggerDialog.Frame().child:GetChildren() }) do
+        if ed:IsShown() and ed.param and ed.param.key == key then return ed end
+    end
 end
 
-local function value(TD, key)
-    return TD.Fields().Get(TD.Field(key))
+-- The field's value, set or read through the field registry.
+local function setValue(NS, key, v)
+    local ed = field(NS, key)
+    assertTrue(ed ~= nil, "no field " .. key)
+    NS.TriggerFields.Set(ed, v)
+end
+
+local function value(NS, key)
+    return NS.TriggerFields.Get(field(NS, key))
 end
 
 local function withTrigger(NS, tid, params)
@@ -51,7 +59,7 @@ test("trigger dialog: NS.TriggerDialog and the nine field types are published", 
     local n = 0
     for _ in pairs(TF.TYPES) do n = n + 1 end
     assertEqual(n, 9)
-    for _, k in ipairs({ "Open", "Close", "IsOpen", "Done", "Field", "Fields", "SetTrigger", "SetCategory" }) do
+    for _, k in ipairs({ "Open", "Close", "IsOpen", "Done", "SetTrigger", "SetCategory", "Frame" }) do
         assertEqual(type(T.NS.TriggerDialog[k]), "function", k)
     end
 end)
@@ -81,9 +89,9 @@ test("trigger dialog: the draft reads the descriptor's default, never the type's
     local id = withTrigger(NS, "SWIMMING", { disableBG = true })
     assertTrue(TD.Open(id))
     -- red under: the draft filled from NS.TriggerParams.TYPES[type].default (INV §9.8: false here).
-    assertTrue(value(TD, "disableVashjir"), "the descriptor's default true was not used")
-    assertTrue(value(TD, "disableBG"), "the stored value was not used")
-    assertFalse(value(TD, "disablePVP"))
+    assertTrue(value(NS, "disableVashjir"), "the descriptor's default true was not used")
+    assertTrue(value(NS, "disableBG"), "the stored value was not used")
+    assertFalse(value(NS, "disablePVP"))
     local f = TD.Frame()
     assertEqual(f.title:GetText(), NS.L["Automation for %s"]:format("Auto"))
     assertEqual(f.desc:GetText(), NS.Triggers.Get("SWIMMING").desc)
@@ -97,13 +105,13 @@ test("trigger dialog: a validation failure shows on its field and writes nothing
     local setMany = NS.Schema.SetMany
     NS.Schema.SetMany = function(...) calls = calls + 1; return setMany(...) end
     TD.Open(id)
-    setValue(TD, "stayWhileFalling", true)
-    setValue(TD, "unequipDelay", 99)
+    setValue(NS, "stayWhileFalling", true)
+    setValue(NS, "unequipDelay", 99)
     -- red under: Done writing the passing keys before it reaches the failing one.
     assertFalse(TD.Done())
     assertEqual(calls, 0, "a failing Done reached SetMany")
     assertNil(NS.Outfits.Get(id).triggerParams, "a failing Done wrote a param")
-    assertTrue((TD.Field("unequipDelay").error:GetText() or "") ~= "", "no error on the failing field")
+    assertTrue((field(NS, "unequipDelay").error:GetText() or "") ~= "", "no error on the failing field")
     assertTrue(TD.IsOpen(), "a failing Done closed the dialog")
     NS.Schema.SetMany = setMany
 end)
@@ -119,8 +127,8 @@ test("trigger dialog: Done is one SetMany with the instance id, trigger.<TID>.* 
         return setMany(entries, opts)
     end
     TD.Open(id)
-    setValue(TD, "unequipDelay", 5)
-    setValue(TD, "stayWhileFalling", true)
+    setValue(NS, "unequipDelay", 5)
+    setValue(NS, "stayWhileFalling", true)
     TD.Frame().combat:SetChecked(true); TD.Frame().combat:__fire("OnClick")
     assertTrue(TD.Done())
     assertEqual(seen.opts.instanceId, id)
@@ -145,9 +153,9 @@ test("trigger dialog: picking another trigger rebuilds the fields and Done write
     TD.Open(id)
     TD.SetCategory("TRADE")
     TD.SetTrigger("SWIMMING")
-    assertTrue(TD.Field("disableVashjir") ~= nil)
-    assertNil(TD.Field("unequipDelay"), "the old trigger's field stayed")
-    setValue(TD, "disableVashjir", false)
+    assertTrue(field(NS, "disableVashjir") ~= nil)
+    assertNil(field(NS, "unequipDelay"), "the old trigger's field stayed")
+    setValue(NS, "disableVashjir", false)
     assertTrue(TD.Done())
     local rec = NS.Outfits.Get(id)
     assertEqual(rec.trigger.id, "SWIMMING")
@@ -166,14 +174,14 @@ test("trigger dialog: the close button and Escape discard the draft", function()
     local TD = NS.TriggerDialog
     local id = withTrigger(NS, "RIDING")
     TD.Open(id)
-    setValue(TD, "unequipDelay", 7)
+    setValue(NS, "unequipDelay", 7)
     TD.Frame().close:__fire("OnClick")
     -- red under: the legacy close X that saved (INV §9.8).
     assertNil(NS.Outfits.Get(id).triggerParams, "the X saved the draft")
     assertFalse(TD.IsOpen())
     TD.Open(id)
-    assertEqual(value(TD, "unequipDelay"), 0, "the discarded draft came back")
-    setValue(TD, "unequipDelay", 7)
+    assertEqual(value(NS, "unequipDelay"), 0, "the discarded draft came back")
+    setValue(NS, "unequipDelay", 7)
     local named = false
     for _, n in ipairs(M.UISpecialFrames) do if n == "OutfitterRebornTriggerDialog" then named = true end end
     assertTrue(named, "Escape does not reach the dialog")
@@ -186,15 +194,15 @@ test("trigger dialog: the list editors add by capture, show names, and remove on
     local TD = NS.TriggerDialog
     local id = withTrigger(NS, "IN_ZONES")
     TD.Open(id)
-    local maps = TD.Field("maps")
+    local maps = field(NS, "maps")
     M.C_Map.GetBestMapForUnit = function() return 85 end
     maps.capture[1]:__fire("OnClick")
     maps.capture[1]:__fire("OnClick")
     -- red under: a capture appended twice (the list is deduped in order).
-    assertTrue(same(value(TD, "maps"), { 85 }))
+    assertTrue(same(value(NS, "maps"), { 85 }))
     assertEqual(maps.lines[1].text:GetText(), NS.TriggerParams.Display({ type = "maplist" }, { 85 }))
     maps.lines[1].remove:__fire("OnClick")
-    assertTrue(same(value(TD, "maps"), {}))
+    assertTrue(same(value(NS, "maps"), {}))
     assertTrue(TD.Done())
 end)
 
@@ -226,7 +234,7 @@ test("trigger dialog: Add a buff... lists the helpful auras after a secret one",
         TD.Open(withTrigger(NS, "HAS_BUFF"))
         local aura = function(id) return { name = "Buff " .. id, spellId = id, icon = 136000 } end
         M.__world:setAuras("player", "HELPFUL", { aura(2645), T.secret(aura(5384)), aura(1459) })
-        TD.Field("spellIDs").capture[2]:__fire("OnClick")
+        field(NS, "spellIDs").capture[2]:__fire("OnClick")
         local rows = ctl.menus[#ctl.menus].rows
         -- red under: eachAura stopping at the first aura CapturePlayerAura answers nil for (the secret one).
         assertEqual(#rows, 2, "rows: " .. ctl.labels())
@@ -240,17 +248,17 @@ test("trigger dialog: a failed Done's error lines go once the value they named i
     local TD = NS.TriggerDialog
     local id = withTrigger(NS, "RIDING")
     TD.Open(id)
-    setValue(TD, "unequipDelay", 99)
+    setValue(NS, "unequipDelay", 99)
     assertFalse(TD.Done())
-    assertTrue((TD.Field("unequipDelay").error:GetText() or "") ~= "", "no error on the failing field")
+    assertTrue((field(NS, "unequipDelay").error:GetText() or "") ~= "", "no error on the failing field")
     local setMany = NS.Schema.SetMany
     NS.Schema.SetMany = function() return false, "refused" end
-    TD.Field("unequipDelay").input:SetText("2")     -- the player types (no editor rebuild)
+    field(NS, "unequipDelay").input:SetText("2")     -- the player types (no editor rebuild)
     assertFalse(TD.Done())
     -- red under: paramEntries writing a field's error on failure only (the fixed field keeps it).
-    assertEqual(TD.Field("unequipDelay").error:GetText() or "", "", "a fixed field kept its error")
+    assertEqual(field(NS, "unequipDelay").error:GetText() or "", "", "a fixed field kept its error")
     assertEqual(TD.Frame().error:GetText(), "refused")
-    TD.Field("unequipDelay").input:SetText("99")
+    field(NS, "unequipDelay").input:SetText("99")
     assertFalse(TD.Done())
     -- red under: Done not clearing frame.error before it tries again.
     assertEqual(TD.Frame().error:GetText() or "", "", "the last SetMany refusal stayed up")

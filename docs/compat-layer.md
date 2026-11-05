@@ -7,7 +7,7 @@ publishing `NS.Compat`. The trigger counts its hand-written shims:
 cat core/Compat*.lua | grep -cE '^\s*function\s+[A-Za-z_][A-Za-z0-9_]*\.'
 ```
 
-which answers **77** at 1.1.0 (three or more fires the trigger). The members LibKa0s-Compat-1.0
+which answers **74** (three or more fires the trigger). The members LibKa0s-Compat-1.0
 supplies are documented by the library and are not repeated here beyond naming which ones this addon
 routes.
 
@@ -22,7 +22,7 @@ routes.
   scope, so Compat loads first, and a file-scope capture of `NS.Secrets` here would read nil
   (`test_loadorder` pins it).
 - **One file.** The family stays one file until `cat core/Compat*.lua | wc -l` would pass 1000
-  (compat; design C39). With the engine's accessors it is 993 lines at 1.1.0, at the edge of that budget. A split by size alone,
+  (compat; design C39). With the engine's accessors it is 956 lines, close to that budget. A split by size alone,
   or an underscore name such as `Compat_Items`, is outside the family pattern.
 
 ## Routed from LibKa0s-Compat-1.0
@@ -47,7 +47,6 @@ a comparison mid-swap, on exactly the degraded path the stub exists to survive.
 |---|---|
 | `Compat.CanAccessTable(t)` | `canaccesstable`, then `issecrettable`, then "readable" |
 | `Compat.NumSpecializations()` | The class's spec count, 0 when unknown |
-| `Compat.PlayerSpecID()` | The active spec's ID, or nil |
 | `Compat.PlayerClass()` | The class token (`"WARRIOR"`), or nil |
 | `Compat.PlayerFaction()` | `UnitFactionGroup`'s **first** return (`"Horde"`, the English token), or nil (H10) |
 | `Compat.UnitLevel(unit)` | A plain level, or nil (nil means "do not filter") |
@@ -73,12 +72,12 @@ and a raise reads as `nil` ("unknown"), which sends the caller to its tooltip fa
 | Cooldowns | `ContainerItemCooldown(bag, slot)`, `InventoryItemCooldown(slotID)` → start, duration, enabled (1/0 normalized) | each part `nil` |
 | By location | `IsBound(loc)`, `IsWarboundUntilEquip(loc)`, `CanUpgradeItem(loc)` (checks `DoesItemExist` first), `AzeritePowers(loc)` (sorted selected ids); `ItemUniqueness(id)` → `{ unique, categoryID, count }`; `CanUseItem(id)` | `nil` |
 | Tooltip data | `TooltipLines(loc or link)` → `{ {text, r, g, b} }`, a secret line skipped; `TooltipInventoryUnit(tooltip)` (O41: `"?"` when an inventory tooltip's unit is unreadable) | `{}` / `nil` |
-| Pets and hooks | `SummonedPetGUID()`, `PetGUIDByName(name)` and `PetGUIDBySpecies(id)` (owned pets only; by species name, never a custom name; the compare runs here on plain names), `SummonPet(guid)`, `HookPetSummon(fn)`, `HookCompare(fn)` | `nil` / `false` |
+| Pets and hooks | `SummonedPetGUID()`, `PetGUIDBySpecies(id)` (owned pets only; a secret GUID is never a handle), `SummonPet(guid)`, `HookPetSummon(fn)`, `HookCompare(fn)` | `nil` / `false` |
 | Equipment Manager | `EMSetIDs()` (bounded at 512, a secret id skipped), `EMSetInfo(id)`, `EMLocations(id)`, `EMIgnoredSlots(id)`, `EMLocation(location)` (alias `FlyoutLocationData`), `EMSetID(name)`, `EMNumSets()`, `EMMaxSets()`; writes `EMCreateSet`, `EMSaveSet`, `EMModifySet`, `EMDeleteSet`, `EMClearIgnored`, `EMIgnoreSlot(slotID, ignore)` | `{}` (the zero-sets path, Q8), `nil`, `0`, `10`, `false` |
 | Titles | `KnownTitles()` → `{ {id, name} }`, sorted case-insensitively, a secret name skipped; `SetCurrentTitle(id)` | `{}` / `false` |
 | Bank | `BankBagIDs()` (the character bank tabs, else the bank and its bags; never the warband tabs, O19), `IsBankerInteraction(type)` | `{}` / `false` |
 | Containers and cursor | `ContainerNumSlots`, `ContainerNumFreeSlots` → free, family; `ContainerIDToInventoryID`; `PickupContainerItem`, `PickupInventoryItem`, `PickupItemLocation(loc)`, `UseContainerItem`, `ShowContainerSellCursor`, `EquipCursorItem`, `ClearCursor` | `0` / `nil` / `false` |
-| Other | `MacroIcons(kind)` (`"item"` or `"ability"`), `PawnVisibleScales()`, `PawnItemValue(link, scale)`, `CanDualWield()`, `BitAnd(a, b)` (plain arithmetic, no `bit` library) | `{}` / `nil` / `false` / `0` |
+| Other | `PawnVisibleScales()`, `PawnItemValue(link, scale)`, `CanDualWield()`, `BitAnd(a, b)` (plain arithmetic, no `bit` library) | `{}` / `nil` / `false` / `0` |
 
 `test_secrets` pins each group: plain answers through, secret answers out as their no-answer value,
 and every member's answer with its API absent.

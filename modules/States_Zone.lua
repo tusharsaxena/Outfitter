@@ -128,11 +128,6 @@ end
 
 -- ── the reads ─────────────────────────────────────────────────────────────────────────────────
 
---- Whether zone id `id` applied at the last update (InZoneType).
---- @param id string
---- @return boolean
-function S.InZone(id) return current[id] == true end
-
 --- Whether the player is in a battleground or an arena right now (InBattlegroundZone).
 --- @return boolean
 function S.InPvPInstance()

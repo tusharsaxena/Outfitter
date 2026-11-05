@@ -22,7 +22,8 @@
 --                  generation's worth) were bred, the search started afresh on the same seed every
 --                  GA_RESTART steps (optimizeStep). The restart is on a fixed step count, never on
 --                  the search ending (it cannot converge in fewer than 100 generations), so every
---                  window of a multiple of GA_RESTART steps bills the same seeding.
+--                  window of a multiple of GA_RESTART steps bills the same seeding. Its fourth
+--                  return answers the search in progress.
 --   dockIdle       the docked window shown on full_bags with nothing changing: one States poll tick
 --                  (the 0.5 s repeater's own function, the clock moved on by its period) and one
 --                  follow tick of the driver (dockFollow). Idle must stay quiet: no STACK_CHANGED,
@@ -217,7 +218,7 @@ return function(env)
                 want = want - (job.generated - last)
                 last = job.generated
             end
-        end, NS, M
+        end, NS, M, function() return job end
     end
 
     -- The docked window, shown, on a world that does not change. The States poll is the one armed

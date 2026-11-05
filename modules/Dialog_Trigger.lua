@@ -297,11 +297,5 @@ end
 
 function TD.IsOpen() return frame ~= nil and frame:IsShown() == true end
 
---- The open draft's editor for param `key`, or nil.
-function TD.Field(key) return draft and draft.fields and draft.fields[key] or nil end
-
---- The field registry (modules/Dialog_TriggerFields.lua), for the suites.
-function TD.Fields() return NS.TriggerFields end
-
 --- The frame, built on first use.
 function TD.Frame() return build() end

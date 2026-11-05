@@ -90,7 +90,4 @@ end
 
 function Pg.IsOpen() return frame ~= nil and frame:IsShown() == true end
 
---- The job the window shows, or nil.
-function Pg.Job() return job end
-
 function Pg.Frame() return build() end

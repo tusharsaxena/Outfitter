@@ -230,7 +230,6 @@ test("compat: the unit reads answer plain values", function()
         assertEqual(C.UnitLevel("target"), 1)
         assertEqual(C.IsDeadOrGhost(), false)
         assertEqual(C.InCombatLockdown(), false)
-        assertEqual(C.PlayerSpecID(), 250)
     end)
 end)
 
@@ -239,14 +238,12 @@ test("compat: a secret read leaves Compat as nil, never as the secret", function
            UnitLevel = function() return T.secret(80) end,
            UnitIsDeadOrGhost = function() return T.secret(true) end,
            UnitClass = function() return "Warrior", T.secret("WARRIOR") end,
-           GetCVar = function() return T.secret("1") end,
-           GetSpecialization = function() return T.secret(1) end }, function()
+           GetCVar = function() return T.secret("1") end }, function()
         assertNil(C.PlayerFaction())
         assertNil(C.UnitLevel(), "a secret level reads as unknown: the filters let the item through")
         assertNil(C.IsDeadOrGhost())
         assertNil(C.PlayerClass())
         assertNil(C.GetCVar("Sound_EnableSFX"), "a secret CVar: the SFX mute is skipped")
-        assertNil(C.PlayerSpecID())
     end)
 end)
 
@@ -293,13 +290,13 @@ local ACCESSORS = {
     "DetailedItemLevel", "ItemStats", "ItemIcon", "ItemSpell", "ItemFamily", "ItemUpgradeInfo",
     "ContainerItemCooldown", "InventoryItemCooldown", "ItemUniqueness", "IsBound", "IsWarboundUntilEquip",
     "CanUseItem", "CanUpgradeItem", "AzeritePowers", "TooltipLines", "TooltipInventoryUnit", "SummonedPetGUID",
-    "PetGUIDByName", "PetGUIDBySpecies", "SummonPet", "HookPetSummon", "HookCompare", "EMSetIDs", "EMSetInfo",
+    "PetGUIDBySpecies", "SummonPet", "HookPetSummon", "HookCompare", "EMSetIDs", "EMSetInfo",
     "EMLocations", "EMIgnoredSlots", "EMLocation", "FlyoutLocationData", "EMCreateSet", "EMSaveSet",
     "EMModifySet", "EMDeleteSet", "EMSetID", "EMNumSets", "EMMaxSets", "EMClearIgnored", "EMIgnoreSlot",
     "KnownTitles", "SetCurrentTitle", "BankBagIDs", "IsBankerInteraction", "ContainerNumSlots",
     "ContainerNumFreeSlots", "ContainerIDToInventoryID", "LastEquippedBagID", "PickupContainerItem", "PickupInventoryItem",
     "PickupItemLocation", "UseContainerItem", "ShowContainerSellCursor", "EquipCursorItem", "ClearCursor",
-    "MacroIcons", "PawnVisibleScales", "PawnItemValue", "CanDualWield", "BitAnd",
+    "PawnVisibleScales", "PawnItemValue", "CanDualWield", "BitAnd",
 }
 
 -- The client's ItemLocation mixin, reduced to the two constructors Compat calls: `b`/`s` for a bag
@@ -419,7 +416,7 @@ test("compat: with the client API absent every accessor answers its no-answer va
     for _, k in ipairs({ "C_Container", "C_Item", "C_ItemUpgrade", "C_EquipmentSet", "C_PetJournal", "C_TooltipInfo",
                          "C_AzeriteEmpoweredItem", "C_PlayerInfo", "GetInventoryItemLink", "GetInventoryItemID",
                          "GetInventorySlotInfo", "GetInventoryItemCooldown", "PickupInventoryItem", "EquipCursorItem",
-                         "ClearCursor", "SetCurrentTitle", "GetMacroIcons", "GetMacroItemIcons",
+                         "ClearCursor", "SetCurrentTitle",
                          "EquipmentManager_GetLocationData", "PawnGetItemData", "PawnGetAllScales", "GetNumTitles",
                          "hooksecurefunc", "ItemLocation", "CanDualWield", "Enum", "MAX_EQUIPMENT_SETS_PER_PLAYER",
                          "NUM_TOTAL_EQUIPPED_BAG_SLOTS", "IsFlying" }) do
@@ -431,7 +428,7 @@ test("compat: with the client API absent every accessor answers its no-answer va
         { "ItemStats", "l" }, { "ItemIcon", 1 }, { "ItemSpell", "l" }, { "ItemFamily", "l" }, { "ItemUpgradeInfo", "l" },
         { "ContainerItemCooldown", 0, 1 }, { "InventoryItemCooldown", 13 }, { "ItemUniqueness", 1 }, { "IsBound", BAG },
         { "IsWarboundUntilEquip", INV }, { "CanUseItem", 1 }, { "CanUpgradeItem", INV }, { "AzeritePowers", INV },
-        { "SummonedPetGUID" }, { "PetGUIDByName", "pierre" }, { "PetGUIDBySpecies", 1 }, { "EMSetInfo", 1 },
+        { "SummonedPetGUID" }, { "PetGUIDBySpecies", 1 }, { "EMSetInfo", 1 },
         { "EMLocation", 1 }, { "FlyoutLocationData", 1 }, { "EMSetID", "Tank" }, { "ContainerIDToInventoryID", 1 },
         { "PawnItemValue", "link", "Alpha" }, { "LastEquippedBagID" } }
     local FALSE = { { "SummonPet", "g" }, { "HookPetSummon", fn }, { "HookCompare", fn }, { "EMCreateSet", "n", 1 },
@@ -441,7 +438,7 @@ test("compat: with the client API absent every accessor answers its no-answer va
         { "UseContainerItem", 0, 1 }, { "ShowContainerSellCursor", 0, 1 }, { "EquipCursorItem", 16 },
         { "ClearCursor" }, { "CanDualWield" }, { "IsFlying" } }
     local EMPTY = { { "TooltipLines", BAG }, { "EMSetIDs" }, { "EMLocations", 1 }, { "EMIgnoredSlots", 1 },
-        { "KnownTitles" }, { "BankBagIDs" }, { "MacroIcons", "item" }, { "PawnVisibleScales" } }
+        { "KnownTitles" }, { "BankBagIDs" }, { "PawnVisibleScales" } }
     with(absent, function()
         for _, row in ipairs(NIL) do assertNil((C[row[1]](unpack(row, 2))), row[1]) end
         for _, row in ipairs(FALSE) do assertEqual(C[row[1]](unpack(row, 2)), false, row[1]) end
@@ -586,7 +583,7 @@ test("compat: TooltipInventoryUnit reads the primary info's getter and fails saf
     assertNil(C.TooltipInventoryUnit(nil))
 end)
 
-test("compat: pet lookups compare plain names inside Compat and skip a secret one", function()
+test("compat: the pet lookup answers an owned pet's plain GUID and skips a secret one", function()
     local PETS = {
         { "BattlePet-0-1", 39, true, nil, "Mechanical Squirrel" },
         { "BattlePet-0-5", 39, true, "Pierre", "Mechanical Squirrel" },
@@ -604,17 +601,11 @@ test("compat: pet lookups compare plain names inside Compat and skip a secret on
         GetSummonedPetGUID = function() return "BattlePet-0-1" end,
         SummonPetByGUID = function(guid) summoned[#summoned + 1] = guid end } }, function()
         assertEqual(C.SummonedPetGUID(), "BattlePet-0-1")
-        assertEqual(C.PetGUIDByName("Mechanical Squirrel"), "BattlePet-0-1", "case-insensitive")
-        -- INV §3.10 Keep: the species name, never a custom one. A squirrel the player renamed
-        -- "Pierre" sits first in the journal; the COOKING preset's Pierre is the species.
-        -- red under: a PetGUIDByName that also matches the custom name (core/Compat.lua).
-        assertEqual(C.PetGUIDByName("pierre"), "BattlePet-0-2", "the species, not the renamed squirrel")
-        assertNil(C.PetGUIDByName("sir pierre"), "a custom name is never matched")
-        assertNil(C.PetGUIDByName("unowned"), "an unowned pet is never a handle")
-        assertNil(C.PetGUIDByName("hidden"), "a secret guid is never a handle")
-        assertNil(C.PetGUIDByName(T.secret("pierre")))
+        assertEqual(C.PetGUIDBySpecies(39), "BattlePet-0-1", "the first owned pet of the species")
         assertEqual(C.PetGUIDBySpecies(1203), "BattlePet-0-2")
-        assertNil(C.PetGUIDBySpecies(77))
+        assertNil(C.PetGUIDBySpecies(77), "an unowned pet is never a handle")
+        assertNil(C.PetGUIDBySpecies(88), "a secret guid is never a handle")
+        assertNil(C.PetGUIDBySpecies(T.secret(1203)))
         assertTrue(C.SummonPet("BattlePet-0-2"))
         assertFalse(C.SummonPet(T.secret("BattlePet-0-2")))
         assertEqual(table.concat(summoned, ","), "BattlePet-0-2")
@@ -769,19 +760,14 @@ test("compat: pickups, uses and the cursor route by location and report the call
         .. "ShowContainerSellCursor:1:3,EquipCursorItem:16,ClearCursor,SetCurrentTitle:42")
 end)
 
-test("compat: macro icons, Pawn scales and values, dual wield and BitAnd", function()
-    with({ GetMacroItemIcons = function(t) t[1], t[2] = 135349, "INV_Misc_QuestionMark" end,
-           GetMacroIcons = function(t) t[1] = 136243 end,
-           PawnGetAllScales = function() return { "Zeta", "Alpha", T.secret("Hidden"), "Hidden scale" } end,
+test("compat: Pawn scales and values, dual wield and BitAnd", function()
+    with({ PawnGetAllScales = function() return { "Zeta", "Alpha", T.secret("Hidden"), "Hidden scale" } end,
            PawnIsScaleVisible = function(name) return name ~= "Hidden scale" end,
            PawnGetItemData = function(link)
                if link == "boom" then error("Pawn raised") end
                return { Values = { { "Alpha", 12.5 }, { "Zeta", T.secret(3) } } }
            end,
            CanDualWield = function() return 1 end }, function()
-        assertEqual(#C.MacroIcons("item"), 2)
-        assertEqual(C.MacroIcons("ability")[1], 136243)
-        assertEqual(#C.MacroIcons("other"), 0)
         assertEqual(table.concat(C.PawnVisibleScales(), ","), "Alpha,Zeta", "visible, plain and sorted")
         assertEqual(C.PawnItemValue("link", "Alpha"), 12.5)
         assertNil(C.PawnItemValue("link", "Zeta"), "a secret score reads nil; the caller scores it 0")

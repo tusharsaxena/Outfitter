@@ -7,7 +7,7 @@ local _, NS = ...
 -- level, then name (modules/QuickSlots_Sort.lua, which extends this table with QS.Sort).
 --
 -- HOOKS, NEVER REPLACEMENTS (design §7.0 rule 3, skinning-§7). The slot buttons take HookScript on
--- PreClick and PostClick; the flyout's PaperDollItemsFrame.flyoutSettings.getItemsFunc and
+-- PostClick; the flyout's PaperDollItemsFrame.flyoutSettings.getItemsFunc and
 -- postGetItemsFunc take hooksecurefunc post-hooks, which filter and sort the tables the original
 -- filled, in place. The legacy code replaced both functions (OutfitterQuickSlots.lua:17-36). A
 -- post-hook receives the caller's numItems, not the original's return: the original inserts "place in
@@ -79,7 +79,6 @@ local Compat, Secrets = NS.Compat, NS.Secrets
 local PLAYER_BIT, BAGS_BIT, BANK_BIT = 0x00100000, 0x00200000, 0x00400000
 
 local installed = false
-local currentSlot           -- the slot name of the last PreClick (the legacy CurrentInventorySlot)
 local slotOf = {}           -- slot button -> its slot name
 
 -- A FrameXML number by name, plain, or `fallback` when the client has none.
@@ -122,11 +121,6 @@ local function sortItems(_, displayTable)
 end
 
 -- ── the slot buttons ──────────────────────────────────────────────────────────────────────────
-
-local function preClick(button)
-    if not active() then return end
-    currentSlot = slotOf[button]
-end
 
 -- Whether the flyout is showing for `button`.
 local function flyoutOpenOn(button)
@@ -449,7 +443,6 @@ function QS.Install()
         local button = _G["Character" .. slotName]
         if button then
             slotOf[button] = slotName
-            button:HookScript("PreClick", preClick)
             button:HookScript("PostClick", postClick)
         end
     end
@@ -465,9 +458,8 @@ function QS.Install()
 end
 
 --- The lifecycle's stand-down (design §5.12): the hooks stay installed and their bodies read the
---- latch; the clicked slot is forgotten and the drawer goes back to Blizzard's.
+--- latch; the drawer goes back to Blizzard's.
 function QS.Suspend()
-    currentSlot = nil
     QS.DrawerSync()
 end
 
@@ -482,7 +474,3 @@ end
 function QS.SetEnabled(enabled)
     if enabled and not NS.IsStoodDown() then QS.Install() end
 end
-
---- The slot name of the last slot button pressed, or nil.
---- @return string|nil
-function QS.CurrentSlot() return currentSlot end

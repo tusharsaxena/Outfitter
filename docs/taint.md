@@ -79,7 +79,7 @@ never moves Blizzard's or another addon's tabs.
 ### The equipment flyout (the quick slots and the outward drawer)
 
 `modules/QuickSlots.lua` meets Blizzard's equipment flyout through post-hooks only: `HookScript`
-PreClick and PostClick on the paper doll's 18 slot buttons (`Character<Slot>`), `hooksecurefunc` on
+PostClick on the paper doll's 18 slot buttons (`Character<Slot>`), `hooksecurefunc` on
 its `flyoutSettings.getItemsFunc` and `postGetItemsFunc`, and `hooksecurefunc` on the globals
 `EquipmentFlyout_UpdateItems`, `EquipmentFlyoutPopoutButton_SetReversed` and
 `EquipmentFlyoutPopoutButton_HideAll`

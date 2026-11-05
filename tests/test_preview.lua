@@ -96,7 +96,7 @@ end
 test("preview: NS.Preview publishes the §8 surface and starts off", function()
     local P = T.NS.Preview
     assertEqual(type(P), "table")
-    for _, k in ipairs({ "Start", "Stop", "Toggle", "IsActive", "Suspend", "Resume", "Diagnose" }) do
+    for _, k in ipairs({ "Start", "Stop", "Toggle", "IsActive", "Suspend", "Resume" }) do
         assertEqual(type(P[k]), "function", k)
     end
     assertEqual(type(P.Source.Rows), "function")
@@ -251,7 +251,7 @@ test("preview: a bar the player had on stays on, on the live outfits, when test 
     settle(M)
     NS.Preview.Start()
     settle(M)
-    assertEqual(NS.Preview.Diagnose().openedBar, false)
+    assertEqual(NS.Preview.openedBar, false)
     NS.Preview.Stop()
     settle(M)
     assertTrue(barShown(NS))
@@ -323,17 +323,17 @@ test("preview: Start and Stop each announce PREVIEW_CHANGED once, and a repeat i
     assertEqual(table.concat(seen, ","), "true,false")
 end)
 
-test("preview: Diagnose reports the mode, the bar it opened and the sample count", function()
+test("preview: Start records the mode and the bar it opened; the source answers the five samples", function()
     local NS, M = scene()
-    local d = NS.Preview.Diagnose()
-    assertEqual(d.active, false)
-    assertEqual(d.outfits, 0)
+    assertFalse(NS.Preview.IsActive())
+    assertEqual(NS.Preview.openedBar, false)
     NS.Preview.Start()
     settle(M)
-    d = NS.Preview.Diagnose()
-    assertEqual(d.active, true)
-    assertEqual(d.openedBar, true)
-    assertEqual(d.outfits, 5)
+    assertTrue(NS.Preview.IsActive())
+    assertEqual(NS.Preview.openedBar, true)
+    local n = 0
+    for _, row in ipairs(NS.Preview.Source.Rows()) do n = n + #row.outfits end
+    assertEqual(n, 5)
     assertEqual(NS.Preview.Source.Rows(), NS.PreviewOutfits.Rows())
 end)
 
@@ -819,14 +819,15 @@ test("preview bar: the dismissal ends with test mode; the bar follows bar.shown,
     settle(M)
     NS.Slash:OnSlash("bar hide")
     settle(M)
-    assertTrue(NS.Bar.TestDismissed())
+    assertFalse(NS.Bar.PlayerWants(), "the bar is not dismissed for the session")
+    assertFalse(barShown(NS))
     NS.Preview.Stop()
     settle(M)
-    -- red under: no clear on PREVIEW_CHANGED
-    assertFalse(NS.Bar.TestDismissed(), "the dismissal outlived test mode")
     assertFalse(barShown(NS), "bar.shown is off: the bar stays hidden after test mode")
     NS.Preview.Start()
     settle(M)
+    -- red under: no clear on PREVIEW_CHANGED
+    assertTrue(NS.Bar.PlayerWants(), "the dismissal outlived test mode")
     assertTrue(barShown(NS), "a new test session did not show the bar")
     -- Combat ends it too.
     NS.Slash:OnSlash("bar hide")
@@ -834,19 +835,24 @@ test("preview bar: the dismissal ends with test mode; the bar follows bar.shown,
     M.__fire("PLAYER_REGEN_DISABLED")
     settle(M)
     assertFalse(NS.Preview.IsActive())
-    assertFalse(NS.Bar.TestDismissed(), "the dismissal outlived the combat end")
-    -- And the stand-down, which sends no PREVIEW_CHANGED.
     M.__fire("PLAYER_REGEN_ENABLED")
     settle(M)
     NS.Preview.Start()
     settle(M)
+    assertTrue(NS.Bar.PlayerWants(), "the dismissal outlived the combat end")
+    assertTrue(barShown(NS))
+    -- And the stand-down, which ends test mode with no PREVIEW_CHANGED: the next session starts
+    -- with the bar on.
     NS.Slash:OnSlash("bar hide")
     settle(M)
     NS.lifecycle:Hold("test")
-    -- red under: a Bar.Suspend that keeps the dismissal
-    assertFalse(NS.Bar.TestDismissed(), "the dismissal outlived the stand-down")
     NS.lifecycle:Release("test")
     settle(M)
+    assertFalse(NS.Preview.IsActive())
+    NS.Preview.Start()
+    settle(M)
+    assertTrue(NS.Bar.PlayerWants(), "the dismissal outlived the stand-down")
+    assertTrue(barShown(NS))
 end)
 
 test("preview bar: the dismissal ends with the General switch; a bar the player had on comes back", function()

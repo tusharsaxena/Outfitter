@@ -29,7 +29,7 @@ local _, NS = ...
 -- items. A refusal (unknown stat) is returned instead and delivers nothing. The simple search
 -- delivers before Generate returns; the genetic one delivers from its ticker.
 --
--- ONE SEARCH AT A TIME. A genetic search is the running job (Opt.Running); starting another cancels
+-- ONE SEARCH AT A TIME. A genetic search is the running job (`running`); starting another cancels
 -- it. OPTIMIZE_STARTED, OPTIMIZE_PROGRESS and OPTIMIZE_DONE bracket the genetic search for the
 -- progress dialog; the simple search sends none. A stand-down (Opt.Suspend) cancels it with
 -- "stood-down".
@@ -354,9 +354,6 @@ function Opt.Cancel(job)
     deliver(job, nil, "canceled")
     return true
 end
-
---- The genetic job in progress, or nil.
-function Opt.Running() return running end
 
 --- Stand-down (design §5.12): the running search ends with nil, "stood-down".
 function Opt.Suspend()

@@ -137,7 +137,7 @@ test("perf scenes: 50 zone flips are 50 zone reads, and the battleground outfit 
     -- red under: a flip that never changes the instance (every read after the first takes the
     -- early-out, and no zone state moves).
     assertTrue((seen.counts.triggerDispatch or 0) >= Scenes.FLIPS, "the zone state never reached the binding")
-    assertFalse(NS.States.InZone("PVP_BATTLEGROUND"), "an even flip count ends in the open world")
+    assertFalse(NS.States.IsActive("PVP_BATTLEGROUND"), "an even flip count ends in the open world")
 end)
 
 test("perf scenes: the fan-out dispatches each of the 40 bindings once per edge", function()
@@ -168,10 +168,10 @@ test("perf scenes: the tooltip pass draws 100 bag items and decorates the used o
 end)
 
 test("perf scenes: one genetic generation breeds 275 children over whole resumes", function()
-    local seen, NS = drive("gaGeneration", 4)
+    local seen, NS, _, current = drive("gaGeneration", 4)
     local P = NS.OptimizeGA.PARAMS
-    local job = NS.Optimize.Running()
-    assertTrue(job ~= nil, "no search is running")
+    local job = current()
+    assertTrue(job ~= nil and not job.done, "no search is running")
     -- red under: a step that resumes once (100 children) instead of breeding one generation's worth.
     assertTrue(job.generated >= P.population + 4 * (P.population - P.parents), "fewer than four generations bred")
     assertTrue(seen.counts.optimizeStep >= 4 * 2, "a generation in fewer than two resumes")

@@ -116,8 +116,8 @@ local function newCache(order, parts)
     return c
 end
 
---- A cache over a given list of infos (each with a `loc`), outside the scan: the pure planner's and
---- the suites' way to match against a known inventory.
+--- A cache over a given list of infos (each with a `loc`), outside the scan: how the suites hand the
+--- pure planner, the matcher and the optimizer a known inventory. The addon itself reads Inv.Cache().
 --- @param infos table[]
 --- @return table cache
 function Inv.NewCache(infos)

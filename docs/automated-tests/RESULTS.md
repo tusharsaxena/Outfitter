@@ -32,6 +32,7 @@ archaeology, for the same reason a skip is never a pass (`automated-tests-§4`).
 
 | Run | Commit | Tree | Version | Lint w/e | Files | Tests | Perf | NLOC | Funcs | Avg NLOC | Avg CCN | Max CCN | CCN warn | Verdict |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| [`20261106-010454`](20261106-010454/) | `7f512f0` | clean | 1.1.0 | 0/0 | 201 | 1536/1/1537 | pass | 46646 | 5785 | 7.1 | 2.3 | 15 | 0 | **green** |
 | [`20261105-160832`](20261105-160832/) | `162b787` | clean | 1.1.0 | 0/0 | 201 | 1538/1/1539 | pass | 46746 | 5809 | 7.1 | 2.3 | 15 | 0 | **green** |
 | [`20261105-125130`](20261105-125130/) | `46d0193` | clean | 1.1.0 | 0/0 | 200 | 1519/1/1520 | pass | 46198 | 5737 | 7.1 | 2.3 | 15 | 0 | **green** |
 | [`20261105-124114`](20261105-124114/) | `0ae116f` | clean | 1.1.0 | 0/0 | 200 | 1519/1/1520 | fail | 46198 | 5737 | 7.1 | 2.3 | 15 | 0 | **amber** |
@@ -46,11 +47,11 @@ archaeology, for the same reason a skip is never a pass (`automated-tests-§4`).
 
 ## Test suite
 
-**1539 cases** — 1538 passed, 0 failed, 1 skipped. The generated inventory
-[`20261105-160832/test-cases.md`](20261105-160832/test-cases.md) is the authority on which cases existed at this run;
+**1537 cases** — 1536 passed, 0 failed, 1 skipped. The generated inventory
+[`20261106-010454/test-cases.md`](20261106-010454/test-cases.md) is the authority on which cases existed at this run;
 `docs/test-cases.md` is that same list at HEAD.
 
-Moved **1520 → 1539** since the previous run.
+Moved **1539 → 1537** since the previous run.
 
 **1 case(s) reported a `skip`.** A skip is counted in the total and never in `passed`, and at
 the release gate it is NOT EVALUATED rather than passed (`automated-tests-§3`).
@@ -67,30 +68,30 @@ to whoever thinks to open `.luacheckrc`.
 ## Perf
 
 **13 scenarios** from `tests/perf.lua`; the measurements are in
-[`20261105-160832/perf.json`](20261105-160832/perf.json).
+[`20261106-010454/perf.json`](20261106-010454/perf.json).
 
 | `scenario` | `iters` | `ms/iter` | `notes/iter` | `bytes/iter` |
 |---|---|---|---|---|
-| `equipPlanCaptureOff` | 500 | 1.57699 | 0.00 | 235856.1 |
-| `equipPlanCaptureOn` | 500 | 1.52101 | 3.00 | 235856.1 |
-| `zoneFlipsCaptureOff` | 50 | 1.14564 | 0.00 | 118022.7 |
-| `zoneFlipsCaptureOn` | 50 | 1.24408 | 100.00 | 117934.4 |
-| `triggerFanoutCaptureOff` | 100 | 0.92251 | 0.00 | 107671.7 |
-| `triggerFanoutCaptureOn` | 100 | 0.95474 | 40.00 | 107674.6 |
-| `tooltipsCaptureOff` | 50 | 0.75424 | 0.00 | 138494.1 |
-| `tooltipsCaptureOn` | 50 | 1.11116 | 100.00 | 138494.1 |
-| `gaGenerationCaptureOff` | 200 | 4.83989 | 0.00 | 468126.8 |
-| `gaGenerationCaptureOn` | 200 | 4.72652 | 3.00 | 468126.8 |
-| `dockIdleCaptureOff` | 2000 | 0.00522 | 0.00 | 192.3 |
-| `dockIdleCaptureOn` | 2000 | 0.00623 | 1.00 | 192.3 |
-| `tooltipsAbsent` | 50 | 0.74852 | 0.00 | 138494.1 |
+| `equipPlanCaptureOff` | 500 | 1.74496 | 0.00 | 235856.1 |
+| `equipPlanCaptureOn` | 500 | 1.74284 | 3.00 | 235856.1 |
+| `zoneFlipsCaptureOff` | 50 | 1.42028 | 0.00 | 118022.7 |
+| `zoneFlipsCaptureOn` | 50 | 1.29356 | 100.00 | 117934.4 |
+| `triggerFanoutCaptureOff` | 100 | 1.15990 | 0.00 | 107671.7 |
+| `triggerFanoutCaptureOn` | 100 | 1.00570 | 40.00 | 107674.6 |
+| `tooltipsCaptureOff` | 50 | 0.73796 | 0.00 | 138494.1 |
+| `tooltipsCaptureOn` | 50 | 0.89902 | 100.00 | 138494.1 |
+| `gaGenerationCaptureOff` | 200 | 5.25910 | 0.00 | 468126.8 |
+| `gaGenerationCaptureOn` | 200 | 5.32791 | 3.00 | 468126.8 |
+| `dockIdleCaptureOff` | 2000 | 0.00570 | 0.00 | 192.3 |
+| `dockIdleCaptureOn` | 2000 | 0.00698 | 1.00 | 192.3 |
+| `tooltipsAbsent` | 50 | 0.80480 | 0.00 | 138494.1 |
 
 `perf` never fails a run and never blocks a commit — it is recorded, read and compared, not
 thresholded (`performance-§9`). It does gate the **tag** (`automated-tests-§3`).
 
 ## Complexity watch list
 
-Current as of [`20261105-160832`](20261105-160832/) — **this run's measurement, not its diff.** Max CCN **15** across 5809
+Current as of [`20261106-010454`](20261106-010454/) — **this run's measurement, not its diff.** Max CCN **15** across 5785
 functions, **0** of them warned on; 0 file(s) in the 1000–1500 band and 0 over the 1500 cap
 (`layout-§1`).
 

@@ -247,23 +247,51 @@ end)
 
 -- ── the rebuild and progress dialogs ──────────────────────────────────────────────────────────
 
+-- The rebuild dialog's shown row at position `i`. The pool hands each position its own row, made in
+-- position order, so the i-th shown child of the rows' host is row i.
+local function rebuildRow(R, i)
+    local n = 0
+    for _, r in ipairs({ R.Frame().rowsHost:GetChildren() }) do
+        if r:IsShown() then
+            n = n + 1
+            if n == i then return r end
+        end
+    end
+end
+
+-- The player sets row `i` through its own widgets: the stat and operator picks, then the value typed.
+local function setRebuildRow(R, i, stat, op, value)
+    local r = rebuildRow(R, i)
+    r.stat.onSelect(stat)
+    r.op.onSelect(op)                  -- an operator pick redraws the rows
+    if value then rebuildRow(R, i).value:SetText(value) end
+end
+
+local function setComplex(R, on)
+    local check = R.Frame().complex
+    check:SetChecked(on)
+    check:__fire("OnClick")
+end
+
 test("rebuild: the rows give the §5.14 cfg, and Done keeps it on the outfit and rebuilds", function()
     local NS = scene()
     local id = NS.Outfits.Create("Gear", { HeadSlot = { id = 0 } })
     local R = NS.RebuildDialog
     R.Open(id)
-    R.SetRow(1, "ITEM_LEVEL", "highest")
-    R.AddRow()
-    R.SetRow(2, "STA", "atLeast", "5")
-    R.AddRow()
-    R.SetRow(3, "INT", "atMost", "10")
-    R.SetComplex(true)
+    setRebuildRow(R, 1, "ITEM_LEVEL", "highest")
+    R.Frame().add:__fire("OnClick")
+    setRebuildRow(R, 2, "STA", "atLeast", "5")
+    R.Frame().add:__fire("OnClick")
+    setRebuildRow(R, 3, "INT", "atMost", "10")
+    setComplex(R, true)
     local cfg = R.GetConfig()
     assertEqual(#cfg, 3)
     assertEqual(cfg[1].stat, "ITEM_LEVEL"); assertNil(cfg[1].min); assertNil(cfg[1].max)
-    assertEqual(cfg[2].min, 5); assertEqual(cfg[3].max, 10); assertTrue(cfg.complex)
-    R.RemoveRow(3); R.RemoveRow(2)
-    R.SetComplex(false)
+    assertEqual(cfg[2].stat, "STA"); assertEqual(cfg[2].min, 5)
+    assertEqual(cfg[3].stat, "INT"); assertEqual(cfg[3].max, 10); assertTrue(cfg.complex)
+    rebuildRow(R, 3).remove:__fire("OnClick"); rebuildRow(R, 2).remove:__fire("OnClick")
+    assertEqual(#R.GetConfig(), 1, "the remove marks took the rows off")
+    setComplex(R, false)
     local job = T.fake(NS, "Optimize", { Rebuild = true, Cancel = true, Suspend = true, Resume = true })
     assertTrue(R.Done())
     -- red under: Done without O.SetStat (the next menu's "Rebuild for <stat>" forgets the pick).

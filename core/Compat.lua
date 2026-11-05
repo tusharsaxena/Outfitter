@@ -10,7 +10,6 @@ local _, NS = ...
 -- Hand-written ladders and reads (P3 C6):
 --   Compat.CanAccessTable(t)     canaccesstable, then issecrettable, then "readable"
 --   Compat.NumSpecializations()  the class's spec count, 0 when unknown
---   Compat.PlayerSpecID()        the active spec's ID, or nil
 --   Compat.PlayerClass()         the class token ("WARRIOR"), or nil
 --   Compat.PlayerClassName()     the localized class name ("Warrior"), or nil (P4.6)
 --   Compat.PlayerFaction()       UnitFactionGroup's FIRST return ("Horde"), or nil (H10)
@@ -24,7 +23,7 @@ local _, NS = ...
 -- The P4.2 accessors (design §5.13), below the C6 reads: item links, info, stats and cooldowns;
 -- binding, uniqueness, usability, upgrade and azerite reads by location; tooltip data; pets and the
 -- two hooks; the Equipment Manager; titles; the bank; containers (and the last equipped bag, P4.5)
--- and the cursor; macro icons; Pawn; dual wield and BitAnd. One file, because the family stays under
+-- and the cursor; Pawn; dual wield and BitAnd. One file, because the family stays under
 -- the 1000-line split line (compat.md :11, design C39).
 --
 -- Every client global is read BARE and at CALL time, so a client (or the harness's mock) that adds an
@@ -132,14 +131,6 @@ function Compat.NumSpecializations()
     local fn = (api and api.GetNumSpecializations) or GetNumSpecializations
     if not fn then return 0 end
     return NS.Secrets.UnsecretNumber(fn(), 0)
-end
-
---- The active specialization's ID (71 = Arms), or nil with no spec chosen or an unreadable answer.
---- @return number|nil
-function Compat.PlayerSpecID()
-    local index = NS.Secrets.PlainNumber(Compat.GetSpecialization())
-    if not index then return nil end
-    return NS.Secrets.PlainNumber((Compat.GetSpecializationInfo(index)))
 end
 
 -- ---------------------------------------------------------------------------
@@ -251,7 +242,7 @@ end
 
 -- ===========================================================================
 -- The P4.2 accessors (design §5.13): items, containers, the Equipment Manager, pets, tooltip data,
--- titles, the bank, the cursor, macro icons and Pawn. Each read answers plain-or-nil; a write answers
+-- titles, the bank, the cursor and Pawn. Each read answers plain-or-nil; a write answers
 -- true when the client call was made and false when the API is absent.
 --
 -- A LOCATION (`loc`) is the addon's own plain table: `{ bag = bagID, slot = index }` for a container
@@ -604,31 +595,21 @@ function Compat.SummonedPetGUID()
     return NS.Secrets.PlainString(fn())
 end
 
--- The GUID of the first owned journal pet that `match(speciesID, speciesName)` accepts, each
--- argument plain or nil. A pet whose GUID is secret is never a handle.
+-- The GUID of the first owned journal pet whose species id `match(speciesID)` accepts (plain or
+-- nil). A pet whose GUID is secret is never a handle.
 local function findPet(match)
     local api, S = C_PetJournal, NS.Secrets
     local count, info = member(api, "GetNumPets"), member(api, "GetPetInfoByIndex")
     if not count or not info then return nil end
     local n = math.min(S.UnsecretNumber((count()), 0), PET_LIMIT)
     for i = 1, n do
-        local guid, species, owned, _, _, _, _, name = info(i)
+        local guid, species, owned = info(i)
         guid = S.PlainString(guid)
-        if guid and S.PlainTruth(owned) == true and match(S.PlainNumber(species), S.PlainString(name)) then
+        if guid and S.PlainTruth(owned) == true and match(S.PlainNumber(species)) then
             return guid
         end
     end
     return nil
-end
-
---- The GUID of the first owned pet whose SPECIES name matches `name` case-insensitively, or nil
---- (INV §3.10, Keep: a pet the player renamed is found by its species, never its custom name).
---- The compare runs here, on plain names only: a secret name is skipped, never compared.
-function Compat.PetGUIDByName(name)
-    local want = NS.Secrets.PlainString(name)
-    if not want then return nil end
-    want = want:lower()
-    return findPet(function(_, species) return species ~= nil and species:lower() == want end)
 end
 
 --- The GUID of the first owned pet of `speciesID`, or nil.
@@ -911,26 +892,8 @@ function Compat.PickupItemLocation(loc)
 end
 
 -- ---------------------------------------------------------------------------
--- Macro icons, Pawn, dual wield and bits
+-- Pawn, dual wield and bits
 -- ---------------------------------------------------------------------------
-
--- The icon list is long (tens of thousands of entries) but finite.
-local ICON_LIMIT = 100000
-
---- The client's icon list for `kind` ("item" or "ability"), plain entries only. Empty for any other
---- kind, or without the API (O33).
-function Compat.MacroIcons(kind)
-    local fill = (kind == "item" and GetMacroItemIcons) or (kind == "ability" and GetMacroIcons) or nil
-    local out = {}
-    if type(fill) ~= "function" then return out end
-    local raw = {}
-    fill(raw)
-    for _, icon in NS.Secrets.SafeIterate(raw, ICON_LIMIT) do
-        local plain = NS.Secrets.Unsecret(icon)
-        if plain ~= nil then out[#out + 1] = plain end
-    end
-    return out
-end
 
 -- Whether Pawn shows scale `name`: without the check every scale shows; a raising check hides it.
 local function pawnVisible(name)

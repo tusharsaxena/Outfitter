@@ -368,7 +368,7 @@ function B.Unbind(id)
     return unbind(id, false)
 end
 
---- @return table|nil  the binding's context (test and diagnostics read)
+--- @return table|nil  the binding's context (the suites' read: the addon holds it in `bound` only)
 function B.Context(id) return bound[id] end
 
 --- @return boolean
