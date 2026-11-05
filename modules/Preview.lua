@@ -104,13 +104,3 @@ end
 function Preview.Resume()
     ensureListener()
 end
-
---- What test mode is doing, for the diagnostics report and the suites.
---- @return table { active, openedBar, outfits }
-function Preview.Diagnose()
-    local n = 0
-    if Preview.active then
-        for _, row in ipairs(Preview.Source.Rows()) do n = n + #row.outfits end
-    end
-    return { active = Preview.active, openedBar = Preview.openedBar, outfits = n }
-end
