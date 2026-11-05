@@ -1481,6 +1481,20 @@ Total.
 - window settings: a section's row redraws the open window
 - window settings: the outfit row's marks follow their rows, the name taking the EM mark's place
 
+### test_flyout_tint.lua (11)
+
+- flyout tint: with the window open a sheet slot's flyout rim takes the skin's border color
+- flyout tint: the window's close gives each texture back exactly what it had
+- flyout tint: with the window closed the flyout keeps Blizzard's rim
+- flyout tint: opening the window over an open flyout tints it
+- flyout tint: another host's flyout gets Blizzard's rim back
+- flyout tint: a page that adds a background piece tints it, and the close restores it too
+- flyout tint: a skin change re-tints, and the close still restores Blizzard's color
+- flyout tint: the stand-down restores the rim, and nothing tints while down
+- flyout tint: nothing is written in combat lockdown
+- flyout tint: a tinted rim is not written over in lockdown either
+- flyout tint: a skin change in lockdown writes nothing
+
 ### test_outfit_menu.lua (33)
 
 - menu: NS.OutfitMenu is published
@@ -1823,6 +1837,7 @@ Total.
 | test_preview.lua | 35 |
 | test_preview_place.lua | 8 |
 | test_window_settings.lua | 12 |
+| test_flyout_tint.lua | 11 |
 | test_outfit_menu.lua | 33 |
 | test_dialogs.lua | 24 |
 | test_trigger_dialog.lua | 11 |
@@ -1837,4 +1852,4 @@ Total.
 | test_lizard_sighted.lua | 8 |
 | test_prose.lua | 15 |
 | Skipped | 1 |
-| **Total** | **1519** |
+| **Total** | **1530** |
