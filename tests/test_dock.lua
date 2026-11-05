@@ -588,11 +588,16 @@ end)
 
 test("dock: the tab's icon follows the neighbor's icon, read on each sheet show", function()
     local NS, M = scene()
+    M.__world:openCharacter()
+    assertTabIcon(NS, M.OutfitterRebornSheetButton, 1, -2)
+    M.__world:closeCharacter()
+    -- A skin re-anchors the neighbor's icon between two opens: the next open follows it.
     local tab3 = M.PaperDollSidebarTab3
     tab3.Icon:ClearAllPoints()
     tab3.Icon:SetPoint("BOTTOM", tab3, "BOTTOM", 2, -3)
     M.__world:openCharacter()
-    -- red under: placeButton not re-anchoring the icon from NS.Sheet.TabIconOffset.
+    -- red under: placeButton not re-anchoring the icon from NS.Sheet.TabIconOffset (an icon anchored
+    -- once, at the first placing, keeps the first open's offset).
     assertTabIcon(NS, M.OutfitterRebornSheetButton, 2, -3)
 end)
 
