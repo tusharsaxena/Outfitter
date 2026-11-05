@@ -1,0 +1,25 @@
+Ka0s Outfitter Reborn — offline perf  (v1.1.0, label 'offline')
+
+scenario                    iters     ms/iter notes/iter  bytes/iter
+equipPlanCaptureOff           500     1.52527       0.00    235856.1
+equipPlanCaptureOn            500     1.83729       3.00    235856.1
+zoneFlipsCaptureOff            50     1.52530       0.00    118022.7
+zoneFlipsCaptureOn             50     1.53762     100.00    117934.4
+triggerFanoutCaptureOff       100     1.03574       0.00    107671.7
+triggerFanoutCaptureOn        100     1.20972      40.00    107674.6
+tooltipsCaptureOff             50     0.85588       0.00    138494.1
+tooltipsCaptureOn              50     0.88146     100.00    138494.1
+gaGenerationCaptureOff        200     5.46986       0.00    468126.8
+gaGenerationCaptureOn         200     4.84309       3.00    468126.8
+dockIdleCaptureOff           2000     0.00545       0.00       192.3
+dockIdleCaptureOn            2000     0.00572       1.00       192.3
+tooltipsAbsent                 50     0.73778       0.00    138494.1
+
+timings are for orientation only — compare scenarios within a run, never across machines
+
+4 assertions FAILED:
+  - equipPlanCaptureOff allocated 235856.1 bytes/iter, over its 234000-byte ceiling
+  - equipPlanCaptureOn allocated 235856.1 bytes/iter, over its 234000-byte ceiling
+  - triggerFanoutCaptureOff allocated 107671.7 bytes/iter, over its 107000-byte ceiling
+  - triggerFanoutCaptureOn allocated 107674.6 bytes/iter, over its 107000-byte ceiling
+wrote docs/automated-tests/20261105-124114/perf.json
