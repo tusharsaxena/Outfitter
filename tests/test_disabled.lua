@@ -712,8 +712,9 @@ test("Disabled (Outfitter): PLAYER_EQUIPMENT_CHANGED while down leaves db.char u
 end)
 
 --- What each latch-gated hook body did, as { effect = true|false }: the used-by line, a compare
---- tooltip, the pet-summon stamp (a Compat.GetTime read), the quick slot's PreClick and the sheet
---- button's re-show on the PaperDollFrame OnShow.
+--- tooltip, the pet-summon stamp (a Compat.GetTime read) and the sheet button's re-show on the
+--- PaperDollFrame OnShow. The quick slots' hook bodies have their own stand-down case in
+--- test_quickslots.
 local function hookEffects(NS, M)
     local tip = M.GameTooltip
     tip:SetBagItem(0, 1)
@@ -736,15 +737,13 @@ local function hookEffects(NS, M)
     C.GetTime = function() reads = reads + 1; return getTime() end
     M.C_PetJournal.SummonPetByGUID("BattlePet-0-000000000001")
     C.GetTime = getTime
-    M.__slotButtons.HeadSlot:__fire("PreClick", "LeftButton", false)
     M.__world:closeCharacter()
     M.__world:openCharacter()
     return { usedBy = usedBy, compare = compares > 0, petStamp = reads > 0,
-             quickSlot = NS.QuickSlots.CurrentSlot() ~= nil,
              sheetButton = M.OutfitterRebornSheetButton:IsShown() }
 end
 
-test("Disabled (Outfitter): the tooltip, compare, pet, quick-slot and PaperDoll hook bodies no-op while down", function()
+test("Disabled (Outfitter): the tooltip, compare, pet and PaperDoll hook bodies no-op while down", function()
     -- red under: drop the NS.IsStoodDown() read from the Compare gate in modules/Tooltips_Compare.lua,
     -- or the `button:Hide()` from Dock.Suspend in modules/Dock.lua (the sheet button is up through
     -- the PaperDollFrame OnShow).

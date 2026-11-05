@@ -147,7 +147,7 @@ end
 test("quickslots: NS.QuickSlots and its sort are published", function()
     local Q = QS(T.NS)
     assertEqual(type(Q), "table", "NS.QuickSlots")
-    for _, name in ipairs({ "Install", "Suspend", "Resume", "SetEnabled", "CurrentSlot" }) do
+    for _, name in ipairs({ "Install", "Suspend", "Resume", "SetEnabled" }) do
         assertEqual(type(Q[name]), "function", "QuickSlots." .. name)
     end
     for _, name in ipairs({ "Items", "PlaceInBagsLast", "CompareItemSortInfo", "ItemSortInfo",
@@ -355,13 +355,12 @@ test("quickslots: an empty slot, or an item on the cursor, opens the flyout; a p
 end)
 
 test("quickslots: a click on the button the flyout is open on closes it", function()
-    local _, NS, M = flyoutInstance("secret_slots")
+    local _, _, M = flyoutInstance("secret_slots")
     local rec, buttons = M.__flyout, M.__slotButtons
     local flyout = M.EquipmentFlyoutFrame
     flyout:Show()
     flyout.button = buttons.LegsSlot
     buttons.LegsSlot:__fire("PreClick", "LeftButton", false)
-    assertEqual(QS(NS).CurrentSlot(), "LegsSlot", "PreClick records the slot")
     buttons.LegsSlot:__fire("PostClick", "LeftButton", false)
     -- red under: dropping the open-on-this-button branch (the empty Legs slot would open it again).
     assertEqual(rec.hidden, 1, "the open flyout is closed")
@@ -474,13 +473,9 @@ end)
 test("quickslots: the stand-down owns nothing to tear down: no event, no timer, no frame", function()
     local _, NS, M = flyoutInstance("secret_slots")
     local frames = #M.__shownFrames()
-    M.__slotButtons.HeadSlot:__fire("PreClick", "LeftButton", false)
-    assertEqual(QS(NS).CurrentSlot(), "HeadSlot")
     QS(NS).Suspend()
     QS(NS).Resume()
     assertEqual(#M.__shownFrames(), frames, "QuickSlots owns no frames (design §7.9)")
-    -- red under: dropping `currentSlot = nil` from QuickSlots.Suspend.
-    assertNil(QS(NS).CurrentSlot(), "the stand-down forgets the clicked slot")
 end)
 
 -- ── the outward drawer (sheet and window feedback design G8) ─────────────────────────────────────
