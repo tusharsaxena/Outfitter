@@ -44,7 +44,8 @@ so sends `OUTFIT_EDITED` instead ([schema.md](schema.md)).
 A profile switch, copy or reset runs `NS.OnProfileChanged` (`core/Database.lua`): hide the skin
 picker, apply the profile's skin, re-run the migrations over a reset profile, re-take the enabled hold,
 maybe show the skin picker, then `PROFILE_CHANGED`, on which the bar re-anchors, the trigger
-binder re-reads `auto.enabled` and the window redraws its trigger marks ([profiles.md](profiles.md)).
+binder re-reads `auto.enabled`, the window redraws its trigger marks and sections, and the dock and
+the slot checkboxes pick up the new profile's `window.*` rows ([profiles.md](profiles.md)).
 `db.char` is never touched.
 
 ## The stand-down latch

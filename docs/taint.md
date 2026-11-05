@@ -151,9 +151,10 @@ back when the window is gone. No Blizzard function is replaced and no Blizzard t
 
 ### Combat-gated acts
 
-The equipment-set checkbox is refused in combat (O44); the bank verbs and Delete all outfits refuse in
-combat with a line. `ChangeActionBarPage` from the Fishing trigger is skipped in lockdown and retried
-on regen (O23).
+Saving to or removing from the Equipment Manager (the row's EM mark and the menu's *Save in equipment
+manager*, `NS.EM.SetStored`) is refused in combat with a line, before anything is worn (O44); the
+bank verbs and Delete all outfits refuse in combat with a line. `ChangeActionBarPage` from the Fishing
+trigger is skipped in lockdown and retried on regen (O23).
 
 ## Owed to a client
 

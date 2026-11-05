@@ -5,8 +5,9 @@ AceDB profiles in Ka0s Outfitter Reborn (documentation-§3, Tier 2: a Profiles p
 ## What a profile holds
 
 Settings only: everything under `profile` in [schema.md](schema.md) (Master controls, automatic
-changes, equip behavior, tooltips, quick slots, the outfit bar, the bar's and dialogs' positions, the
-skin). Every character starts on the shared **Default** profile (`AceDB:New(…, true)`, H30).
+changes, equip behavior, tooltips, quick slots, the outfit bar, the outfit window and its sheet
+surfaces, the bar's and dialogs' positions, the skin). Every character starts on the shared
+**Default** profile (`AceDB:New(…, true)`, H30).
 
 **Outfits are not in a profile.** They live in `db.char`, per character: switching, copying or
 resetting a profile never touches an outfit, the stack, the recents or a key binding's outfit (H7,
@@ -39,7 +40,8 @@ and character.
 5. Send `PROFILE_CHANGED (key)`. Every other reaction rides this message, because a switch writes no
    row and so sends no `SETTINGS_CHANGED`: the bar rebuilds and re-anchors from the new profile's
    `windows.bar` at its scale and alpha, the trigger binder re-reads `auto.enabled` and binds or
-   unbinds the triggers, and the outfit window redraws its trigger marks.
+   unbinds the triggers, the outfit window redraws its sections and marks, and the sheet button, the
+   drawer and the slot check boxes follow the new profile's `window.*` rows.
 
 The callbacks are setup, not features: they stay live while the addon is disabled
 (slash-commands-§7).

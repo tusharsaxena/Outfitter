@@ -30,16 +30,16 @@ reads state when it is drawn (the launcher tooltip, `/or diagnostics`) is not on
 
 | Key | Sender | Payload | Receivers |
 |---|---|---|---|
-| `SETTINGS_CHANGED` | `settings/Schema.lua` (the announce) | `(path, value)`, settings paths only | Trigger binder (`auto.enabled`), Bar (`bar.*`), Window |
-| `PROFILE_CHANGED` | `core/Database.lua` | `(key)` | Bar (rebuild and re-anchor from the new profile's `windows.bar`), Trigger binder (`SetActive` from the new profile's `auto.enabled`), Window (redraw: the trigger marks dim on `auto.enabled`) |
+| `SETTINGS_CHANGED` | `settings/Schema.lua` (the announce) | `(path, value)`, settings paths only | Trigger binder (`auto.enabled`), Bar (`bar.*` and the master `scale`, `alpha`, `locked`, `visibility`), Window (`auto.enabled`, `window.*`), Dock (`window.*`: the sheet button and the drawer), slot checkboxes (`window.slotBoxes`) |
+| `PROFILE_CHANGED` | `core/Database.lua` | `(key)` | Bar (rebuild and re-anchor from the new profile's `windows.bar`), Trigger binder (`SetActive` from the new profile's `auto.enabled`), Window (redraw: the trigger marks dim on `auto.enabled`, and the `window.*` rows), Dock (the sheet button and the drawer), slot checkboxes |
 | `OUTFIT_ADDED` | `modules/Outfits.lua` | `(id)` | Window, Bar, Tooltips (cache wipe), Trigger binder (`Bind(id)`), API v1 |
-| `OUTFIT_DELETED` | `modules/Outfits.lua` | `(id, name)` | Window, Bar, Tooltips (cache wipe), Trigger binder (unbind), API v1 |
-| `OUTFIT_EDITED` | `modules/Outfits.lua`, also for the instance-row writes the `NS.OutfitSchema` announce makes | `(id, what)` | Window, Bar, Tooltips (cache wipe), slot checkboxes, Trigger binder (coalesced rebind on `what == "trigger"`), API v1 |
-| `OUTFIT_RENAMED` | `modules/Outfits.lua` | `(id, oldName, newName)` | Window, Bar, Tooltips (cache wipe), API v1 |
-| `OUTFIT_WORN` | `modules/OutfitStack.lua` | `(id, layer, byTrigger)` | Trigger binder (the `OUTFIT_WORN` pseudo-event), Window, Bar, API v1 |
-| `OUTFIT_REMOVED` | `modules/OutfitStack.lua` | `(id, byTrigger)` | Trigger binder, Window, Bar, API v1 |
+| `OUTFIT_DELETED` | `modules/Outfits.lua` | `(id, name)` | Window, Bar, Tooltips (cache wipe), Trigger binder (unbind), Broker, API v1 |
+| `OUTFIT_EDITED` | `modules/Outfits.lua`, also for the instance-row writes the `NS.OutfitSchema` announce makes | `(id, what)` | Window, Bar, Tooltips (cache wipe), slot checkboxes, Trigger binder (coalesced rebind on `what == "trigger"`), Broker, API v1 |
+| `OUTFIT_RENAMED` | `modules/Outfits.lua` | `(id, oldName, newName)` | Window, Bar, Tooltips (cache wipe), Broker, API v1 |
+| `OUTFIT_WORN` | `modules/OutfitStack.lua` | `(id, layer, byTrigger)` | Trigger binder (the `OUTFIT_WORN` pseudo-event), Window, Bar, Broker, API v1 |
+| `OUTFIT_REMOVED` | `modules/OutfitStack.lua` | `(id, byTrigger)` | Trigger binder, Window, Bar, Broker, API v1 |
 | `SELECTION_CHANGED` | `modules/OutfitStack.lua` | `(id or nil)` | Window, slot checkboxes |
-| `STACK_CHANGED` | `modules/Equip.lua` (on the close of a bracket in which the stack moved: `E.Request` or `E.Touch` marked it; outside a bracket `E.Touch` sends at once) | none | Window (dirty, status cache kept) |
+| `STACK_CHANGED` | `modules/Equip.lua` (on the close of a bracket in which the stack moved: `E.Request` or `E.Touch` marked it; outside a bracket `E.Touch` sends at once) | none | Window (dirty, status cache kept), Broker |
 | `INVENTORY_CHANGED` | `modules/Inventory.lua` | `(equippedChanged, bagsChanged)` | Stack watch, Window, slot checkboxes, Tooltips (cache wipe) |
 | `SWAP_COMPLETE` | `modules/OutfitStack_Watch.lua` | none | Equipment Manager mirror (pending save) |
 | `EM_SYNCED` | `modules/EquipmentManager.lua` | none | Window |
