@@ -11,7 +11,8 @@ local _, NS = ...
 -- player color painted onto the Shell frame would be overwritten: the two layers switch on
 -- visibility instead, one of them always shown (DpsRace's race HUD is the model:
 -- DpsRace@2e27c30 modules/Hud.lua:446-475; smoke round 3 E6 removed Show background). The Border
--- block's Show border reaches both: the plate's edge, and the chrome's through S.Shell's `noBorder`.
+-- block's Show border reaches both once *Use the skin's border* is off (while it is on the edge is the
+-- skin's: smoke round 3 E7): the plate's edge, and the chrome's through S.Shell's `noBorder`.
 --
 -- THE HEADER stands on the chrome's title band: LibKa0s's S.Band, laid by Shell at the skin's inset
 -- and `title.height` (flush and 25 px under EllesmereUI, NS.SkinBandGeometry), or a host holder 1 px
@@ -350,12 +351,20 @@ function Bar.EdgeColor(prefix, token)
     return NS.ResolveColor(stored, class)
 end
 
+--- Whether the Border block under `prefix` asks for an edge: the skin's while *Use the skin's border*
+--- is on (Show border is dimmed and not read then: smoke round 3 E7, the owner's ruling), else Show
+--- border's own value.
+--- @return boolean
+local function borderWanted(prefix)
+    return setting(prefix .. "borderStyleFromSkin") == true or setting(prefix .. "borderShow") ~= false
+end
+
 --- The Border block under `prefix` as drawn: show, style and thickness, the skin's bar family while
---- its companion is on (S.BarBorder, so a skin's None leaves them to the player).
+--- its companion is on (S.BarBorder, so a skin's None leaves the style and thickness to the player).
 --- @return boolean show, string|nil style, number size
 local function frameBorder(prefix)
     local fromSkin = setting(prefix .. "borderStyleFromSkin") == true
-    local style, show, size = NS.Skin.BarBorder(setting(prefix .. "borderStyle"), setting(prefix .. "borderShow"),
+    local style, show, size = NS.Skin.BarBorder(setting(prefix .. "borderStyle"), borderWanted(prefix),
         setting(prefix .. "borderSize"), fromSkin)
     return show ~= false and style ~= nil and style ~= "None", style, math.max(num(size, 1), 1)
 end
@@ -371,11 +380,11 @@ local function paintPlate(plate)
     if edge then plate:SetBackdropBorderColor(Bar.EdgeColor("bar.frame.", "bar.border")) end
 end
 
---- The chrome's edge: the skin's window edge while Show border is on, none while it is off (smoke
---- round 3 E7). S.Shell records the opts and replays them on every skin switch; it is called again
---- only when the switch moves.
+--- The chrome's edge: the skin's window edge while *Use the skin's border* is on, and once it is off
+--- while Show border is on; none otherwise (smoke round 3 E7). S.Shell records the opts and replays
+--- them on every skin switch; it is called again only when the answer moves.
 local function chromeBorder(f)
-    local noBorder = setting("bar.frame.borderShow") == false
+    local noBorder = not borderWanted("bar.frame.")
     if f.chromeNoBorder == noBorder then return end
     f.chromeNoBorder = noBorder
     NS.Skin.Shell(f.chrome, { noBorder = noBorder })

@@ -222,27 +222,63 @@ local function shellEdgeShown(Skin, frame)
     return (top ~= nil and top:IsShown() == true) or rec.regions.nine ~= nil
 end
 
-test("bar: Frame > Show border shows and hides the skin's window edge while the bar follows the skin", function()
-    -- Smoke round 3 E7 (screen 25): the switch was read only by the player's plate, so under the
-    -- default (Use the skin's background on) it did nothing. It now reaches the Shell's edge, and a
-    -- skin switch replays the choice.
-    -- red under: Bar.PaintChrome never handing S.Shell `noBorder` from bar.frame.borderShow.
+--- Every skin's key, in the library's order.
+local function skinKeys(Skin)
+    local keys = {}
+    for _, def in ipairs(Skin:Skins()) do keys[#keys + 1] = def.key end
+    return keys
+end
+
+test("bar: Frame > Show border is dimmed while Use the skin's border is on, and live once it is off, in every skin", function()
+    -- Smoke round 3 E7, the owner's ruling (follow the standard): while the companion is on the
+    -- border is the skin's, so the switch is dimmed and reads ticked, and its tooltip says why; off,
+    -- it is the player's. The library's own rule dims it only under a skin with a real bar style.
+    -- red under: the composed row's library disabledIf/skinValue kept (live under Ka0s Default's
+    -- None), or the library's tooltip kept.
+    local NS, M = scene()
+    local Skin = M.LibStub("LibKa0s-Skin-1.0")
+    local row = NS.FindSchemaRow("bar.frame.borderShow")
+    assertTrue(row.tooltip:find("Use the skin's border", 1, true) ~= nil, "the tooltip names the companion")
+    assertTrue(row.tooltip:find("dimmed", 1, true) ~= nil, "the tooltip says the switch is dimmed")
+    for _, key in ipairs(skinKeys(Skin)) do
+        NS.ApplySkinChoice("ka0s", key)
+        NS.SetByPath("bar.frame.borderStyleFromSkin", true)
+        assertTrue(row.disabledIf(row) == true, key .. ": dimmed while the border follows the skin")
+        assertEqual(row.skinValue(row), true, key .. ": reads ticked meanwhile")
+        NS.SetByPath("bar.frame.borderStyleFromSkin", false)
+        assertFalse(row.disabledIf(row) == true, key .. ": live once the companion is off")
+        T.assertNil(row.skinValue(row), key .. ": the stored value shows once the companion is off")
+    end
+    NS.ApplySkinChoice("ka0s", "ka0s")
+end)
+
+test("bar: Frame > Show border governs the edge once Use the skin's border is off, and the skin's edge draws while it is on", function()
+    -- Smoke round 3 E7, the owner's ruling. Both layers: the skin's chrome (Use the skin's background
+    -- on, S.Shell's `noBorder`) and the player's plate (its backdrop edge), in every skin.
+    -- red under: Bar.PaintChrome reading bar.frame.borderShow while borderStyleFromSkin is on, or
+    -- never reading it once it is off.
     local NS, M, Bar = scene()
     accessory(NS, "Hat")
     settle(M)
     local Skin = M.LibStub("LibKa0s-Skin-1.0")
     local f = Bar.Frame()
-    assertTrue(f.chrome:IsShown(), "the skin's chrome")
-    local keys = {}
-    for _, def in ipairs(Skin:Skins()) do keys[#keys + 1] = def.key end
-    for _, on in ipairs({ false, true }) do
-        NS.SetByPath("bar.frame.borderShow", on)
-        settle(M)
-        for _, key in ipairs(keys) do
-            NS.ApplySkinChoice("ka0s", key)
-            settle(M)
-            if NS.Skin.Token("win.border") ~= nil then
-                assertEqual(shellEdgeShown(Skin, f.chrome), on, key .. (on and ": on" or ": off"))
+    for _, key in ipairs(skinKeys(Skin)) do
+        NS.ApplySkinChoice("ka0s", key)
+        for _, follow in ipairs({ true, false }) do
+            NS.SetByPath("bar.frame.borderStyleFromSkin", follow)
+            for _, on in ipairs({ false, true }) do
+                local tag = key .. (follow and " following" or " own") .. (on and ": on" or ": off")
+                NS.SetByPath("bar.frame.borderShow", on)
+                NS.SetByPath("bar.bgFromSkin", true)
+                settle(M)
+                assertTrue(f.chrome:IsShown(), tag .. ": the skin's chrome")
+                if NS.Skin.Token("win.border") ~= nil then
+                    assertEqual(shellEdgeShown(Skin, f.chrome), follow or on, tag .. ": the chrome's edge")
+                end
+                NS.SetByPath("bar.bgFromSkin", false)
+                settle(M)
+                assertTrue(f.plate:IsShown(), tag .. ": the player's plate")
+                assertEqual(f.plate:GetBackdrop().edgeFile ~= nil, follow or on, tag .. ": the plate's edge")
             end
         end
     end

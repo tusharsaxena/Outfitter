@@ -132,7 +132,7 @@ NS.Equip.Batch(function()  NS.Stack.Wear / Remove (layer, byTrigger)  end) â—„â”
   `SETTINGS_CHANGED`, `PREVIEW_CHANGED`, `PROFILE_CHANGED`, a skin change): `NS.Bar.Layout` computes
   the geometry from the Layout and Icons rows (while `bar.layout.mode` is Collapsed, every shown
   outfit in one unlabeled row), `Bar.PaintChrome` dresses the header band, the chrome or the plate
-  (the chrome's edge on or off with the Frame tab's *Show border*), labels and test strip, and the pooled buttons are set from `NS.OutfitIcon`. `/or bar`, the *Toggle
+  (the chrome's edge the skin's while *Use the skin's border* is on, else on or off with the Frame tab's *Show border*), labels and test strip, and the pooled buttons are set from `NS.OutfitIcon`. `/or bar`, the *Toggle
   outfit bar* key and the header's close all write `bar.shown`, except in test mode, where they only
   dismiss the bar for that test session (`Bar.SetTestShown`, cleared on every `PREVIEW_CHANGED` and
   the stand-down) and `bar.shown` is never written; every path that hides the bar closes
