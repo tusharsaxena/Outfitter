@@ -1,8 +1,9 @@
 -- tests/test_companion.lua — P4.13 (design §5.15, INV §3.10): NS.Companion, the battle-pet
--- reconciler. Summon and dismiss by name, GUID and species; the blockers (flying, combat, dead,
+-- reconciler. Summon by GUID and species, dismiss by GUID; the blockers (flying, combat, dead,
 -- feign, casting, channeling, 3 s after the SummonPetByGUID hook); the auto-summon watch; the retry
--- cap (30 tries, a 60 s dismiss deadline); a nil or secret name answers false and never raises;
--- Suspend cancels the ticker and drops the wish.
+-- cap (30 tries, a 60 s dismiss deadline); a nil or secret GUID answers false and never raises;
+-- Suspend cancels the ticker and drops the wish. The pet out is read off the journal mock
+-- (M.__world.summonedPet), which SummonPetByGUID toggles as the client does.
 --
 -- NS.States lands in P4.14 (a parallel task): IsFeigning runs against a recorded fake (design §12,
 -- the fake rule). NS.Equip lands in P4.8: PlayerState's calls into it are faked the same way.
@@ -71,40 +72,24 @@ end
 test("companion: NS.Companion is published with the design's surface", function()
     local C = T.NS.Companion
     assertEqual(type(C), "table")
-    for _, name in ipairs({ "SummonByName", "SummonByGUID", "SummonBySpecies", "DismissByName", "DismissByGUID",
-                            "Summoned", "CanAct", "Suspend", "Resume" }) do
+    for _, name in ipairs({ "SummonByGUID", "SummonBySpecies", "DismissByGUID", "CanAct", "Suspend", "Resume" }) do
         assertEqual(type(C[name]), "function", name)
     end
 end)
 
 -- ── summon ────────────────────────────────────────────────────────────────────────────────────
 
-test("companion: SummonByName matches the species name case-insensitively and summons now", function()
+test("companion: SummonByGUID summons now", function()
     local _, NS, M = scene()
-    assertTrue(NS.Companion.SummonByName("mechanical SQUIRREL"))
+    assertTrue(NS.Companion.SummonByGUID(SQUIRREL))
     assertEqual(#calls(M), 1)
     assertEqual(calls(M)[1], SQUIRREL)
-    assertEqual(NS.Companion.Summoned(), SQUIRREL)
-    -- red under: matching the custom name (the renamed cat answers to its species only).
-    assertFalse(NS.Companion.SummonByName("Whiskers"), "a custom name is not a species")
-    M.__now = M.__now + 5   -- past the 3 s window the squirrel's own summon opened
-    assertTrue(NS.Companion.SummonByName("bombay cat"))
-    assertEqual(calls(M)[#calls(M)], CAT)
+    assertEqual(M.__world.summonedPet, SQUIRREL)
 end)
 
-test("companion: a nil, secret or unknown name answers false and never raises", function()
+test("companion: a nil or secret GUID answers false and never raises", function()
     local _, NS, M = scene()
-    -- legacy: raises (`nameToFind:lower()` on a nil name, Outfitter.lua:8251; INV §3.10 Fix); fixed:
-    -- false, and nothing scheduled.
-    -- red under: the legacy `nameToFind:lower()` on a nil name (INV §3.10 Fix).
-    local ok, res = pcall(NS.Companion.SummonByName, nil)
-    assertTrue(ok, "a nil name raised: " .. tostring(res))
-    assertFalse(res)
-    assertFalse(NS.Companion.SummonByName(T.secret("Mechanical Squirrel")), "a secret name is refused")
-    assertFalse(NS.Companion.SummonByName("No Such Pet"))
-    ok, res = pcall(NS.Companion.DismissByName, nil)
-    assertTrue(ok, "a nil dismiss name raised: " .. tostring(res))
-    assertFalse(res)
+    -- red under: usable() without its PlainString read (a secret GUID reaches the journal).
     assertFalse(NS.Companion.SummonByGUID(nil))
     assertFalse(NS.Companion.SummonByGUID(T.secret(SQUIRREL)), "a secret GUID is refused")
     assertFalse(NS.Companion.DismissByGUID(nil))
@@ -123,10 +108,10 @@ end)
 test("companion: summoning the pet already out calls nothing (the call would dismiss it)", function()
     local _, NS, M = scene()
     M.__world.summonedPet = SQUIRREL
-    -- red under: summoning without comparing to Summoned() (SummonPetByGUID toggles it away).
+    -- red under: summoning without comparing to the pet out (SummonPetByGUID toggles it away).
     assertTrue(NS.Companion.SummonByGUID(SQUIRREL))
     assertEqual(#calls(M), 0)
-    assertEqual(NS.Companion.Summoned(), SQUIRREL)
+    assertEqual(M.__world.summonedPet, SQUIRREL)
 end)
 
 test("companion: a delayed summon waits for its timer", function()
@@ -142,12 +127,12 @@ end)
 
 -- ── dismiss ───────────────────────────────────────────────────────────────────────────────────
 
-test("companion: DismissByName dismisses the summoned pet; another pet out is left alone", function()
+test("companion: DismissByGUID dismisses the summoned pet; another pet out is left alone", function()
     local _, NS, M = scene()
     M.__world.summonedPet = RAGNAROS
-    assertTrue(NS.Companion.DismissByName("lil' ragnaros"))
+    assertTrue(NS.Companion.DismissByGUID(RAGNAROS))
     assertEqual(calls(M)[1], RAGNAROS)
-    assertNil(NS.Companion.Summoned())
+    assertNil(M.__world.summonedPet)
     M.__world.summonedPet, M.__world.petCalls = CAT, {}
     M.__now = M.__now + 5   -- past the 3 s window the dismiss call opened
     -- red under: dismissing whatever is out (the call would toggle the cat away).
@@ -164,7 +149,7 @@ test("companion: dismissing the pet of a pending summon cancels the summon", fun
     assertEqual(pending(M), 0, "the summon's ticker went and no watch replaced it")
     tick(M, 3)
     assertEqual(#calls(M), 0, "the summon was canceled")
-    assertNil(NS.Companion.Summoned())
+    assertNil(M.__world.summonedPet)
 end)
 
 test("companion: the auto-summon watch dismisses the pet when the game brings it back", function()
@@ -179,7 +164,7 @@ test("companion: the auto-summon watch dismisses the pet when the game brings it
     tick(M)
     assertEqual(#calls(M), 1)
     assertEqual(calls(M)[1], RAGNAROS)
-    assertNil(NS.Companion.Summoned())
+    assertNil(M.__world.summonedPet)
     assertEqual(pending(M), 0)
 end)
 

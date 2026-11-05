@@ -17,9 +17,9 @@ local _, NS = ...
 -- moment the player can act again (a dismiss asked in flight still catches the pet the game
 -- re-summons on landing, as the legacy one did). Its blocked passes are capped at MAX_DISMISS_TRIES.
 --
--- SECRETS. Every name and GUID goes through NS.Secrets.PlainString first (Compat does it too), so a
--- nil or secret value answers false and never raises (INV §3.10 Fix). GUIDs compared here are
--- plain strings from Compat.
+-- SECRETS. Every GUID goes through NS.Secrets.PlainString first (Compat does it too), so a nil or
+-- secret value answers false and never raises (INV §3.10 Fix). GUIDs compared here are plain
+-- strings from Compat.
 --
 -- STAND-DOWN (slash-commands-§7). Suspend cancels the ticker and drops the wish; Resume installs the
 -- hook once and stamps the summon time, so the 3 s window also follows every stand-up, as it
@@ -74,10 +74,6 @@ function Companion.CanAct()
     end
     return true
 end
-
---- The summoned companion's GUID, or nil.
---- @return string|nil
-function Companion.Summoned() return Compat.SummonedPetGUID() end
 
 -- ── the reconciler ────────────────────────────────────────────────────────────────────────────
 
@@ -174,17 +170,6 @@ function Companion.SummonByGUID(guid, delay)
     return wish("summon", guid, delay)
 end
 
---- Summon the first owned pet whose species name is `name` (case-insensitive).
---- @return boolean accepted  false for a nil, secret or unknown name
-function Companion.SummonByName(name, delay)
-    local plain = usable(name) and Compat.PetGUIDByName(name)
-    if not plain then
-        debug("summon by name: no pet named %s", NS.SafeToString(name))
-        return false
-    end
-    return wish("summon", plain, delay)
-end
-
 --- Summon the first owned pet of `speciesID`.
 --- @return boolean accepted
 function Companion.SummonBySpecies(speciesID, delay)
@@ -207,14 +192,6 @@ function Companion.DismissByGUID(guid, delay)
         return true
     end
     return wish("dismiss", guid, delay)
-end
-
---- Dismiss the first owned pet whose species name is `name` (case-insensitive).
---- @return boolean accepted
-function Companion.DismissByName(name)
-    local plain = usable(name) and Compat.PetGUIDByName(name)
-    if not plain then return false end
-    return Companion.DismissByGUID(plain)
 end
 
 -- ── lifecycle ─────────────────────────────────────────────────────────────────────────────────

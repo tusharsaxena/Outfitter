@@ -290,7 +290,7 @@ local ACCESSORS = {
     "DetailedItemLevel", "ItemStats", "ItemIcon", "ItemSpell", "ItemFamily", "ItemUpgradeInfo",
     "ContainerItemCooldown", "InventoryItemCooldown", "ItemUniqueness", "IsBound", "IsWarboundUntilEquip",
     "CanUseItem", "CanUpgradeItem", "AzeritePowers", "TooltipLines", "TooltipInventoryUnit", "SummonedPetGUID",
-    "PetGUIDByName", "PetGUIDBySpecies", "SummonPet", "HookPetSummon", "HookCompare", "EMSetIDs", "EMSetInfo",
+    "PetGUIDBySpecies", "SummonPet", "HookPetSummon", "HookCompare", "EMSetIDs", "EMSetInfo",
     "EMLocations", "EMIgnoredSlots", "EMLocation", "FlyoutLocationData", "EMCreateSet", "EMSaveSet",
     "EMModifySet", "EMDeleteSet", "EMSetID", "EMNumSets", "EMMaxSets", "EMClearIgnored", "EMIgnoreSlot",
     "KnownTitles", "SetCurrentTitle", "BankBagIDs", "IsBankerInteraction", "ContainerNumSlots",
@@ -428,7 +428,7 @@ test("compat: with the client API absent every accessor answers its no-answer va
         { "ItemStats", "l" }, { "ItemIcon", 1 }, { "ItemSpell", "l" }, { "ItemFamily", "l" }, { "ItemUpgradeInfo", "l" },
         { "ContainerItemCooldown", 0, 1 }, { "InventoryItemCooldown", 13 }, { "ItemUniqueness", 1 }, { "IsBound", BAG },
         { "IsWarboundUntilEquip", INV }, { "CanUseItem", 1 }, { "CanUpgradeItem", INV }, { "AzeritePowers", INV },
-        { "SummonedPetGUID" }, { "PetGUIDByName", "pierre" }, { "PetGUIDBySpecies", 1 }, { "EMSetInfo", 1 },
+        { "SummonedPetGUID" }, { "PetGUIDBySpecies", 1 }, { "EMSetInfo", 1 },
         { "EMLocation", 1 }, { "FlyoutLocationData", 1 }, { "EMSetID", "Tank" }, { "ContainerIDToInventoryID", 1 },
         { "PawnItemValue", "link", "Alpha" }, { "LastEquippedBagID" } }
     local FALSE = { { "SummonPet", "g" }, { "HookPetSummon", fn }, { "HookCompare", fn }, { "EMCreateSet", "n", 1 },
@@ -583,7 +583,7 @@ test("compat: TooltipInventoryUnit reads the primary info's getter and fails saf
     assertNil(C.TooltipInventoryUnit(nil))
 end)
 
-test("compat: pet lookups compare plain names inside Compat and skip a secret one", function()
+test("compat: the pet lookup answers an owned pet's plain GUID and skips a secret one", function()
     local PETS = {
         { "BattlePet-0-1", 39, true, nil, "Mechanical Squirrel" },
         { "BattlePet-0-5", 39, true, "Pierre", "Mechanical Squirrel" },
@@ -601,17 +601,11 @@ test("compat: pet lookups compare plain names inside Compat and skip a secret on
         GetSummonedPetGUID = function() return "BattlePet-0-1" end,
         SummonPetByGUID = function(guid) summoned[#summoned + 1] = guid end } }, function()
         assertEqual(C.SummonedPetGUID(), "BattlePet-0-1")
-        assertEqual(C.PetGUIDByName("Mechanical Squirrel"), "BattlePet-0-1", "case-insensitive")
-        -- INV §3.10 Keep: the species name, never a custom one. A squirrel the player renamed
-        -- "Pierre" sits first in the journal; the COOKING preset's Pierre is the species.
-        -- red under: a PetGUIDByName that also matches the custom name (core/Compat.lua).
-        assertEqual(C.PetGUIDByName("pierre"), "BattlePet-0-2", "the species, not the renamed squirrel")
-        assertNil(C.PetGUIDByName("sir pierre"), "a custom name is never matched")
-        assertNil(C.PetGUIDByName("unowned"), "an unowned pet is never a handle")
-        assertNil(C.PetGUIDByName("hidden"), "a secret guid is never a handle")
-        assertNil(C.PetGUIDByName(T.secret("pierre")))
+        assertEqual(C.PetGUIDBySpecies(39), "BattlePet-0-1", "the first owned pet of the species")
         assertEqual(C.PetGUIDBySpecies(1203), "BattlePet-0-2")
-        assertNil(C.PetGUIDBySpecies(77))
+        assertNil(C.PetGUIDBySpecies(77), "an unowned pet is never a handle")
+        assertNil(C.PetGUIDBySpecies(88), "a secret guid is never a handle")
+        assertNil(C.PetGUIDBySpecies(T.secret(1203)))
         assertTrue(C.SummonPet("BattlePet-0-2"))
         assertFalse(C.SummonPet(T.secret("BattlePet-0-2")))
         assertEqual(table.concat(summoned, ","), "BattlePet-0-2")

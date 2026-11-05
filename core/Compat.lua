@@ -595,31 +595,21 @@ function Compat.SummonedPetGUID()
     return NS.Secrets.PlainString(fn())
 end
 
--- The GUID of the first owned journal pet that `match(speciesID, speciesName)` accepts, each
--- argument plain or nil. A pet whose GUID is secret is never a handle.
+-- The GUID of the first owned journal pet whose species id `match(speciesID)` accepts (plain or
+-- nil). A pet whose GUID is secret is never a handle.
 local function findPet(match)
     local api, S = C_PetJournal, NS.Secrets
     local count, info = member(api, "GetNumPets"), member(api, "GetPetInfoByIndex")
     if not count or not info then return nil end
     local n = math.min(S.UnsecretNumber((count()), 0), PET_LIMIT)
     for i = 1, n do
-        local guid, species, owned, _, _, _, _, name = info(i)
+        local guid, species, owned = info(i)
         guid = S.PlainString(guid)
-        if guid and S.PlainTruth(owned) == true and match(S.PlainNumber(species), S.PlainString(name)) then
+        if guid and S.PlainTruth(owned) == true and match(S.PlainNumber(species)) then
             return guid
         end
     end
     return nil
-end
-
---- The GUID of the first owned pet whose SPECIES name matches `name` case-insensitively, or nil
---- (INV §3.10, Keep: a pet the player renamed is found by its species, never its custom name).
---- The compare runs here, on plain names only: a secret name is skipped, never compared.
-function Compat.PetGUIDByName(name)
-    local want = NS.Secrets.PlainString(name)
-    if not want then return nil end
-    want = want:lower()
-    return findPet(function(_, species) return species ~= nil and species:lower() == want end)
 end
 
 --- The GUID of the first owned pet of `speciesID`, or nil.
