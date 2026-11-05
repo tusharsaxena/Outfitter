@@ -222,3 +222,20 @@ test("test place: test mode's end puts a bar the player had on back at its saved
     -- red under: a session place that outlives test mode
     assertEqual(pt[1], "BOTTOMLEFT"); assertEqual(pt[4], 40); assertEqual(pt[5], 30)
 end)
+
+test("test place: Reset position in test mode moves the bar to its starting place, as it says", function()
+    local NS, M = scene()
+    NS.db.profile.windows.bar = { point = "BOTTOMLEFT", x = 40, y = 30 }
+    NS.Preview.Start()
+    M.__fireTimers()
+    local bar = NS.Bar.Frame()
+    assertEqual(lastPoint(bar)[1], "TOPRIGHT", "the test bar is not beside the window")
+    -- The Display tab's (and Master's) Reset position: the bar.position row's default.
+    NS.ApplyDefault(NS.FindSchemaRow("bar.position"))
+    M.__fireTimers()
+    local pt = lastPoint(bar)
+    -- red under: a session place that outlives the player's own write of the place (the button's
+    -- write lands, the bar stays put, and it jumps there only when test mode ends)
+    assertEqual(pt[1], "TOPLEFT", "Reset position left the bar at the session's place")
+    assertEqual(pt[4], 200); assertEqual(pt[5], -200)
+end)

@@ -38,7 +38,8 @@ local _, NS = ...
 -- TEST MODE'S PLACE (smoke round 3 E3). For the length of a test session the bar starts just left of
 -- the alone test window (its TOPRIGHT TEST_GAP left of NS.Dock.AloneSpot, worked out at the session's
 -- first draw and held in `st.testPlace`, never saved), so the two never stack. It stays draggable: a
--- drag stop saves the place as it always does, and from then on the session draws the saved place.
+-- drag stop saves the place as it always does, and from then on the session draws the saved place;
+-- so does any other write of `bar.position` in the session (Reset position, `/or set|reset`).
 -- While the test place holds, nothing re-saves it as the player's (CornerDisagrees and a grow-direction
 -- write leave the saved place alone), and test mode's end, by any route, draws the saved place again.
 -- ALPHA is the Master alpha, times `bar.combatAlpha` in combat (PLAYER_STATE_CHANGED "combat"); at 0
@@ -509,6 +510,9 @@ local function onSettings(_, path)
     if type(path) ~= "string" then return end
     -- A new grow direction keeps the bar where it is: its place, re-saved at the corner it implies.
     if GROW[path] and bar and bar:IsShown() and not testPlace() then Bar.SavePosition() end
+    -- A write of the place in test mode (a drag's save, Reset position, `/or set bar.position`) is the
+    -- player's own: it ends the session's place, so the bar shows where the write put it.
+    if path == "bar.position" and NS.Preview.IsActive() == true then st.testPlace = false end
     if MASTER[path] or path:find("^bar%.") then schedule() end
 end
 

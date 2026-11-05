@@ -1454,7 +1454,7 @@ Total.
 - preview bar: the dismissal ends with test mode; the bar follows bar.shown, and a new session shows it
 - preview bar: the dismissal ends with the General switch; a bar the player had on comes back
 
-### test_preview_place.lua (7)
+### test_preview_place.lua (8)
 
 - test place: with the sheet closed, the test window opens alone in the screen center
 - test place: alone, the window drags; the drop holds for the session and nothing is saved
@@ -1463,6 +1463,7 @@ Total.
 - test place: the bar starts just left of the window, and the saved place is left alone
 - test place: a drag of the test bar saves as usual, and test mode's end keeps it there
 - test place: test mode's end puts a bar the player had on back at its saved place
+- test place: Reset position in test mode moves the bar to its starting place, as it says
 
 ### test_outfit_menu.lua (33)
 
@@ -1804,7 +1805,7 @@ Total.
 | test_broker.lua | 13 |
 | test_triggers_parity.lua | 13 |
 | test_preview.lua | 35 |
-| test_preview_place.lua | 7 |
+| test_preview_place.lua | 8 |
 | test_outfit_menu.lua | 33 |
 | test_dialogs.lua | 24 |
 | test_trigger_dialog.lua | 11 |
@@ -1819,4 +1820,4 @@ Total.
 | test_lizard_sighted.lua | 8 |
 | test_prose.lua | 15 |
 | Skipped | 1 |
-| **Total** | **1505** |
+| **Total** | **1506** |

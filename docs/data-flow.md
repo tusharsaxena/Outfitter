@@ -116,7 +116,7 @@ NS.Equip.Batch(function()  NS.Stack.Wear / Remove (layer, byTrigger)  end) â—„â”
   under its own strip, beside the sheet when it is open or alone in the screen center
   (`Dock.AloneSpot`) when it is not, never in lockdown. Alone it drags for the session (`Dock.testSpot`,
   never saved); the bar starts just left of it (`st.testPlace`) until the player drags the bar, which
-  saves as usual. X or Escape sets `testDismissed` for that test session. Every row action
+  saves as usual, or writes `bar.position` (Reset position). X or Escape sets `testDismissed` for that test session. Every row action
   refuses a `preview:` id but the gear, which opens the sample's browse-only outfit menu (every data
   row disabled around a no-op, `L["Not available in test mode"]`), so nothing reaches `NS.Outfits` or
   `NS.Stack`. Combat
