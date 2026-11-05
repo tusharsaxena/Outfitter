@@ -200,8 +200,12 @@ local TAB_BG = { 0.015625, 0.796875, 0.61328125, 0.78125 }
 local TAB_BG_SELECTED = { 0.015625, 0.796875, 0.7890625, 0.95703125 }
 local TAB_HIDER = { 0.015625, 0.546875, 0.11328125, 0.1875 }
 local TAB_HIGHLIGHT = { 0.015625, 0.5, 0.1953125, 0.31640625 }
--- The icon inside the tab: Chonky's 30 x 30 centered (its full-bleed tab icon), cropped as item art is.
-local TAB_ICON_SIZE = 30
+-- The icon inside the tab, cropped as item art is (smoke round 3 E10). The neighbors' pictures in
+-- PaperDollSidebarTabs are 25-26 wide (Titles x 3-28, Equipment Manager x 4-28 at alpha > 0.5), and
+-- TabBg's face inside its bevel is 29 x 30 (x 3..32, y 1..31 of the tab), so a full-bleed 26 x 26
+-- reads as their size and leaves the bevel showing; round 2's 30 x 30 covered it. It centers where the
+-- neighbor's icon does (NS.Sheet.TabIconOffset), re-read on each placing.
+local TAB_ICON_SIZE = 26
 local ICON_CROP = { 0.07, 0.93, 0.07, 0.93 }
 -- EllesmereUI's label face size (CreateEUIButton: SetFont(fontPath, 10, "")).
 local EUI_FONT_SIZE = 10
@@ -220,7 +224,6 @@ local function buildLooks()
     button.TabBg:SetPoint("BOTTOMLEFT", button, "BOTTOMLEFT", -9, -2)
     button.icon = button:CreateTexture(nil, "ARTWORK")
     button.icon:SetSize(TAB_ICON_SIZE, TAB_ICON_SIZE)
-    button.icon:SetPoint("CENTER", button, "CENTER", 0, 0)
     button.icon:SetTexture(NS.Constants.DEFAULT_OUTFIT_ICON)
     button.icon:SetTexCoord(unpack(ICON_CROP))
     button.Hider = tabTexture("OVERLAY", 34, 19, TAB_HIDER)
@@ -268,7 +271,10 @@ local function applyLook(look)
     local tab = look ~= "text"
     for _, key in ipairs({ "TabBg", "icon", "Hider", "Highlight" }) do button[key]:SetShown(tab) end
     button.label:SetShown(not tab)
-    if not tab then
+    if tab then
+        button.icon:ClearAllPoints()
+        button.icon:SetPoint("CENTER", button, "CENTER", NS.Sheet.TabIconOffset())
+    else
         local source = NS.Sheet.EUILabelText()
         local face = source and source:GetFont()
         button.label:SetFont(face or STANDARD_TEXT_FONT, EUI_FONT_SIZE, "")

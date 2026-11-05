@@ -558,6 +558,52 @@ test("dock: on Chonky the button is the same sidebar tab", function()
     assertTabLook(M.OutfitterRebornSheetButton, false)
 end)
 
+-- Smoke round 3 E10 (29.png Chonky, 30.png stock): the icon is the neighbors' size and on their
+-- center, inside TabBg's bevel. The neighbors' pictures in PaperDollSidebarTabs are 25-26 wide
+-- (alpha > 0.5) and center where the template's Icon does; TabBg's bevel lines run at tab x 2 and 32
+-- and y 31-32, so its face is x 3..32, y 1..31 (the file's texels, 1:1 with the tab's units).
+local TAB_FACE = { left = 3, right = 32, bottom = 1, top = 31 }
+
+local function assertTabIcon(NS, button, dx, dy)
+    local icon = button.icon
+    assertEqual((icon:GetDrawLayer()), "ARTWORK")
+    local w, h = icon:GetSize()
+    assertEqual(w, 26, "the icon's width"); assertEqual(h, 26, "the icon's height")
+    local p = { icon:GetPoint(1) }
+    assertEqual(p[1], "CENTER"); assertEqual(p[2], button); assertEqual(p[3], "CENTER")
+    assertEqual(p[4], dx, "the icon's x offset"); assertEqual(p[5], dy, "the icon's y offset")
+    local _, _, _, _, _, bw, bh = NS.Sheet.ButtonAnchor()
+    local cx, cy = bw / 2 + p[4], bh / 2 + p[5]
+    assertTrue(cx - w / 2 >= TAB_FACE.left and cx + w / 2 <= TAB_FACE.right, "the icon covers TabBg's side bevel")
+    assertTrue(cy - h / 2 >= TAB_FACE.bottom and cy + h / 2 <= TAB_FACE.top, "the icon covers TabBg's top bevel")
+end
+
+test("dock: the tab's icon is the neighbors' size, on their center, inside the bevel", function()
+    local NS, M = scene()
+    M.__sheets.place(M.CharacterFrame, 300, 500)
+    M.__world:openCharacter()
+    -- red under: round 2's 30 x 30 CENTER 0,0 (over the bevel, 2 above the neighbors' center).
+    assertTabIcon(NS, M.OutfitterRebornSheetButton, 1, -2)
+end)
+
+test("dock: the tab's icon follows the neighbor's icon, read on each sheet show", function()
+    local NS, M = scene()
+    local tab3 = M.PaperDollSidebarTab3
+    tab3.Icon:ClearAllPoints()
+    tab3.Icon:SetPoint("BOTTOM", tab3, "BOTTOM", 2, -3)
+    M.__world:openCharacter()
+    -- red under: placeButton not re-anchoring the icon from NS.Sheet.TabIconOffset.
+    assertTabIcon(NS, M.OutfitterRebornSheetButton, 2, -3)
+end)
+
+test("dock: on Chonky the tab's icon sits as on the stock sheet", function()
+    local NS, M = scene()
+    M.__sheets.chonky()
+    M.__loadedAddOns.ChonkyCharacterSheet = true
+    M.__world:openCharacter()
+    assertTabIcon(NS, M.OutfitterRebornSheetButton, 1, -2)
+end)
+
 -- The EllesmereUI sheet with its Equipment label carrying EUI's font, and the accent `green`.
 local function euiScene(green)
     local NS, M = scene()

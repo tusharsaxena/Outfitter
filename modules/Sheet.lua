@@ -113,6 +113,26 @@ function Sheet.ButtonAnchor()
     return "RIGHT", CharacterFrameCloseButton, "LEFT", -2, 0, TAB_W, TAB_H, "tab"
 end
 
+-- The template's Icon: 33 x 35, BOTTOM 1,-2 on the 33 x 35 tab, so its center sits 1 right of and 2
+-- below the tab's (wow-ui-source@297d7aa:Interface/AddOns/Blizzard_UIPanels_Game/Mainline/
+-- PaperDollFrame.xml:406-411).
+local TAB_ICON_DX, TAB_ICON_DY = 1, -2
+
+--- Where the neighbor tab's icon centers, as an offset from the tab's center (smoke round 3 E10): read
+--- live from PaperDollSidebarTab3.Icon, anchored BOTTOM to its tab's BOTTOM as the template lays it;
+--- the template's own offset when there is no such icon or it is anchored some other way.
+--- @return number dx, number dy
+function Sheet.TabIconOffset()
+    local tab = builtFrame(STOCK_TAB)
+    local icon = tab and tab.Icon
+    if type(icon) ~= "table" or type(icon.GetPoint) ~= "function" then return TAB_ICON_DX, TAB_ICON_DY end
+    local point, rel, relPoint, x, y = icon:GetPoint(1)
+    if point ~= "BOTTOM" or rel ~= tab or relPoint ~= "BOTTOM" then return TAB_ICON_DX, TAB_ICON_DY end
+    local _, h = icon:GetSize()
+    local _, tabH = stockTabSize(tab)
+    return NS.SafeNumber(x, TAB_ICON_DX), NS.SafeNumber(y, 0) + (NS.SafeNumber(h, TAB_H) - tabH) / 2
+end
+
 -- EllesmereUI's own fallback for a missing accent (_paintTopButton, EllesmereUIBlizzardSkin_
 -- CharacterSheet.lua:3136).
 local EUI_ACCENT_FALLBACK = { r = 0.51, g = 0.784, b = 1 }

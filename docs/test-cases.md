@@ -1164,11 +1164,13 @@ Total.
 - pvp: a disabled spec keeps the outfit off, and the spec change puts it on or takes it off
 - pvp: every zone trigger honors each of the four spec toggles
 
-### test_sheet.lua (16)
+### test_sheet.lua (18)
 
 - sheet: NS.Sheet is published with the adapter's surface
 - sheet: stock by default
 - sheet: without the stock tab the button keeps its place left of the close X, as a tab
+- sheet: the tab icon's offset is read from the neighbor tab's icon
+- sheet: the tab icon falls back to the template's offset when the neighbor's is unreadable
 - sheet: EllesmereUI with its equipment tab shown is eui
 - sheet: EllesmereUI loaded with the blizzard style resolves to stock
 - sheet: EllesmereUI's tab hidden off the Character tab still reads eui
@@ -1183,7 +1185,7 @@ Total.
 - sheet: with no Chonky panel shown DockRight is the backdrop's edge
 - sheet: the adapter creates, anchors and shows nothing
 
-### test_dock.lua (45)
+### test_dock.lua (48)
 
 - dock: NS.Dock is published with the §7.2 surface
 - dock: the holder fills the sheet, and the sheet button toggles the window
@@ -1214,6 +1216,9 @@ Total.
 - dock: the button's icon is the default outfit icon, the gold tint retired
 - dock: on the stock sheet the button is a sidebar tab, selected while the window shows
 - dock: on Chonky the button is the same sidebar tab
+- dock: the tab's icon is the neighbors' size, on their center, inside the bevel
+- dock: the tab's icon follows the neighbor's icon, read on each sheet show
+- dock: on Chonky the tab's icon sits as on the stock sheet
 - dock: on EllesmereUI the button is a text label in EUI's tab style
 - dock: without EllesmereUI's accent the active label takes EUI's own fallback
 - dock: the sheet button's label has a face before its text is set
@@ -1770,8 +1775,8 @@ Total.
 | test_triggers_quest.lua | 12 |
 | test_triggers_class.lua | 11 |
 | test_triggers_pvp.lua | 7 |
-| test_sheet.lua | 16 |
-| test_dock.lua | 45 |
+| test_sheet.lua | 18 |
+| test_dock.lua | 48 |
 | test_list_model.lua | 8 |
 | test_rows_secure.lua | 21 |
 | test_slot_enables.lua | 29 |
@@ -1795,4 +1800,4 @@ Total.
 | test_lizard_sighted.lua | 8 |
 | test_prose.lua | 15 |
 | Skipped | 1 |
-| **Total** | **1485** |
+| **Total** | **1490** |
