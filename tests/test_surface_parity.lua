@@ -334,7 +334,7 @@ test("parity: the Widgets seam answers on both arms, nil being a real answer", f
     -- copied from the debug console's own Copy button). red under: restoring NS.ShowCopy in
     -- core/WidgetsSetup.lua.
     bothArms("NS", function(NS) return NS end, {
-        MakeDropdown = "function", OpenMenu = "function", CloseMenu = "function",
+        MakeDropdown = "function", OpenMenu = "function", CloseMenu = "function", CloseMenuFrom = "function",
         MakeTestStrip = "function", TEST_STRIP_HEIGHT = "number",
     })
     local l, d = pair()
@@ -348,6 +348,8 @@ test("parity: the Widgets seam answers on both arms, nil being a real answer", f
     assertNil(d.NS.MakeTestStrip(d.mocks.UIParent, "Test mode"), "the stub drew a strip")
     d.NS.CloseMenu()
     l.NS.CloseMenu()
+    -- The degraded arm owns no menu, so a claim of everything closes nothing.
+    assertFalse(d.NS.CloseMenuFrom(function() return true end), "the stub closed a menu it never opened")
 end)
 
 test("parity: OpenMenu draws the same fill on both arms", function()

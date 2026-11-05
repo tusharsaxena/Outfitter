@@ -1425,7 +1425,7 @@ Total.
 - preview window: New outfit is disabled in test mode and enabled after
 - preview window: entering test mode clears the selection, and no slot box or Slots button acts
 
-### test_outfit_menu.lua (17)
+### test_outfit_menu.lua (25)
 
 - menu: NS.OutfitMenu is published
 - menu: the rows per section are legacy's, less Void Storage and the script editor
@@ -1444,6 +1444,14 @@ Total.
 - menu: an outfit deleted under its open menu leaves rows that paint and click without raising
 - menu: nothing opens for an unknown id or while stood down
 - menu: the class category reads the client's class name, the rest their own labels
+- bar menu: /or bar hide closes the outfit menu the bar opened
+- bar menu: /or bar toggle closes the outfit menu the bar opened
+- bar menu: the Toggle outfit bar key closes the outfit menu the bar opened
+- bar menu: the header's close X closes the outfit menu the bar opened
+- bar menu: the stand-down closes the outfit menu the bar opened
+- bar menu: hiding the bar leaves a menu the window opened alone
+- bar menu: a bar menu already dismissed is forgotten, so a later menu is not taken for it
+- bar menu: NS.CloseMenuFrom closes only what its owner claims, and answers whether it closed
 
 ### test_dialogs.lua (24)
 
@@ -1748,7 +1756,7 @@ Total.
 | test_broker.lua | 13 |
 | test_triggers_parity.lua | 13 |
 | test_preview.lua | 29 |
-| test_outfit_menu.lua | 17 |
+| test_outfit_menu.lua | 25 |
 | test_dialogs.lua | 24 |
 | test_trigger_dialog.lua | 11 |
 | test_diagnostics.lua | 12 |
@@ -1762,4 +1770,4 @@ Total.
 | test_lizard_sighted.lua | 8 |
 | test_prose.lua | 15 |
 | Skipped | 1 |
-| **Total** | **1456** |
+| **Total** | **1464** |

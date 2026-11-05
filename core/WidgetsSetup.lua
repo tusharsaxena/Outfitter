@@ -1,5 +1,6 @@
 local addonName, NS = ...
--- core/WidgetsSetup.lua — NS.MakeDropdown / NS.OpenMenu / NS.CloseMenu / NS.MakeTestStrip from LibKa0s-Widgets-1.0 (BP §6.13).
+-- core/WidgetsSetup.lua — NS.MakeDropdown / NS.OpenMenu / NS.CloseMenu / NS.CloseMenuFrom / NS.MakeTestStrip from
+-- LibKa0s-Widgets-1.0 (BP §6.13).
 --
 -- A seam, nothing else (library-stack-§7): one file leases the major, so the art the controls draw
 -- is resolved once, here, and every control is handed this addon's skin owner. The library is
@@ -15,6 +16,11 @@ local addonName, NS = ...
 -- THE POPUP IS A PROCESS-WIDE SINGLETON parented to UIParent, so hiding a window does not reach it.
 -- Every non-click close path of a window that opens a menu calls NS.CloseMenu(): the character
 -- sheet's OnHide, the outfit window's OnHide and each dialog's OnHide (design §7.2, §7.3, §7.6).
+-- A surface that shares the screen with another menu's owner closes only its OWN menu instead:
+-- NS.OpenMenu remembers the anchor it opened from until that menu hides by any route (a row's click,
+-- an outside press, NS.CloseMenu), and NS.CloseMenuFrom(owns) closes it only when `owns` claims that
+-- anchor. The outfit bar does that from every path that hides it (modules/Bar.lua hideFrames), so a
+-- menu the window opened stays up when the bar goes.
 --
 -- DEGRADED (the library absent): NS.MakeDropdown and NS.MakeTestStrip answer nil, and the caller
 -- draws no control rather than a dead one; NS.OpenMenu hands the same `fill` to the client's
@@ -193,6 +199,20 @@ local function wrapDescription(desc)
     return w
 end
 
+-- THE OPENER: the anchor of the menu NS.OpenMenu has up, or nil. Cleared by the menu's own OnHide,
+-- hooked once on the frame W.ContextMenu answers (the library's one popup), so a menu dismissed by an
+-- outside press is forgotten before a dropdown drops the same popup; and by NS.CloseMenu.
+local opener
+local watched = setmetatable({}, { __mode = "k" })
+
+local function remember(m, anchor)
+    if m == nil then return end
+    opener = anchor
+    if type(m) ~= "table" or watched[m] or type(m.HookScript) ~= "function" then return end
+    watched[m] = true
+    m:HookScript("OnHide", function() opener = nil end)
+end
+
 --- A context menu at the cursor: `fill(root)` adds its rows as it would to a MenuUtil description.
 --- @param anchor table the region the menu belongs to (a press on it is no outside press)
 --- @param fill function
@@ -215,7 +235,7 @@ function NS.OpenMenu(anchor, fill)
         fill(fresh)
         relabel(rows, fresh)
     end
-    W.ContextMenu(anchor, rows, { owner = addonName, cursor = true })
+    remember(W.ContextMenu(anchor, rows, { owner = addonName, cursor = true }), anchor)
     return true
 end
 
@@ -232,7 +252,19 @@ end
 --- Close the shared popup menu behind every dropdown and context menu in the process, if one is
 --- open. Safe when none ever opened, and a no-op on a degraded install.
 function NS.CloseMenu()
+    opener = nil
     if W then W.CloseMenu() end
+end
+
+--- Close the menu NS.OpenMenu has up only when `owns(anchor)` claims the anchor it opened from: a
+--- surface's own hide takes its own menu down and leaves another surface's alone. Nothing on a
+--- degraded install, where the client's menu is not this seam's to close (NS.CloseMenu above).
+--- @param owns function (anchor) -> boolean
+--- @return boolean closed
+function NS.CloseMenuFrom(owns)
+    if opener == nil or not owns(opener) then return false end
+    NS.CloseMenu()
+    return true
 end
 
 -- ── the test-mode strip ──────────────────────────────────────────────────────────────────────────

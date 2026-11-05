@@ -24,7 +24,8 @@ local _, NS = ...
 --   Left click   wear, or remove a worn outfit that is not Complete (a Complete outfit is re-worn, as
 --                the legacy bar did), with { hw = true }; a manual wear clears the Disabled flag
 --   Right click  the outfit menu, built afresh on every open (quirk 21: the legacy kept the pooled
---                menu frame and checked `.released`; the library hides the menu itself)
+--                menu frame and checked `.released`; the library hides the menu itself). The bar
+--                closes it whenever the bar hides: Bar.IsButton is how it knows the menu is its own
 --   Hover        the outfit tooltip, `always` (the legacy pShowEmptyTooltips), and the bar's hover
 --   Drop         Alt held: the dropped item's, spell's or macro's icon becomes the outfit's icon
 --                (NS.Outfits.SetIcon, so an Equipment Manager outfit's goes to its set; the spell
@@ -48,6 +49,9 @@ local WORN_EDGE = 2                     -- the worn accent edge, in pixels
 local ICONS = "bar.icons."
 
 local function setting(path) return NS.GetSetting(path) end
+
+-- Every button NewButton made, weak-keyed: a released button still owns a menu opened on it.
+local mine = setmetatable({}, { __mode = "k" })
 
 -- The legacy plain icon and the Birthday Suit's, now the resolver's (modules/Outfits.lua).
 Bar.PLAIN_ICON, Bar.NAKED_ICON = NS.Outfits.PLAIN_ICON, NS.Outfits.NAKED_ICON
@@ -266,7 +270,16 @@ function Bar.NewButton(parent)
     btn:SetScript("OnReceiveDrag", onReceiveDrag)
     btn:SetScript("OnEnter", onEnter)
     btn:SetScript("OnLeave", onLeave)
+    mine[btn] = true
     return btn
+end
+
+--- Whether `frame` is one of the bar's buttons: the claim the bar hands NS.CloseMenuFrom, so its
+--- hide takes down the outfit menu a right click opened here and no other.
+--- @param frame table|nil
+--- @return boolean
+function Bar.IsButton(frame)
+    return frame ~= nil and mine[frame] == true
 end
 
 --- Point `btn` at outfit `rec`: its icon, its edge, and its worn highlight (never on a placeholder).

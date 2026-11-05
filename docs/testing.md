@@ -169,7 +169,7 @@ has no row here, or a row leaves its §9.3 group or order.
 | `test_list_model` | The list model: section order, both sorts, nil names last, collapse |
 | `test_rows_secure` | The secure row children: built once, never moved after the build, disarmed in lockdown |
 | `test_slot_enables` | The slot checkboxes: one per slot on the character sheet, the tri-state, All and None, the restack |
-| `test_outfit_menu` | The outfit context menu: the rows per kind, the bank rows, the binding labels, the title submenu, the trigger switch |
+| `test_outfit_menu` | The outfit context menu: the rows per kind, the bank rows, the binding labels, the title submenu, the trigger switch; the bar's menu closing on every path that hides the bar, and only the bar's |
 | `test_dialogs` | The new-outfit and rename dialogs, the popups' data, the icon browser (Change icon...), the row's Equipment Manager checkbox |
 | `test_trigger_dialog` | The trigger dialog: the draft, validation, Done writes through `SetMany` only, X and Escape discard, the nine field types |
 | `test_bar` | The outfit bar: defaults, buttons, stacking, the icon ladder, drag, alpha and fades, pet battles, the menu, disabled-trigger outfits |

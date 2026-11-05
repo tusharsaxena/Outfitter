@@ -6,6 +6,8 @@
 -- cascading `submenu` rows, design 2026-11-05 G4), so `click` on a submenu row records its child
 -- level as the newest menu, as the library opens it beside the parent. NS.Bank runs against a
 -- recorded fake where a case asserts which move a row asks for; the bank's own behavior is test_bank's.
+-- The last section opens the menu from the outfit bar instead (tests/bar_scene.lua) and pins that it
+-- closes with the bar, and that only the bar's own menu does.
 
 local T = _G.OUTFITTERREBORN_TEST
 local test, assertEqual, assertTrue, assertFalse, assertNil =
@@ -495,4 +497,112 @@ test("menu: the class category reads the client's class name, the rest their own
     assertEqual(CL("QUEST"), "Questing"); assertEqual(CL("ENTERTAIN"), "Entertainment")
     assertEqual(CL("SPEC"), "Specialization")
     assertEqual(CL("CLASS"), NS.Compat.PlayerClassName())
+end)
+
+-- ── the bar's menu closes with the bar (smoke round 2 review) ─────────────────────────────────────
+-- Every path that hides the outfit bar (`/or bar hide|toggle`, the Toggle outfit bar binding, the
+-- header's close X, the stand-down) takes down a menu the bar opened through NS.OpenMenu, and only
+-- that menu: core/WidgetsSetup.lua's rule, a menu must not outlive its owner, and the shared popup is
+-- a process-wide singleton no Hide of the bar reaches. After `/or disable` an orphaned menu's rows
+-- would still write saved data (the Key binding rows' O.SetBinding). The bar is tests/bar_scene.lua's
+-- and the menu the real library's: W.ContextMenu is wrapped only to keep the frame it answers.
+
+local H = dofile(T.root .. "/tests/bar_scene.lua")(T)
+local barScene, accessory, settle, buttonFor = H.scene, H.accessory, H.settle, H.buttonFor
+
+--- The bar up with one outfit on it, and the library's menu frame recorded as it opens.
+local function barSetup()
+    local NS, M, Bar = barScene()
+    local hat = accessory(NS, "Hat")
+    settle(M)
+    local W = M.LibStub("LibKa0s-Widgets-1.0")
+    local seen = {}
+    local real = W.ContextMenu
+    W.ContextMenu = function(...)
+        local m = real(...)
+        seen.menu = m
+        return m
+    end
+    return NS, M, Bar, hat, seen
+end
+
+--- Right-click the bar's button for `id`: the outfit menu opens on it.
+local function openFromBar(Bar, id, seen)
+    buttonFor(Bar, id):__fire("OnClick", "RightButton")
+    local m = seen.menu
+    assertTrue(m ~= nil and m:IsShown(), "the fixture needs the bar's menu open")
+    return m
+end
+
+--- The Toggle outfit bar binding's press (Bindings.xml: it clicks a hidden button).
+local function pressToggle(M)
+    M._G.OutfitterRebornToggleBar:__fire("OnClick", "LeftButton", true)
+end
+
+-- ── each hide path ─────────────────────────────────────────────────────────────────────────────
+
+local PATHS = {
+    { "/or bar hide",              function(NS) NS.Slash:OnSlash("bar hide") end },
+    { "/or bar toggle",            function(NS) NS.Slash:OnSlash("bar toggle") end },
+    { "the Toggle outfit bar key", function(_, M) pressToggle(M) end },
+    { "the header's close X",      function(_, _, Bar) Bar.Frame().close:__fire("OnClick") end },
+    { "the stand-down",            function(NS) NS.SetByPath("enabled", false) end },
+}
+
+for _, path in ipairs(PATHS) do
+    test("bar menu: " .. path[1] .. " closes the outfit menu the bar opened", function()
+        local NS, M, Bar, hat, seen = barSetup()
+        local m = openFromBar(Bar, hat, seen)
+        path[2](NS, M, Bar)
+        settle(M)
+        assertFalse(Bar.Frame():IsShown(), "the path did not hide the bar")
+        -- red under: hideFrames (modules/Bar.lua) without NS.CloseMenuFrom(Bar.IsButton)
+        assertFalse(m:IsShown(), "the bar's menu outlived the bar")
+    end)
+end
+
+-- ── only the bar's own menu ────────────────────────────────────────────────────────────────────
+
+test("bar menu: hiding the bar leaves a menu the window opened alone", function()
+    local NS, M, Bar, hat, seen = barSetup()
+    openFromBar(Bar, hat, seen)
+    -- The window's row opens the outfit menu afresh (it replaces the bar's on the one popup).
+    local row = M.CreateFrame("Button", nil, M.UIParent)
+    assertTrue(NS.OutfitMenu.Open(row, hat), "the window's menu did not open")
+    local m = seen.menu
+    NS.Slash:OnSlash("bar hide")
+    settle(M)
+    assertFalse(Bar.Frame():IsShown())
+    -- red under: hideFrames calling NS.CloseMenu() whoever opened the menu
+    assertTrue(m:IsShown(), "hiding the bar closed the window's menu")
+end)
+
+test("bar menu: a bar menu already dismissed is forgotten, so a later menu is not taken for it", function()
+    local NS, M, Bar, hat, seen = barSetup()
+    local m = openFromBar(Bar, hat, seen)
+    -- An outside press hides the library's menu (its own OnHide, which the client fires on Hide).
+    m:Hide()
+    m:__fire("OnHide")
+    -- Then a dropdown of the window drops the same shared popup, which NS.OpenMenu never saw.
+    local W = M.LibStub("LibKa0s-Widgets-1.0")
+    local dd = M.CreateFrame("Button", nil, M.UIParent)
+    W.ContextMenu(dd, { { label = "Any", value = "any", onClick = function() end } }, {})
+    assertTrue(m:IsShown(), "the fixture needs the dropdown's menu up")
+    NS.Slash:OnSlash("bar hide")
+    settle(M)
+    -- red under: an opener kept past the menu's OnHide
+    assertTrue(m:IsShown(), "hiding the bar closed a dropdown's menu it never opened")
+end)
+
+test("bar menu: NS.CloseMenuFrom closes only what its owner claims, and answers whether it closed", function()
+    local NS, _, Bar, hat, seen = barSetup()
+    local m = openFromBar(Bar, hat, seen)
+    assertFalse(NS.CloseMenuFrom(function() return false end), "a claim of nothing closed the menu")
+    assertTrue(m:IsShown())
+    assertTrue(Bar.IsButton(buttonFor(Bar, hat)), "the bar does not know its own button")
+    assertFalse(Bar.IsButton(Bar.Frame()), "the container is no button")
+    assertTrue(NS.CloseMenuFrom(Bar.IsButton))
+    assertFalse(m:IsShown())
+    assertFalse(NS.CloseMenuFrom(Bar.IsButton), "nothing open, yet it closed one")
+    assertEqual(Bar.Frame():IsShown(), true, "closing the menu hid the bar")
 end)

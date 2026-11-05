@@ -34,8 +34,17 @@ local _, NS = ...
 -- re-anchor a profile switch needs: a new profile carries its own `windows.bar`) and a skin change
 -- (NS.Skin.OnLooksChanged: the band's height and the skin's colors move with it).
 --
+-- A MENU THE BAR OPENED GOES WITH IT. A right click opens the outfit menu on the shared popup
+-- (NS.OpenMenu), which no Hide of the bar reaches; every path that hides the bar (`/or bar hide` and
+-- `toggle`, the Toggle outfit bar key and the header's close X, all through `bar.shown`; the
+-- stand-down through Suspend; test mode's end, a pet battle, the visibility rule) ends in hideFrames,
+-- which closes that menu, and only that one (NS.CloseMenuFrom with Bar.IsButton), so a menu the
+-- window opened stays up (core/WidgetsSetup.lua). Left open after `/or disable`, its rows would
+-- still write saved data.
+--
 -- CALLS (at call time, no nil guard; design §12): NS.Outfits, NS.Preview.IsActive/Source,
--- NS.PlayerState.InCombat; the buttons call NS.Stack, NS.OutfitMenu, NS.OutfitTooltip, NS.Triggers.
+-- NS.PlayerState.InCombat, NS.CloseMenuFrom; the buttons call NS.Stack, NS.OutfitMenu,
+-- NS.OutfitTooltip, NS.Triggers.
 
 local Bar = {}
 NS.Bar = Bar
@@ -283,6 +292,7 @@ end
 
 local function hideFrames()
     if not bar then return end
+    NS.CloseMenuFrom(Bar.IsButton)
     fadeStop(bar)
     bar:Hide()
     if bar.strip then bar.strip:Hide() end
