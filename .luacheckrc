@@ -71,8 +71,9 @@ files["core/Compat.lua"] = {
 -- The skin seam falls back to the client's item-quality colors where the skin sets no q.* token.
 files["core/SkinSetup.lua"] = { read_globals = { "ITEM_QUALITY_COLORS" } }
 
--- The degraded context menu hands its `fill` to the client's own menu (core/WidgetsSetup.lua).
-files["core/WidgetsSetup.lua"] = { read_globals = { "MenuUtil" } }
+-- The degraded context menu hands its `fill` to the client's own menu, whose keep-open rows answer
+-- MenuResponse.Refresh (core/WidgetsSetup.lua).
+files["core/WidgetsSetup.lua"] = { read_globals = { "MenuUtil", "MenuResponse" } }
 
 -- The Outfits broker's modifier-click asks to set the outfit to the worn items (plan Task 3.8).
 files["modules/Broker.lua"] = { read_globals = { "IsShiftKeyDown", "IsControlKeyDown", "IsAltKeyDown" } }

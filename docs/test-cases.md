@@ -1425,7 +1425,7 @@ Total.
 - preview window: New outfit is disabled in test mode and enabled after
 - preview window: entering test mode clears the selection, and no slot box or Slots button acts
 
-### test_outfit_menu.lua (11)
+### test_outfit_menu.lua (16)
 
 - menu: NS.OutfitMenu is published
 - menu: the rows per section are legacy's, less Void Storage and the script editor
@@ -1436,6 +1436,11 @@ Total.
 - menu: the toggles keep the menu open, Turn trigger off writes outfit.trigger.disabled
 - menu: picking a trigger writes outfit.trigger.id and opens its settings when it has params
 - menu: Delete, Update and Rebuild ask through popups carrying the id; the dialogs open
+- menu: the whole tree goes to the library once, each nested level as a submenu row
+- menu: Key binding picks are radios that keep the menu open, tick the key and rename its holders
+- menu: Title picks and a trigger without params keep the menu open; the parent's label follows
+- menu: rows that open a dialog, popup or window, and the bank moves, act and close
+- menu: on the client's MenuUtil only keep-open rows answer Refresh, the rest close
 - menu: nothing opens for an unknown id or while stood down
 - menu: the class category reads the client's class name, the rest their own labels
 
@@ -1742,7 +1747,7 @@ Total.
 | test_broker.lua | 13 |
 | test_triggers_parity.lua | 13 |
 | test_preview.lua | 29 |
-| test_outfit_menu.lua | 11 |
+| test_outfit_menu.lua | 16 |
 | test_dialogs.lua | 24 |
 | test_trigger_dialog.lua | 11 |
 | test_diagnostics.lua | 12 |
@@ -1756,4 +1761,4 @@ Total.
 | test_lizard_sighted.lua | 8 |
 | test_prose.lua | 15 |
 | Skipped | 1 |
-| **Total** | **1450** |
+| **Total** | **1455** |

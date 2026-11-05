@@ -2,9 +2,10 @@
 -- its rows per section, the submenus, the toggles that keep it open, and where each row leads.
 --
 -- The menu is drawn through the real NS.OpenMenu seam (core/WidgetsSetup.lua); tests/dialog_scene.lua
--- records W.ContextMenu's rows, so a submenu row's click reopens the recorder one level down, as the
--- library's menu does. NS.Bank runs against a recorded fake where a case asserts which move a row
--- asks for; the bank's own behavior is test_bank's.
+-- records W.ContextMenu's rows. The seam hands the library the whole tree once (Widgets minor 23's
+-- cascading `submenu` rows, design 2026-11-05 G4), so `click` on a submenu row records its child
+-- level as the newest menu, as the library opens it beside the parent. NS.Bank runs against a
+-- recorded fake where a case asserts which move a row asks for; the bank's own behavior is test_bank's.
 
 local T = _G.OUTFITTERREBORN_TEST
 local test, assertEqual, assertTrue, assertFalse, assertNil =
@@ -36,12 +37,36 @@ local function open(NS, ctl, id)
     assertTrue(NS.OutfitMenu.Open({}, id), "the menu did not open")
 end
 
--- Click a row of the newest menu by its label (a submenu row opens its level in the recorder).
+-- Click a row of the newest menu by its label: a submenu row records its child level (the library
+-- opens it beside the parent, the parent kept), any other row runs its click as the library does.
 local function click(ctl, text)
     local r = ctl.row(text)
     assertTrue(r ~= nil, "no row " .. text .. " in " .. ctl.labels())
-    r.onClick(nil, r)
+    if r.submenu then
+        ctl.menus[#ctl.menus + 1] = { rows = r.submenu, parent = r }
+    else
+        r.onClick(nil, r)
+    end
     return r
+end
+
+-- The first trigger the picker offers, with params (`true`) or without (`false`): its category and descriptor.
+local function triggerWith(NS, params)
+    local class = NS.Compat.PlayerClass()
+    for _, cat in ipairs(NS.Triggers.Categories(class)) do
+        for _, d in ipairs(NS.Triggers.List(cat, class)) do
+            if (#(d.params or {}) > 0) == params then return cat, d end
+        end
+    end
+    error("no trigger " .. (params and "with" or "without") .. " params")
+end
+
+-- The row of `rows` whose plain label is `text` exactly.
+local function exact(rows, text)
+    for _, r in ipairs(rows) do
+        if r.label and plain(r.label) == text then return r end
+    end
+    return nil
 end
 
 test("menu: NS.OutfitMenu is published", function()
@@ -263,6 +288,168 @@ test("menu: Delete, Update and Rebuild ask through popups carrying the id; the d
     open(NS, ctl, acc)
     click(ctl, "Change icon")
     assertTrue(NS.IconBrowser.IsOpen())
+end)
+
+-- ── cascading levels (design 2026-11-05 G4; LibKa0s Widgets minor 23) ─────────────────────────
+
+test("menu: the whole tree goes to the library once, each nested level as a submenu row", function()
+    local NS, _, ctl = scene()
+    local acc = outfits(NS)
+    open(NS, ctl, acc)
+    -- red under: the old replay, a submenu row whose click reopened the one menu with its level.
+    assertEqual(#ctl.menus, 1, "the menu opened more than once")
+    assertTrue(ctl.menus[1].opts.cursor, "the menu opens at the cursor")
+    for _, name in ipairs({ "Key binding", "Title", "Bank", "Automation" }) do
+        local r = ctl.row(name)
+        assertEqual(type(r.submenu), "table", name .. " carries no submenu")
+        assertNil(r.onClick, name .. " runs a click of its own")
+        -- The library draws the arrow: the label carries no chevron markup.
+        assertNil(r.label:find("|T", 1, true), name .. " draws its own chevron")
+    end
+    assertEqual(#ctl.row("Key binding").submenu, 11, "None and Outfit 1-10")
+    local cat = triggerWith(NS, false)
+    local auto = ctl.row("Automation").submenu
+    -- Two deep: Automation > category > trigger.
+    local level = exact(auto, NS.OutfitMenu.CategoryLabel(cat))
+    assertTrue(level ~= nil and type(level.submenu) == "table", "the category opens no level")
+    click(ctl, "Key binding")
+    assertEqual(#ctl.menus, 2)
+    assertEqual(plain(ctl.menus[2].rows[1].label), "None")
+end)
+
+test("menu: Key binding picks are radios that keep the menu open, tick the key and rename its holders", function()
+    local NS, _, ctl = scene()
+    local acc = outfits(NS)
+    local tank = NS.Outfits.Create("Tank", { HeadSlot = { id = 0 } })
+    NS.Outfits.SetBinding(tank, 3)
+    open(NS, ctl, acc)
+    click(ctl, "Key binding")
+    local rows = ctl.menus[#ctl.menus].rows
+    for i, r in ipairs(rows) do
+        -- red under: binding rows recorded as plain buttons (the menu closes on a pick, no tick).
+        assertTrue(r.radio, "row " .. i .. " is not a radio")
+        assertTrue(r.keepOpen, "row " .. i .. " closes the menu")
+        assertEqual(type(r.selected), "function", "row " .. i .. " has no tick predicate")
+    end
+    assertTrue(rows[1].selected(rows[1]), "None is not ticked on an unbound outfit")
+    assertFalse(rows[4].selected(rows[4]))
+    click(ctl, "Outfit 3")
+    assertEqual(NS.Outfits.BindingOf(acc), 3)
+    -- The library repaints the open level from these same tables: the tick moved, the holder renamed.
+    assertTrue(rows[4].selected(rows[4]), "Outfit 3 is not ticked after the pick")
+    assertFalse(rows[1].selected(rows[1]), "None stays ticked")
+    -- red under: a keep-open pick that leaves the labels the first fill wrote.
+    assertEqual(plain(rows[4].label), "Outfit 3 (Ride)")
+    assertEqual(#ctl.menus, 1 + 1, "the pick reopened the menu")
+end)
+
+test("menu: Title picks and a trigger without params keep the menu open; the parent's label follows", function()
+    local NS, _, ctl = scene()
+    local _, comp = outfits(NS)
+    open(NS, ctl, comp)
+    local root = ctl.menus[1].rows
+    click(ctl, "Title")
+    local none = ctl.row("None")
+    assertTrue(none.radio and none.keepOpen, "the Title rows are not keep-open radios")
+    assertTrue(none.selected(none), "None is not ticked with no title")
+    local private = ctl.row("Private")
+    click(ctl, "Private")
+    assertTrue(private.selected(private), "the picked title is not ticked")
+    assertFalse(none.selected(none))
+    -- A trigger without params: picked in place, the root's Automation row renamed.
+    local cat, d = triggerWith(NS, false)
+    assertTrue(exact(root, "Turn trigger off").disabled, "Turn trigger off is live with no trigger")
+    ctl.menus = { ctl.menus[1] }
+    click(ctl, "Automation")
+    local noTrigger = ctl.row("No trigger")
+    assertTrue(noTrigger.radio and noTrigger.keepOpen and noTrigger.selected(noTrigger), "No trigger")
+    click(ctl, NS.OutfitMenu.CategoryLabel(cat))
+    local r = exact(ctl.menus[#ctl.menus].rows, d.name)
+    assertTrue(r ~= nil, "no row " .. d.name)
+    assertTrue(r.radio and r.keepOpen, "a trigger without params closes the menu")
+    r.onClick(nil, r)
+    assertEqual(NS.Outfits.Get(comp).trigger.id, d.id)
+    assertFalse(NS.TriggerDialog.IsOpen(), "a trigger without params opened its settings")
+    assertTrue(r.selected(r), "the picked trigger is not ticked")
+    assertFalse(noTrigger.selected(noTrigger))
+    -- red under: refreshing the picked level only (the root still says None, the toggles stay off).
+    assertTrue(exact(root, "Automation: " .. d.name) ~= nil, "the root's Automation label did not follow")
+    assertNil(exact(root, "Turn trigger off").disabled, "Turn trigger off stays disabled")
+end)
+
+test("menu: rows that open a dialog, popup or window, and the bank moves, act and close", function()
+    local NS, _, ctl = scene()
+    local acc, comp = outfits(NS)
+    open(NS, ctl, acc)
+    for _, name in ipairs({ "Rename...", "Delete", "Update to current items", "Rebuild for...",
+                            "Trigger settings...", "Change icon..." }) do
+        local r = exact(ctl.menus[1].rows, name)
+        assertTrue(r ~= nil, "no row " .. name)
+        -- red under: a seam marking every row keepOpen (the menu would cover the dialog).
+        assertNil(r.keepOpen, name .. " keeps the menu open")
+        assertNil(r.radio, name .. " is a radio")
+    end
+    assertNil(ctl.row("Rebuild for S").keepOpen)
+    click(ctl, "Bank")
+    for _, r in ipairs(ctl.menus[#ctl.menus].rows) do
+        if not r.divider then assertNil(r.keepOpen, plain(r.label) .. " keeps the menu open") end
+    end
+    open(NS, ctl, comp)
+    local cat, d = triggerWith(NS, true)
+    click(ctl, "Automation")
+    click(ctl, NS.OutfitMenu.CategoryLabel(cat))
+    local r = exact(ctl.menus[#ctl.menus].rows, d.name .. "...")
+    assertTrue(r ~= nil, "no row " .. d.name .. "...")
+    -- red under: every trigger pick a keep-open radio (its settings dialog would sit under the menu).
+    assertNil(r.keepOpen, "a trigger with params keeps the menu open")
+    assertNil(r.radio, "a trigger with params is a radio")
+end)
+
+-- The client's MenuUtil, for the library-absent load: each description recorded with its responder.
+local function menuUtil(M)
+    local made = {}
+    local function desc(kind, text, responder)
+        local d = { kind = kind, text = text, responder = responder }
+        made[#made + 1] = d
+        function d.CreateButton(_, t, cb) return desc("button", t, cb) end
+        function d.CreateRadio(_, t, _, set, data) return desc("radio", t, function() return set(data) end) end
+        function d.CreateCheckbox(_, t, _, set, data) return desc("checkbox", t, function() return set(data) end) end
+        function d.CreateTitle() return {} end
+        function d.CreateDivider() return {} end
+        function d.SetEnabled() end
+        function d.SetTooltip() end
+        return d
+    end
+    M.MenuUtil = { CreateContextMenu = function(owner, gen) gen(owner, desc("root")) end }
+    return function(text)
+        for _, d in ipairs(made) do
+            if d.text and plain(d.text):find(text, 1, true) == 1 then return d end
+        end
+        error("no description " .. text)
+    end
+end
+
+test("menu: on the client's MenuUtil only keep-open rows answer Refresh, the rest close", function()
+    local inst = T.load({ libFiles = {} })
+    local NS, M = inst.NS, inst.mocks
+    local acc = NS.Outfits.Create("Ride", { FeetSlot = { id = 0 } })
+    M.MenuResponse = { Open = 1, Refresh = 2, Close = 3, CloseAll = 4 }
+    local find = menuUtil(M)
+    assertTrue(NS.OutfitMenu.Open({}, acc), "the degraded menu did not open")
+    -- red under: radios handed to MenuUtil as they are (a responder returning nil closes the tree).
+    assertEqual(find("Outfit 2").responder(), 2, "a binding pick closes the client's menu")
+    assertEqual(NS.Outfits.BindingOf(acc), 2)
+    assertEqual(find("Ignore in comparison").responder(), 2, "a toggle closes the client's menu")
+    -- red under: a seam that answers Refresh from every row.
+    assertNil(find("Rename").responder(), "Rename keeps the client's menu open")
+    NS.OutfitDialog.Close("test")
+    -- Without MenuResponse the keep-open rows answer nil (close) rather than raise.
+    M.MenuResponse = nil
+    find = menuUtil(M)
+    assertTrue(NS.OutfitMenu.Open({}, acc))
+    assertNil(find("Outfit 4").responder())
+    assertEqual(NS.Outfits.BindingOf(acc), 4)
+    M.MenuUtil = nil
 end)
 
 test("menu: nothing opens for an unknown id or while stood down", function()
