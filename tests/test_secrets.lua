@@ -230,7 +230,6 @@ test("compat: the unit reads answer plain values", function()
         assertEqual(C.UnitLevel("target"), 1)
         assertEqual(C.IsDeadOrGhost(), false)
         assertEqual(C.InCombatLockdown(), false)
-        assertEqual(C.PlayerSpecID(), 250)
     end)
 end)
 
@@ -239,14 +238,12 @@ test("compat: a secret read leaves Compat as nil, never as the secret", function
            UnitLevel = function() return T.secret(80) end,
            UnitIsDeadOrGhost = function() return T.secret(true) end,
            UnitClass = function() return "Warrior", T.secret("WARRIOR") end,
-           GetCVar = function() return T.secret("1") end,
-           GetSpecialization = function() return T.secret(1) end }, function()
+           GetCVar = function() return T.secret("1") end }, function()
         assertNil(C.PlayerFaction())
         assertNil(C.UnitLevel(), "a secret level reads as unknown: the filters let the item through")
         assertNil(C.IsDeadOrGhost())
         assertNil(C.PlayerClass())
         assertNil(C.GetCVar("Sound_EnableSFX"), "a secret CVar: the SFX mute is skipped")
-        assertNil(C.PlayerSpecID())
     end)
 end)
 
@@ -299,7 +296,7 @@ local ACCESSORS = {
     "KnownTitles", "SetCurrentTitle", "BankBagIDs", "IsBankerInteraction", "ContainerNumSlots",
     "ContainerNumFreeSlots", "ContainerIDToInventoryID", "LastEquippedBagID", "PickupContainerItem", "PickupInventoryItem",
     "PickupItemLocation", "UseContainerItem", "ShowContainerSellCursor", "EquipCursorItem", "ClearCursor",
-    "MacroIcons", "PawnVisibleScales", "PawnItemValue", "CanDualWield", "BitAnd",
+    "PawnVisibleScales", "PawnItemValue", "CanDualWield", "BitAnd",
 }
 
 -- The client's ItemLocation mixin, reduced to the two constructors Compat calls: `b`/`s` for a bag
@@ -419,7 +416,7 @@ test("compat: with the client API absent every accessor answers its no-answer va
     for _, k in ipairs({ "C_Container", "C_Item", "C_ItemUpgrade", "C_EquipmentSet", "C_PetJournal", "C_TooltipInfo",
                          "C_AzeriteEmpoweredItem", "C_PlayerInfo", "GetInventoryItemLink", "GetInventoryItemID",
                          "GetInventorySlotInfo", "GetInventoryItemCooldown", "PickupInventoryItem", "EquipCursorItem",
-                         "ClearCursor", "SetCurrentTitle", "GetMacroIcons", "GetMacroItemIcons",
+                         "ClearCursor", "SetCurrentTitle",
                          "EquipmentManager_GetLocationData", "PawnGetItemData", "PawnGetAllScales", "GetNumTitles",
                          "hooksecurefunc", "ItemLocation", "CanDualWield", "Enum", "MAX_EQUIPMENT_SETS_PER_PLAYER",
                          "NUM_TOTAL_EQUIPPED_BAG_SLOTS", "IsFlying" }) do
@@ -441,7 +438,7 @@ test("compat: with the client API absent every accessor answers its no-answer va
         { "UseContainerItem", 0, 1 }, { "ShowContainerSellCursor", 0, 1 }, { "EquipCursorItem", 16 },
         { "ClearCursor" }, { "CanDualWield" }, { "IsFlying" } }
     local EMPTY = { { "TooltipLines", BAG }, { "EMSetIDs" }, { "EMLocations", 1 }, { "EMIgnoredSlots", 1 },
-        { "KnownTitles" }, { "BankBagIDs" }, { "MacroIcons", "item" }, { "PawnVisibleScales" } }
+        { "KnownTitles" }, { "BankBagIDs" }, { "PawnVisibleScales" } }
     with(absent, function()
         for _, row in ipairs(NIL) do assertNil((C[row[1]](unpack(row, 2))), row[1]) end
         for _, row in ipairs(FALSE) do assertEqual(C[row[1]](unpack(row, 2)), false, row[1]) end
@@ -769,19 +766,14 @@ test("compat: pickups, uses and the cursor route by location and report the call
         .. "ShowContainerSellCursor:1:3,EquipCursorItem:16,ClearCursor,SetCurrentTitle:42")
 end)
 
-test("compat: macro icons, Pawn scales and values, dual wield and BitAnd", function()
-    with({ GetMacroItemIcons = function(t) t[1], t[2] = 135349, "INV_Misc_QuestionMark" end,
-           GetMacroIcons = function(t) t[1] = 136243 end,
-           PawnGetAllScales = function() return { "Zeta", "Alpha", T.secret("Hidden"), "Hidden scale" } end,
+test("compat: Pawn scales and values, dual wield and BitAnd", function()
+    with({ PawnGetAllScales = function() return { "Zeta", "Alpha", T.secret("Hidden"), "Hidden scale" } end,
            PawnIsScaleVisible = function(name) return name ~= "Hidden scale" end,
            PawnGetItemData = function(link)
                if link == "boom" then error("Pawn raised") end
                return { Values = { { "Alpha", 12.5 }, { "Zeta", T.secret(3) } } }
            end,
            CanDualWield = function() return 1 end }, function()
-        assertEqual(#C.MacroIcons("item"), 2)
-        assertEqual(C.MacroIcons("ability")[1], 136243)
-        assertEqual(#C.MacroIcons("other"), 0)
         assertEqual(table.concat(C.PawnVisibleScales(), ","), "Alpha,Zeta", "visible, plain and sorted")
         assertEqual(C.PawnItemValue("link", "Alpha"), 12.5)
         assertNil(C.PawnItemValue("link", "Zeta"), "a secret score reads nil; the caller scores it 0")
