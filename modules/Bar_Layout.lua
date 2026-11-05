@@ -4,8 +4,8 @@ local _, NS = ...
 -- places the frames from the answer, so the suites pin the arithmetic without a client.
 --
 -- THE SHAPE. A category is a BLOCK: its label (a line `labelH` high, 0 with the labels off) over its
--- icons, `perLine` to a line (0 = one line), `size` px each and `spacing` px apart on both axes, so
--- the default 32 + 5 keeps the legacy 37 px pitch. Horizontal, a line is a row and the blocks stack
+-- icons, `perLine` to a line (0 = one line), `size` px each and `spacing` px apart on both axes;
+-- the defaults are 32 and 4 (smoke round 3 E8). Horizontal, a line is a row and the blocks stack
 -- downward; vertical (`bar.vertical`), a line is a column and the blocks stand side by side. The bar
 -- is the blocks `spacing` apart, `padding` px in from every edge, under `top` px of header band and
 -- test strip, and never narrower than `minWidth` (the header's title and controls need the room).

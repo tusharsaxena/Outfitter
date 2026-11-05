@@ -22,6 +22,19 @@ local _, NS = ...
 -- trigger. StoreLocally deletes the set too, as the legacy one did: a set left behind would be
 -- mirrored again by the next sync, beside the local copy.
 --
+-- THE ONE TOGGLE (smoke round 3 E12, the owner's ruling). SetStored(id, on) is what the outfit row's
+-- EM mark and the gear menu's "Save in equipment manager" On/Off both call: one call saves the outfit
+-- to, or removes it from, the Equipment Manager, whether or not it is selected. The client's
+-- CreateEquipmentSet saves the gear WORN at the call (it takes no items), so a save wears the outfit
+-- and makes the set on the SWAP_COMPLETE that follows (at once when nothing moves, through
+-- St.CheckComplete); a save still waiting after 10 s is dropped with a line. The cap and the name
+-- are checked before anything is worn. Refused in combat with the window's line: the C_EquipmentSet
+-- writes carry no lockdown restriction (wow-ui-source@297d7aa:Interface/AddOns/
+-- Blizzard_APIDocumentationGenerated/EquipmentManagerDocumentation.lua:35-54, :256-265), but the wear
+-- a save needs cannot swap most slots in combat, and a remove wears its local copy (O44). A store
+-- replaces the outfit with a new record; Current(id) follows an id to its replacement, so an open
+-- menu's On/Off keeps answering for the outfit it was opened on.
+--
 -- THE REBUILD PATH. SetItems holds the new items as the outfit's (pendingSave), wears them, and saves
 -- the set from what is worn on the next SWAP_COMPLETE; a pending save is dropped after 10 s, by any
 -- slot edit to the outfit, and by a stand-down.
@@ -39,7 +52,8 @@ local ID = NS.ItemData
 local NO_ICON = 134400          -- the question mark: "no icon" both ways (INV §3.5)
 local NAME_BYTES = 31           -- the longest set name the client keeps
 local IGNORE_WINDOW = 0.5       -- seconds an own save's EQUIPMENT_SETS_CHANGED is ignored (O18)
-local PENDING_TIMEOUT = 10      -- seconds a rebuild waits for its SWAP_COMPLETE
+local PENDING_TIMEOUT = 10      -- seconds a rebuild, or a SetStored save, waits for its SWAP_COMPLETE
+local MOVED_HOPS = 64           -- the longest replacement chain EM.Current follows
 local LOC_EMPTY, LOC_IGNORED = 0, 1   -- the client's packed "empty slot" and "ignored slot"
 
 -- What a store carries between a native outfit and its mirror (B17), beside the key binding.
@@ -47,8 +61,11 @@ local COPY = { "trigger", "triggerParams", "triggerState", "stat", "unequipOther
                "ignoreComparisons" }
 
 -- Session state. `keep[id]` marks a mirror being removed because its set is gone: DeleteSet leaves the
--- set id alone, which the client may already have handed to a new set.
-local st = { saving = 0, ignoreUntil = 0, pending = nil, timer = nil, keep = {} }
+-- set id alone, which the client may already have handed to a new set. `store` is the outfit id a
+-- SetStored save is waiting to wear (its cancel `storeTimer`); `moved[old] = new` each store's
+-- replacement (EM.Current).
+local st = { saving = 0, ignoreUntil = 0, pending = nil, timer = nil, keep = {}, store = nil, storeTimer = nil,
+             moved = {} }
 EM.__state = st   -- test seam only
 
 local events            -- the AceEvent/AceTimer target
@@ -110,6 +127,12 @@ local function dropPending(id)
     if not p or (id ~= nil and p.id ~= id) then return end
     if st.timer and events then events:CancelTimer(st.timer) end
     st.pending, st.timer = nil, nil
+end
+
+-- Drop the SetStored save waiting on its swap, and its timer.
+local function dropStore()
+    if st.storeTimer and events then events:CancelTimer(st.storeTimer) end
+    st.store, st.storeTimer = nil, nil
 end
 
 -- ── reading a set ─────────────────────────────────────────────────────────────────────────────
@@ -399,6 +422,7 @@ end
 
 -- The new outfit takes the old one's place: the binding, worn and selected, then the old one goes.
 local function replace(oldId, newId)
+    st.moved[oldId] = newId
     moveBinding(oldId, newId)
     NS.Stack.Wear(newId)
     NS.Stack.Select(newId)
@@ -416,6 +440,17 @@ local function nameTaken(id, name)
     return false
 end
 
+-- Why native outfit `rec` cannot become a set now: the EM-full popup's key, or true once the name line
+-- is printed; nil when it can.
+local function storeRefusal(id, rec)
+    if Compat.EMNumSets() >= Compat.EMMaxSets() then return "OUTFITTERREBORN_EM_FULL" end
+    if nameTaken(id, EM.TruncateName(rec.name or "")) then
+        NS.Print(L["That name is already used"])
+        return true
+    end
+    return nil
+end
+
 --- Store a native outfit on the server: a set from its slots (the name cut to 31 bytes, the icon its
 --- own fileID, else 134400 with a glyph kept as the mirror's override), mirrored by an em outfit that carries its settings (B17) and binding, worn and
 --- selected; then the native outfit is deleted. Refused at the client's cap with the EM-full popup,
@@ -426,12 +461,9 @@ function EM.StoreOnServer(id)
     local O = NS.Outfits
     local rec = O.Get(id)
     if not rec or rec.kind == "em" then return false end
-    if Compat.EMNumSets() >= Compat.EMMaxSets() then return false, "OUTFITTERREBORN_EM_FULL" end
+    local why = storeRefusal(id, rec)
+    if why then return false, why ~= true and why or nil end
     local name = EM.TruncateName(rec.name or "")
-    if nameTaken(id, name) then
-        NS.Print(L["That name is already used"])
-        return false
-    end
     EM.SetSlotsFromItems(O.Items(rec))
     -- A set takes a fileID only: a glyph icon creates the set on the wildcard and stays the
     -- mirror's, as its per-character override (NS.Outfits.SetIcon).
@@ -469,7 +501,17 @@ local function expire()
     st.pending, st.timer = nil, nil
 end
 
+-- The SetStored save's swap landed: the outfit's gear is worn, so the set is made from it now.
+local function storeWaiting()
+    local id = st.store
+    if not id then return end
+    dropStore()
+    local ok, popupKey = EM.StoreOnServer(id)
+    if not ok and popupKey then NS.Popups.ShowEMFull() end
+end
+
 local function onSwapComplete()
+    storeWaiting()
     local p = st.pending
     if not p then return end
     dropPending()
@@ -481,20 +523,80 @@ local function onSwapComplete()
     NS.Outfits.Changed(p.id, "items")
 end
 
---- The rebuild path: `items` become the outfit's until the next SWAP_COMPLETE, when the worn gear is
---- saved into the set from their slots; worn now. Dropped after 10 s.
---- @param rec table
---- @param items table
-function EM.SetItems(rec, items)
+-- The bus receiver for SWAP_COMPLETE, made once (the rebuild path's and a waiting save's).
+local function listen()
     local t = ensure()
     if not swapTarget then
         swapTarget = NS.NewBusTarget()
         if swapTarget then swapTarget:RegisterMessage(NS.MSG.SWAP_COMPLETE, onSwapComplete) end
     end
+    return t
+end
+
+--- The rebuild path: `items` become the outfit's until the next SWAP_COMPLETE, when the worn gear is
+--- saved into the set from their slots; worn now. Dropped after 10 s.
+--- @param rec table
+--- @param items table
+function EM.SetItems(rec, items)
+    local t = listen()
     dropPending()
     st.pending = { id = rec.id, items = copy(items) }
     st.timer = t:ScheduleTimer(expire, PENDING_TIMEOUT)
     NS.Stack.Wear(rec.id)
+end
+
+-- ── the one toggle (smoke round 3 E12) ────────────────────────────────────────────────────────
+
+local function storeExpired()
+    st.store, st.storeTimer = nil, nil
+    NS.Print(L["The outfit could not be worn, so it was not saved in the Equipment Manager"])
+end
+
+-- Wear native outfit `id` and make its set once the swap lands (see the header).
+local function saveWhenWorn(id, rec)
+    local why = storeRefusal(id, rec)
+    if why then
+        if why ~= true then NS.Popups.ShowEMFull() end
+        return false
+    end
+    local t = listen()
+    dropStore()
+    st.store = id
+    st.storeTimer = t:ScheduleTimer(storeExpired, PENDING_TIMEOUT)
+    NS.Stack.Wear(id, { hw = true, clearDisabled = true })
+    return true
+end
+
+--- Save outfit `id` in the Equipment Manager (`on`) or take it out (see the header): the EM mark's
+--- click and the gear menu's On/Off. Refused while stood down and, with a line, in combat; true once
+--- the outfit is, or will be once its swap lands, in the state asked for.
+--- @param id string
+--- @param on boolean
+--- @return boolean
+function EM.SetStored(id, on)
+    if NS.IsStoodDown() then return false end
+    local rec = NS.Outfits.Get(id)
+    if not rec then return false end
+    if (rec.kind == "em") == (on == true) then return true end
+    if Compat.InCombatLockdown() then
+        NS.Print(L["Outfits can't be changed in combat."])
+        return false
+    end
+    if on then return saveWhenWorn(id, rec) end
+    return EM.StoreLocally(id) ~= nil
+end
+
+--- The outfit that now stands for `id`: its replacement after a store (each store makes a new
+--- record), followed to the last; `id` itself when it was never replaced.
+--- @param id string
+--- @return string
+function EM.Current(id)
+    for _ = 1, MOVED_HOPS do
+        local nextId = st.moved[id]
+        if nextId == nil then break end
+        id = nextId
+    end
+    return id
 end
 
 -- ── lifecycle ─────────────────────────────────────────────────────────────────────────────────
@@ -508,6 +610,7 @@ end
 --- nothing stays registered.
 function EM.Suspend()
     dropPending()
+    dropStore()
     st.saving = 0
     if events then
         events:UnregisterAllEvents()

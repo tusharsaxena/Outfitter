@@ -102,6 +102,16 @@ registration, so each registration costs 896 bytes a step whether or not its mes
 The client's own dispatch has no such cost. `triggerFanout` rose from 104748 to 106104 for the same
 reason and stays under its 107000 ceiling.
 
+**Re-pinned again 2026-11-05: `equipPlan` 234000 → 240000 and `triggerFanout` 107000 → 109500.**
+Smoke round 3's Outfit Window settings (E11, `702e299`) added four bus registrations, a
+SETTINGS_CHANGED and a PROFILE_CHANGED subscriber each in `modules/Dock.lua` and
+`modules/SlotEnables.lua`. `equipPlan` rose from 232272 to 235856 bytes a step (4 × 896) and
+`triggerFanout` from 106776 to 107672 (896), over both ceilings; bundle `20261105-124114` recorded
+the amber run. With only those four lines commented out, the live registration count goes back from
+99 to 95 and both scenarios return to their previous figures to the byte, so the rise is the same
+recorder cost and none of it is the addon's. Each new ceiling is about 2% over its figure, and
+`triggerFanout`'s stays well under the 119534 the old vararg table and closures cost.
+
 ## Measured costs
 
 **The idle docked window: about 192 bytes a step.** Measured 2026-11-04 by `tests/perf.lua`'s

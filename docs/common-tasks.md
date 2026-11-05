@@ -7,7 +7,8 @@ change is test-first and ends with the green gate ([testing.md](testing.md)). Ev
 ## Add a setting
 
 1. Add the default to `defaults/Profile.lua`, the only place a default is hardcoded.
-2. Add the row to its page file (`settings/General.lua` or `settings/OutfitBar.lua`):
+2. Add the row to its page file (`settings/General.lua`, `settings/OutfitBar.lua` or
+   `settings/OutfitWindow.lua`):
    `{ path, page, group, type, label = L["…"], tooltip = L["…"], default = D.<key>, onChange }`. The
    `group` is the tab; a page's tabs appear in `group` declaration order.
 3. If something must react, put it in `onChange` or in a module's `SETTINGS_CHANGED` handler, never

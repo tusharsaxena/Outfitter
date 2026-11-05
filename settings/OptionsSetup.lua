@@ -2,7 +2,7 @@ local addonName, NS = ...
 -- settings/OptionsSetup.lua — the LibKa0s-Options-1.0 descriptor (NS.Helpers IS the library instance),
 -- the tabbed-page helper every page file uses, and the global reset's one popup.
 
--- Options stay in-addon: three subcategories, below options-ui-§4's five-subpanel threshold (DpsRace
+-- Options stay in-addon: four subcategories, below options-ui-§4's five-subpanel threshold (DpsRace
 -- precedent). No LoadOnDemand split (H21).
 
 local L = NS.L
@@ -89,7 +89,7 @@ function NS.ShowResetAll()
     return StaticPopup_Show("OUTFITTERREBORN_RESET_ALL")
 end
 
---- One schema page (Outfit Bar): its panel, its page-wide Defaults button, and every render through
+--- One schema page (Outfit Bar, Outfit Window): its panel, its page-wide Defaults button, and every render through
 --- the tabbed renderer, a one-tab page included (options-ui-§13). Everything here is resolved at
 --- CALL time, so it serves the library-absent load too, where NS.RegisterOptionsPage is the stub's
 --- no-op.

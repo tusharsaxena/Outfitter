@@ -9,8 +9,12 @@ local _, NS = ...
 -- is the host's own backdrop, the Background color (or the class color) under the Border block's
 -- edge, and shows while it is off. S.Shell records and replays its paint on every skin switch, so a
 -- player color painted onto the Shell frame would be overwritten: the two layers switch on
--- visibility instead, and Show background off hides both (DpsRace's race HUD is the model:
--- DpsRace@2e27c30 modules/Hud.lua:446-475).
+-- visibility instead, one of them always shown (DpsRace's race HUD is the model:
+-- DpsRace@2e27c30 modules/Hud.lua:446-475; smoke round 3 E6 removed Show background). The Border
+-- block's Show border reaches both, the plate's edge and the chrome's (through S.Shell's `noBorder`),
+-- as S.BarBorder answers it: the player's while *Use the skin's border* is off or the skin's bar style
+-- is None, and the skin's edge, drawn whatever the switch says, under a real style (skinning-§6;
+-- smoke round 3 E7).
 --
 -- THE HEADER stands on the chrome's title band: LibKa0s's S.Band, laid by Shell at the skin's inset
 -- and `title.height` (flush and 25 px under EllesmereUI, NS.SkinBandGeometry), or a host holder 1 px
@@ -34,7 +38,7 @@ local _, NS = ...
 -- skin's HUD label color (S.HudLabelColor) while *Use the skin's color* is on, else the swatch. A
 -- skin change re-renders the bar (modules/Bar.lua), which draws them again.
 --
--- CALLS (at call time): NS.Skin (Shell through NS.ApplySkin, Band, Header, CloseButton, BarBorder,
+-- CALLS (at call time): NS.Skin (Shell through NS.ApplySkin, and again for Show border's `noBorder`, Band, Header, CloseButton, BarBorder,
 -- Resolve, Color, HudFont, HudFontSize, HudLabelColor), NS.SkinBandGeometry, NS.ResolveColor, NS.MakeCloseButton, NS.MakeTestStrip,
 -- NS.SetByPath, NS.OpenOptionsPanel.
 
@@ -262,9 +266,13 @@ end
 local LABEL = "bar.labels."
 local LABEL_LEADING = 4   -- the label line's height over its drawn size
 
---- Whether the category labels show.
+--- Whether the bar draws its outfits as one group (the Layout tab's Grouping, smoke round 3 E9).
 --- @return boolean
-function Bar.LabelsShown() return setting(LABEL .. "show") ~= false end
+function Bar.Collapsed() return setting("bar.layout.mode") == "collapsed" end
+
+--- Whether the category labels show: never while the bar is Collapsed.
+--- @return boolean
+function Bar.LabelsShown() return not Bar.Collapsed() and setting(LABEL .. "show") ~= false end
 
 local function labelFromSkin() return setting(LABEL .. "fontFromSkin") ~= false end
 
@@ -345,13 +353,21 @@ function Bar.EdgeColor(prefix, token)
     return NS.ResolveColor(stored, class)
 end
 
---- The Border block under `prefix` as drawn: show, style and thickness, the skin's bar family while
---- its companion is on (S.BarBorder, so a skin's None leaves them to the player).
+--- The Border block under `prefix` through S.BarBorder (skinning-§6): while its companion is on, a
+--- skin's real bar style wins (its style and thickness, show true, Show border not read), and a skin's
+--- None hands back the player's three; with the companion off, the player's three. The stored switch
+--- is never gated on ahead of the call (smoke round 3 E7, the owner's ruling: follow the standard).
+--- @return string|nil style, boolean|nil show, number|nil size
+local function barBorder(prefix)
+    return NS.Skin.BarBorder(setting(prefix .. "borderStyle"),
+        setting(prefix .. "borderShow") ~= false, setting(prefix .. "borderSize"),
+        setting(prefix .. "borderStyleFromSkin") == true)
+end
+
+--- The Border block under `prefix` as the plate draws it: show, style and thickness.
 --- @return boolean show, string|nil style, number size
 local function frameBorder(prefix)
-    local fromSkin = setting(prefix .. "borderStyleFromSkin") == true
-    local style, show, size = NS.Skin.BarBorder(setting(prefix .. "borderStyle"), setting(prefix .. "borderShow"),
-        setting(prefix .. "borderSize"), fromSkin)
+    local style, show, size = barBorder(prefix)
     return show ~= false and style ~= nil and style ~= "None", style, math.max(num(size, 1), 1)
 end
 
@@ -366,12 +382,24 @@ local function paintPlate(plate)
     if edge then plate:SetBackdropBorderColor(Bar.EdgeColor("bar.frame.", "bar.border")) end
 end
 
---- Show the one background layer the settings ask for and paint the plate when it is that one.
+--- The chrome's edge: the skin's window edge while S.BarBorder answers show (a skin's real bar style
+--- with *Use the skin's border* on, else Show border), none otherwise (skinning-§6; smoke round 3 E7).
+--- The answer moves with the skin, and PaintChrome runs on every skin switch. S.Shell records the opts
+--- and replays them on a switch; it is called again only when the answer moves.
+local function chromeBorder(f)
+    local _, show = barBorder("bar.frame.")
+    local noBorder = show == false
+    if f.chromeNoBorder == noBorder then return end
+    f.chromeNoBorder = noBorder
+    NS.Skin.Shell(f.chrome, { noBorder = noBorder })
+end
+
+--- Show the one background layer the settings ask for and paint it: the plate's colors and edge, or
+--- the chrome's edge on or off.
 --- @param f table the bar
 function Bar.PaintChrome(f)
-    local shown = setting("bar.showBackground") ~= false
     local skin = setting("bar.bgFromSkin") ~= false
-    f.chrome:SetShown(shown and skin)
-    f.plate:SetShown(shown and not skin)
-    if shown and not skin then paintPlate(f.plate) end
+    f.chrome:SetShown(skin)
+    f.plate:SetShown(not skin)
+    if skin then chromeBorder(f) else paintPlate(f.plate) end
 end

@@ -13,9 +13,11 @@ such rather than listed as a requirement.
   `OutfitterReborn.toc`; Retail only.
 - **Nothing else.** Every library is vendored under `libs/` and committed (library-stack), LibKa0s
   at **v1.87.0** (the provenance line in `CLAUDE.md`), so the player installs no separate library
-  addon. `## OptionalDeps:` names the vendored libraries for
+  addon. `## OptionalDeps:` names the vendored libraries, EllesmereUI, Pawn and WeightsWatcher for
   load ordering, not as things to download. Pawn and WeightsWatcher are optional stat sources: the
   addon reads them when they are loaded and falls back to its own scoring when they are not.
+  EllesmereUI and ChonkyCharacterSheet are optional too: when one's character sheet is up, the
+  outfit tab and window follow it (`modules/Sheet.lua`), and EllesmereUI can be the skin source.
 
 ## Development: the contributor toolchain
 
@@ -69,7 +71,8 @@ mklink /J "C:\Program Files (x86)\World of Warcraft\_retail_\Interface\AddOns\Ou
 
 **One entry: Pillow**, and only for **regenerating** the logo. The four files in `media/logos/` are
 committed; `outfitterreborn.logo.128.tga` (the TOC icon, the minimap button and the launcher's
-broker icon; the sheet button and the Outfits broker draw the game's own chest-armor icon, fileID 132724) and `outfitterreborn.logo.tga` (the settings landing page) are cut from the
+broker icon; the sheet tab, and the Outfits broker while no outfit is worn, draw the game's own
+chest-armor icon, fileID 132724) and `outfitterreborn.logo.tga` (the settings landing page) are cut from the
 2000×2000 `outfitterreborn.logo.png` with the layout-§4 recipe when the art changes. `.pkgmeta`
 keeps the `.png` and `.jpg` out of the package. **None of this group is needed to build, run or test
 the addon.**

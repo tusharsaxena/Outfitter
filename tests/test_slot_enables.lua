@@ -13,7 +13,8 @@ local scene = dofile(T.root .. "/tests/dock_scene.lua")(T)
 local RAISED_HOST_STRATA = "HIGH"
 
 -- The sheet's three columns (sheet and window feedback design G7-G8): each box sits on the slot's
--- inner corner, so LEFT and BOTTOM boxes anchor TOPRIGHT (+2, +2) and RIGHT boxes TOPLEFT (-2, +2).
+-- inner corner, so LEFT and BOTTOM boxes anchor TOPRIGHT (+2, +2) and RIGHT boxes TOPLEFT (-2, +2);
+-- the off-hand's box is the exception, at TOPLEFT (round-3 smoke pass).
 local LEFT = { "HeadSlot", "NeckSlot", "ShoulderSlot", "BackSlot", "ChestSlot", "ShirtSlot", "TabardSlot",
                "WristSlot" }
 local RIGHT = { "HandsSlot", "WaistSlot", "LegsSlot", "FeetSlot", "Finger0Slot", "Finger1Slot", "Trinket0Slot",
@@ -60,7 +61,7 @@ test("slot enables: one 14x14 checkbox per slot, anchored to Character<Slot> (ol
         local p = cb.__pts[1]
         assertTrue(p ~= nil, slot .. " is not anchored")
         assertEqual(p[2], M["Character" .. slot], slot .. " is not anchored to its slot button")
-        if IS_RIGHT[slot] then
+        if IS_RIGHT[slot] or slot == "SecondaryHandSlot" then
             assertEqual(p[1], "TOPLEFT", slot); assertEqual(p[3], "TOPLEFT", slot)
             assertEqual(p[4], -2, slot); assertEqual(p[5], 2, slot)
         else
@@ -399,4 +400,95 @@ test("slot enables: each box carries an edge in the skin's accent", function()
     -- red under: newBox without the edge (the 1 px near-black check.border alone, hard to see).
     assertEqual(#marks, 4 * 18, "four accent sides per box")
     assertTrue(M.OutfitterRebornEnableHeadSlot.edge ~= nil, "the box keeps its edge")
+end)
+
+-- ── over the open flyout (smoke round 3 E2) ────────────────────────────────────────────────────
+--
+-- Blizzard's EquipmentFlyoutFrame is HIGH (Blizzard_FrameXML/EquipmentFlyout.xml:38;
+-- EquipmentFlyout.lua:330) at its slot button's level - 1 (:332), and its Highlight is an OVERLAY on
+-- it, so on the stock MEDIUM sheet it covered the slot's box. While it is open on a sheet slot the
+-- boxes take its strata and a level over it; its close puts the host's back.
+
+local FLYOUT_STRATA = "HIGH"    -- Blizzard's flyout strata: a client value, never one of ours
+
+-- The window open with an outfit selected, and a stand-in for Blizzard's flyout (hidden, HIGH, its
+-- item frame a child a few levels up) built before the addon loads, as FrameXML builds it.
+local function withFlyout()
+    local NS, M = scene({ mutate = function(M)
+        local flyout = M.CreateFrame("Frame", "EquipmentFlyoutFrame", M.UIParent)
+        flyout:SetFrameStrata(FLYOUT_STRATA)
+        flyout:Hide()
+        flyout.buttonFrame = M.CreateFrame("Frame", nil, flyout)
+    end })
+    M.__world:openCharacter()
+    NS.Dock.Open()
+    NS.Stack.Select(NS.Outfits.Create("Hat", { HeadSlot = { id = 0 } }))
+    local flyout = M.EquipmentFlyoutFrame
+    flyout:SetFrameLevel(30)
+    flyout.buttonFrame:SetFrameLevel(34)
+    return NS, M, flyout
+end
+
+local function openOn(flyout, button)
+    flyout.button = button
+    flyout:Show()
+end
+
+test("slot enables: the flyout open on a sheet slot lifts the boxes over it; its close restores", function()
+    local _, M, flyout = withFlyout()
+    local frame = M.OutfitterRebornSlotEnables
+    local strata, level = frame:GetFrameStrata(), frame:GetFrameLevel()
+    assertEqual(strata, "MEDIUM", "the stock sheet's strata")
+    openOn(flyout, M.CharacterHandsSlot)
+    -- red under: a Restack that ignores the flyout (the boxes stay MEDIUM, under its HIGH Highlight).
+    assertEqual(frame:GetFrameStrata(), FLYOUT_STRATA)
+    -- red under: a level from the sheet alone (the flyout's item frame, 34, is not cleared).
+    assertTrue(frame:GetFrameLevel() > 34, "the boxes do not clear the flyout's frames")
+    assertEqual(M.OutfitterRebornEnableHandsSlot:GetFrameLevel(), frame:GetFrameLevel() + 1)
+    flyout:Hide()
+    -- red under: no OnHide hook (the boxes stay HIGH over any window until the sheet moves).
+    assertEqual(frame:GetFrameStrata(), strata, "the host's strata is back")
+    assertEqual(frame:GetFrameLevel(), level, "the host's level is back")
+end)
+
+test("slot enables: the follow tick catches a flyout the hooks missed", function()
+    local NS, M, flyout = withFlyout()
+    local frame = M.OutfitterRebornSlotEnables
+    flyout.button = M.CharacterHeadSlot
+    rawset(flyout, "__shown", true)    -- shown with no OnShow, as a hook installed late would see it
+    assertEqual(frame:GetFrameStrata(), "MEDIUM")
+    -- red under: a strata probe that leaves the flyout out (MaybeRestack sees nothing to do).
+    NS.SlotEnables.MaybeRestack()
+    assertEqual(frame:GetFrameStrata(), FLYOUT_STRATA)
+end)
+
+test("slot enables: another host's flyout, or one opened in lockdown, lifts nothing", function()
+    local NS, M, flyout = withFlyout()
+    local frame = M.OutfitterRebornSlotEnables
+    -- The Item Upgrade frame shares the flyout with its own button (EquipmentFlyout.lua:244).
+    -- red under: lift for any shown flyout, whatever button it is open on.
+    openOn(flyout, M.CreateFrame("Button", nil, M.UIParent))
+    assertEqual(frame:GetFrameStrata(), "MEDIUM", "a flyout not on a sheet slot")
+    flyout:Hide()
+    M.InCombatLockdown = function() return true end
+    openOn(flyout, M.CharacterHandsSlot)
+    -- red under: no lockdown gate (the plan's E2: never in lockdown).
+    assertEqual(frame:GetFrameStrata(), "MEDIUM", "lifted in lockdown")
+    M.InCombatLockdown = function() return false end
+    NS.SlotEnables.MaybeRestack()
+    -- red under: a probe that ignores lockdown (the lift waits for the flyout's next open).
+    assertEqual(frame:GetFrameStrata(), FLYOUT_STRATA, "the lift after combat")
+end)
+
+test("slot enables: the flyout's hooks do nothing while stood down", function()
+    local NS, M, flyout = withFlyout()
+    NS.SetByPath("enabled", false)
+    local restacks = 0
+    local maybe = NS.SlotEnables.MaybeRestack
+    NS.SlotEnables.MaybeRestack = function(...) restacks = restacks + 1; return maybe(...) end
+    openOn(flyout, M.CharacterHandsSlot)
+    flyout:Hide()
+    NS.SlotEnables.MaybeRestack = maybe
+    -- red under: a hook body without the stand-down latch.
+    assertEqual(restacks, 0)
 end)

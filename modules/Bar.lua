@@ -5,7 +5,8 @@ local _, NS = ...
 -- position Reset (BP §11). ONE container, `OutfitterRebornBar` (strata HUD, movable, clamped,
 -- toplevel), wears a Ka0s window's look with a header (modules/Bar_Chrome.lua: the Shell chrome or the
 -- player's plate, the title band with its title, lock and close, the drag strip and, in test mode,
--- the test strip under the band), and holds one row frame per category with shown outfits
+-- the test strip under the band), and holds one row frame per category with shown outfits (one for
+-- them all, unlabeled, while the Layout tab's Grouping is Collapsed: smoke round 3 E9)
 -- (`OutfitterRebornBarRow1..2`). The buttons are pooled per row (modules/Bar_Buttons.lua builds them):
 -- each render releases every row and acquires exactly one button per outfit, which fixes the legacy
 -- `_ButtonBar`'s extra button. Its colors each carry a FromSkin companion (skinning-§6).
@@ -34,6 +35,13 @@ local _, NS = ...
 -- on still has it when test mode ends. `/or bar show` (and toggle or the key while dismissed) brings it
 -- back the same way. Neither ends test mode (preview-mode). The flag clears on every PREVIEW_CHANGED
 -- and on the stand-down, so after test mode, by any route, the bar follows `bar.shown` again.
+-- TEST MODE'S PLACE (smoke round 3 E3). For the length of a test session the bar starts just left of
+-- the alone test window (its TOPRIGHT TEST_GAP left of NS.Dock.AloneSpot, worked out at the session's
+-- first draw and held in `st.testPlace`, never saved), so the two never stack. It stays draggable: a
+-- drag stop saves the place as it always does, and from then on the session draws the saved place;
+-- so does any other write of `bar.position` in the session (Reset position, `/or set|reset`).
+-- While the test place holds, nothing re-saves it as the player's (CornerDisagrees and a grow-direction
+-- write leave the saved place alone), and test mode's end, by any route, draws the saved place again.
 -- ALPHA is the Master alpha, times `bar.combatAlpha` in combat (PLAYER_STATE_CHANGED "combat"); at 0
 -- the buttons take no mouse (frame-layering-§4: insecure frames, so legal in combat). The legacy fade
 -- is kept: off the bar, it fades down to its alpha over 0.5 s.
@@ -81,7 +89,7 @@ local GROW_X = { right = 1, left = -1 }
 local GROW_Y = { down = -1, up = 1 }
 
 local st = { active = false, inCombat = false, inPetBattle = false, hovered = false, timer = nil,
-             testDismissed = false }
+             testDismissed = false, testPlace = nil }
 local bar, rows = nil, {}
 local mod   -- the module's own bus target, with AceTimer and the pet-battle events on it
 
@@ -97,6 +105,26 @@ local function position()
     if type(p) ~= "table" or not QUADRANT[p.point] then p = NS.defaults.profile.windows.bar end
     return p
 end
+
+-- The gap between the test bar's right edge and the alone test window's left, in UIParent's units.
+local TEST_GAP = 8
+
+--- The session's test place: { point = "TOPRIGHT", x, y } in screen pixels from UIParent's TOPRIGHT,
+--- as SavePosition writes a place; nil outside test mode, after a drag (st.testPlace false), or while
+--- the window's spot is not known yet (worked out again at the next draw).
+local function testPlace()
+    if NS.Preview.IsActive() ~= true or st.testPlace == false then return nil end
+    if st.testPlace then return st.testPlace end
+    local x, top = NS.Dock.AloneSpot()
+    local uRight, uTop = num(UIParent:GetRight(), nil), num(UIParent:GetTop(), nil)
+    if not (x and top and uRight and uTop) then return nil end
+    local u = num(UIParent:GetEffectiveScale(), 1)
+    st.testPlace = { point = "TOPRIGHT", x = (x - TEST_GAP - uRight) * u, y = (top - uTop) * u }
+    return st.testPlace
+end
+
+--- Where the bar is drawn: the session's test place, else the saved one.
+local function placed() return testPlace() or position() end
 
 local VISIBLE = {
     always      = function() return true end,
@@ -123,7 +151,7 @@ end
 --- @param p table|nil the saved place (nil reads it)
 --- @return number gx, number gy
 function Bar.Growth(p)
-    local q = QUADRANT[(p or position()).point]
+    local q = QUADRANT[(p or placed()).point]
     return GROW_X[NS.GetSetting("bar.layout.growH")] or q[1], GROW_Y[NS.GetSetting("bar.layout.growV")] or q[2]
 end
 
@@ -133,9 +161,11 @@ end
 --- @return table
 function Bar.LayoutSpec(counts, strip)
     local gx, gy = Bar.Growth()
+    -- A value that is no number lays out at the profile default (smoke round 3 E8's 8 and 4).
+    local D = NS.defaults.profile.bar.layout
     return {
-        size = num(NS.GetSetting("bar.icons.size"), 32), spacing = num(NS.GetSetting("bar.layout.spacing"), 5),
-        padding = num(NS.GetSetting("bar.layout.padding"), 4), perLine = num(NS.GetSetting("bar.layout.perLine"), 0),
+        size = num(NS.GetSetting("bar.icons.size"), 32), spacing = num(NS.GetSetting("bar.layout.spacing"), D.spacing),
+        padding = num(NS.GetSetting("bar.layout.padding"), D.padding), perLine = num(NS.GetSetting("bar.layout.perLine"), 0),
         vertical = NS.GetSetting("bar.vertical") == true, labelH = Bar.LabelHeight(), top = Bar.HeaderHeight(strip),
         minWidth = Bar.Layout.MIN_WIDTH, gx = gx, gy = gy, counts = counts,
     }
@@ -292,13 +322,19 @@ local function placeRow(row, b, outfits, size, style)
     end
 end
 
---- The rows a source answers, without the empty ones, at most one per row frame.
+--- The rows a source answers, without the empty ones, at most one per row frame; while the bar is
+--- Collapsed, one row of them all, in display order (no label draws for it).
 local function shownRows(source)
     local out = {}
     for _, row in ipairs(source.Rows() or {}) do
         if #out < MAX_ROWS and type(row.outfits) == "table" and #row.outfits > 0 then out[#out + 1] = row end
     end
-    return out
+    if #out < 2 or not Bar.Collapsed() then return out end
+    local all = {}
+    for _, row in ipairs(out) do
+        for _, rec in ipairs(row.outfits) do all[#all + 1] = rec end
+    end
+    return { { categoryID = out[1].categoryID, outfits = all } }
 end
 
 --- Draw `source` (Bar.LiveSource or NS.Preview.Source): its rows, laid out by Bar_Layout from the
@@ -324,7 +360,7 @@ function Bar.Render(source, strip)
     end
     bar:SetSize(g.width, g.height)
     bar:SetScale(scale())
-    anchor(position())
+    anchor(placed())
     Bar.PaintChrome(bar)
     if t0 then Perf.Note("barRender", debugprofilestop() - t0) end
 end
@@ -367,7 +403,7 @@ end
 --- rect the client has not laid yet is left for the next draw.
 --- @return boolean
 function Bar.CornerDisagrees()
-    if not bar or bar:GetLeft() == nil then return false end
+    if not bar or bar:GetLeft() == nil or testPlace() then return false end
     local q = QUADRANT[position().point]
     local gx, gy = GROW_X[NS.GetSetting("bar.layout.growH")], GROW_Y[NS.GetSetting("bar.layout.growV")]
     return (gx ~= nil and gx ~= q[1]) or (gy ~= nil and gy ~= q[2])
@@ -391,7 +427,7 @@ end
 function Bar.ApplyScale()
     if not bar then return end
     bar:SetScale(scale())
-    anchor(position())
+    anchor(placed())
 end
 
 --- The alpha the bar rests at: Master alpha, times `bar.combatAlpha` in combat.
@@ -462,6 +498,8 @@ function Bar.SavePosition()
     local horiz, x = "LEFT", left - uLeft
     if gx < 0 then horiz, x = "RIGHT", right - uRight end
     NS.SetByPath("bar.position", NS.EncodeBarPosition({ point = vert .. horiz, x = x, y = y }))
+    -- A drag in test mode ends the session's place: the bar is where the player put it, and saved.
+    if NS.Preview.IsActive() == true then st.testPlace = false end
     if st.active then Bar.Refresh() end
     return NS.db.profile.windows.bar
 end
@@ -471,7 +509,10 @@ end
 local function onSettings(_, path)
     if type(path) ~= "string" then return end
     -- A new grow direction keeps the bar where it is: its place, re-saved at the corner it implies.
-    if GROW[path] and bar and bar:IsShown() then Bar.SavePosition() end
+    if GROW[path] and bar and bar:IsShown() and not testPlace() then Bar.SavePosition() end
+    -- A write of the place in test mode (a drag's save, Reset position, `/or set bar.position`) is the
+    -- player's own: it ends the session's place, so the bar shows where the write put it.
+    if path == "bar.position" and NS.Preview.IsActive() == true then st.testPlace = false end
     if MASTER[path] or path:find("^bar%.") then schedule() end
 end
 
@@ -489,9 +530,9 @@ local function onGameEvent(event)
     if st.active then Bar.Refresh() end
 end
 
--- A test session starts or ends: either way the session's dismissal is over (see the header).
+-- A test session starts or ends: either way the session's dismissal and place are over (see the header).
 local function onPreviewChanged()
-    st.testDismissed = false
+    st.testDismissed, st.testPlace = false, nil
     schedule()
 end
 
@@ -514,7 +555,7 @@ end
 
 --- The stand-down (design §5.12): the pet-battle events and the pending rebuild go, and the bar hides.
 function Bar.Suspend()
-    st.active, st.hovered, st.testDismissed = false, false, false
+    st.active, st.hovered, st.testDismissed, st.testPlace = false, false, false, nil
     if mod then
         mod:UnregisterAllEvents()
         if st.timer then mod:CancelTimer(st.timer) end

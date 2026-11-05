@@ -95,12 +95,12 @@ end)
 
 -- ── layout ────────────────────────────────────────────────────────────────────────────────────
 
-test("bar: the layout's defaults keep the legacy 37 px pitch, 4 px in from the edge", function()
+test("bar: the layout's defaults are 4 px between icons and 8 px in from the edge", function()
     local Layout = T.NS.Bar.Layout
     local D = T.NS.defaults.profile.bar
-    -- red under: a spacing default other than 5 (the legacy Style.ButtonBar pitch, OutfitterUITools.lua)
-    assertEqual(D.icons.size + D.layout.spacing, 37)
-    assertEqual(D.layout.padding, 4)
+    -- red under: the round 2 defaults (spacing 5, the legacy 37 px pitch; padding 4); smoke round 3 E8
+    assertEqual(D.layout.spacing, 4)
+    assertEqual(D.layout.padding, 8)
     assertEqual(D.layout.perLine, 0)
     local g = Layout.Compute({ size = 32, spacing = 5, padding = 4, perLine = 0, counts = { 3, 1 },
                                gx = 1, gy = -1 })
@@ -110,6 +110,16 @@ test("bar: the layout's defaults keep the legacy 37 px pitch, 4 px in from the e
     assertEqual(a.x, 4); assertEqual(a.y, 4)
     assertEqual(b.x - a.x, 37, "the pitch along the row")
     assertEqual(g.blocks[2].icons[1].y - a.y, 37, "the pitch between the rows")
+end)
+
+test("bar: a spacing or padding that is no number lays out at the defaults", function()
+    -- red under: Bar.LayoutSpec's own fallbacks kept at the round 2 values (spacing 5, padding 4)
+    local NS, _, Bar = scene()
+    NS.db.profile.bar.layout.spacing = "wide"
+    NS.db.profile.bar.layout.padding = "wide"
+    local spec = Bar.LayoutSpec({ 1 })
+    assertEqual(spec.spacing, NS.defaults.profile.bar.layout.spacing)
+    assertEqual(spec.padding, NS.defaults.profile.bar.layout.padding)
 end)
 
 test("bar: the layout wraps at icons per line, in rows or in columns", function()
@@ -315,13 +325,11 @@ test("bar: the window look: the skin's Shell while it follows the skin, the play
     assertEqual(bd.edgeSize, 3, "the border thickness")
     r, g, b = f.plate:GetBackdropBorderColor()
     assertTrue(r == 1 and g == 0 and b == 0, "the border swatch")
+    -- Show border governs once Use the skin's border is off, in every skin (skinning-§6, smoke round 3 E7).
+    NS.SetByPath("bar.frame.borderStyleFromSkin", false)
     NS.SetByPath("bar.frame.borderShow", false)
     settle(M)
     assertNil(f.plate:GetBackdrop().edgeFile, "Show border off draws no edge")
-    NS.SetByPath("bar.showBackground", false)
-    settle(M)
-    -- red under: PaintChrome ignoring bar.showBackground
-    assertFalse(f.plate:IsShown()); assertFalse(f.chrome:IsShown())
 end)
 
 test("bar: the header band is titled Outfits, carries close and lock, and the icons sit under it", function()

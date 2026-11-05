@@ -7,7 +7,8 @@ local _, NS = ...
 -- shown and its outfits sorted by name, nil names last, the EM copy first on a tie
 -- (Outfitter.CompareOutfitNames, Outfitter.lua:3075). Then the item sections Inventory answers
 -- (Odds 'n ends, Warbound until equipped, Unopened), each already sorted by
--- NS.Inventory.CompareItems and left out when empty. A collapsed category keeps its header.
+-- NS.Inventory.CompareItems and left out when empty or when the Outfit Window page turned it off
+-- (`window.sections.<key>`, smoke round 3 E11). A collapsed category keeps its header.
 --
 -- AN ENTRY is { kind, id, depth } plus, per kind: a category's `label`, `desc` and `collapsed`; an
 -- outfit's `status` (read through the status cache); an item's `item` (the info).
@@ -19,7 +20,7 @@ local _, NS = ...
 -- real bag slot (modules/Window_Rows.lua), which a sample list must never do.
 --
 -- CALLS (at call time; design §12): NS.Outfits.Categories/Ids/Get/Status, NS.Inventory.ItemSections,
--- NS.Preview.IsActive, NS.PreviewOutfits.Rows.
+-- NS.Preview.IsActive, NS.PreviewOutfits.Rows, NS.GetSetting.
 
 local LM = {}
 NS.WindowListModel = LM
@@ -129,7 +130,8 @@ function LM.Build(collapsed, statusCache)
         end
     end
     for _, section in ipairs(NS.Inventory.ItemSections()) do
-        if header(out, section.key, collapsed, section.labelKey) then
+        if NS.GetSetting("window.sections." .. section.key) ~= false
+            and header(out, section.key, collapsed, section.labelKey) then
             for i, item in ipairs(section.items) do
                 out[#out + 1] = { kind = "item", id = section.key .. ":" .. i, depth = 1, item = item }
             end

@@ -44,7 +44,8 @@ so sends `OUTFIT_EDITED` instead ([schema.md](schema.md)).
 A profile switch, copy or reset runs `NS.OnProfileChanged` (`core/Database.lua`): hide the skin
 picker, apply the profile's skin, re-run the migrations over a reset profile, re-take the enabled hold,
 maybe show the skin picker, then `PROFILE_CHANGED`, on which the bar re-anchors, the trigger
-binder re-reads `auto.enabled` and the window redraws its trigger marks ([profiles.md](profiles.md)).
+binder re-reads `auto.enabled`, the window redraws its trigger marks and sections, and the dock and
+the slot checkboxes pick up the new profile's `window.*` rows ([profiles.md](profiles.md)).
 `db.char` is never touched.
 
 ## The stand-down latch
@@ -107,21 +108,34 @@ NS.Equip.Batch(function()  NS.Stack.Wear / Remove (layer, byTrigger)  end) ◄�
   sidebar tab on stock and Chonky, EllesmereUI's text tab; re-placed on the next frame when the
   sheet kind changes) and paints it selected while the window shows. The window's show and hide, and
   the sheet's hide, call `NS.QuickSlots.DrawerSync`, which, only while the window is visible, shows
-  every slot's popout arrow, turns the left column's drawer outward, and lines a horizontal flyout up
-  with its slot ([`taint.md`](taint.md)). The slot checkboxes restack from the same follow when the
-  host's strata or level moves.
+  every slot's popout arrow, turns the left column's drawer outward, lines a horizontal flyout up
+  with its slot, and tints the flyout's rim in the skin's `win.border` (`QS.TintSync`, also run from
+  the flyout's update hook and on a skin change; Blizzard's color is restored when the window, the
+  sheet slot or the stand-down lets go: `DEV-SKIN-FLYOUT-TINT`, [`taint.md`](taint.md)). The slot checkboxes restack from the same follow when the
+  host's strata or level moves, and when Blizzard's equipment flyout opens or closes on a sheet slot
+  (its `OnShow`/`OnHide` post-hooks, and the follow's probe for what a hook missed): open, they take
+  the flyout's strata and a level over it, out of lockdown only (smoke round 3 E2). The Outfit
+  Window page's rows (`window.*`) reach each surface on their `SETTINGS_CHANGED` and on
+  `PROFILE_CHANGED`: the dock shows or hides the sheet button and syncs the drawer, the follow's
+  corner compare re-docks for a new `window.dockGap`, `NS.SlotEnables` shows or hides the boxes, and
+  `NS.Window` redraws the list's sections and marks.
 - **Test mode.** `NS.Preview` flips the session-only `NS.State.testMode` and sends `PREVIEW_CHANGED`.
   The bar draws `Preview.Source` (the samples of `defaults/PreviewOutfits.lua`) under its test strip;
   the dock clears the selection and calls `Dock.Refresh`, which shows the window with the samples
-  under its own strip, beside the sheet when it is open or alone at `NS.Sheet.AloneCorner` when it is
-  not, never in lockdown. X or Escape sets `testDismissed` for that test session. Every row action
-  refuses a `preview:` id, so nothing reaches `NS.Outfits` or `NS.Stack`. Combat
+  under its own strip, beside the sheet when it is open or alone in the screen center
+  (`Dock.AloneSpot`) when it is not, never in lockdown. Alone it drags for the session (`Dock.testSpot`,
+  never saved); the bar starts just left of it (`st.testPlace`) until the player drags the bar, which
+  saves as usual, or writes `bar.position` (Reset position). X or Escape sets `testDismissed` for that test session. Every row action
+  refuses a `preview:` id but the gear, which opens the sample's browse-only outfit menu (every data
+  row disabled around a no-op, `L["Not available in test mode"]`), so nothing reaches `NS.Outfits` or
+  `NS.Stack`. Combat
   (`PLAYER_STATE_CHANGED "combat"`, before lockdown), its own switch, Reset all and the stand-down
   end it, and `PREVIEW_CHANGED false` puts both surfaces back on live data.
 - **The outfit bar.** `NS.Bar` renders on a coalesced 0 s flag (outfit messages, a `bar.*` or Master
   `SETTINGS_CHANGED`, `PREVIEW_CHANGED`, `PROFILE_CHANGED`, a skin change): `NS.Bar.Layout` computes
-  the geometry from the Layout and Icons rows, `Bar.PaintChrome` dresses the header band, plate,
-  labels and test strip, and the pooled buttons are set from `NS.OutfitIcon`. `/or bar`, the *Toggle
+  the geometry from the Layout and Icons rows (while `bar.layout.mode` is Collapsed, every shown
+  outfit in one unlabeled row), `Bar.PaintChrome` dresses the header band, the chrome or the plate
+  (the chrome's edge as `S.BarBorder` answers it: the skin's under a real bar border style while *Use the skin's border* is on, else on or off with the Frame tab's *Show border*, skinning-§6), labels and test strip, and the pooled buttons are set from `NS.OutfitIcon`. `/or bar`, the *Toggle
   outfit bar* key and the header's close all write `bar.shown`, except in test mode, where they only
   dismiss the bar for that test session (`Bar.SetTestShown`, cleared on every `PREVIEW_CHANGED` and
   the stand-down) and `bar.shown` is never written; every path that hides the bar closes

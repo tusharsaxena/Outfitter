@@ -46,6 +46,16 @@ local installLayers = dofile(root .. "/tests/_kit/mock_layers.lua")
 -- Mainline/SharedUIPanelTemplates.xml:134, :381, :680; CharacterFrame is a ButtonFrameTemplate,
 -- Blizzard_UIPanels_Game/Mainline/CharacterFrame.xml:147).
 local CLOSE_BUTTON_LEVEL = 510
+-- A sidebar tab's Icon: points and size, as a Texture keeps them.
+local function sidebarIcon()
+    local icon = { points = {}, w = 0, h = 0 }
+    function icon:SetPoint(...) self.points[#self.points + 1] = { ... } end
+    function icon:ClearAllPoints() self.points = {} end
+    function icon:GetPoint(i) return unpack(self.points[i or 1] or {}) end
+    function icon:SetSize(w, h) self.w, self.h = w, h end
+    function icon:GetSize() return self.w, self.h end
+    return icon
+end
 local function installSheets(M)
     local function place(f, right, top)
         rawset(f, "GetRight", function() return right end)
@@ -55,6 +65,12 @@ local function installSheets(M)
     local tabs = M.CreateFrame("Frame", "PaperDollSidebarTabs", M.PaperDollFrame)
     local tab3 = M.CreateFrame("Button", "PaperDollSidebarTab3", tabs)
     rawset(tab3, "GetSize", function() return 33, 35 end)
+    -- Its Icon as the template lays it: 33 x 35, BOTTOM 1,-2 (PaperDollFrame.xml:406-411). The
+    -- outfit tab centers its own icon on this one (NS.Sheet.TabIconOffset). A region of its own: the
+    -- base mock's CreateTexture answers the frame itself, and the paint recorder comes per scene, later.
+    tab3.Icon = sidebarIcon()
+    tab3.Icon:SetSize(33, 35)
+    tab3.Icon:SetPoint("BOTTOM", tab3, "BOTTOM", 1, -2)
     local close = M.CreateFrame("Button", "CharacterFrameCloseButton", M.CharacterFrame)
     close:SetFrameLevel(CLOSE_BUTTON_LEVEL)
     -- The sheet's sidebar tabs, as PaperDollFrame.lua declares them: the third is the Equipment

@@ -44,9 +44,9 @@ A refused verb prints the library's one line: `[OR] Ka0s Outfitter Reborn is dis
 with /or enable`. The `list`, `get`, `set` and `reset` verbs reach settings only, never outfits
 (slash-commands-§3): the per-outfit rows are on `NS.OutfitSchema`, which the CLI does not read.
 
-`NS.RunVerb(verb, rest)` runs one verb's handler by name, so the launcher's Enabled entry and the
-Toggle outfit bar (`bar toggle`), AutoOn, AutoOff and Update key bindings reach the same handler as
-the typed verb.
+`NS.RunVerb(verb, rest)` runs one verb's handler by name, so the launcher's Enabled and Locked
+entries, the broker menu's automatic-changes toggle (`auto`), and the Toggle outfit bar
+(`bar toggle`), AutoOn, AutoOff and Update key bindings reach the same handler as the typed verb.
 
 ## The outfit verbs
 

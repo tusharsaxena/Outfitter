@@ -24,8 +24,14 @@ C.LOGO = ("Interface\\AddOns\\%s\\media\\logos\\%s.logo.tga"):format(addonName, 
 --                      (the sheet holder's strata, its level + DOCK_OVER_HOST) and the slot
 --                      checkboxes (the highest strata among the sheet and its 18 slot buttons, ranked
 --                      by STRATA_ORDER; the highest descendant OF THAT STRATA + SLOT_ENABLES_OVER_HOST,
---                      capped at LEVEL.MAX under the client's level ceiling)
+--                      capped at LEVEL.MAX under the client's level ceiling). While Blizzard's
+--                      EquipmentFlyoutFrame is open on a sheet slot and out of lockdown, the boxes
+--                      take the higher of the host strata and the flyout's, one level over the
+--                      flyout's highest descendant of that strata, and drop back on its OnHide
+--                      (modules/SlotEnables.lua, smoke round 3 E2)
 --   MEDIUM             HUD       the outfit bar: movable, clamped, toplevel
+--   HIGH               (Blizzard) EquipmentFlyoutFrame (EquipmentFlyout.xml:38, re-set on every
+--                      update), which the slot boxes rise over while it is open
 --   DIALOG             MODAL     the outfit, trigger, rebuild and progress dialogs; the LibKa0s icon
 --                                browser (modules/IconBrowserSetup.lua), a modal over them in a band
 --                                based UIParent + ICON_BROWSER (catcher +0, window +2, page +3, X +5)

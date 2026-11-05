@@ -229,7 +229,7 @@ Total.
 ### test_schema.lua (25)
 
 - schema: the load-time shape check finds no error and every stored path resolves
-- schema: the settings pages are general, bar and profiles
+- schema: the settings pages are general, bar, window and profiles
 - schema: every stored row's default is the one in defaults/Profile.lua
 - schema: every P4.23 profile row is registered, on its page, with its stored default
 - schema: bar.position reads and writes profile.windows.bar as `POINT X Y`
@@ -257,7 +257,7 @@ Total.
 ### test_settings.lua (16)
 
 - settings: the parent category registers eagerly and every page body renders quietly
-- settings: the pages register General first, then Outfit Bar, and Profiles last
+- settings: the pages register General first, then Outfit Bar, Outfit Window, and Profiles last
 - settings: General's tabs are Master controls, Behavior, Tooltips, Skin, then Keybindings last
 - settings: Master controls is composed by the library, with the bar's notes
 - settings: Behavior holds the outfit changes, then the character sheet's one row
@@ -930,7 +930,7 @@ Total.
 - stack: the persisted stack round-trips; Init drops unknown ids, keeps temps whole, sets expected
 - stack: Init absorbs worn gear the restored stack does not expect into the temporary outfit
 
-### test_em_sync.lua (24)
+### test_em_sync.lua (27)
 
 - em: NS.EM is published with the §5.13 surface
 - em: every set is mirrored as an em outfit, its items resolved from the set's locations
@@ -952,6 +952,9 @@ Total.
 - em: StoreOnServer refuses a name a set or another mirror already holds
 - em: StoreOnServer at the cap answers the EM-full popup and changes nothing
 - em: StoreLocally clones the set into a native outfit with the same copy list
+- em: SetStored stores an outfit not worn in one call, worn first and saved once the swap lands
+- em: SetStored refuses in combat, at the cap and on a taken name, before anything is worn
+- em: a store waiting on its swap is dropped after 10 s with a line, and by a stand-down
 - em: SetItems wears the items and saves them on SWAP_COMPLETE
 - em: a rebuild that moves nothing saves once its update has run
 - em: a pending save is dropped after 10 s, by a stand-down, and by a slot edit
@@ -1164,11 +1167,13 @@ Total.
 - pvp: a disabled spec keeps the outfit off, and the spec change puts it on or takes it off
 - pvp: every zone trigger honors each of the four spec toggles
 
-### test_sheet.lua (16)
+### test_sheet.lua (18)
 
 - sheet: NS.Sheet is published with the adapter's surface
 - sheet: stock by default
 - sheet: without the stock tab the button keeps its place left of the close X, as a tab
+- sheet: the tab icon's offset is read from the neighbor tab's icon
+- sheet: the tab icon falls back to the template's offset when the neighbor's is unreadable
 - sheet: EllesmereUI with its equipment tab shown is eui
 - sheet: EllesmereUI loaded with the blizzard style resolves to stock
 - sheet: EllesmereUI's tab hidden off the Character tab still reads eui
@@ -1183,7 +1188,7 @@ Total.
 - sheet: with no Chonky panel shown DockRight is the backdrop's edge
 - sheet: the adapter creates, anchors and shows nothing
 
-### test_dock.lua (45)
+### test_dock.lua (48)
 
 - dock: NS.Dock is published with the §7.2 surface
 - dock: the holder fills the sheet, and the sheet button toggles the window
@@ -1214,6 +1219,9 @@ Total.
 - dock: the button's icon is the default outfit icon, the gold tint retired
 - dock: on the stock sheet the button is a sidebar tab, selected while the window shows
 - dock: on Chonky the button is the same sidebar tab
+- dock: the tab's icon is the neighbors' size, on their center, inside the bevel
+- dock: the tab's icon follows the neighbor's icon, read on each sheet show
+- dock: on Chonky the tab's icon sits as on the stock sheet
 - dock: on EllesmereUI the button is a text label in EUI's tab style
 - dock: without EllesmereUI's accent the active label takes EUI's own fallback
 - dock: the sheet button's label has a face before its text is set
@@ -1242,7 +1250,7 @@ Total.
 - list model: Status caches O.Status in the table it is handed, until that is wiped
 - list model: in test mode the list is the sample outfits under their headers, no item section
 
-### test_rows_secure.lua (21)
+### test_rows_secure.lua (22)
 
 - rows: NS.WindowRows is published with the secure surface
 - rows: fourteen rows and their secure children are created once, each SetAllPoints'd at birth
@@ -1258,7 +1266,8 @@ Total.
 - rows: an outfit row shows worn, icon, EM mark, name in that order
 - rows: a glyph outfit icon is drawn uncropped; a fileID one edged and cropped
 - rows: the EM mark is full for an EM outfit and dimmed otherwise
-- rows: clicking the dimmed EM mark stores the outfit on the server, as the checkbox did
+- rows: one click on the EM mark saves or removes the outfit through NS.EM.SetStored, selected or not
+- rows: the EM mark's tooltip states the true state and what a click does
 - rows: clicking the EM mark in combat refuses and changes nothing
 - rows: the menu control is a borderless gear that opens the outfit menu
 - rows: the lightning has no border
@@ -1266,7 +1275,7 @@ Total.
 - rows: a profile switch redraws the trigger mark from the new profile's auto.enabled
 - rows: an item with no quality color is drawn muted, never in the previous item's color
 
-### test_slot_enables.lua (25)
+### test_slot_enables.lua (29)
 
 - slot enables: NS.SlotEnables is published with the §7.4 surface
 - slot enables: one 14x14 checkbox per slot, anchored to Character<Slot> (old test_xml:101-112)
@@ -1293,15 +1302,20 @@ Total.
 - slot enables: the level is capped under the client's ceiling
 - slot enables: MaybeRestack restacks on a strata-only change, and once
 - slot enables: each box carries an edge in the skin's accent
+- slot enables: the flyout open on a sheet slot lifts the boxes over it; its close restores
+- slot enables: the follow tick catches a flyout the hooks missed
+- slot enables: another host's flyout, or one opened in lockdown, lifts nothing
+- slot enables: the flyout's hooks do nothing while stood down
 
-### test_bar.lua (44)
+### test_bar.lua (45)
 
 - bar: NS.Bar is published with the §7.7 surface
 - bar: bar.shown defaults false, so a fresh profile and a repaired one both come up hidden
 - bar: the container sits in the HUD strata, movable, clamped and toplevel; rows and buttons in their bands
 - bar: one button per visible outfit, a row per category, and a re-render never grows the pool
 - bar: an outfit whose trigger is off is not on the bar, and a manual wear of it puts it back
-- bar: the layout's defaults keep the legacy 37 px pitch, 4 px in from the edge
+- bar: the layout's defaults are 4 px between icons and 8 px in from the edge
+- bar: a spacing or padding that is no number lays out at the defaults
 - bar: the layout wraps at icons per line, in rows or in columns
 - bar: the layout grows away from its corner, the first icon and block at that corner
 - bar: the layout adds each block's label line and never draws narrower than its minimum
@@ -1341,13 +1355,21 @@ Total.
 - bar: Suspend hides it and stops the rebuilds; the stand-down keeps it down
 - bar: test mode shows the sample outfits with the strip, even with the bar off, and they do nothing
 
-### test_bar_look.lua (5)
+### test_bar_look.lua (13)
 
 - bar: a label draws through S.HudFont with its font block, and its color follows the skin until told not to
 - bar: the player's plate and icon edge take the skin's border color while that companion stays on
 - bar: without the library test mode reserves no strip room, and the header title says test mode
 - bar: with Ignore fonts on a label draws its own stored face, the seam's answer
 - bar: a button's edges, worn edge and worn mark stand on named rungs, the mark on a mouse-off overlay
+- bar: Icons > Show border draws the skin's icon edge when on and no edge at all when off, in every skin
+- bar: Icons > Show border on draws the skin's window icon outline, which shows on the bar's dark background
+- bar: Frame > Show background is gone, and a stored false from round 2 hides nothing
+- bar: Frame > Show border is dimmed only while Use the skin's border is on under a skin with a real border style
+- bar: Frame > Show border governs the edge but under a skin's real border style with Use the skin's border on
+- bar: a skin switch moves Frame > Show border's dimming and the edge between a None skin and a real style
+- bar: the Layout tab's Grouping row is Grouped or Collapsed, and Collapsed hides every label row
+- bar: Collapsed draws every shown outfit as one group with no labels; Grouped keeps a row per category
 
 ### test_outfit_icons.lua (17)
 
@@ -1401,7 +1423,7 @@ Total.
 - parity: the menu sorts as legacy's, and a renamed or refiled row by the same rule
 - parity: a class row is offered to its own class only, as the legacy menu filtered it
 
-### test_preview.lua (36)
+### test_preview.lua (35)
 
 - preview: NS.Preview publishes the §8 surface and starts off
 - preview: the placeholders are five Test Outfits in two rows, each stamped placeholder and preview:<n>
@@ -1418,9 +1440,8 @@ Total.
 - preview: Diagnose reports the mode, the bar it opened and the sample count
 - preview: every start and stop, from any source, repaints an open settings panel
 - preview window: the list is the five samples under their headers, no item section, nothing armed
-- preview window: every row handler refuses a sample quietly and nothing is written
-- preview window: with the sheet closed, test mode shows the window alone at the stock sheet's right
-- preview window: the alone corner reads the client's panel layout and the sheet's scale
+- preview window: every row handler refuses a sample quietly, the gear browses, and nothing is written
+- preview window: with the sheet closed, test mode shows the window alone in the screen center
 - preview window: opening the sheet docks it, closing the sheet puts it back alone
 - preview window: with the sheet open, test mode shows the window docked
 - preview window: X and Escape hide it for the session without ending test mode
@@ -1440,7 +1461,48 @@ Total.
 - preview bar: the dismissal ends with test mode; the bar follows bar.shown, and a new session shows it
 - preview bar: the dismissal ends with the General switch; a bar the player had on comes back
 
-### test_outfit_menu.lua (30)
+### test_preview_place.lua (8)
+
+- test place: with the sheet closed, the test window opens alone in the screen center
+- test place: alone, the window drags; the drop holds for the session and nothing is saved
+- test place: docked beside the sheet, or in lockdown, the window does not move
+- test place: combat mid-drag stops the move before lockdown and ends test mode
+- test place: the bar starts just left of the window, and the saved place is left alone
+- test place: a drag of the test bar saves as usual, and test mode's end keeps it there
+- test place: test mode's end puts a bar the player had on back at its saved place
+- test place: Reset position in test mode moves the bar to its starting place, as it says
+
+### test_window_settings.lua (12)
+
+- window settings: the page holds the window's rows on two tabs, each with a tooltip
+- window settings: the page's Defaults puts every row back
+- window settings: Show the button on the character sheet hides and shows the sheet button in place
+- window settings: a profile switch carries the sheet button's row
+- window settings: the window still opens without the button
+- window settings: Show slot check boxes hides and shows the boxes for the selection
+- window settings: Show the flyout arrows turns the drawer off and on with the window open
+- window settings: the gap moves the docked window right of the sheet, on the follow's next tick
+- window settings: the alone test window takes no gap
+- window settings: each item section's row keeps it in the list or leaves it out
+- window settings: a section's row redraws the open window
+- window settings: the outfit row's marks follow their rows, the name taking the EM mark's place
+
+### test_flyout_tint.lua (12)
+
+- flyout tint: with the window open a sheet slot's flyout rim takes the skin's border color
+- flyout tint: the window's close gives each texture back exactly what it had
+- flyout tint: with the window closed the flyout keeps Blizzard's rim
+- flyout tint: opening the window over an open flyout tints it
+- flyout tint: another host's flyout gets Blizzard's rim back
+- flyout tint: a page that adds a background piece tints it, and the close restores it too
+- flyout tint: a skin change re-tints, and the close still restores Blizzard's color
+- flyout tint: the stand-down restores the rim, and nothing tints while down
+- flyout tint: nothing is written in combat lockdown
+- flyout tint: a tinted rim is not written over in lockdown either
+- flyout tint: a skin change in lockdown writes nothing
+- flyout tint: once let go the rim is Blizzard's alone, and later updates write nothing to it
+
+### test_outfit_menu.lua (35)
 
 - menu: NS.OutfitMenu is published
 - menu: the rows per section are legacy's, less Void Storage and the script editor
@@ -1453,12 +1515,17 @@ Total.
 - menu: Delete, Update and Rebuild ask through popups carrying the id; the dialogs open
 - menu: the whole tree goes to the library once, each nested level as a submenu row
 - menu: Key binding picks are radios that keep the menu open, tick the key and rename its holders
+- menu: Save in equipment manager, below Rename..., is On/Off radios on the EM mark's own path
+- menu: once Save in equipment manager stores the outfit, the open menu's other rows act on the stored one
 - menu: Title picks and a trigger without params keep the menu open; the parent's label follows
 - menu: rows that open a dialog, popup or window, and the bank moves, act and close
 - menu: on the client's MenuUtil only keep-open rows answer Refresh, the rest close
 - menu: an outfit deleted under its open menu leaves rows that paint and click without raising
 - menu: a ticked toggle clicked after its outfit is deleted repaints without its tick
 - menu: nothing opens for an unknown id or while stood down
+- menu: in test mode a sample opens a browse-only menu, every data row off with the test-mode tooltip
+- menu: nothing in the sample's menu reaches a real outfit, whatever row is clicked
+- menu: a sample's menu needs test mode, and a real outfit's menu stays live during it
 - menu: the class category reads the client's class name, the rest their own labels
 - bar menu: /or bar hide closes the outfit menu the bar opened
 - bar menu: /or bar toggle closes the outfit menu the bar opened
@@ -1484,7 +1551,7 @@ Total.
 - new outfit: a trigger fills an empty or auto-filled name, and one with params opens its settings
 - rename: the name field only, 140 px shorter, and Done renames
 - popups: every popup times out never, works dead, hides on Escape, and carries its id in data
-- popups: the row EM mark selects first, stores on the second click, says the EM is full, and unstores
+- popups: one click on the row EM mark stores the outfit, the EM full says so, one more unstores
 - rebuild: the rows give the §5.14 cfg, and Done keeps it on the outfit and rebuilds
 - progress: OPTIMIZE_* drive it, High speed sets the job's, and Cancel cancels that job
 - browser: Change icon opens on Recommended with the outfit's icon selected
@@ -1549,7 +1616,7 @@ Total.
 - skin: with every surface built, no Blizzard frame is painted
 - skin: the window, the dialogs and the bar wear NS.ApplySkin's Shell
 - skin: Blizzard icon art in a window is cropped and edged from the skin, never as a HUD
-- skin: the bar's icons are HUD icons, cropped and edged from the skin
+- skin: the bar's icons are cropped and edged from the skin in the window outline
 - skin: the sheet button wears the host's look and is never painted through the skin
 - window: the header gear has no border
 - skin: no source file writes inline icon markup by hand (W.IconText crops it)
@@ -1754,7 +1821,7 @@ Total.
 | test_equip_bracket.lua | 32 |
 | test_tooltips.lua | 18 |
 | test_stack.lua | 27 |
-| test_em_sync.lua | 24 |
+| test_em_sync.lua | 27 |
 | test_bank.lua | 14 |
 | test_optimize.lua | 30 |
 | test_triggers.lua | 21 |
@@ -1766,18 +1833,21 @@ Total.
 | test_triggers_quest.lua | 12 |
 | test_triggers_class.lua | 11 |
 | test_triggers_pvp.lua | 7 |
-| test_sheet.lua | 16 |
-| test_dock.lua | 45 |
+| test_sheet.lua | 18 |
+| test_dock.lua | 48 |
 | test_list_model.lua | 8 |
-| test_rows_secure.lua | 21 |
-| test_slot_enables.lua | 25 |
-| test_bar.lua | 44 |
-| test_bar_look.lua | 5 |
+| test_rows_secure.lua | 22 |
+| test_slot_enables.lua | 29 |
+| test_bar.lua | 45 |
+| test_bar_look.lua | 13 |
 | test_outfit_icons.lua | 17 |
 | test_broker.lua | 13 |
 | test_triggers_parity.lua | 13 |
-| test_preview.lua | 36 |
-| test_outfit_menu.lua | 30 |
+| test_preview.lua | 35 |
+| test_preview_place.lua | 8 |
+| test_window_settings.lua | 12 |
+| test_flyout_tint.lua | 12 |
+| test_outfit_menu.lua | 35 |
 | test_dialogs.lua | 24 |
 | test_trigger_dialog.lua | 11 |
 | test_diagnostics.lua | 12 |
@@ -1791,4 +1861,4 @@ Total.
 | test_lizard_sighted.lua | 8 |
 | test_prose.lua | 15 |
 | Skipped | 1 |
-| **Total** | **1481** |
+| **Total** | **1539** |

@@ -158,4 +158,5 @@ settings\OptionsSetup.lua
 # LOAD-BEARING: General registers FIRST and Profiles LAST; page order IS registration order.
 settings\General.lua
 settings\OutfitBar.lua
+settings\OutfitWindow.lua
 settings\Profiles.lua

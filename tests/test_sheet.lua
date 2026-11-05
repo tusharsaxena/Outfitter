@@ -26,7 +26,7 @@ end
 test("sheet: NS.Sheet is published with the adapter's surface", function()
     local S = T.NS.Sheet
     assertEqual(type(S), "table")
-    for _, k in ipairs({ "Kind", "Frame", "ButtonAnchor", "DockRight", "Refresh" }) do
+    for _, k in ipairs({ "Kind", "Frame", "ButtonAnchor", "TabIconOffset", "DockRight", "Refresh" }) do
         assertEqual(type(S[k]), "function", k)
     end
 end)
@@ -54,6 +54,47 @@ test("sheet: without the stock tab the button keeps its place left of the close 
     assertEqual(point, "RIGHT"); assertEqual(rel, M.CharacterFrameCloseButton); assertEqual(relPoint, "LEFT")
     assertEqual(x, -2); assertEqual(y, 0)
     assertEqual(w, 33); assertEqual(h, 35); assertEqual(look, "tab")
+end)
+
+-- Smoke round 3 E10: the outfit tab's icon centers where the neighbor tab's icon does. The template
+-- anchors its 33 x 35 Icon BOTTOM 1,-2 on a 33 x 35 tab (wow-ui-source@297d7aa:Interface/AddOns/
+-- Blizzard_UIPanels_Game/Mainline/PaperDollFrame.xml:393-394, :406-411): 1 right of, 2 below center.
+test("sheet: the tab icon's offset is read from the neighbor tab's icon", function()
+    local NS, M = fresh()
+    NS.Sheet.Refresh()
+    local dx, dy = NS.Sheet.TabIconOffset()
+    assertEqual(dx, 1); assertEqual(dy, -2)
+    -- Read live, not a constant: a neighbor icon placed elsewhere moves ours with it.
+    -- red under: TabIconOffset answering the template's constants.
+    local tab3 = M.PaperDollSidebarTab3
+    tab3.Icon:ClearAllPoints()
+    tab3.Icon:SetPoint("BOTTOM", tab3, "BOTTOM", 3, 0)
+    tab3.Icon:SetSize(33, 31)
+    dx, dy = NS.Sheet.TabIconOffset()
+    assertEqual(dx, 3); assertEqual(dy, -2)
+end)
+
+test("sheet: the tab icon falls back to the template's offset when the neighbor's is unreadable", function()
+    local NS, M = fresh()
+    NS.Sheet.Refresh()
+    local tab3 = M.PaperDollSidebarTab3
+    -- Another anchor shape (a skin re-anchored it): its offsets mean something else.
+    tab3.Icon:ClearAllPoints()
+    tab3.Icon:SetPoint("CENTER", tab3, "CENTER", 7, 7)
+    local dx, dy = NS.Sheet.TabIconOffset()
+    assertEqual(dx, 1); assertEqual(dy, -2)
+    -- Anchored to some other frame.
+    tab3.Icon:ClearAllPoints()
+    tab3.Icon:SetPoint("BOTTOM", M.CharacterFrame, "BOTTOM", 7, 7)
+    dx, dy = NS.Sheet.TabIconOffset()
+    assertEqual(dx, 1); assertEqual(dy, -2)
+    -- No icon, then no tab.
+    tab3.Icon = nil
+    dx, dy = NS.Sheet.TabIconOffset()
+    assertEqual(dx, 1); assertEqual(dy, -2)
+    M.PaperDollSidebarTab3 = nil
+    dx, dy = NS.Sheet.TabIconOffset()
+    assertEqual(dx, 1); assertEqual(dy, -2)
 end)
 
 test("sheet: EllesmereUI with its equipment tab shown is eui", function()

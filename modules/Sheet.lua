@@ -113,6 +113,26 @@ function Sheet.ButtonAnchor()
     return "RIGHT", CharacterFrameCloseButton, "LEFT", -2, 0, TAB_W, TAB_H, "tab"
 end
 
+-- The template's Icon: 33 x 35, BOTTOM 1,-2 on the 33 x 35 tab, so its center sits 1 right of and 2
+-- below the tab's (wow-ui-source@297d7aa:Interface/AddOns/Blizzard_UIPanels_Game/Mainline/
+-- PaperDollFrame.xml:406-411).
+local TAB_ICON_DX, TAB_ICON_DY = 1, -2
+
+--- Where the neighbor tab's icon centers, as an offset from the tab's center (smoke round 3 E10): read
+--- live from PaperDollSidebarTab3.Icon, anchored BOTTOM to its tab's BOTTOM as the template lays it;
+--- the template's own offset when there is no such icon or it is anchored some other way.
+--- @return number dx, number dy
+function Sheet.TabIconOffset()
+    local tab = builtFrame(STOCK_TAB)
+    local icon = tab and tab.Icon
+    if type(icon) ~= "table" or type(icon.GetPoint) ~= "function" then return TAB_ICON_DX, TAB_ICON_DY end
+    local point, rel, relPoint, x, y = icon:GetPoint(1)
+    if point ~= "BOTTOM" or rel ~= tab or relPoint ~= "BOTTOM" then return TAB_ICON_DX, TAB_ICON_DY end
+    local _, h = icon:GetSize()
+    local _, tabH = stockTabSize(tab)
+    return NS.SafeNumber(x, TAB_ICON_DX), NS.SafeNumber(y, 0) + (NS.SafeNumber(h, TAB_H) - tabH) / 2
+end
+
 -- EllesmereUI's own fallback for a missing accent (_paintTopButton, EllesmereUIBlizzardSkin_
 -- CharacterSheet.lua:3136).
 local EUI_ACCENT_FALLBACK = { r = 0.51, g = 0.784, b = 1 }
@@ -163,31 +183,4 @@ function Sheet.DockRight()
         end
     end
     return right, top
-end
-
--- Where Blizzard's UI panel manager puts a "left" panel (CharacterFrame, UIPanelWindows.lua:9): TOPLEFT
--- at LEFT_OFFSET and TOP_OFFSET from UIParent's top left, divided by the panel's scale in its own
--- units, which is those offsets in UIParent's (wow-ui-source@297d7aa:Interface/AddOns/
--- Blizzard_UIParentPanelManager/Shared/UIParentPanelManager.lua:617-635; the defaults, 16 and -116,
--- UIPanelLayoutFrame.lua:1-9). With the paper doll up the stock sheet is CHARACTERFRAME_EXPANDED_WIDTH
--- (540) wide (Blizzard_UIPanels_Game/Mainline/CharacterFrame.lua:2).
-local LEFT_OFFSET, TOP_OFFSET, EXPANDED_WIDTH = 16, -116, 540
-
-local function layoutAttribute(name, fallback)
-    local get = GetUIPanelLayoutAttribute
-    return NS.SafeNumber(type(get) == "function" and get(name) or nil, fallback)
-end
-
---- Where the window stands alone while test mode shows it with the sheet closed (smoke round 2
---- design G7): the top right corner of a stock sheet that is not open, in UIParent's units. Computed,
---- never read off the hidden CharacterFrame, whose rect is unset before its first open and narrower on
---- the Reputation and Currency tabs. nil, nil while UIParent has no top.
---- @return number|nil x, number|nil top
-function Sheet.AloneCorner()
-    local screenTop = NS.SafeNumber(UIParent:GetTop(), nil)
-    if not screenTop then return nil, nil end
-    local scale = NS.SafeNumber(CharacterFrame:GetScale(), 1)
-    local width = NS.SafeNumber(CHARACTERFRAME_EXPANDED_WIDTH, EXPANDED_WIDTH)
-    local x = layoutAttribute("LEFT_OFFSET", LEFT_OFFSET) + width * scale
-    return x, screenTop + layoutAttribute("TOP_OFFSET", TOP_OFFSET)
 end

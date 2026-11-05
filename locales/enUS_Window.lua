@@ -41,6 +41,10 @@ L["Warbound until equipped lists the warbound items that become soulbound once e
 L["Unopened lists the items still in their original Binds on Equip state."] = "Unopened lists the items still in their original Binds on Equip state."
 L["%s (Disabled)"] = "%s (Disabled)"
 L["Stored in the Equipment Manager"] = "Stored in the Equipment Manager"
+L["Not stored in the Equipment Manager"] = "Not stored in the Equipment Manager"
+L["Click to save in the Equipment Manager"] = "Click to save in the Equipment Manager"
+L["Click to remove from the Equipment Manager"] = "Click to remove from the Equipment Manager"
+L["The outfit could not be worn, so it was not saved in the Equipment Manager"] = "The outfit could not be worn, so it was not saved in the Equipment Manager"
 L["Outfits can't be changed in combat."] = "Outfits can't be changed in combat."
 
 -- P4.20 keys (modules/Bar.lua, modules/Bar_Buttons.lua)
@@ -70,6 +74,7 @@ L["Deposit other outfits to bank"] = "Deposit other outfits to bank"
 L["Withdraw other outfits from bank"] = "Withdraw other outfits from bank"
 L["Bank"] = "Bank"
 L["Rename..."] = "Rename..."
+L["Save in equipment manager"] = "Save in equipment manager"
 L["On equip, unequip other Accessory outfits"] = "On equip, unequip other Accessory outfits"
 L["Ignore in comparison tooltips"] = "Ignore in comparison tooltips"
 L["Delete"] = "Delete"
@@ -143,3 +148,6 @@ L["Outfitter Reborn (test mode)"] = "Outfitter Reborn (test mode)"
 
 -- Smoke round 2 review fix keys (modules/Bar_Chrome.lua: the bar's degraded test-mode title)
 L["Outfits (test mode)"] = "Outfits (test mode)"
+
+-- Smoke round 3 E4 keys (modules/OutfitMenu.lua: a sample's browse-only menu in test mode)
+L["Not available in test mode"] = "Not available in test mode"

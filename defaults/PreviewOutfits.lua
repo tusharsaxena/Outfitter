@@ -48,3 +48,16 @@ function NS.PreviewOutfits.Rows()
     if not stamped then stamp() end
     return rows
 end
+
+--- The sample record with id `id` (`preview:<n>`), or nil: the outfit menu's browse-only source
+--- (smoke round 3 E4). The record is the display copy; nothing writes to it.
+--- @param id string
+--- @return table|nil
+function NS.PreviewOutfits.Get(id)
+    for _, row in ipairs(NS.PreviewOutfits.Rows()) do
+        for _, rec in ipairs(row.outfits) do
+            if rec.id == id then return rec end
+        end
+    end
+    return nil
+end

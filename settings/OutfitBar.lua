@@ -126,8 +126,15 @@ NS.RegisterSchemaRows({
 -- corner the bar is saved at (modules/Bar.lua's SavePosition), so a drag never flips its growth.
 local GROW_H = { auto = L["Automatic"], right = L["Right"], left = L["Left"] }
 local GROW_V = { auto = L["Automatic"], down = L["Down"], up = L["Up"] }
+-- Grouped: one block per category under its label; Collapsed: one block, no labels (smoke round 3
+-- E9), so every Labels row is hidden while it is picked (options-ui-§22).
+local MODES = { grouped = L["Grouped"], collapsed = L["Collapsed"] }
 
 NS.RegisterSchemaRows({
+    { path = "bar.layout.mode", page = PAGE, group = LAYOUT, type = "string",
+      values = MODES, sorting = { "grouped", "collapsed" },
+      label = L["Grouping"], default = DB.layout.mode,
+      tooltip = L["Grouped: one row of icons per category (one column in the vertical layout), each under its label. Collapsed: every outfit the bar shows in a single group with no labels, and the Labels tab's rows are hidden."] },
     { path = "bar.vertical", page = PAGE, group = LAYOUT, type = "bool",
       label = L["Vertical layout"], default = DB.vertical,
       tooltip = L["One column per category."] },
@@ -153,7 +160,7 @@ NS.RegisterSchemaRows({
 -- ── Icons ──────────────────────────────────────────────────────────────────────────────────────
 -- Size, then the Border block on the skin's icon family (`fromSkin = "icon"`: its companion governs
 -- the thickness too), with *Use the skin's color* after it. Both companions on, the button wears the
--- skin's own HUD icon edge (S.IconBorder); either off, the player's (modules/Bar_Buttons.lua).
+-- skin's own window icon outline (S.IconBorder); either off, the player's (modules/Bar_Buttons.lua).
 NS.RegisterSchemaRows({
     { path = "bar.icons.size", page = PAGE, group = ICONS, subgroup = L["Size"], type = "number",
       min = 16, max = 64, step = 1, label = L["Icon size (px)"], default = DB.icons.size,
@@ -170,13 +177,18 @@ registerComposed(H.BorderGroup({
 
 -- ── Labels ─────────────────────────────────────────────────────────────────────────────────────
 -- One label per category, over its row (over its column, truncated, in the vertical layout), drawn
--- through S.HudFont (modules/Bar_Chrome.lua). The font block's rows dim while the labels are off,
--- the swatch excepted (it is never grayed, anti-pattern #74); a row the composer already governs by
--- its skin companion dims for either (AuraMaster settings/Layout.lua:582-597's shape).
+-- through S.HudFont (modules/Bar_Chrome.lua). Every row is shown only while the Layout tab's
+-- Grouping is Grouped (options-ui-§22: Collapsed draws no labels, and a group no picked value uses is
+-- hidden, never dimmed); a note stands in for them while Collapsed. The font block's rows dim while
+-- the labels are off, the swatch excepted (it is never grayed, anti-pattern #74); a row the composer
+-- already governs by its skin companion dims for either (AuraMaster settings/Layout.lua:582-597's shape).
+local GROUPED = { path = "bar.layout.mode", equals = "grouped" }
 local function labelsOff() return NS.GetSetting("bar.labels.show") == false end
 
 NS.RegisterSchemaRows({
-    { path = "bar.labels.show", page = PAGE, group = LABELS, type = "bool",
+    { type = "note", page = PAGE, group = LABELS, shownWhen = { path = "bar.layout.mode", equals = "collapsed" },
+      text = L["Category labels are drawn only while Grouping is Grouped (Outfit Bar > Layout)."] },
+    { path = "bar.labels.show", page = PAGE, group = LABELS, type = "bool", shownWhen = GROUPED,
       label = L["Show category labels"], default = DB.labels.show,
       tooltip = L["Names each row of the bar: Complete outfits, Accessories."] },
 })
@@ -195,6 +207,7 @@ do
         },
     })
     for _, row in ipairs(rows) do
+        row.shownWhen = GROUPED
         local governedBy = row.disabledIf
         if type(governedBy) == "string" then
             row.disabledIf = function() return labelsOff() or NS.GetSetting(governedBy) == true end
@@ -206,14 +219,18 @@ do
 end
 
 -- ── Frame ──────────────────────────────────────────────────────────────────────────────────────
--- Show background leads; then the Background block (a backdrop with no texture: a ColorPair,
--- options-ui-§16) and the Border block on the skin's bar family. While *Use the skin's background*
--- is on the bar is drawn exactly as a Ka0s window and these colors wait; off, they draw.
-NS.RegisterSchemaRows({
-    { path = "bar.showBackground", page = PAGE, group = FRAME, type = "bool",
-      label = L["Show background"], default = DB.showBackground,
-      tooltip = L["Draws the bar's window behind its buttons: its background, its border and its header band."] },
-})
+-- The Background block (a backdrop with no texture: a ColorPair, options-ui-§16) and the Border block
+-- on the skin's bar family. While *Use the skin's background* is on the bar is drawn exactly as a
+-- Ka0s window and these colors wait; off, they draw. The bar always draws one of the two (smoke
+-- round 3 E6 removed Show background; a stored `bar.showBackground` is never read).
+--
+-- SHOW BORDER (smoke round 3 E7, the owner's ruling: follow the standard, skinning-§6): while *Use the
+-- skin's border* is on under a skin with a real bar border style, the edge is the skin's, so the switch
+-- is dimmed, reads ticked and is not read; under a skin whose style is None the skin has no border of
+-- its own, so the switch stays live and governs; with the companion off it governs in every skin.
+-- That is the composer's own rule (LibKa0s OptionsCompose minor 18, its disabledIf and skinValue on
+-- the row, read at call time so a skin switch moves it), kept as composed; only the tooltip is the
+-- addon's, through the composer's `tooltips` (options-ui-§16), so it says why.
 registerComposed(H.ColorPair({
     prefix = "bar.", page = PAGE, group = FRAME, subgroup = L["Background"], order = 100,
     key = "bgColor", companionKey = "useClassColorBg", label = L["Background color"], classColor = PLAYER_CLASS,
@@ -221,12 +238,13 @@ registerComposed(H.ColorPair({
     extra = { {
         path = "bar.bgFromSkin", type = "bool", startsLine = true, label = L["Use the skin's background"],
         default = DB.bgFromSkin,
-        tooltip = L["Draw the bar as a window of the skin: its background, border and header band. The Background color and Border rows are not read while this is on."],
+        tooltip = L["Draw the bar as a window of the skin: its background, border and header band. While this is on the Background color rows and the border's style, thickness and color are not read; Show border still hides the edge, except under a skin whose own border style Use the skin's border follows."],
     } },
 }))
 registerComposed(H.BorderGroup({
     prefix = "bar.frame.", page = PAGE, group = FRAME, subgroup = L["Border"], order = 200, show = true,
     fromSkin = "bar", classColor = PLAYER_CLASS, defaults = DB.frame,
+    tooltips = { borderShow = L["Draw a border around the bar. While Use the skin's border is on under a skin with a border style of its own, the border is the skin's, so this switch is dimmed and not read; under a skin with no border style it stays yours, and turning Use the skin's border off makes it yours in every skin."] },
     extra = { borderColorFollow("bar.frame.", DB.frame) },
 }))
 

@@ -367,7 +367,7 @@ end)
 -- ── the window (smoke round 2 design G7, D9, D10) ─────────────────────────────────────────────
 --
 -- While test mode is on the window lists the sample outfits under its own test strip, docked beside
--- an open sheet or, with the sheet closed, alone where a stock sheet would put it: the same single
+-- an open sheet or, with the sheet closed, alone in the screen center: the same single
 -- TOPLEFT -> UIParent BOTTOMLEFT point the dock always uses, issued only from Dock.Refresh. No item
 -- section is listed, so no secure child arms, and every outfit-row handler refuses a sample quietly.
 -- X or Escape hides it for the rest of that test session; the mode itself still ends only on its own
@@ -380,10 +380,11 @@ local WINDOW_STRIP = "Test mode: sample outfits, nothing equipped"
 local TITLE = "Outfitter Reborn"
 local TITLE_DEGRADED = "Outfitter Reborn (test mode)"
 
--- The stock sheet's spot with UIParent 1080 high: LEFT_OFFSET 16 + CHARACTERFRAME_EXPANDED_WIDTH 540,
--- TOP_OFFSET -116 (wow-ui-source@297d7aa UIPanelLayoutFrame.lua:1-9, CharacterFrame.lua:2).
+-- The alone spot with UIParent 1920 x 1080: the 260-wide window centered, 320 high plus the test strip
+-- and its 2 px gap (smoke round 3 E3; test_preview_place pins the drag and the bar beside it).
 local SCREEN_TOP = 1080
-local ALONE_X, ALONE_TOP = 556, SCREEN_TOP - 116
+local ALONE_X = (1920 - 260) / 2
+local function aloneTop(NS) return (SCREEN_TOP + 320 + NS.TEST_STRIP_HEIGHT + 2) / 2 end
 
 --- The dock scene with UIParent laid out, so the alone corner has a screen top to hang from.
 local function testScene(opts)
@@ -396,8 +397,8 @@ local function win(M) return M.OutfitterRebornWindow end
 
 local function lastPoint(f) return f.__pts[#f.__pts] end
 
-local function isAlonePoint(M, p)
-    return p[1] == "TOPLEFT" and p[2] == M.UIParent and p[3] == "BOTTOMLEFT" and p[4] == ALONE_X and p[5] == ALONE_TOP
+local function isAlonePoint(NS, M, p)
+    return p[1] == "TOPLEFT" and p[2] == M.UIParent and p[3] == "BOTTOMLEFT" and p[4] == ALONE_X and p[5] == aloneTop(NS)
 end
 
 local function outfitRows(NS)
@@ -455,7 +456,7 @@ test("preview window: the list is the five samples under their headers, no item 
     assertTrue(back, "the real outfits came back when test mode ended")
 end)
 
-test("preview window: every row handler refuses a sample quietly and nothing is written", function()
+test("preview window: every row handler refuses a sample quietly, the gear browses, and nothing is written", function()
     local NS, M, fakes = testScene()
     M.__sheets.place(M.CharacterFrame, 300, 500)
     M.__world:openCharacter()
@@ -476,6 +477,13 @@ test("preview window: every row handler refuses a sample quietly and nothing is 
         -- red under: an onWornClick that returns without putting the box back
         assertEqual(row.worn:GetChecked(), was, "the worn box kept the click")
         row.em:__fire("OnClick", "LeftButton")
+        -- The mark's tooltip gives the sample's drawn state and no click hint (smoke round 3 E12).
+        -- red under: a sample's mark offering the save its click refuses.
+        row.em:__fire("OnEnter")
+        assertEqual(M.GameTooltip.TextLeft1:GetText(), row.entry.rec.em and "Stored in the Equipment Manager"
+            or "Not stored in the Equipment Manager")
+        assertEqual(M.GameTooltip.TextLeft2:GetText(), "Not available in test mode")
+        row.em:__fire("OnLeave")
         row.menu:__fire("OnClick", "LeftButton")
         row:__fire("OnEnter")
         assertEqual(M.GameTooltip.TextLeft2:GetText(), SAMPLE_TIP)
@@ -485,7 +493,14 @@ test("preview window: every row handler refuses a sample quietly and nothing is 
     -- red under: a row click or worn box that reaches NS.Stack.Wear with the sample's id
     assertEqual(#M.__equipCalls, calls, "a sample reached the equip path")
     assertEqual(#NS.db.char.stack, 0, "nothing worn")
-    assertEqual(fakes.OutfitMenu.__count("Open"), 0, "a sample opened the outfit menu")
+    -- The gear opens the sample's browse-only menu (smoke round 3 E4; test_outfit_menu pins its rows);
+    -- the row's right click still opens nothing.
+    -- red under: a gear that still refuses a sample (20.png)
+    assertEqual(fakes.OutfitMenu.__count("Open"), #rows, "the gear did not open each sample's menu")
+    for i, c in ipairs(fakes.OutfitMenu.__calls) do
+        assertTrue(c[2] == rows[i].menu, "the menu did not open from the sample's gear")
+        assertEqual(c[3], "preview:" .. i)
+    end
     assertNil(NS.Stack.Selected(), "a sample was selected")
     assertEqual(#M.__printed(), 0, "a refusal spoke")
     assertEqual(snapshot(NS), before)
@@ -493,7 +508,7 @@ end)
 
 -- ── where it shows ────────────────────────────────────────────────────────────────────────────
 
-test("preview window: with the sheet closed, test mode shows the window alone at the stock sheet's right", function()
+test("preview window: with the sheet closed, test mode shows the window alone in the screen center", function()
     local NS, M = testScene()
     assertFalse(M.PaperDollFrame:IsShown(), "the sheet starts closed")
     NS.Preview.Toggle()
@@ -505,25 +520,12 @@ test("preview window: with the sheet closed, test mode shows the window alone at
         assertTrue(p[1] == "TOPLEFT" and p[2] == M.UIParent, "a second anchor point on the window")
     end
     -- red under: a corner that reads the hidden sheet's rect while the doll is hidden
-    assertTrue(isAlonePoint(M, lastPoint(w)), "the window is not at the stock sheet's right")
+    assertTrue(isAlonePoint(NS, M, lastPoint(w)), "the window is not in the screen center")
     -- The follow does not chase the hidden sheet.
     local n = #w.__pts
     M.__sheets.place(M.CharacterFrame, 300, 500)
     M.OutfitterRebornDockDriver:__fire("OnUpdate", 0.05)
     assertEqual(#w.__pts, n, "the follow re-anchored the alone window")
-end)
-
-test("preview window: the alone corner reads the client's panel layout and the sheet's scale", function()
-    local NS, M = testScene({ mutate = function(M)
-        M.GetUIPanelLayoutAttribute = function(name)
-            if name == "LEFT_OFFSET" then return 20 end
-            if name == "TOP_OFFSET" then return -100 end
-        end
-    end })
-    rawset(M.CharacterFrame, "GetScale", function() return 0.5 end)
-    local x, top = NS.Sheet.AloneCorner()
-    assertEqual(x, 20 + 540 * 0.5)
-    assertEqual(top, SCREEN_TOP - 100)
 end)
 
 test("preview window: opening the sheet docks it, closing the sheet puts it back alone", function()
@@ -538,7 +540,7 @@ test("preview window: opening the sheet docks it, closing the sheet puts it back
     M.__world:closeCharacter()
     -- red under: the sheet's OnHide hiding the window in test mode
     assertTrue(w:IsShown(), "closing the sheet hid the test window")
-    assertTrue(isAlonePoint(M, lastPoint(w)), "the window did not go back to its alone spot")
+    assertTrue(isAlonePoint(NS, M, lastPoint(w)), "the window did not go back to its alone spot")
     NS.Preview.Stop()
     assertFalse(w:IsShown(), "ending test mode left the alone window up")
 end)

@@ -53,8 +53,9 @@ local _, NS = ...
 -- hosts' (Item Upgrade, Item Interaction, Runeforge) keep Blizzard's anchor; and nothing is written
 -- in combat lockdown: the window hides at PLAYER_REGEN_DISABLED, before lockdown, and its hide
 -- restores the drawer (modules/Dock.lua). None of these frames is protected. The drawer's gate is the
--- stand-down latch and the window, not `quickSlots.enabled`, which is the flyout's lists and clicks
--- only. Each global hook is installed only when the client has the function.
+-- stand-down latch, the window and the Outfit Window page's `window.drawer` (smoke round 3 E11; Dock's
+-- receiver syncs a write or a profile switch), not `quickSlots.enabled`, which is the flyout's lists
+-- and clicks only. Each global hook is installed only when the client has the function.
 --
 -- CLIENT READS beyond this file's luacheck stanza go through `_G` by name, read at call time:
 -- CursorHasItem, EquipmentFlyoutFrame, EquipmentFlyout_UpdateItems,
@@ -63,7 +64,11 @@ local _, NS = ...
 -- client's value as its fallback). Every link is read through NS.Compat, which hands a secret one back
 -- as nil.
 --
--- CALLS (at call time; design §12): NS.Dock.IsVisible, NS.SlotEnables.COLUMN.
+-- THE BORDER TINT (smoke round 3 E1): the one Blizzard frame this addon colors, under the accepted
+-- deviation DEV-SKIN-FLYOUT-TINT; see "the flyout's border tint" below.
+--
+-- CALLS (at call time; design §12): NS.Dock.IsVisible, NS.SlotEnables.COLUMN, NS.Skin.Color and
+-- NS.Skin.OnLooksChanged (the tint).
 
 local QS = {}
 NS.QuickSlots = QS
@@ -184,10 +189,12 @@ local flyoutMoved = false         -- buttonFrame carries this file's point, not 
 
 local function locked() return Compat.InCombatLockdown() end
 
--- The drawer opens outward: standing up and the outfit window on screen. Visible, not shown: a
--- window parked in the sheet holder keeps its shown flag when the sheet hides it.
+-- The drawer opens outward: standing up, the Outfit Window page's `window.drawer` on (smoke round 3
+-- E11) and the outfit window on screen. Visible, not shown: a window parked in the sheet holder keeps
+-- its shown flag when the sheet hides it.
 local function drawerWanted()
-    return not NS.IsStoodDown() and NS.Dock.IsVisible() == true
+    if NS.IsStoodDown() or NS.GetSetting("window.drawer") == false then return false end
+    return NS.Dock.IsVisible() == true
 end
 
 local function leftColumn(button)
@@ -308,10 +315,92 @@ local function showArrows(want)
     end
 end
 
+-- ── the flyout's border tint (smoke round 3 E1; deviation DEV-SKIN-FLYOUT-TINT) ──────────────────
+--
+-- The one place this addon colors a Blizzard frame: the accepted deviation DEV-SKIN-FLYOUT-TINT
+-- (skinning-§7, docs/ARCHITECTURE.md -> Documented deviations; owner ruling 2026-11-05). While the
+-- window is on screen and the flyout is open on one of the 18 sheet slots (this file's slotOf), its
+-- rim takes the skin's `win.border`: vertex color, desaturated so the hue is the token's. Tint only:
+-- no new art, no reparenting, nothing moved (the drawer above anchors). The rim, at
+-- wow-ui-source@297d7aa (Blizzard_FrameXML), is the UI-GearManager-Flyout art: `buttonFrame.bg1` (EquipmentFlyout.xml:61-69) and the bg2..bgN
+-- that _createFlyoutBG adds as a page needs them (EquipmentFlyout.lua:121-135, laid out at :345-431),
+-- plus `NavigationFrame.BottomBackground` (xml:83-86), the paging strip of the same art. The flyout's
+-- `Highlight` (xml:41-51) is the open slot's glow, not the rim, and is left alone.
+-- Each texture's color and desaturation are read before its first tint and written back exactly, then
+-- forgotten, when the window goes, another host's slot owns the flyout (Item Upgrade, Item
+-- Interaction, Runeforge; seen on its EquipmentFlyout_UpdateItems, which runs before the flyout
+-- shows, :226-228), and at the stand-down (QS.Suspend). A skin change re-tints (NS.Skin
+-- .OnLooksChanged). Nothing is written in combat lockdown; the window hides before it, so the tint is
+-- already gone by then. None of these textures is protected. A piece Blizzard makes while tinted is
+-- read on its own first tint, so a page change cannot record a tinted color as Blizzard's.
+
+local RIM_TOKEN = "win.border"
+local tinted = {}             -- rim texture -> { r, g, b, a, desaturated } as Blizzard had it
+
+-- The flyout's rim textures as it has them now: the background pieces, then the paging strip.
+local function rimTextures(flyout)
+    local out = {}
+    local frame = flyout.buttonFrame
+    if type(frame) == "table" then
+        for i = 1, NS.SafeNumber(frame.numBGs, 0) do
+            local t = frame["bg" .. i]
+            if type(t) == "table" then out[#out + 1] = t end
+        end
+    end
+    local nav = flyout.NavigationFrame
+    if type(nav) == "table" and type(nav.BottomBackground) == "table" then out[#out + 1] = nav.BottomBackground end
+    return out
+end
+
+-- This addon holds the flyout: standing up, the window on screen, and a sheet slot's flyout.
+local function tintWanted(flyout)
+    if NS.IsStoodDown() or NS.Dock.IsVisible() ~= true then return false end
+    local button = flyout.button
+    return button ~= nil and slotOf[button] ~= nil
+end
+
+local function isDesaturated(t)
+    return type(t.IsDesaturated) == "function" and Secrets.PlainTruth(t:IsDesaturated()) == true
+end
+
+-- Every tinted texture back to what it had, and forgotten.
+local function restoreRim()
+    for t, was in pairs(tinted) do
+        t:SetDesaturated(was[5])
+        t:SetVertexColor(was[1], was[2], was[3], was[4])
+        tinted[t] = nil
+    end
+end
+
+-- Every rim texture in the skin's border color, each read first if it has not been.
+local function tintRim(flyout)
+    local r, g, b, a = NS.Skin.Color(RIM_TOKEN)
+    if r == nil then return restoreRim() end
+    for _, t in ipairs(rimTextures(flyout)) do
+        if not tinted[t] then
+            local tr, tg, tb, ta = t:GetVertexColor()
+            tinted[t] = { tr, tg, tb, ta, isDesaturated(t) }
+        end
+        t:SetDesaturated(true)
+        t:SetVertexColor(r, g, b, a or 1)
+    end
+end
+
+--- Bring the flyout's rim in line with who holds it: the skin's border color while this addon does,
+--- Blizzard's own otherwise. The flyout's updates, DrawerSync (the window's show and hide, the
+--- stand-down) and a skin change call it. Never in combat lockdown.
+function QS.TintSync()
+    if not installed or locked() then return end
+    local flyout = _G.EquipmentFlyoutFrame
+    if type(flyout) == "table" and tintWanted(flyout) then return tintRim(flyout) end
+    restoreRim()
+end
+
 -- EquipmentFlyout_UpdateItems' post-hook.
 local function onFlyoutUpdate()
     if locked() then return end
     placeFlyout()
+    QS.TintSync()
 end
 
 -- EquipmentFlyoutPopoutButton_SetReversed's post-hook: a moved arrow keeps pointing outward.
@@ -332,6 +421,7 @@ end
 --- OnHide call it; so does the stand-down. Never in combat lockdown.
 function QS.DrawerSync()
     if not installed or locked() then return end
+    QS.TintSync()
     local want = drawerWanted()
     if want == drawerOn then return placeFlyout() end
     for button, slot in pairs(slotOf) do
@@ -363,6 +453,7 @@ function QS.Install()
             button:HookScript("PostClick", postClick)
         end
     end
+    NS.Skin.OnLooksChanged(QS.TintSync)
     if type(hooksecurefunc) ~= "function" then return end
     hookGlobal("EquipmentFlyout_UpdateItems", onFlyoutUpdate)
     hookGlobal("EquipmentFlyoutPopoutButton_SetReversed", onSetReversed)

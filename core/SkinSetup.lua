@@ -64,6 +64,9 @@ local addonName, NS = ...
 -- Only this addon's own frames (skinning-§7): the docked window, the sheet button, the slot
 -- checkboxes, the bar, the dialogs and the compare tooltips. Never CharacterFrame, PaperDollFrame or
 -- any other Blizzard frame: the window is docked BESIDE the sheet, it never paints it.
+-- One accepted deviation (DEV-SKIN-FLYOUT-TINT, docs/ARCHITECTURE.md -> Documented deviations): while
+-- the window holds Blizzard's equipment flyout, modules/QuickSlots.lua tints its rim with `win.border`
+-- and gives Blizzard's color back when it lets go.
 --
 -- ── WHY A ROW'S onChange PASSES ONE HALF ─────────────────────────────────────────────────────
 --

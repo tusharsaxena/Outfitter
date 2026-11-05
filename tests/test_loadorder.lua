@@ -158,7 +158,7 @@ local PLANNED = {
     "modules/Bar_Buttons.lua", "modules/Broker.lua", "modules/QuickSlots.lua", "modules/QuickSlots_Sort.lua",
     "modules/Preview.lua", "modules/Api.lua", "modules/Diagnostics.lua",
     "settings/Schema.lua", "settings/Slash.lua", "settings/OptionsSetup.lua", "settings/General.lua",
-    "settings/OutfitBar.lua", "settings/Profiles.lua",
+    "settings/OutfitBar.lua", "settings/OutfitWindow.lua", "settings/Profiles.lua",
 }
 
 --- Load position of each TOC file, by forward-slash path.

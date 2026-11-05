@@ -10,7 +10,10 @@ local _, NS = ...
 --
 -- AN OUTFIT ROW (sheet and window feedback design G4), left to right: the worn box, the outfit's icon,
 -- the Equipment Manager mark (that tab's own icon, full when the outfit is stored there, dimmed when
--- not; a click toggles it), the name, the automation lightning and the gear that opens the menu.
+-- not; one click saves or removes it, NS.EM.SetStored, and its tooltip says which state it is in and
+-- what a click does: smoke round 3 E12), the name, the automation lightning and the gear that opens the menu. The
+-- Outfit Window page can turn off the EM mark (the name then starts where it was) and the lightning
+-- (`window.marks.em`, `window.marks.trigger`; smoke round 3 E11).
 --
 -- THE SECURE CHILD. Each row owns `<row>Secure`, a SecureActionButtonTemplate button covering it, so
 -- an item-targeting spell (Disenchant) lands on a secure frame (UseContainerItem is protected). Its
@@ -25,11 +28,12 @@ local _, NS = ...
 --
 -- A SAMPLE ROW (test mode, smoke round 2 design G7; the entry's `placeholder`) draws its record's
 -- display fields (worn, triggered, em, status) instead of the live state, and every handler refuses
--- it quietly: the row click, the worn box (which takes its drawn state back), the EM mark and the
--- gear. Its tooltip is the bar's sample line. Only item rows arm, and test mode lists none.
+-- it quietly: the row click, the worn box (which takes its drawn state back) and the EM mark. Its gear
+-- opens the sample's browse-only outfit menu (smoke round 3 E4: every data row disabled, in
+-- NS.OutfitMenu). Its tooltip is the bar's sample line. Only item rows arm, and test mode lists none.
 --
 -- CALLS (at call time; design §12): NS.Window.MarkDirty/ToggleCollapsed, NS.Stack.Wear/Remove/IsWorn/
--- Select/Selected, NS.Outfits.Get/IsEM, NS.EM.StoreOnServer/StoreLocally, NS.OutfitMenu.Open,
+-- Select/Selected, NS.Outfits.Get/IsEM, NS.EM.SetStored, NS.OutfitMenu.Open,
 -- NS.OutfitTooltip.Show, NS.OutfitIcon (the one icon resolver), NS.Compat (pickup, use, sell
 -- cursor, item icon).
 
@@ -53,6 +57,8 @@ local EM_DIM_ALPHA = 0.35
 -- PAPERDOLL_SIDEBARS (wow-ui-source@297d7aa:Interface/AddOns/Blizzard_UIPanels_Game/Mainline/
 -- PaperDollFrame.lua:79, :97-100). Read when the rows are built, so the client's art is the art drawn.
 local EM_SIDEBAR_TAB = 3
+-- An outfit row's columns: the EM mark's left edge, and the name's after it (design G4).
+local EM_X, NAME_X = 50, 68
 
 -- An outfit's icon -> texture, r, g, b: the one resolver the bar and the broker draw too (plan Task 3.5).
 local function outfitIcon(rec)
@@ -158,33 +164,28 @@ local function onWornClick(row)
     NS.Window.MarkDirty(true)
 end
 
--- The EM mark (INV §3.5 OutfitServerButton): the first click on an outfit that is not selected only
--- selects it; a click on the selected one stores it on the server. A click on the full mark (an
--- outfit the Equipment Manager holds) stores it locally.
-local function storeOnServer(id)
-    local St = NS.Stack
-    if St.Selected() ~= id then
-        St.Wear(id, { hw = true, clearDisabled = true })
-        St.Select(id)
-        return
-    end
-    local ok, popupKey = NS.EM.StoreOnServer(id)
-    if not ok and popupKey then StaticPopup_Show(popupKey) end
-end
-
+-- The EM mark: one click saves the outfit to the Equipment Manager (the dimmed mark) or removes it
+-- (the full one), selected or not (the owner's E12(2) ruling, which retires INV §3.5's select-first
+-- click). NS.EM.SetStored is the one path, the gear menu's On/Off included; it refuses in combat.
 local function onEmClick(row)
     local e = row.entry
     if NS.IsStoodDown() or not (e and e.kind == "outfit") or e.placeholder then return end
-    if locked() then
-        NS.Print(L["Outfits can't be changed in combat."])
-        return
-    end
-    if NS.Outfits.IsEM(e.id) then
-        NS.EM.StoreLocally(e.id)
-    else
-        storeOnServer(e.id)
-    end
+    NS.EM.SetStored(e.id, not NS.Outfits.IsEM(e.id))
     NS.Window.MarkDirty(true)
+end
+
+-- The EM mark's tooltip: the state, then what a click does (a sample's click does nothing).
+local function emTooltip(mark, row)
+    local e = row.entry
+    if NS.IsStoodDown() or not (e and e.kind == "outfit") then return end
+    local stored
+    if e.placeholder then stored = e.rec.em == true else stored = NS.Outfits.IsEM(e.id) end
+    local hint = stored and L["Click to remove from the Equipment Manager"] or L["Click to save in the Equipment Manager"]
+    if e.placeholder then hint = L["Not available in test mode"] end
+    GameTooltip:SetOwner(mark, "ANCHOR_RIGHT")
+    GameTooltip:SetText(stored and L["Stored in the Equipment Manager"] or L["Not stored in the Equipment Manager"])
+    GameTooltip:AddLine(hint, nil, nil, nil, true)
+    GameTooltip:Show()
 end
 
 -- ── hover ─────────────────────────────────────────────────────────────────────────────────────
@@ -254,6 +255,19 @@ local function outfitMarks(e, rec)
     return NS.Stack.IsWorn(e.id), NS.Outfits.IsEM(e.id), shown, dim
 end
 
+-- The EM mark and the lightning as the Outfit Window page has them (smoke round 3 E11): without the
+-- EM mark the name takes its place.
+local function drawMarks(row, em, trig, dim)
+    local showEm = NS.GetSetting("window.marks.em") ~= false
+    row.em:SetAlpha(em and 1 or EM_DIM_ALPHA)
+    row.em:SetShown(showEm)
+    row.name:SetPoint("LEFT", row, "LEFT", showEm and NAME_X or EM_X, 0)
+    if trig and NS.GetSetting("window.marks.trigger") ~= false then
+        row.trig:SetAlpha(dim and DIM_ALPHA or 1)
+        row.trig:Show()
+    end
+end
+
 function RENDER.outfit(row, e)
     local rec = e.rec or NS.Outfits.Get(e.id)
     if not rec then return end
@@ -266,17 +280,12 @@ function RENDER.outfit(row, e)
     icon:SetTexture(tex)
     icon:SetVertexColor(r, g, b)
     icon:Show()
-    row.em:SetAlpha(em and 1 or EM_DIM_ALPHA)
-    row.em:Show()
+    drawMarks(row, em, trig, dim)
     local name = type(rec.name) == "string" and rec.name or ""
     if e.status == "disabled" then name = L["%s (Disabled)"]:format(name) end
     row.name:SetText(name)
     NS.Skin.Text(row.name, STATUS_TOKEN[e.status] or "body")
     row.name:Show()
-    if trig then
-        row.trig:SetAlpha(dim and DIM_ALPHA or 1)
-        row.trig:Show()
-    end
     row.menu:Show()
 end
 
@@ -328,7 +337,7 @@ local function regions(row)
     row.label:SetJustifyH("LEFT")
     S.Text(row.label, "heading")
     row.name = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-    row.name:SetPoint("LEFT", row, "LEFT", 68, 0)
+    row.name:SetPoint("LEFT", row, "LEFT", NAME_X, 0)
     row.name:SetPoint("RIGHT", row, "RIGHT", -38, 0)
     row.name:SetJustifyH("LEFT")
     row.icon = row:CreateTexture(nil, "ARTWORK")
@@ -361,7 +370,7 @@ end
 local function emMark(row)
     local em = CreateFrame("Button", row.__rowName .. "EM", row)
     em:SetSize(16, 16)
-    em:SetPoint("LEFT", row, "LEFT", 50, 0)
+    em:SetPoint("LEFT", row, "LEFT", EM_X, 0)
     em.icon = em:CreateTexture(nil, "ARTWORK")
     em.icon:SetAllPoints(em)
     local tabs = _G.PAPERDOLL_SIDEBARS
@@ -371,11 +380,7 @@ local function emMark(row)
         if type(tab.texCoords) == "table" then em.icon:SetTexCoord(unpack(tab.texCoords)) end
     end
     em:SetScript("OnClick", function() onEmClick(row) end)
-    em:SetScript("OnEnter", function(b)
-        GameTooltip:SetOwner(b, "ANCHOR_RIGHT")
-        GameTooltip:SetText(L["Stored in the Equipment Manager"])
-        GameTooltip:Show()
-    end)
+    em:SetScript("OnEnter", function(b) emTooltip(b, row) end)
     em:SetScript("OnLeave", Rows.OnLeave)
     return em
 end
@@ -391,7 +396,9 @@ local function gearMenu(row)
     NS.Skin.Button(menu, { noBg = true, noBorder = true })
     menu:SetScript("OnClick", function()
         local e = row.entry
-        if NS.IsStoodDown() or not (e and e.kind == "outfit") or e.placeholder then return end
+        -- A sample's gear opens its browse-only menu (smoke round 3 E4): NS.OutfitMenu disables every
+        -- row that would change data.
+        if NS.IsStoodDown() or not (e and e.kind == "outfit") then return end
         NS.OutfitMenu.Open(menu, e.id)
     end)
     return menu

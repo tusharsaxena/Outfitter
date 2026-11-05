@@ -6,7 +6,7 @@ LibKa0s-Options, built from the rows in `NS.Schema`; categories are registered e
 game's **Settings → AddOns → Ka0s Outfitter Reborn**, from `/or config`, and from a left-click on
 the minimap button.
 
-The options stay in the addon: three subcategories, below options-ui-§4's five-subpanel threshold, so
+The options stay in the addon: four subcategories, below options-ui-§4's five-subpanel threshold, so
 there is no LoadOnDemand split (H21; the comment is in `settings/OptionsSetup.lua`).
 
 ## Pages
@@ -14,7 +14,8 @@ there is no LoadOnDemand split (H21; the comment is in `settings/OptionsSetup.lu
 | Page | Covers |
 |---|---|
 | General | Master controls, automatic outfit changes and equip behavior, tooltips, the skin, and key bindings |
-| Outfit Bar | Whether the bar shows and how it marks the worn outfit, opacity in combat; its layout, icons and their border, category labels, and its window frame (background and border) |
+| Outfit Bar | Whether the bar shows and how it marks the worn outfit, opacity in combat; its layout (Grouped or Collapsed), icons and their border, category labels, and its window frame (background and border) |
+| Outfit Window | The character sheet's button, slot check boxes and flyout arrows, the window's gap from the sheet; which item sections the list shows and which marks an outfit row draws |
 | Profiles | AceDB profiles: settings only; outfits belong to each character |
 
 ## Landing page
@@ -117,37 +118,57 @@ on the right, and the header drags it. Tabs in declaration order:
 
 | Path | Default | Label |
 |---|---|---|
+| `bar.layout.mode` | `grouped` (`grouped`, `collapsed`) | Grouping: Grouped is one block per category under its label; Collapsed is every shown outfit in one block with no labels, and every Labels row is hidden (a note stands in) |
 | `bar.vertical` | `false` | Vertical layout |
 | `bar.layout.perLine` | `0` (0 to 20) | Per row or column (0 = one line) |
 | `bar.layout.growH` | `auto` (`auto`, `right`, `left`) | Grow horizontally |
 | `bar.layout.growV` | `auto` (`auto`, `down`, `up`) | Grow vertically |
-| `bar.layout.padding` | `4` (0 to 20) | Padding (px) |
-| `bar.layout.spacing` | `5` (0 to 20) | Spacing (px); 32 + 5 keeps the old 37 px pitch |
+| `bar.layout.padding` | `8` (0 to 20) | Padding (px) |
+| `bar.layout.spacing` | `4` (0 to 20) | Spacing (px) |
 
 ### Icons
 
 `bar.icons.size` (`32`, 16 to 64, *Icon size (px)*), then the library's Border block (`H.BorderGroup`,
 prefix `bar.icons.`, on the skin's icon family): show, style, size, color and *Use class color*
 with *Use the skin's border*, then this addon's *Use the skin's color*
-(`bar.icons.borderColorFromSkin`). With both companions on, a button wears the skin's own HUD icon
-edge.
+(`bar.icons.borderColorFromSkin`). With both companions on, a button wears the skin's own window
+icon outline (`icon.outline`, else `icon.border`), not the HUD edge: the bar always draws a window
+background, and Ka0s Default's black HUD edge on it read as no border (review of smoke round 3 E5).
+*Show border* (`bar.icons.borderShow`) is the only edge a button draws, in every skin: on, the
+skin's edge or the player's; off, none (smoke round 3 E5: the button no longer takes `S.SquareIcon`,
+whose permanent outline edge read as an inverted switch under Ka0s Default and a dead one under the
+other skins; its art is cropped by hand instead).
 
 ### Labels
 
 `bar.labels.show` (`true`, *Show category labels*), then the library's Font block (`H.FontGroup`,
 prefix `bar.labels.`): face, size, flags (From skin first), shadow, color and *Use class color*, with
 *Use the skin's font*, then this addon's *Use the skin's color* and *Use the skin's shadow*. The
-block's rows dim while the labels are off, the swatch excepted. One label per category, drawn as
+block's rows dim while the labels are off, the swatch excepted. Every row of the tab carries
+`shownWhen` Grouped (options-ui-§22): while the Layout tab's *Grouping* is Collapsed no label draws,
+so the rows are hidden, not dimmed, and one note in their place says labels draw only while Grouped.
+One label per category, drawn as
 HUD text through `S.HudFont`, its face resolved through `S.Resolve`: with *Ignore fonts* on, the
 labels draw the stored face whatever *Use the skin's font* says (skinning-§6).
 
 ### Frame
 
-`bar.showBackground` (`true`, *Show background*), then the Background block (`H.ColorPair`,
+The Background block (`H.ColorPair`,
 `bar.bgColor` with `bar.useClassColorBg`) with this addon's *Use the skin's background*
 (`bar.bgFromSkin`), and the Border block (`H.BorderGroup`, prefix `bar.frame.`, on the skin's bar
 family) with *Use the skin's color*. While *Use the skin's background* is on, the bar is drawn
-exactly as a Ka0s window and the colors wait; off, they draw on a plate of the bar's own.
+exactly as a Ka0s window and the colors wait; off, they draw on a plate of the bar's own. *Show
+border* (`bar.frame.borderShow`) follows skinning-§6 (smoke round 3 E7, the owner's ruling: follow
+the standard). It is dimmed (reading ticked, its tooltip saying why) only while *Use the skin's
+border* (`bar.frame.borderStyleFromSkin`) is on under a skin with a real bar border style (Azeroth,
+High Contrast, WoW Default, WoW Midnight): the skin's edge then draws whatever the switch says. Under
+a skin whose style is None (Ka0s Default and the rest) the skin has no border of its own, so the row
+stays live and governs; with the companion off it governs in every skin. The row keeps the
+composer's own `disabledIf` and `skinValue` (OptionsCompose minor 18, read at call time, so a skin
+switch moves the dimming), and the bar draws through `S.BarBorder`. Where it governs it reaches both
+layers: on, the plate draws the player's style and thickness and the chrome the skin's window edge;
+off, the plate draws no edge and the skin's window edge is dropped (`S.Shell`'s `noBorder`, replayed
+on every skin switch).
 
 **No second switches** (options-ui-§15): scale, opacity, the lock, Reset position and General
 visibility are the Master controls' and govern this one frame. The header's lock writes `locked`
@@ -161,6 +182,45 @@ No row has an `onChange`: the bar re-renders on `SETTINGS_CHANGED` for any `bar.
 corner and two numbers, and decodes every write into a new table, so a reset copies the default. Its
 default is the defaults tree's `windows.bar`, encoded, and the load-time shape check skips it, since
 its own get/set are its storage.
+
+## Outfit Window
+
+`settings/OutfitWindow.lua`, page `window` (smoke round 3 E11): everything configurable about the
+docked outfit window and the sheet surfaces it brings. The Master controls govern the bar only, so
+the window takes no scale, opacity or lock here; General > Behavior's flyout row (`quickSlots.enabled`,
+the flyout's lists and clicks) is a different state from the drawer row and stays on General. Tabs in
+declaration order:
+
+### Character sheet
+
+| Path | Default | Label |
+|---|---|---|
+| `window.sheetButton` | `true` | Show the button on the character sheet: off, the button stays hidden (still anchored); the window opens from the minimap button, a key binding or `/or show` |
+| `window.slotBoxes` | `true` | Show slot check boxes: off, no box shows for any selection |
+| `window.drawer` | `true` | Show the flyout arrows while the window is open: off, the arrows and flyouts stay Blizzard's |
+| `window.dockGap` | `0` (0 to 40) | Gap from the character sheet (px): sheet units right of the dock's edge; never the alone test window |
+
+### List
+
+| Path | Default | Label |
+|---|---|---|
+| `window.sections.unused` | `true` | Show Odds 'n ends (*Item sections*) |
+| `window.sections.warbound` | `true` | Show Warbound until equipped |
+| `window.sections.boe` | `true` | Show Unopened |
+| `window.marks.em` | `true` | Show the Equipment Manager mark (*Outfit rows*): off, the name takes its place |
+| `window.marks.trigger` | `true` | Show the automation mark |
+
+No row has an `onChange`, and the page draws no color, font or border block, so no FromSkin companion
+or composed group is owed. Each surface follows a `window.*` write (`SETTINGS_CHANGED`) and a profile
+switch (`PROFILE_CHANGED`) itself: modules/Dock.lua (the button, the drawer; the gap through the
+follow's corner compare), modules/SlotEnables.lua (the boxes) and modules/Window.lua (the sections and
+marks, redrawn on the follow tick).
+
+`window.marks.em` hides the mark only. The Equipment Manager store itself is not a setting: an
+outfit's gear menu carries *Save in equipment manager* directly below *Rename...*, with *On* and *Off*
+radios ticking the outfit's true state, on the same path as the mark's click (`NS.EM.SetStored`, smoke
+round 3 E12), so an outfit can be saved or removed with the mark off. The menu stays open on a pick;
+both refuse in combat, and in test mode the radios are grayed.
 
 ## Profiles
 

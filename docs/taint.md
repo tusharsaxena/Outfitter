@@ -20,7 +20,9 @@ level and parent on the outfit window (events-frames-taint-§2).
 
 - **Nothing is written into a Blizzard frame or table** (skinning-§7). The fork's
   `PaperDollSidebarTabs` nudge, `CharacterLevelText:Hide()` and `StackSplitFrame:Hide()` are gone, and
-  the flyout's function replacement became `hooksecurefunc`.
+  the flyout's function replacement became `hooksecurefunc`. One accepted exception: the equipment
+  flyout's rim tint, `DEV-SKIN-FLYOUT-TINT` (below, and the register in
+  [ARCHITECTURE.md](ARCHITECTURE.md#documented-deviations)).
 - **Hooks are post-hooks**: `hooksecurefunc`, `HookScript` and `TooltipDataProcessor` post-calls,
   never a replaced function. None can be unhooked, so every hook body checks `NS.IsStoodDown()` first.
 - **Prefixed names.** Frames are `OutfitterReborn*` and popups `OUTFITTERREBORN_*`, so a legacy
@@ -50,13 +52,22 @@ anchors, so in combat:
 `Dock.ApplyLayers` copies the sheet holder's strata and level onto the window through
 `NS.SecureQueue.Run("dock.layers", …)`, because the window has secure children. The slot checkboxes
 hold no secure frames and may restack in combat, to the host strata (the highest among
-`CharacterFrame` and its slot buttons).
+`CharacterFrame` and its slot buttons). While Blizzard's `EquipmentFlyoutFrame` is open on one of the
+18 sheet slots (it is `HIGH`, one level under its slot button,
+wow-ui-source@297d7aa:Interface/AddOns/Blizzard_FrameXML/EquipmentFlyout.xml:38 and
+EquipmentFlyout.lua:330-332), they take the flyout's strata when it is higher and a level over its
+frames (smoke round 3 E2), and drop back to the host's when it closes. The lift is read only out of
+lockdown (`SE.OpenFlyout` answers nil in it), so a flyout opened in combat is lifted once lockdown
+ends; the flyout itself is only read, never written.
 
 Test mode's alone window is the same protected frame. It is shown, placed (the one `TOPLEFT` point,
-at `NS.Sheet.AloneCorner`) and dressed (`Window.SetTestMode`) only through `Dock.Refresh`, never in
-lockdown: `/or test` is refused in combat, and combat ends test mode at `PLAYER_REGEN_DISABLED`,
+at `Dock.AloneSpot`, the screen center or the session's drop) and dressed (`Window.SetTestMode`) only
+through `Dock.Refresh`, never in lockdown. Its drag (smoke round 3 E3) starts only out of lockdown and
+only while it stands alone; the drop clears the client's user-placed flag and re-issues the one point,
+and the hide at `PLAYER_REGEN_DISABLED` stops a move in progress before lockdown: `/or test` is refused in combat, and combat ends test mode at `PLAYER_REGEN_DISABLED`,
 before lockdown, hiding the alone window with it. The sample rows arm no secure button: the list
-carries no item section in test mode, and every row handler refuses a `preview:` id.
+carries no item section in test mode, and every row handler refuses a `preview:` id (the gear opens a browse-only menu whose data rows are
+disabled no-ops).
 
 ### The sheet button
 
@@ -73,7 +84,36 @@ its `flyoutSettings.getItemsFunc` and `postGetItemsFunc`, and `hooksecurefunc` o
 `EquipmentFlyout_UpdateItems`, `EquipmentFlyoutPopoutButton_SetReversed` and
 `EquipmentFlyoutPopoutButton_HideAll`
 (wow-ui-source@297d7aa:Interface/AddOns/Blizzard_FrameXML/EquipmentFlyout.lua:238, :598, :633). A
-missing global is skipped, never hooked.
+missing global is skipped, never hooked. `modules/SlotEnables.lua` adds `HookScript` OnShow and OnHide
+on `EquipmentFlyoutFrame` itself (the stand-down latch first), which only restack the addon's own
+slot boxes over it (smoke round 3 E2).
+
+**The flyout's rim tint** (smoke round 3 E1, the accepted deviation `DEV-SKIN-FLYOUT-TINT`,
+skinning-§7; owner ruling 2026-11-05). It is the one place this addon colors a Blizzard frame.
+`QS.TintSync` (`modules/QuickSlots.lua`) decides who holds the flyout: this addon does while it is
+stood up, the outfit window is visible and `EquipmentFlyoutFrame.button` is one of the 18 paper-doll
+slots. While it holds it, the rim (`buttonFrame.bg1..bgN`, the pieces `_createFlyoutBG` adds as a page
+needs them, and `NavigationFrame.BottomBackground`; EquipmentFlyout.xml:61-86, .lua:121-135 at
+wow-ui-source@297d7aa) is desaturated and given the skin's `win.border` through `SetVertexColor`.
+Each texture's own vertex color and desaturation are read before its first tint, so a piece Blizzard
+makes while tinted is never recorded with the tint. Tint only: no new art, no reparenting, no anchor
+change, and the slot `Highlight` (the open slot's glow) is never touched. None of these textures is
+protected.
+
+The restore paths, each writing every recorded texture back exactly and then forgetting it, so a
+let-go flyout is never written again:
+
+- **The window closes** (or the sheet hides it): Dock's window `OnHide` calls `DrawerSync`, which
+  calls `TintSync` first.
+- **Another host opens the flyout** (Item Upgrade, Item Interaction, Runeforge): the
+  `EquipmentFlyout_UpdateItems` post-hook runs before that flyout shows (EquipmentFlyout.lua:226-228)
+  and finds a slot that is not the sheet's.
+- **The stand-down**: `QS.Suspend` calls `DrawerSync`, and `tintWanted` reads `NS.IsStoodDown()`.
+- **A skin with no `win.border`**: `tintRim` restores instead of tinting.
+
+A skin change re-tints through `NS.Skin.OnLooksChanged(QS.TintSync)`. Nothing is written in combat
+lockdown (`TintSync` and the update hook return under `InCombatLockdown`); the window hides before
+lockdown, so the restore has already run by then.
 
 While the outfit window is on screen (visible, not just shown: a window parked in the sheet holder
 keeps its shown flag when the sheet hides it), the drawer is the window's (design 2026-11-04 G8,
@@ -111,9 +151,10 @@ back when the window is gone. No Blizzard function is replaced and no Blizzard t
 
 ### Combat-gated acts
 
-The equipment-set checkbox is refused in combat (O44); the bank verbs and Delete all outfits refuse in
-combat with a line. `ChangeActionBarPage` from the Fishing trigger is skipped in lockdown and retried
-on regen (O23).
+Saving to or removing from the Equipment Manager (the row's EM mark and the menu's *Save in equipment
+manager*, `NS.EM.SetStored`) is refused in combat with a line, before anything is worn (O44); the
+bank verbs and Delete all outfits refuse in combat with a line. `ChangeActionBarPage` from the Fishing
+trigger is skipped in lockdown and retried on regen (O23).
 
 ## Owed to a client
 

@@ -17,6 +17,7 @@ open issues (§14); a row here leaves when its check passes or its owner rules.
   window is a blocked action. Dialogs stay open through the suspend (O30). Recorded as deviation D2.
 - **The window is docked, not movable** (D2). It follows the character sheet and has no saved
   position. If following ever fails, it parents to the sheet instead, which works but pins the sheet.
+  Only test mode's alone window drags, out of combat and for that test session (smoke round 3 E3).
 - **No migration** (R4). 1.1.0 starts from a fresh store: outfits, options and scripts from the old
   addon are not read. Blizzard equipment sets come back as outfits.
 - **Key assignments are lost** (H11): the bindings have new names so they cannot collide with a
@@ -50,6 +51,12 @@ in [smoke-tests.md](smoke-tests.md) §12 for the owner's eye.
   EllesmereUI's own Equipment label each time it is placed (a sheet open, a sheet kind change), so a
   font changed in EllesmereUI shows on the next placing, not at once. Its active color is read at
   paint time, with a fallback when `EllesmereUI.ELLESMERE_GREEN` is absent.
+- **The flyout's rim is near black under Ka0s Default.** While the outfit window holds Blizzard's
+  equipment flyout, its rim takes the skin's window border color (smoke round 3 E1, the accepted
+  deviation `DEV-SKIN-FLYOUT-TINT` in [ARCHITECTURE.md](ARCHITECTURE.md#documented-deviations)). Ka0s
+  Default's border is black, so the rim reads as a dark edge rather than Blizzard's gold; the owner
+  accepted that with the ruling. Another skin's border color shows as that color. The flyout is
+  Blizzard's again as soon as the window closes or another window opens it.
 - **Test mode's alone window cannot stand alone while parked.** A window that fell back to the sheet
   holder (following failed) cannot show without the sheet; in test mode the bar still shows the
   samples.
@@ -105,7 +112,7 @@ Each is a row in [smoke-tests.md](smoke-tests.md) with its pass criterion.
 
 - **One headless case flakes, about 1 run in 8 to 20** ([LibKa0s#75](https://github.com/tusharsaxena/LibKa0s/issues/75)):
   "bar: a profile switch redraws the bar from the new profile and rebinds the triggers"
-  (`tests/test_bar.lua:837`). The cause is in the vendored kit: `Callbacks:unregisterAll`
+  (`tests/test_bar.lua:845`). The cause is in the vendored kit: `Callbacks:unregisterAll`
   (`tests/_kit/mock_ace.lua:116-117`) writes `list[target] = nil` into lists that do not hold the
   target. In Lua 5.1 that can rehash a list mid-dispatch, so `Callbacks:fire`'s `next()` walk ends
   early and skips the bar's `PROFILE_CHANGED` listener; the trigger binder's `onProfile` calls

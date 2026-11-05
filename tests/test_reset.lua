@@ -106,7 +106,7 @@ local CHANGED = {
     { "auto.enabled", false }, { "equip.muteSounds", false }, { "equip.showErrors", false },
     { "equip.announceKeys", false }, { "quickSlots.enabled", false },
     { "tooltip.usedBy", false }, { "tooltip.compare", false },
-    { "bar.shown", true }, { "bar.vertical", true }, { "bar.showBackground", false },
+    { "bar.shown", true }, { "bar.vertical", true }, { "bar.bgFromSkin", false },
     { "bar.combatAlpha", 0.5 }, { "bar.position", "BOTTOMRIGHT -10 10" },
     { "visibility", "never" }, { "scale", 1.5 }, { "locked", true },
 }
