@@ -150,6 +150,10 @@ test("bar: the layout grows away from its corner, the first icon and block at th
     assertEqual(down.blocks[1].icons[1].y, 7 + 1, "the header's height is above the first row")
     local vleft = g(-1, -1, true)
     assertEqual(vleft.blocks[1].x, vleft.blocks[2].x + 10, "vertical and growing left, the first column is right")
+    local vup = g(1, 1, true)
+    -- red under: a vertical block placed at the top whatever gy says
+    assertEqual(vup.blocks[2].icons[1].y, vup.blocks[1].icons[1].y, "growing up, a shorter column is bottom-aligned")
+    assertEqual(vup.blocks[2].icons[1].y, 7 + 1 + 10)
 end)
 
 test("bar: the layout adds each block's label line and never draws narrower than its minimum", function()
@@ -417,33 +421,6 @@ test("bar: each category's row carries its label above it, and the labels switch
     assertEqual(Bar.LabelHeight(), 0)
     _, y1 = at(Bar.Buttons()[1])
     assertEqual(y1, Bar.HeaderHeight() + P, "off: no label line")
-end)
-
-test("bar: a label draws through S.HudFont with its font block, and its color follows the skin until told not to", function()
-    local NS, M, Bar = scene()
-    complete(NS, "A")
-    local S = NS.Skin
-    local seen
-    local realFont = S.HudFont
-    S.HudFont = function(fs, opts) seen = opts; return realFont(fs, opts) end
-    NS.SetByPath("bar.labels.fontSize", 14)
-    settle(M)
-    S.HudFont = realFont
-    -- red under: a label painted with a plain SetFont (skinning-§6: HUD text draws through S.HudFont)
-    assertTrue(seen ~= nil, "S.HudFont was not called")
-    assertEqual(seen.flags, "@skin", "the flags From skin")
-    assertEqual(seen.size, S.HudFontSize(14, true), "the size through S.HudFontSize")
-    assertEqual(seen.shadowFromSkin, true)
-    assertNil(seen.face, "the skin's face while Use the skin's font is on")
-    local r, g, b = Bar.Label(1):GetTextColor()
-    local sr, sg, sb = S.HudLabelColor()
-    assertTrue(r == sr and g == sg and b == sb, "the skin's HUD label color")
-    NS.SetByPath("bar.labels.fontColorFromSkin", false)
-    NS.SetByPath("bar.labels.fontColor", { r = 0.1, g = 0.2, b = 0.3, a = 1 })
-    settle(M)
-    r, g, b = Bar.Label(1):GetTextColor()
-    -- red under: the swatch never read (the label always in the skin's color)
-    assertTrue(r == 0.1 and g == 0.2 and b == 0.3, "the swatch")
 end)
 
 test("bar: a vertical layout's label is as wide as its column", function()

@@ -140,3 +140,6 @@ L["Test mode ended: you entered combat."] = "Test mode ended: you entered combat
 -- Smoke round 2 Task 2.6 keys (modules/Window.lua: the test window's strip and degraded title)
 L["Test mode: sample outfits, nothing equipped"] = "Test mode: sample outfits, nothing equipped"
 L["Outfitter Reborn (test mode)"] = "Outfitter Reborn (test mode)"
+
+-- Smoke round 2 review fix keys (modules/Bar_Chrome.lua: the bar's degraded test-mode title)
+L["Outfits (test mode)"] = "Outfits (test mode)"

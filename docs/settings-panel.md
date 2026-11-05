@@ -138,7 +138,8 @@ edge.
 prefix `bar.labels.`): face, size, flags (From skin first), shadow, color and *Use class color*, with
 *Use the skin's font*, then this addon's *Use the skin's color* and *Use the skin's shadow*. The
 block's rows dim while the labels are off, the swatch excepted. One label per category, drawn as
-HUD text through `S.HudFont`.
+HUD text through `S.HudFont`, its face resolved through `S.Resolve`: with *Ignore fonts* on, the
+labels draw the stored face whatever *Use the skin's font* says (skinning-§6).
 
 ### Frame
 

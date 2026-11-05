@@ -23,10 +23,12 @@ local _, NS = ...
 -- The separate drag handle above the bar is retired.
 --
 -- THE TEST STRIP hangs flush under the band (DpsRace modules/Hud.lua:501-512), and Bar.HeaderHeight
--- adds its height above the icons.
+-- adds its height above the icons, only while a strip is drawn. Without the library there is none:
+-- the title then says test mode (Bar.SetTitle), as the window's does.
 --
 -- THE LABELS (one per category, over its row) are HUD text (skinning-§6): face, size, flags and
--- shadow through S.HudFont from the Labels tab's font block, the size through S.HudFontSize and the
+-- shadow through S.HudFont from the Labels tab's font block, the face through S.Resolve (so Ignore
+-- fonts draws the stored pick, never the client's font), the size through S.HudFontSize and the
 -- flags From skin by default (S.FontFlags inside S.HudFont); the color is the class color, else the
 -- skin's HUD label color (S.HudLabelColor) while *Use the skin's color* is on, else the swatch. A
 -- skin change re-renders the bar (modules/Bar.lua), which draws them again.
@@ -246,6 +248,14 @@ function Bar.EnsureStrip()
     return f.strip or nil
 end
 
+--- The header's title: the test-mode word while `testWord` (test mode with no strip drawn, the
+--- library absent: preview-mode's one marker per mode), else the bar's name.
+--- @param testWord boolean
+function Bar.SetTitle(testWord)
+    local f = Bar.Frame()
+    if f and f.title then f.title:SetText(testWord and L["Outfits (test mode)"] or L["Outfits"]) end
+end
+
 -- ── the labels ────────────────────────────────────────────────────────────────────────────────
 
 local LABEL = "bar.labels."
@@ -268,11 +278,15 @@ function Bar.LabelHeight()
     return math.ceil(num(labelSize(), 11)) + LABEL_LEADING
 end
 
---- The stored face's path while the labels keep their own face; nil follows the skin (S.HudFont).
+--- The face's path through the seam (skinning-§6): S.Resolve answers the skin's `hud.font` while
+--- the labels follow it, and the stored pick while they do not or while the owner ignores fonts. nil
+--- (no answer, or a key LibSharedMedia does not hold) leaves S.HudFont its own fallback.
 local function labelFace()
-    if labelFromSkin() then return nil end
+    local S = NS.Skin
+    local key = S.Resolve("hud.font", setting(LABEL .. "font"), labelFromSkin())
+    if type(key) ~= "string" or key == S.FROM_SKIN then return nil end
     local LSM = LibStub and LibStub("LibSharedMedia-3.0", true)
-    return LSM and LSM.Fetch and LSM:Fetch("font", setting(LABEL .. "font"), true) or nil
+    return LSM and LSM.Fetch and LSM:Fetch("font", key, true) or nil
 end
 
 --- The label color: the class color, else the skin's HUD label color while it follows the skin,

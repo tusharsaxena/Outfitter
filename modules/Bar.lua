@@ -308,9 +308,13 @@ function Bar.Refresh()
         return false
     end
     local preview = NS.Preview.IsActive() == true
-    Bar.Render(preview and NS.Preview.Source or Bar.LiveSource, preview)
-    local strip = preview and Bar.EnsureStrip()
+    -- The strip first, so the rows make room only for one that is drawn (none without the library,
+    -- where the header's title carries the test-mode word instead).
+    ensureFrame()
+    local strip = preview and Bar.EnsureStrip() or nil
+    Bar.Render(preview and NS.Preview.Source or Bar.LiveSource, strip ~= nil)
     if strip then strip:Show() elseif bar.strip then bar.strip:Hide() end
+    Bar.SetTitle(preview and strip == nil)
     bar:Show()
     Bar.SetLocked(locked())
     Bar.ApplyAlpha()

@@ -152,8 +152,8 @@ the diagnostics sections.
 | `modules/Dialog_Progress.lua` | `NS.ProgressDialog`: the optimizer's progress window |
 | `modules/Bar.lua` | `NS.Bar`: the outfit bar: the show decision, the render, the position and its saved corner, alpha and fades, the coalesced rebuild, and closing the menu it opened when it hides |
 | `modules/Bar_Layout.lua` | `NS.Bar.Layout`: the bar's geometry as pure functions (icons per line, padding, spacing, icon size, grow direction, label lines) |
-| `modules/Bar_Chrome.lua` | The bar's Ka0s window look (extends `NS.Bar`): the Shell chrome or the player's plate, the header on the title band with its title, lock and close, the drag strip, the test strip under the band, the category labels |
-| `modules/Bar_Buttons.lua` | The outfit bar's pooled buttons: icon, border (the skin's HUD edge or the player's), worn highlight, clicks and drops |
+| `modules/Bar_Chrome.lua` | The bar's Ka0s window look (extends `NS.Bar`): the Shell chrome or the player's plate, the header on the title band with its title, lock and close, the drag strip, the test strip under the band (the title says test mode without the library), the category labels |
+| `modules/Bar_Buttons.lua` | The outfit bar's pooled buttons: icon, border (the skin's HUD edge or the player's), worn highlight (the mark on a mouse-off overlay over the edges, every child on a named `LAYERS.LEVEL` rung), clicks and drops |
 | `modules/Broker.lua` | `NS.Broker`: the `OutfitterRebornOutfits` LibDataBroker data source, the old addon's outfit switcher (a second object beside the launcher; [ARCHITECTURE.md](ARCHITECTURE.md#documented-deviations)) |
 | `modules/QuickSlots.lua` | `NS.QuickSlots`: the equipment flyout hooks; while the window shows, every slot's arrow, the left column's drawer turned outward, and a horizontal flyout level with its slot |
 | `modules/QuickSlots_Sort.lua` | The flyout's upgrade-track sort (extends `NS.QuickSlots`) |
@@ -197,7 +197,7 @@ the diagnostics sections.
 | `tests/unit_load.lua` | A unit instance: the whole load and login with the resume walk emptied, for a suite that drives one module's `Resume` itself |
 | `tests/spy.lua` | A recorder over a REAL module's members: the call is recorded, then made (it replaced the fakes once their modules landed, P4.27) |
 | `tests/dock_scene.lua` | The shared scene of the four window suites (`test_dock`, `test_list_model`, `test_rows_secure`, `test_slot_enables`) |
-| `tests/bar_scene.lua` | The outfit bar suite's shared scene and helpers (`test_bar`) |
+| `tests/bar_scene.lua` | The outfit bar suite's shared scene and helpers (`test_bar`, `test_bar_look`) |
 | `tests/dialog_scene.lua` | The shared scene of the three dialog suites (`test_outfit_menu`, `test_dialogs`, `test_trigger_dialog`) |
 | `tests/test_*.lua` | The local suites ([testing.md](testing.md)) |
 | `tests/skin_surfaces.lua` | The skin-switch suite's painted surfaces (skinning-§1) |

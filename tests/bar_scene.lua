@@ -106,6 +106,6 @@ return function(T)
 
     return {
         geom = geom, naked = naked, scene = scene, complete = complete, accessory = accessory, ids = ids,
-        settle = settle, buttonFor = buttonFor, point = point, at = at,
+        settle = settle, buttonFor = buttonFor, point = point, at = at, recordGeometry = recordGeometry,
     }
 end

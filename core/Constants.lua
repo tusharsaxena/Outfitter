@@ -37,7 +37,11 @@ C.LOGO = ("Interface\\AddOns\\%s\\media\\logos\\%s.logo.tga"):format(addonName, 
 --   TOOLTIP            CURSOR    the compare tooltips; GameTooltip and ShoppingTooltip1/2 (Blizzard)
 --
 -- Levels inside a surface (base W): chrome W+1, content W+2, the scroll bar W+3, the row's secure
--- child row + ROW_SECURE, a cover W+30, the test strip W+40, the drag handle W+50 (its grip +10).
+-- child row + ROW_SECURE, a cover W+30, the test strip W+40, the outfit bar's header band W+50
+-- (HANDLE: its title, lock and close, and the drag that replaced the retired drag handle).
+-- Inside one bar button (base B, frame-layering-§3's element rungs): the icon on B, the skin's and the
+-- player's edge B+BAR_EDGE (BORDER), the worn accent edge B+BAR_WORN_EDGE, and the mouse-off overlay
+-- holding the worn mark B+BAR_OVERLAY (OVERLAY).
 C.LAYERS = {
     STRATA = { HUD = "MEDIUM", MODAL = "DIALOG", POPUP = "FULLSCREEN_DIALOG", CURSOR = "TOOLTIP" },
     -- The client's eight strata, low to high: a host's strata is compared, never written from here.
@@ -47,6 +51,7 @@ C.LAYERS = {
         DOCK_OVER_HOST = 1, SLOT_ENABLES_OVER_HOST = 1, SLOT_CHECKBOX = 1, SHEET_BUTTON_OVER_CLOSE = 1,
         CHROME = 1, CONTENT = 2, ROW_CONTROLS = 1, ROW_SECURE = 2, SCROLL = 3,
         BAR_ROW = 1, BAR_BUTTON = 2, COVER = 30, MARKER = 40, HANDLE = 50,
+        BAR_EDGE = 2, BAR_WORN_EDGE = 3, BAR_OVERLAY = 4,
         ICON_BROWSER = 1200,
         MAX = 9990,     -- a host-derived level's cap, under the client's 10000 ceiling
     },

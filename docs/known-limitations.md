@@ -105,7 +105,7 @@ Each is a row in [smoke-tests.md](smoke-tests.md) with its pass criterion.
 
 - **One headless case flakes, about 1 run in 8 to 20** ([LibKa0s#75](https://github.com/tusharsaxena/LibKa0s/issues/75)):
   "bar: a profile switch redraws the bar from the new profile and rebinds the triggers"
-  (`tests/test_bar.lua:860`). The cause is in the vendored kit: `Callbacks:unregisterAll`
+  (`tests/test_bar.lua:837`). The cause is in the vendored kit: `Callbacks:unregisterAll`
   (`tests/_kit/mock_ace.lua:116-117`) writes `list[target] = nil` into lists that do not hold the
   target. In Lua 5.1 that can rehash a list mid-dispatch, so `Callbacks:fire`'s `next()` walk ends
   early and skips the bar's `PROFILE_CHANGED` listener; the trigger binder's `onProfile` calls

@@ -42,6 +42,7 @@ local Bar = NS.Bar
 
 local L = NS.L
 local Compat, Secrets = NS.Compat, NS.Secrets
+local LAYERS = NS.Constants.LAYERS
 
 local COMPLETE = "Complete"
 local WHITE = "Interface\\Buttons\\WHITE8X8"
@@ -211,14 +212,24 @@ function Bar.IconStyle()
     return c
 end
 
-local function backdropFrame(btn, key, level)
+--- Button child `key`, a backdrop frame over the whole button, made on first use (relevel sets its level).
+local function backdropFrame(btn, key)
     local f = btn[key]
     if f then return f end
     f = CreateFrame("Frame", nil, btn, "BackdropTemplate")
     f:SetAllPoints(btn)
-    f:SetFrameLevel(Secrets.UnsecretNumber(btn:GetFrameLevel(), 0) + level)
     btn[key] = f
     return f
+end
+
+--- Every child frame on its rung over the button's level, again on every fill: Render re-levels the
+--- button after a pooled one made its children (frame-layering-§3, re-assert what moves).
+local function relevel(btn)
+    local base = Secrets.UnsecretNumber(btn:GetFrameLevel(), 0)
+    btn.skinEdge:SetFrameLevel(base + LAYERS.LEVEL.BAR_EDGE)
+    btn.overlay:SetFrameLevel(base + LAYERS.LEVEL.BAR_OVERLAY)
+    if btn.edge then btn.edge:SetFrameLevel(base + LAYERS.LEVEL.BAR_EDGE) end
+    if btn.wornEdge then btn.wornEdge:SetFrameLevel(base + LAYERS.LEVEL.BAR_WORN_EDGE) end
 end
 
 local function paintEdge(btn, style)
@@ -228,7 +239,7 @@ local function paintEdge(btn, style)
         if btn.edge then btn.edge:Hide() end
         return
     end
-    local f = backdropFrame(btn, "edge", 1)
+    local f = backdropFrame(btn, "edge")
     f:SetBackdrop({ edgeFile = e.file, edgeSize = e.size })
     f:SetBackdropBorderColor(e.color[1], e.color[2], e.color[3], e.color[4])
     f:Show()
@@ -239,7 +250,7 @@ local SHOWS_EDGE = { border = true, both = true }
 
 local function paintWorn(btn, style, worn)
     btn.worn:SetShown(worn and SHOWS_MARK[style.worn] == true)
-    local f = backdropFrame(btn, "wornEdge", 2)
+    local f = backdropFrame(btn, "wornEdge")
     f:SetBackdrop({ edgeFile = WHITE, edgeSize = WORN_EDGE })
     local c = style.wornColor
     f:SetBackdropBorderColor(c[1], c[2], c[3], c[4])
@@ -257,7 +268,11 @@ function Bar.NewButton(parent)
     btn:RegisterForClicks("LeftButtonUp", "RightButtonUp")
     btn.icon = btn:CreateTexture(nil, "ARTWORK")
     btn.icon:SetAllPoints(btn)
-    btn.worn = btn:CreateTexture(nil, "OVERLAY")
+    -- The worn mark on a mouse-off overlay over the edges, never a region under its own children.
+    btn.overlay = CreateFrame("Frame", nil, btn)
+    btn.overlay:SetAllPoints(btn)
+    btn.overlay:EnableMouse(false)
+    btn.worn = btn.overlay:CreateTexture(nil, "OVERLAY")
     btn.worn:SetSize(14, 14)
     btn.worn:SetPoint("TOPRIGHT", btn, "TOPRIGHT", -1, -1)
     btn.worn:Hide()
@@ -295,4 +310,5 @@ function Bar.SetButton(btn, rec, style)
     btn.icon:SetVertexColor(r, g, b)
     paintEdge(btn, style)
     paintWorn(btn, style, not rec.placeholder and NS.Stack.IsWorn(rec.id) == true)
+    relevel(btn)
 end
