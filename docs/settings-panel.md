@@ -121,8 +121,8 @@ on the right, and the header drags it. Tabs in declaration order:
 | `bar.layout.perLine` | `0` (0 to 20) | Per row or column (0 = one line) |
 | `bar.layout.growH` | `auto` (`auto`, `right`, `left`) | Grow horizontally |
 | `bar.layout.growV` | `auto` (`auto`, `down`, `up`) | Grow vertically |
-| `bar.layout.padding` | `4` (0 to 20) | Padding (px) |
-| `bar.layout.spacing` | `5` (0 to 20) | Spacing (px); 32 + 5 keeps the old 37 px pitch |
+| `bar.layout.padding` | `8` (0 to 20) | Padding (px) |
+| `bar.layout.spacing` | `4` (0 to 20) | Spacing (px) |
 
 ### Icons
 

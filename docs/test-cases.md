@@ -1310,7 +1310,7 @@ Total.
 - bar: the container sits in the HUD strata, movable, clamped and toplevel; rows and buttons in their bands
 - bar: one button per visible outfit, a row per category, and a re-render never grows the pool
 - bar: an outfit whose trigger is off is not on the bar, and a manual wear of it puts it back
-- bar: the layout's defaults keep the legacy 37 px pitch, 4 px in from the edge
+- bar: the layout's defaults are 4 px between icons and 8 px in from the edge
 - bar: the layout wraps at icons per line, in rows or in columns
 - bar: the layout grows away from its corner, the first icon and block at that corner
 - bar: the layout adds each block's label line and never draws narrower than its minimum

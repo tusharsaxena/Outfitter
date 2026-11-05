@@ -95,12 +95,12 @@ end)
 
 -- ── layout ────────────────────────────────────────────────────────────────────────────────────
 
-test("bar: the layout's defaults keep the legacy 37 px pitch, 4 px in from the edge", function()
+test("bar: the layout's defaults are 4 px between icons and 8 px in from the edge", function()
     local Layout = T.NS.Bar.Layout
     local D = T.NS.defaults.profile.bar
-    -- red under: a spacing default other than 5 (the legacy Style.ButtonBar pitch, OutfitterUITools.lua)
-    assertEqual(D.icons.size + D.layout.spacing, 37)
-    assertEqual(D.layout.padding, 4)
+    -- red under: the round 2 defaults (spacing 5, the legacy 37 px pitch; padding 4); smoke round 3 E8
+    assertEqual(D.layout.spacing, 4)
+    assertEqual(D.layout.padding, 8)
     assertEqual(D.layout.perLine, 0)
     local g = Layout.Compute({ size = 32, spacing = 5, padding = 4, perLine = 0, counts = { 3, 1 },
                                gx = 1, gy = -1 })
