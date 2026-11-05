@@ -32,7 +32,10 @@
 -- triggerFanout (104748) were re-measured 2026-11-05 after the Outfits broker (modules/Broker.lua)
 -- registered six bus messages. The addon's own bytes did not move: the rise is the recorder's.
 -- M.__fire (tests/_kit/mock_record.lua) builds M.__registrations(), one row per live registration,
--- for every game event it fires, so each of the six adds 896 bytes to an equipPlan step. zoneFlips (149134) and triggerFanout
+-- for every game event it fires, so each of the six adds 896 bytes to an equipPlan step. Both were
+-- re-pinned again 2026-11-05 (equipPlan 235856, ceiling 240000; triggerFanout 107675, ceiling 109500)
+-- when the Outfit Window settings (modules/Dock.lua, modules/SlotEnables.lua) added four more: the
+-- same recorder cost, 4 x 896 a step, gone to the byte with those four lines out. zoneFlips (149134) and triggerFanout
 -- (119534) were re-measured when the Equip bracket stopped allocating: each zone flip and each binding
 -- dispatch runs through E.Batch, so the old vararg table and two xpcall closures were in every call. The figures are large because a step
 -- is a whole path on the real addon (an equipment update builds its change list and moves items
@@ -67,9 +70,9 @@ local ITERS = { equipPlan = 500, zoneFlips = 50, triggerFanout = 100, tooltips =
 
 -- Per scenario: the bytes/iter ceiling and the bracket notes/iter it is pinned at.
 local BYTE_CEILING = {
-    equipPlanCaptureOff = 234000, equipPlanCaptureOn = 234000,      -- re-pinned 2026-11-05: the recorder's survey (header)
+    equipPlanCaptureOff = 240000, equipPlanCaptureOn = 240000,      -- re-pinned 2026-11-05: the recorder's survey (header)
     zoneFlipsCaptureOff = 120500, zoneFlipsCaptureOn = 120500,         -- red under: run()'s vararg table and xpcall closures
-    triggerFanoutCaptureOff = 107000, triggerFanoutCaptureOn = 107000, -- red under: the same
+    triggerFanoutCaptureOff = 109500, triggerFanoutCaptureOn = 109500, -- red under: the same; re-pinned 2026-11-05 (header)
     tooltipsCaptureOff = 141000, tooltipsCaptureOn = 141000, tooltipsAbsent = 141000,
     gaGenerationCaptureOff = 478000, gaGenerationCaptureOn = 478000,
     dockIdleCaptureOff = 200, dockIdleCaptureOn = 200,         -- red under: reverting C-01's st.touched gate, or run()'s vararg table
