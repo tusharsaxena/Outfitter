@@ -86,7 +86,8 @@ NS.COMMANDS = {
     { "iteminfo",    L["Print an item link's fields"], function(rest) NS.Commands.ItemInfo(rest) end },
     { "test",        L["Sample outfits on the outfit bar and window: /or test"], feature(function() NS.Preview.Toggle() end) },
     -- A feature noun with its own sub-verbs (slash-commands-§2: the top-level `toggle` reservation
-    -- binds the top level only). Writes `bar.shown` through the CLI; the key binding runs it too.
+    -- binds the top level only). Writes `bar.shown` through the CLI (in test mode it dismisses the bar
+    -- for that test session instead, NS.Bar.SetTestShown); the key binding runs it too.
     { "bar",         L["Outfit bar: /or bar show, hide or toggle"], feature(function(rest) doBar(rest) end) },
     -- slash-commands-§8: the Lock frame row's path, through the one seam.
     { "lock",        L["Lock the outfit bar in place"],            feature(function() writeRow("locked", true) end) },
@@ -254,15 +255,21 @@ function doAuto(rest)
 end
 
 -- `/or bar` words: show and hide write `bar.shown`; toggle, or no word, flips it (smoke round 2 G6).
+-- In test mode they dismiss the bar for that test session, or bring it back, and write nothing
+-- (modules/Bar.lua's header, the bar's half of design D10).
 local BAR_WORDS = { show = true, hide = false }
 
---- `bar`: show, hide or toggle the outfit bar through its `bar.shown` row.
+--- `bar`: show, hide or toggle the outfit bar through its `bar.shown` row, or in test mode for the
+--- test session only.
 function doBar(rest)
     local word = tostring(rest or ""):match("^%s*(%S*)"):lower()
     local want = BAR_WORDS[word]
     if want == nil then
         if word ~= "" and word ~= "toggle" then return out(L["%s bar takes show, hide or toggle"]:format(NS.SLASH)) end
-        want = NS.GetSetting("bar.shown") ~= true
+        want = not NS.Bar.PlayerWants()
+    end
+    if NS.Bar.SetTestShown(want) then
+        return out(want and L["Outfit bar shown for this test session"] or L["Outfit bar hidden for this test session"])
     end
     writeRow("bar.shown", want)
 end

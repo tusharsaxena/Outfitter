@@ -577,6 +577,23 @@ for _, path in ipairs(PATHS) do
     end)
 end
 
+-- In test mode the first four paths dismiss the bar for the test session instead of writing
+-- `bar.shown` (modules/Bar.lua's header); the dismissal still takes the bar's menu down with it.
+for i = 1, 4 do
+    local path = PATHS[i]
+    test("bar menu: in test mode " .. path[1] .. " still closes the outfit menu the bar opened", function()
+        local NS, M, Bar, hat, seen = barSetup()
+        local m = openFromBar(Bar, hat, seen)
+        rawset(NS.Preview, "IsActive", function() return true end)
+        path[2](NS, M, Bar)
+        settle(M)
+        assertFalse(Bar.Frame():IsShown(), "the path did not dismiss the bar")
+        assertEqual(NS.db.profile.bar.shown, true, "the path wrote bar.shown in test mode")
+        -- red under: a dismissal that hides the bar around hideFrames
+        assertFalse(m:IsShown(), "the bar's menu outlived the dismissed bar")
+    end)
+end
+
 -- ── only the bar's own menu ────────────────────────────────────────────────────────────────────
 
 test("bar menu: hiding the bar leaves a menu the window opened alone", function()

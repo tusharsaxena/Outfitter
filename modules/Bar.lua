@@ -23,8 +23,17 @@ local _, NS = ...
 -- a new table each time, so a reset COPIES the default (legacy aliased it, so a reset after a drag
 -- could do nothing: OutfitterBar.lua:107-115).
 --
--- SHOWN = (bar.shown or test mode) and the Master visibility rule and not in a pet battle and not
--- stood down. The decision is made here and nowhere else, so a stood-down bar cannot be re-shown.
+-- SHOWN = (in test mode: not dismissed for this test session; else bar.shown) and the Master
+-- visibility rule and not in a pet battle and not stood down. The decision is made here and nowhere
+-- else, so a stood-down bar cannot be re-shown.
+--
+-- TEST MODE'S DISMISSAL (the bar's half of design D10; the window's is Dock.testDismissed). While test
+-- mode is on, the four player hide paths (the header's close X, `/or bar hide` and `toggle`, the Toggle
+-- outfit bar key) go through Bar.SetTestShown: they dismiss the bar for the rest of THAT test session
+-- (`st.testDismissed`, session-only, never saved) and never write `bar.shown`, so a player whose bar was
+-- on still has it when test mode ends. `/or bar show` (and toggle or the key while dismissed) brings it
+-- back the same way. Neither ends test mode (preview-mode). The flag clears on every PREVIEW_CHANGED
+-- and on the stand-down, so after test mode, by any route, the bar follows `bar.shown` again.
 -- ALPHA is the Master alpha, times `bar.combatAlpha` in combat (PLAYER_STATE_CHANGED "combat"); at 0
 -- the buttons take no mouse (frame-layering-§4: insecure frames, so legal in combat). The legacy fade
 -- is kept: off the bar, it fades down to its alpha over 0.5 s.
@@ -36,8 +45,8 @@ local _, NS = ...
 --
 -- A MENU THE BAR OPENED GOES WITH IT. A right click opens the outfit menu on the shared popup
 -- (NS.OpenMenu), which no Hide of the bar reaches; every path that hides the bar (`/or bar hide` and
--- `toggle`, the Toggle outfit bar key and the header's close X, all through `bar.shown`; the
--- stand-down through Suspend; test mode's end, a pet battle, the visibility rule) ends in hideFrames,
+-- `toggle`, the Toggle outfit bar key and the header's close X, through `bar.shown`, or in test mode
+-- through the session's dismissal; the stand-down through Suspend; test mode's end, a pet battle, the visibility rule) ends in hideFrames,
 -- which closes that menu, and only that one (NS.CloseMenuFrom with Bar.IsButton), so a menu the
 -- window opened stays up (core/WidgetsSetup.lua). Left open after `/or disable`, its rows would
 -- still write saved data.
@@ -71,7 +80,8 @@ local GROW = { ["bar.layout.growH"] = true, ["bar.layout.growV"] = true }
 local GROW_X = { right = 1, left = -1 }
 local GROW_Y = { down = -1, up = 1 }
 
-local st = { active = false, inCombat = false, inPetBattle = false, hovered = false, timer = nil }
+local st = { active = false, inCombat = false, inPetBattle = false, hovered = false, timer = nil,
+             testDismissed = false }
 local bar, rows = nil, {}
 local mod   -- the module's own bus target, with AceTimer and the pet-battle events on it
 
@@ -136,7 +146,36 @@ end
 function Bar.ShouldShow()
     if not st.active or NS.IsStoodDown() or st.inPetBattle then return false end
     if not visibilityAllows() then return false end
-    return NS.GetSetting("bar.shown") == true or NS.Preview.IsActive() == true
+    if NS.Preview.IsActive() == true then return not st.testDismissed end
+    return NS.GetSetting("bar.shown") == true
+end
+
+--- Whether the player has the bar on: in test mode, not dismissed for this test session; else
+--- `bar.shown`. What `/or bar toggle` and the Toggle outfit bar key flip.
+--- @return boolean
+function Bar.PlayerWants()
+    if NS.Preview.IsActive() == true then return not st.testDismissed end
+    return NS.GetSetting("bar.shown") == true
+end
+
+--- @return boolean the bar is dismissed for the current test session
+function Bar.TestDismissed() return st.testDismissed end
+
+--- The player's show or hide while test mode is on (see the header): dismiss the bar for this test
+--- session, or bring it back, without writing `bar.shown` and without ending test mode. Outside test
+--- mode it does nothing and answers false, so the caller writes `bar.shown` as usual.
+--- @param want boolean
+--- @return boolean taken  test mode took the request
+function Bar.SetTestShown(want)
+    if NS.Preview.IsActive() ~= true then return false end
+    st.testDismissed = not want
+    Bar.Refresh()
+    return true
+end
+
+--- The header's close X: dismissed for the test session in test mode, else `bar.shown` off.
+function Bar.Close()
+    if not Bar.SetTestShown(false) then NS.SetByPath("bar.shown", false) end
 end
 
 --- The live source: each category's outfits in display order, without the ones whose trigger is
@@ -450,8 +489,14 @@ local function onGameEvent(event)
     if st.active then Bar.Refresh() end
 end
 
+-- A test session starts or ends: either way the session's dismissal is over (see the header).
+local function onPreviewChanged()
+    st.testDismissed = false
+    schedule()
+end
+
 local REBUILD = { "OUTFIT_WORN", "OUTFIT_REMOVED", "OUTFIT_ADDED", "OUTFIT_DELETED", "OUTFIT_EDITED",
-                  "OUTFIT_RENAMED", "PREVIEW_CHANGED", "PROFILE_CHANGED" }
+                  "OUTFIT_RENAMED", "PROFILE_CHANGED" }
 local GAME_EVENTS = { "PET_BATTLE_OPENING_START", "PET_BATTLE_OVER" }
 
 local function ensureListeners()
@@ -459,6 +504,7 @@ local function ensureListeners()
     mod = NS.NewBusTarget()
     LibStub("AceTimer-3.0"):Embed(mod)
     for _, key in ipairs(REBUILD) do mod:RegisterMessage(NS.MSG[key], schedule) end
+    mod:RegisterMessage(NS.MSG.PREVIEW_CHANGED, onPreviewChanged)
     mod:RegisterMessage(NS.MSG.SETTINGS_CHANGED, onSettings)
     mod:RegisterMessage(NS.MSG.PLAYER_STATE_CHANGED, onPlayerState)
     NS.Skin.OnLooksChanged(schedule)
@@ -468,7 +514,7 @@ end
 
 --- The stand-down (design §5.12): the pet-battle events and the pending rebuild go, and the bar hides.
 function Bar.Suspend()
-    st.active, st.hovered = false, false
+    st.active, st.hovered, st.testDismissed = false, false, false
     if mod then
         mod:UnregisterAllEvents()
         if st.timer then mod:CancelTimer(st.timer) end

@@ -81,6 +81,10 @@ library-absent stub.
 `/or bar takes show, hide or toggle`. slash-commands-§2's `toggle` reservation binds the top level
 only, so `bar toggle` does not collide with the outfit verb `toggle`. The *Toggle outfit bar* key
 binding runs `bar toggle` through `NS.RunVerb`, and the bar header's close writes the same row.
+While test mode is on, none of them writes `bar.shown`: hide (and toggle or the key on a shown bar)
+dismisses the bar for that test session and prints *Outfit bar hidden for this test session*; show
+(and toggle or the key on a dismissed bar) brings it back with *Outfit bar shown for this test
+session*. Test mode stays on, and when it ends the bar follows `bar.shown` again (`NS.Bar.SetTestShown`).
 
 **No window `toggle` verb.** standalone-windows asks for `show`, `hide` and `toggle` on a window. The
 first two exist; `toggle` does not toggle the window, because `toggle` has been the outfit verb in

@@ -112,7 +112,7 @@ LibKa0s-Slash), behind a host routing wrapper that runs macro conditionals throu
 The outfit verbs (`show`, `hide`, `wear`, `unwear`, `toggle`, `update`, the bank verbs, `auto`,
 `zone`, `iteminfo`, `test`, `bar`, `lock`, `unlock`, `deleteall` and the rest) follow `version`, with
 their handlers in `modules/Commands.lua` (`bar show|hide|toggle` writes `bar.shown` in
-`settings/Slash.lua`; the *Toggle outfit bar* key runs it). The live-while-disabled rules, the macro-conditional routing and
+`settings/Slash.lua`, or in test mode only dismisses the bar for that test session; the *Toggle outfit bar* key runs it). The live-while-disabled rules, the macro-conditional routing and
 the full verb set are in [`slash-dispatch.md`](slash-dispatch.md).
 
 ## Public API

@@ -122,7 +122,9 @@ NS.Equip.Batch(function()  NS.Stack.Wear / Remove (layer, byTrigger)  end) â—„â”
   `SETTINGS_CHANGED`, `PREVIEW_CHANGED`, `PROFILE_CHANGED`, a skin change): `NS.Bar.Layout` computes
   the geometry from the Layout and Icons rows, `Bar.PaintChrome` dresses the header band, plate,
   labels and test strip, and the pooled buttons are set from `NS.OutfitIcon`. `/or bar`, the *Toggle
-  outfit bar* key and the header's close all write `bar.shown`; every path that hides the bar closes
+  outfit bar* key and the header's close all write `bar.shown`, except in test mode, where they only
+  dismiss the bar for that test session (`Bar.SetTestShown`, cleared on every `PREVIEW_CHANGED` and
+  the stand-down) and `bar.shown` is never written; every path that hides the bar closes
   the outfit menu it opened (`NS.CloseMenuFrom`), and only that one.
 - **Matching uses IDs, never names.** Maps by uiMapID or instance mapID, spells and auras by spellID,
   items by itemID, NPCs by creatureID, professions by skillLine. The documented exceptions are rows

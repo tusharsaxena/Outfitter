@@ -151,7 +151,8 @@ exactly as a Ka0s window and the colors wait; off, they draw on a plate of the b
 
 **No second switches** (options-ui-§15): scale, opacity, the lock, Reset position and General
 visibility are the Master controls' and govern this one frame. The header's lock writes `locked`
-and its close writes `bar.shown = false`, the same rows; hiding the bar in combat is General
+and its close writes `bar.shown = false`, the same rows (in test mode the close only dismisses the
+bar for that test session and writes nothing); hiding the bar in combat is General
 visibility, which the combat opacity row's tooltip points to. Every color has its FromSkin
 companion, default on (skinning-§6).
 

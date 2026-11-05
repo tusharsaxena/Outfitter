@@ -739,3 +739,125 @@ test("preview window: entering test mode clears the selection, and no slot box o
     assertTrue(boxes:IsShown(), "the slot boxes did not come back after test mode")
     assertTrue(M.OutfitterRebornSlotsAll:IsShown())
 end)
+
+
+-- ── the bar's dismissal (the bar's half of design D10) ───────────────────────────────────────────
+-- While test mode is on, each player hide path dismisses the bar for that test session only: the
+-- bar hides, `bar.shown` is never written, and test mode stays on. Show (or toggle and the key while
+-- dismissed) brings it back the same way. When test mode ends, by any route, the bar follows
+-- `bar.shown` again. Outside test mode each path writes `bar.shown` as before.
+
+local HIDE_PATHS = {
+    { "/or bar hide",              function(NS) NS.Slash:OnSlash("bar hide") end },
+    { "/or bar toggle",            function(NS) NS.Slash:OnSlash("bar toggle") end },
+    { "the Toggle outfit bar key", function(_, M) M._G.OutfitterRebornToggleBar:__fire("OnClick", "LeftButton", true) end },
+    { "the header's close X",      function(NS) NS.Bar.Frame().close:__fire("OnClick", "LeftButton") end },
+}
+
+for _, path in ipairs(HIDE_PATHS) do
+    test("preview bar: " .. path[1] .. " dismisses the bar for the test session, never writing bar.shown", function()
+        local NS, M = scene({ shown = true })
+        NS.Preview.Start()
+        settle(M)
+        assertTrue(barShown(NS))
+        path[2](NS, M)
+        settle(M)
+        -- red under: a ShouldShow that ORs test mode in again (no session dismissal)
+        assertFalse(barShown(NS), "the path did not hide the bar in test mode")
+        -- red under: a path that writes bar.shown in test mode (Bar.SetTestShown not consulted)
+        assertEqual(NS.db.profile.bar.shown, true, "the path wrote the player's bar.shown")
+        assertTrue(NS.Preview.IsActive(), "the path ended test mode")
+        NS.Preview.Stop()
+        settle(M)
+        assertTrue(barShown(NS), "the player's bar did not come back when test mode ended")
+        -- Outside test mode the path writes bar.shown, as before.
+        path[2](NS, M)
+        settle(M)
+        assertFalse(barShown(NS))
+        assertEqual(NS.db.profile.bar.shown, false, "outside test mode the path must write bar.shown")
+    end)
+end
+
+test("preview bar: show, toggle and the key bring a dismissed bar back, never writing bar.shown", function()
+    local NS, M = scene()
+    NS.Preview.Start()
+    settle(M)
+    local function dismiss()
+        NS.Slash:OnSlash("bar hide")
+        settle(M)
+        assertFalse(barShown(NS))
+    end
+    dismiss()
+    M.__resetPrinted()
+    NS.Slash:OnSlash("bar show")
+    settle(M)
+    -- red under: `bar show` writing bar.shown in test mode
+    assertEqual(NS.db.profile.bar.shown, false, "show wrote the player's bar.shown")
+    assertTrue(barShown(NS), "show did not bring the dismissed bar back")
+    assertEqual(printed(M, "Outfit bar shown for this test session"), 1)
+    assertEqual(printed(M, "bar.shown"), 0, "the line claimed a write that did not happen")
+    dismiss()
+    NS.Slash:OnSlash("bar toggle")
+    settle(M)
+    assertTrue(barShown(NS), "toggle did not bring the dismissed bar back")
+    dismiss()
+    M._G.OutfitterRebornToggleBar:__fire("OnClick", "LeftButton", true)
+    settle(M)
+    assertTrue(barShown(NS), "the key did not bring the dismissed bar back")
+    assertEqual(NS.db.profile.bar.shown, false)
+    M.__resetPrinted()
+    NS.Slash:OnSlash("bar hide")
+    assertEqual(printed(M, "Outfit bar hidden for this test session"), 1)
+    assertTrue(NS.Preview.IsActive())
+end)
+
+test("preview bar: the dismissal ends with test mode; the bar follows bar.shown, and a new session shows it", function()
+    local NS, M = scene()
+    NS.Preview.Start()
+    settle(M)
+    NS.Slash:OnSlash("bar hide")
+    settle(M)
+    assertTrue(NS.Bar.TestDismissed())
+    NS.Preview.Stop()
+    settle(M)
+    -- red under: no clear on PREVIEW_CHANGED
+    assertFalse(NS.Bar.TestDismissed(), "the dismissal outlived test mode")
+    assertFalse(barShown(NS), "bar.shown is off: the bar stays hidden after test mode")
+    NS.Preview.Start()
+    settle(M)
+    assertTrue(barShown(NS), "a new test session did not show the bar")
+    -- Combat ends it too.
+    NS.Slash:OnSlash("bar hide")
+    settle(M)
+    M.__fire("PLAYER_REGEN_DISABLED")
+    settle(M)
+    assertFalse(NS.Preview.IsActive())
+    assertFalse(NS.Bar.TestDismissed(), "the dismissal outlived the combat end")
+    -- And the stand-down, which sends no PREVIEW_CHANGED.
+    M.__fire("PLAYER_REGEN_ENABLED")
+    settle(M)
+    NS.Preview.Start()
+    settle(M)
+    NS.Slash:OnSlash("bar hide")
+    settle(M)
+    NS.lifecycle:Hold("test")
+    -- red under: a Bar.Suspend that keeps the dismissal
+    assertFalse(NS.Bar.TestDismissed(), "the dismissal outlived the stand-down")
+    NS.lifecycle:Release("test")
+    settle(M)
+end)
+
+test("preview bar: the dismissal ends with the General switch; a bar the player had on comes back", function()
+    local NS, M = scene({ shown = true })
+    NS.Preview.Start()
+    settle(M)
+    NS.Bar.Frame().close:__fire("OnClick", "LeftButton")
+    settle(M)
+    assertFalse(barShown(NS))
+    NS.FindSchemaRow("state.testMode").set(false)
+    settle(M)
+    assertFalse(NS.Preview.IsActive())
+    assertEqual(NS.db.profile.bar.shown, true)
+    -- red under: a ShouldShow that keeps reading the dismissal after test mode
+    assertTrue(barShown(NS), "the player's bar stayed dismissed after test mode")
+end)

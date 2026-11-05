@@ -4,7 +4,7 @@
 ![CurseForge Version](https://img.shields.io/curseforge/v/1698220)
 ![License](https://img.shields.io/badge/License-MIT-orange)
 ![Standard](https://img.shields.io/badge/Ka0s-WoW_Addon_Standard-yellow)
-![Tests](https://img.shields.io/badge/Tests-1470%2F1470_passing-green)
+![Tests](https://img.shields.io/badge/Tests-1481%2F1481_passing-green)
 
 Ka0s Outfitter Reborn manages your gear. You build named outfits from what you own and put them on with a click, a key or a slash command, or you let the addon change them for you: when you cast your fishing line, climb on a mount, shift into bear form, swap specs or walk into a particular battleground. It knows which items each outfit needs, tells you when one has gone missing or is sitting in the bank, and can put together the best outfit your bags hold for a stat or a Pawn scale.
 
@@ -22,7 +22,7 @@ Right-click an outfit for everything else. Submenus open beside the menu and kee
 
 The outfit bar puts your outfits on screen as a small window of buttons, once you turn on *Show outfit bar* on the Outfit Bar settings page, type `/or bar show`, or press the *Toggle outfit bar* key (`/or bar hide` and `/or bar toggle` do the rest). Each category gets its own labeled row. Left-click a button to wear that outfit (a second click takes an Accessory off again) or right-click it for the same menu the window has; the outfit you're wearing is marked. Drop an item on a button and you get a new outfit built around that item; hold Alt as you drop and the item becomes the button's icon instead. Drag the bar by its header, where a lock and a close sit, or right-click the header for the bar's settings. The Outfit Bar page sets how many icons go in a row, the padding and spacing, the icon size and border, which way the bar grows, the labels' font, and the bar's background and border, each following the skin until you pick your own. *Lock frame* on General → Master controls, `/or lock`, the header's lock or the minimap menu holds it in place, and *Reset position* brings it back if it ends up somewhere you can't reach. The bar hides during pet battles and can fade in combat with *Opacity in combat*.
 
-To place and skin the bar and the window before you have outfits worth showing, turn on test mode with `/or test`, the Master controls or the minimap menu. Both fill with sample outfits under a *Test mode* strip and nothing is equipped. With the character sheet closed, the outfit window shows by itself where the sheet would open; its X or Escape puts it away for the rest of that test session. Test mode ends when you turn it off, enter combat or reset all settings.
+To place and skin the bar and the window before you have outfits worth showing, turn on test mode with `/or test`, the Master controls or the minimap menu. Both fill with sample outfits under a *Test mode* strip and nothing is equipped. With the character sheet closed, the outfit window shows by itself where the sheet would open; its X or Escape puts it away for the rest of that test session, and the bar's X, `/or bar hide` or the *Toggle outfit bar* key do the same for the bar, so your own *Show outfit bar* choice is just as you left it when test mode ends. Test mode ends when you turn it off, enter combat or reset all settings.
 
 The minimap button opens the settings on a left-click, and its right-click menu turns the addon on or off, locks the bar, toggles test mode, shows the outfit window, or opens the settings or the skin picker. Hover it to see the outfit you have on.
 

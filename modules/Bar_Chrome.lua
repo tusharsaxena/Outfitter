@@ -15,8 +15,9 @@ local _, NS = ...
 -- THE HEADER stands on the chrome's title band: LibKa0s's S.Band, laid by Shell at the skin's inset
 -- and `title.height` (flush and 25 px under EllesmereUI, NS.SkinBandGeometry), or a host holder 1 px
 -- in when the library is absent (DpsRace modules/Style.lua:559-575 bandOf). The title,
--- L["Outfits"], is LEFT; the controls are RIGHT, outermost first: close (NS.MakeCloseButton, which
--- writes `bar.shown = false`) and lock (the Master `locked` row, through the one seam). Both are
+-- L["Outfits"], is LEFT; the controls are RIGHT, outermost first: close (NS.MakeCloseButton through
+-- Bar.Close, which writes `bar.shown = false`, or in test mode dismisses the bar for that test
+-- session) and lock (the Master `locked` row, through the one seam). Both are
 -- 18 px slots with the close X's art size, painted as the X is (S.CloseButton), as the window's
 -- gear is (modules/Window.lua). The drag strip covers the band left of the controls: it moves the
 -- bar unless locked, saves the place on release, and a right click opens the bar's settings page.
@@ -211,7 +212,7 @@ function Bar.BuildChrome(f)
     -- Shell paints `frame.title` in the skin's title face and color.
     f.chrome.title = f.title
     NS.ApplySkin(f.chrome)
-    f.close = NS.MakeCloseButton(header, function() NS.SetByPath("bar.shown", false) end)
+    f.close = NS.MakeCloseButton(header, function() Bar.Close() end)
     -- Hooked, so Core's own hover tint stays: the bar keeps full alpha under the X as under the lock.
     if f.close then
         f.close:HookScript("OnEnter", function() Bar.HoverIn() end)

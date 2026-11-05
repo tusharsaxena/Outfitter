@@ -1401,7 +1401,7 @@ Total.
 - parity: the menu sorts as legacy's, and a renamed or refiled row by the same rule
 - parity: a class row is offered to its own class only, as the legacy menu filtered it
 
-### test_preview.lua (29)
+### test_preview.lua (36)
 
 - preview: NS.Preview publishes the §8 surface and starts off
 - preview: the placeholders are five Test Outfits in two rows, each stamped placeholder and preview:<n>
@@ -1432,8 +1432,15 @@ Total.
 - preview window: without the library's strip the title says test mode
 - preview window: New outfit is disabled in test mode and enabled after
 - preview window: entering test mode clears the selection, and no slot box or Slots button acts
+- preview bar: /or bar hide dismisses the bar for the test session, never writing bar.shown
+- preview bar: /or bar toggle dismisses the bar for the test session, never writing bar.shown
+- preview bar: the Toggle outfit bar key dismisses the bar for the test session, never writing bar.shown
+- preview bar: the header's close X dismisses the bar for the test session, never writing bar.shown
+- preview bar: show, toggle and the key bring a dismissed bar back, never writing bar.shown
+- preview bar: the dismissal ends with test mode; the bar follows bar.shown, and a new session shows it
+- preview bar: the dismissal ends with the General switch; a bar the player had on comes back
 
-### test_outfit_menu.lua (26)
+### test_outfit_menu.lua (30)
 
 - menu: NS.OutfitMenu is published
 - menu: the rows per section are legacy's, less Void Storage and the script editor
@@ -1458,6 +1465,10 @@ Total.
 - bar menu: the Toggle outfit bar key closes the outfit menu the bar opened
 - bar menu: the header's close X closes the outfit menu the bar opened
 - bar menu: the stand-down closes the outfit menu the bar opened
+- bar menu: in test mode /or bar hide still closes the outfit menu the bar opened
+- bar menu: in test mode /or bar toggle still closes the outfit menu the bar opened
+- bar menu: in test mode the Toggle outfit bar key still closes the outfit menu the bar opened
+- bar menu: in test mode the header's close X still closes the outfit menu the bar opened
 - bar menu: hiding the bar leaves a menu the window opened alone
 - bar menu: a bar menu already dismissed is forgotten, so a later menu is not taken for it
 - bar menu: NS.CloseMenuFrom closes only what its owner claims, and answers whether it closed
@@ -1765,8 +1776,8 @@ Total.
 | test_outfit_icons.lua | 17 |
 | test_broker.lua | 13 |
 | test_triggers_parity.lua | 13 |
-| test_preview.lua | 29 |
-| test_outfit_menu.lua | 26 |
+| test_preview.lua | 36 |
+| test_outfit_menu.lua | 30 |
 | test_dialogs.lua | 24 |
 | test_trigger_dialog.lua | 11 |
 | test_diagnostics.lua | 12 |
@@ -1780,4 +1791,4 @@ Total.
 | test_lizard_sighted.lua | 8 |
 | test_prose.lua | 15 |
 | Skipped | 1 |
-| **Total** | **1470** |
+| **Total** | **1481** |
