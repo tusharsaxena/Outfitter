@@ -108,18 +108,6 @@ Each is a row in [smoke-tests.md](smoke-tests.md) with its pass criterion.
 | O44 | Equipment Manager saves in combat | Refused with a line |
 | H8 | LibKa0s-Skin falls back to the client's locale font for zhCN, zhTW, koKR and ruRU | Conditional deviation row D7 |
 
-## Test harness
-
-- **One headless case flakes, about 1 run in 8 to 20** ([LibKa0s#75](https://github.com/tusharsaxena/LibKa0s/issues/75)):
-  "bar: a profile switch redraws the bar from the new profile and rebinds the triggers"
-  (`tests/test_bar.lua:845`). The cause is in the vendored kit: `Callbacks:unregisterAll`
-  (`tests/_kit/mock_ace.lua:116-117`) writes `list[target] = nil` into lists that do not hold the
-  target. In Lua 5.1 that can rehash a list mid-dispatch, so `Callbacks:fire`'s `next()` walk ends
-  early and skips the bar's `PROFILE_CHANGED` listener; the trigger binder's `onProfile` calls
-  `UnregisterAllMessages` inside that same dispatch. The real CallbackHandler guards this
-  (`libs/CallbackHandler-1.0/CallbackHandler-1.0.lua:183-184`), so the game is unaffected. Re-run on a
-  red bar profile-switch case; it clears at the re-vendor that carries the fix.
-
 ## Frame layering
 
 The window and the slot checkboxes take their layer from the character sheet rather than a fixed
