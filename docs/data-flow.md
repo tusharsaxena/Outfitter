@@ -109,7 +109,13 @@ NS.Equip.Batch(function()  NS.Stack.Wear / Remove (layer, byTrigger)  end) â—„â”
   the sheet's hide, call `NS.QuickSlots.DrawerSync`, which, only while the window is visible, shows
   every slot's popout arrow, turns the left column's drawer outward, and lines a horizontal flyout up
   with its slot ([`taint.md`](taint.md)). The slot checkboxes restack from the same follow when the
-  host's strata or level moves.
+  host's strata or level moves, and when Blizzard's equipment flyout opens or closes on a sheet slot
+  (its `OnShow`/`OnHide` post-hooks, and the follow's probe for what a hook missed): open, they take
+  the flyout's strata and a level over it, out of lockdown only (smoke round 3 E2). The Outfit
+  Window page's rows (`window.*`) reach each surface on their `SETTINGS_CHANGED` and on
+  `PROFILE_CHANGED`: the dock shows or hides the sheet button and syncs the drawer, the follow's
+  corner compare re-docks for a new `window.dockGap`, `NS.SlotEnables` shows or hides the boxes, and
+  `NS.Window` redraws the list's sections and marks.
 - **Test mode.** `NS.Preview` flips the session-only `NS.State.testMode` and sends `PREVIEW_CHANGED`.
   The bar draws `Preview.Source` (the samples of `defaults/PreviewOutfits.lua`) under its test strip;
   the dock clears the selection and calls `Dock.Refresh`, which shows the window with the samples
@@ -124,8 +130,9 @@ NS.Equip.Batch(function()  NS.Stack.Wear / Remove (layer, byTrigger)  end) â—„â”
   end it, and `PREVIEW_CHANGED false` puts both surfaces back on live data.
 - **The outfit bar.** `NS.Bar` renders on a coalesced 0 s flag (outfit messages, a `bar.*` or Master
   `SETTINGS_CHANGED`, `PREVIEW_CHANGED`, `PROFILE_CHANGED`, a skin change): `NS.Bar.Layout` computes
-  the geometry from the Layout and Icons rows, `Bar.PaintChrome` dresses the header band, plate,
-  labels and test strip, and the pooled buttons are set from `NS.OutfitIcon`. `/or bar`, the *Toggle
+  the geometry from the Layout and Icons rows (while `bar.layout.mode` is Collapsed, every shown
+  outfit in one unlabeled row), `Bar.PaintChrome` dresses the header band, the chrome or the plate
+  (the chrome's edge on or off with the Frame tab's *Show border*), labels and test strip, and the pooled buttons are set from `NS.OutfitIcon`. `/or bar`, the *Toggle
   outfit bar* key and the header's close all write `bar.shown`, except in test mode, where they only
   dismiss the bar for that test session (`Bar.SetTestShown`, cleared on every `PREVIEW_CHANGED` and
   the stand-down) and `bar.shown` is never written; every path that hides the bar closes

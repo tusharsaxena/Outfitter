@@ -55,6 +55,19 @@ in [smoke-tests.md](smoke-tests.md) §12 for the owner's eye.
   holder (following failed) cannot show without the sheet; in test mode the bar still shows the
   samples.
 
+## Awaiting an owner ruling (smoke round 3)
+
+What the round of 2026-11-05 held rather than built ([round 3 plan](superpowers/plans/2026-11-05-smoke-round-3.md)).
+
+- **The equipment flyout keeps Blizzard's border color** (E1). Tinting it in the skin's border color
+  means a skin painting Blizzard's shared `EquipmentFlyoutFrame`, which skinning-§7 forbids and no
+  deviation row covers. It waits on a register row or a change to the standard.
+- **The Equipment Manager mark's tooltip** (E12, not built yet). It says *Stored in the Equipment
+  Manager* even for an outfit that is not stored, it does not say what a click does, and the gear
+  menu has no *Save in equipment manager* entry. The click hint needs a ruling first: on an
+  unselected outfit that is not stored, the first click wears and selects it and only a second click
+  saves it (INV §3.5).
+
 ## Living beside the old addon
 
 - If the old Outfitter is also loaded, both change gear: the addon warns once at login and does not

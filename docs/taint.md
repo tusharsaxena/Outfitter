@@ -50,7 +50,13 @@ anchors, so in combat:
 `Dock.ApplyLayers` copies the sheet holder's strata and level onto the window through
 `NS.SecureQueue.Run("dock.layers", …)`, because the window has secure children. The slot checkboxes
 hold no secure frames and may restack in combat, to the host strata (the highest among
-`CharacterFrame` and its slot buttons).
+`CharacterFrame` and its slot buttons). While Blizzard's `EquipmentFlyoutFrame` is open on one of the
+18 sheet slots (it is `HIGH`, one level under its slot button,
+wow-ui-source@297d7aa:Interface/AddOns/Blizzard_FrameXML/EquipmentFlyout.xml:38 and
+EquipmentFlyout.lua:330-332), they take the flyout's strata when it is higher and a level over its
+frames (smoke round 3 E2), and drop back to the host's when it closes. The lift is read only out of
+lockdown (`SE.OpenFlyout` answers nil in it), so a flyout opened in combat is lifted once lockdown
+ends; the flyout itself is only read, never written.
 
 Test mode's alone window is the same protected frame. It is shown, placed (the one `TOPLEFT` point,
 at `Dock.AloneSpot`, the screen center or the session's drop) and dressed (`Window.SetTestMode`) only
@@ -76,7 +82,14 @@ its `flyoutSettings.getItemsFunc` and `postGetItemsFunc`, and `hooksecurefunc` o
 `EquipmentFlyout_UpdateItems`, `EquipmentFlyoutPopoutButton_SetReversed` and
 `EquipmentFlyoutPopoutButton_HideAll`
 (wow-ui-source@297d7aa:Interface/AddOns/Blizzard_FrameXML/EquipmentFlyout.lua:238, :598, :633). A
-missing global is skipped, never hooked.
+missing global is skipped, never hooked. `modules/SlotEnables.lua` adds `HookScript` OnShow and OnHide
+on `EquipmentFlyoutFrame` itself (the stand-down latch first), which only restack the addon's own
+slot boxes over it (smoke round 3 E2).
+
+The flyout's border keeps Blizzard's color. Smoke round 3 E1 asked for it in the skin's border color;
+that is a skin painting Blizzard's shared `EquipmentFlyoutFrame`, which skinning-§7 forbids and no
+register row covers, so it is held for an owner ruling (a deviation row or an upstream change) and
+nothing tints the flyout ([known-limitations.md](known-limitations.md)).
 
 While the outfit window is on screen (visible, not just shown: a window parked in the sheet holder
 keeps its shown flag when the sheet hides it), the drawer is the window's (design 2026-11-04 G8,

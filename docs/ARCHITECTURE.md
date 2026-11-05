@@ -182,7 +182,9 @@ above it. The slot checkboxes take the **host strata**, the highest among `Chara
 buttons to `HIGH` under a `MEDIUM` sheet, EllesmereUI lifts the sheet itself), and one level above
 the highest frame **of that strata** under the sheet, capped at `LAYERS.LEVEL.MAX` (smoke round 2
 design G3). So they beat the item buttons and any addon drawing over them, and a high level in a
-lower strata no longer inflates theirs. Both re-sync from the window's follow tick, on a level or a
+lower strata no longer inflates theirs. While Blizzard's equipment flyout is open on a sheet slot, the
+boxes take the higher of the host strata and the flyout's (`HIGH`) and a level over it, out of lockdown only, and drop back when it closes
+(smoke round 3 E2). Both re-sync from the window's follow tick, on a level or a
 strata change, because raising the sheet changes its level. Neither ever gets a fixed strata, which
 would poke it through a window that covers the sheet (the fork's lesson, kept). The bar is `HUD`
 (its header band, test strip and labels ride its own levels; the separate drag handle is retired),

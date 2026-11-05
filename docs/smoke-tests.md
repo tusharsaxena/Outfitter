@@ -5,7 +5,9 @@ the design could not measure ahead of time (audit-review-history). The owner run
 before a release. Each row has a pass criterion, and every row can run on the 1.1.0 build; section 10 maps what the headless gate leaves unverified to the
 rows that verify it. Section 11 is the sheet, window and broker round of 2026-11-04, the owner's CP4
 pass; section 12 is smoke round 2 of 2026-11-05 (the sheet button, slots, flyouts, menus, the
-outfit bar and test mode), the owner's CP5 pass.
+outfit bar and test mode), the owner's CP5 pass; section 13 is smoke round 3 of 2026-11-05 (the flyout,
+the sheet button's icon, the bar's options, test mode's placement and menu, the Outfit Window page),
+the owner's R7 pass.
 
 ## Sign-off
 
@@ -322,7 +324,7 @@ Its Character Sheet skin must be on, as in section 11.2.
 | RB4 | Layout: *Vertical layout*; *Per row or column* 2; *Padding* 0 then 20; *Spacing* 0 then 20; each *Grow* direction; with both on *Automatic*, drag the bar to each screen corner and add an outfit | Vertical stands each category in a column; 2 wraps every two icons; padding and spacing move as named; an explicit direction grows that way and a drag never makes the bar jump or flip; on Automatic the bar grows away from the nearest screen edges |
 | RB5 | Icons: *Icon size* 16, then 64; the Border block with *Use the skin's border* and *Use the skin's color* off: show off and on, a style, a thickness, a color, *Use class color* | Every icon resizes and the bar fits them. With the skin's border and color on the edge is the skin's HUD icon edge; off, each Border row changes it as named |
 | RB6 | Labels: *Show category labels* off and on; the Font block: face, size, outline, shadow, color and *Use class color*, each with its *Use the skin's ...* companion off; then the vertical layout | Each part changes as named only with its companion off; off, the labels go and the rows close up. Vertical: each label sits over its column, truncated to its width |
-| RB7 | Frame: *Show background* off and on; *Use the skin's background* off, then a *Background color*, *Use class color*, and the Border block | Background off: no chrome, the buttons alone. Skin's background off: the bar draws in the picked color with the picked border; on, it is a Ka0s window again |
+| RB7 | (Superseded by R3B2: *Show background* is gone.) Frame: *Show background* off and on; *Use the skin's background* off, then a *Background color*, *Use class color*, and the Border block | Background off: no chrome, the buttons alone. Skin's background off: the bar draws in the picked color with the picked border; on, it is a Ka0s window again |
 | RB8 | Switch the skin with the bar showing | The band, the background, the edges, the labels and the worn highlight all repaint at once |
 
 ### 12.7 Test mode (any sheet)
@@ -335,3 +337,68 @@ Its Character Sheet skin must be on, as in section 11.2.
 | RT4 | Click the window's X; open the sheet; click the outfit tab; close everything and press Escape on the alone window in a new test session (`/or test` twice) | The X hides it and test mode stays on (the bar keeps its strip; the minimap menu's *Test mode* is ticked). Opening the sheet does not bring it back; the outfit tab does, docked. Escape hides it the same way |
 | RT5 | With test mode on and the window alone, attack a training dummy | Test mode ends with one chat line, the alone window goes before combat locks it, and the bar shows real outfits again. `/or test` in combat refuses with a line |
 | RT6 | With *Show outfit bar* ticked, `/or test`; click the bar header's X; `/or bar show`; `/or bar hide`; press *Toggle outfit bar* twice; `/or test` to end it; then untick *Show outfit bar* and repeat with a fresh `/or test` and `/or bar hide` | In test mode each hide puts the bar away for that test session only: test mode stays on, *Show outfit bar* stays ticked, and the slash words print *Outfit bar hidden (shown) for this test session*. Show and the key bring it back. When test mode ends the bar is back as before (ticked: shown; unticked: hidden), and a new test session shows it again |
+
+## 13. Smoke round 3 (2026-11-05)
+
+The smoke round 3 pass ([plan](superpowers/plans/2026-11-05-smoke-round-3.md), decisions E1 to E11),
+the owner's R7 pass. It supersedes two rows of section 12: RB7's *Show background* is gone (E6), and
+RT1's placement is now the screen center, draggable (E3). Sections 13.1 to 13.3 are one pass per sheet,
+set up as section 12's are; sections 13.4 to 13.6 run once, on any sheet. Run 13.4's border rows under
+Ka0s Default and under one other skin. E1 is held for an owner ruling, so its rows check that nothing
+changed and record the ruling.
+
+### 13.1 The stock sheet
+
+| # | Do | See |
+|---|---|---|
+| R3S1 (E1) | Window open: open the Head flyout, then close the window and open it again | The flyout's border is Blizzard's own color both times (E1 is held: nothing tints the flyout). Record the owner's ruling on E1 here |
+| R3S2 (E2) | Window open, an outfit selected: open the Head flyout, then the Hands flyout; close each | While a flyout is open, its slot's check box stays on top of the flyout's slot highlight, as it is with the flyout closed. After the close the box is where it was, and the other slots' boxes never moved. No `ADDON_ACTION_BLOCKED` |
+| R3S3 (E10) | Press `C`; compare the outfit tab with the Equipment Manager tab beside it; hover it; open the window | The chest-armor icon is the same size as the neighbors' icons, centered where theirs are, with the tab's bevel showing around it; the tab's bottom and spacing match the tabs between themselves; its border, hover light and selected look are those of the Blizzard tabs |
+| R3S4 (E11) | Outfit Window → Character sheet: untick *Show the button on the character sheet*, then tick it; untick *Show slot check boxes* with an outfit selected; untick *Show the flyout arrows while the window is open*; set *Gap from the character sheet (px)* to 20, then 0 | The tab goes and comes back in place; `/or show` still opens the window without it. No box on any slot; ticked again, they return for the selection. With the window open no arrow shows and a flyout opens at Blizzard's place. At 20 the window stands 20 px right of the sheet, at 0 flush again |
+
+### 13.2 EllesmereUI
+
+| # | Do | See |
+|---|---|---|
+| R3E1 (E1) | As R3S1 | Blizzard's color (EllesmereUI's flyout skin, if it draws one), unchanged by this addon |
+| R3E2 (E2) | As R3S2 | The box stays over the flyout on EllesmereUI's square slot art, with its accent edge |
+| R3E3 (E10) | Press `C`; look at the *Outfits* text tab | Unchanged from round 2 (the owner passed it): stacked above *Equipment*, in its face, size and color |
+| R3E4 (E11) | As R3S4 | The same, with the *Outfits* text tab as the button and EllesmereUI's arrows (*Hide Slot Flyout Arrows* off) |
+
+### 13.3 ChonkyCharacterSheet
+
+| # | Do | See |
+|---|---|---|
+| R3C1 (E1) | As R3S1 | Blizzard's color, unchanged |
+| R3C2 (E2) | As R3S2, with Chonky's stats panel open | The box stays over the flyout and its highlight (Chonky's slots are already `HIGH`), and over the slot once the flyout closes |
+| R3C3 (E10) | Press `C`; compare the outfit tab with Chonky's tab icons | The icon is the same size as Chonky's tab icons and on the same line as them, the tab spaced from its neighbor as they are from each other (the row's right-heavy offset of RC1 stays accepted) |
+| R3C4 (E11) | As R3S4 | The same on Chonky's tab row and slots |
+
+### 13.4 The outfit bar (any sheet)
+
+| # | Do | See |
+|---|---|---|
+| R3B1 (E5) | Outfit Bar → Icons, under Ka0s Default and then another skin: *Show border* on, then off; then with *Use the skin's border* and *Use the skin's color* off, on and off again | On: every button carries an edge (the skin's HUD icon edge, or the picked one); off: no edge at all on any button, in both skins and both companion states. Never inverted |
+| R3B2 (E6) | Open Outfit Bar → Frame | There is no *Show background* row; the tab starts with the Background block. The bar always draws a background |
+| R3B3 (E7) | Frame: *Show border* off, then on; with *Use the skin's background* on, then off; then switch the skin with it off | Off: the bar's window has no edge in either background state, and it stays off across the skin switch; on: the skin's edge (or the picked one on the plate) comes back |
+| R3B4 (E8) | On a fresh profile (Profiles → New), look at Layout | *Padding (px)* reads 8 and *Spacing (px)* 4, and the bar draws 8 px in from its edges with 4 px between icons |
+| R3B5 (E9) | Layout: hover *Grouping*; set it to *Collapsed*; open the Labels tab; set *Vertical layout*; set *Grouping* back to *Grouped* | The tooltip explains Grouped and Collapsed. Collapsed: every shown outfit in one group, no category label, and every Labels row dimmed (the swatch excepted); vertical, one column. Grouped: one labeled row per category again |
+
+### 13.5 Test mode (any sheet)
+
+| # | Do | See |
+|---|---|---|
+| R3T1 (E3) | With the sheet closed, `/or test` | The window opens in the middle of the screen and the bar just to its left (about 8 px apart), not stacked |
+| R3T2 (E3) | Drag the window by its header; open the sheet with `C`, close it; `/or test` twice | The window moves and stays where dropped; docked, it follows the sheet; with the sheet closed it is back at the drop. The new session starts centered again (nothing saved) |
+| R3T3 (E3) | Drag the bar; `/or test` to end test mode; then a new `/or test`, *Reset position*, end it | The dragged place is saved: the bar stays there after test mode ends. In the new session the bar starts beside the window again; Reset position puts it at its start, and test mode's end leaves it there |
+| R3T4 (E3) | With test mode on and the window alone, start a drag and attack a training dummy | Test mode ends before lockdown, the window goes, and no `ADDON_ACTION_BLOCKED` |
+| R3T5 (E4) | Click a sample's gear; open *Automation* and a category, then *Key binding*; hover a grayed row; click one | The menu opens for the sample and every submenu cascades. Every row that would change data is grayed, its tooltip *Not available in test mode*, and a click does nothing: no real outfit changes. After test mode ends a real outfit's menu is whole |
+
+### 13.6 The Outfit Window page (any sheet)
+
+| # | Do | See |
+|---|---|---|
+| R3W1 (E11) | Settings → AddOns → Ka0s Outfitter Reborn: open *Outfit Window*; hover each row | The page sits between Outfit Bar and Profiles, with the tabs Character sheet and List; every row has a tooltip |
+| R3W2 (E11) | List: untick *Show Odds 'n ends*, *Show Warbound until equipped* and *Show Unopened*, each with the window open | Each section leaves the list at once; ticked again, it returns |
+| R3W3 (E11) | List: untick *Show the Equipment Manager mark*, then *Show the automation mark* | The EM icon goes and the name starts where it was; the lightning goes from outfits with a trigger. Ticked again, both return |
+| R3W4 (E11) | Change a few rows, then switch to another profile and back | Each surface (the tab, the boxes, the arrows, the gap, the sections, the marks) follows the profile at once |

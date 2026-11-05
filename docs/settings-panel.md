@@ -14,7 +14,7 @@ there is no LoadOnDemand split (H21; the comment is in `settings/OptionsSetup.lu
 | Page | Covers |
 |---|---|
 | General | Master controls, automatic outfit changes and equip behavior, tooltips, the skin, and key bindings |
-| Outfit Bar | Whether the bar shows and how it marks the worn outfit, opacity in combat; its layout, icons and their border, category labels, and its window frame (background and border) |
+| Outfit Bar | Whether the bar shows and how it marks the worn outfit, opacity in combat; its layout (Grouped or Collapsed), icons and their border, category labels, and its window frame (background and border) |
 | Outfit Window | The character sheet's button, slot check boxes and flyout arrows, the window's gap from the sheet; which item sections the list shows and which marks an outfit row draws |
 | Profiles | AceDB profiles: settings only; outfits belong to each character |
 
@@ -132,7 +132,10 @@ on the right, and the header drags it. Tabs in declaration order:
 prefix `bar.icons.`, on the skin's icon family): show, style, size, color and *Use class color*
 with *Use the skin's border*, then this addon's *Use the skin's color*
 (`bar.icons.borderColorFromSkin`). With both companions on, a button wears the skin's own HUD icon
-edge.
+edge. *Show border* (`bar.icons.borderShow`) is the only edge a button draws, in every skin: on, the
+skin's edge or the player's; off, none (smoke round 3 E5: the button no longer takes `S.SquareIcon`,
+whose permanent outline edge read as an inverted switch under Ka0s Default and a dead one under the
+other skins; its art is cropped by hand instead).
 
 ### Labels
 

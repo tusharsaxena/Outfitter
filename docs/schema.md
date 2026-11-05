@@ -39,6 +39,9 @@ profile = {
                  frame  = { borderShow = true, borderStyle = "Solid", borderSize = 1,
                             borderColor = { r = 0, g = 0, b = 0, a = 1 }, useClassColorBorder = false,
                             borderStyleFromSkin = true, borderColorFromSkin = true } },
+  window     = { sheetButton = true, slotBoxes = true, drawer = true, dockGap = 0,         -- Outfit Window page
+                 sections = { unused = true, warbound = true, boe = true },
+                 marks = { em = true, trigger = true } },
   windows    = { bar = { point = "TOPLEFT", x = 200, y = -200 }, dialogs = {} },     -- named non-setting state
   skin       = { source = "ka0s", skin = "ka0s", ignorePanel = true, ignoreFonts = false,
                  font = "", texture = "", outline = "hud", pickerSeen = false },
@@ -62,6 +65,12 @@ global = { schemaVersion = 0, minimap = { hide = false }, skinNotice = {} },
   class-color companion, default off; the stored value is what a player turns the companion off to
   get. `bar.layout.growH`/`growV` other than `auto` pin the corner `bar.position` is saved at.
   The smoke round 2 rows are new keys with defaults, so no migration step was needed.
+- **Smoke round 3** (2026-11-05) added `bar.layout.mode` (Grouped or Collapsed, E9) and the `window`
+  table (the Outfit Window page, E11), new keys with defaults; moved the defaults of
+  `bar.layout.padding` and `spacing` to 8 and 4 (E8), so a profile that never wrote them takes the
+  new values; and removed `bar.showBackground` (E6). A stored `bar.showBackground` stays in the
+  saved variables and is never read, the bar always drawing one of its two backgrounds; no
+  migration step was needed, so `NS.SCHEMA_VERSION` is still 1.
 - **Session-only state stays out:** `NS.State.debug`, `NS.State.testMode`, `NS.State.legacyLoaded`
   (`core/State.lua`) are reset by every `/reload`.
 
@@ -88,7 +97,7 @@ anything reads `NS.db.profile`, and again over a reset profile:
 
 | Instance | File | Rows | Root (`resolveRoot`, `core/Database.lua`) |
 |---|---|---|---|
-| `NS.Schema` | `settings/Schema.lua` | Every settings row: the Master controls, the Skin rows, the Behavior, Tooltips and Outfit Bar rows | `NS.ResolveSettingsRoot`: `global.*` under `db.global`, everything else under `db.profile` |
+| `NS.Schema` | `settings/Schema.lua` | Every settings row: the Master controls, the Skin rows, the Behavior, Tooltips, Outfit Bar and Outfit Window rows | `NS.ResolveSettingsRoot`: `global.*` under `db.global`, everything else under `db.profile` |
 | `NS.OutfitSchema` | `modules/Outfits_Schema.lua` | The instance rows: `outfit.trigger.id`, `outfit.trigger.disabled`, `outfit.trigger.combatDisabled`, `outfit.icon` (a fileID, a LibKa0s glyph path or nil), `outfit.iconColor` (a glyph's `"rrggbb"`, or nil for white), `outfit.bar.hide`, and one `trigger.<TID>.<key>` row per trigger parameter (about 250) | `NS.ResolveOutfitRoot`: `outfit.*` under `db.char.outfits[id]`, `trigger.*` under its `triggerParams`; a nil or unknown id is refused |
 
 The settings instance has no outfit arm and the outfit instance refuses a nil id, so a profile reset
