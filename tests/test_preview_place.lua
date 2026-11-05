@@ -1,5 +1,5 @@
 -- tests/test_preview_place.lua — where test mode puts its two surfaces (smoke round 3 E3): the
--- window stands alone in the SCREEN CENTRE and drags for the length of the test session (out of
+-- window stands alone in the SCREEN CENTER and drags for the length of the test session (out of
 -- combat only, never saved: the client's user-placed flag is cleared after the drop), and the bar
 -- starts just left of that spot for the session, stays draggable, and a drag of it saves as it always
 -- does. Docked beside the sheet the window does not move. test_preview pins the rest of test mode.
