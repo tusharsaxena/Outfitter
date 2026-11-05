@@ -282,6 +282,20 @@ test("bar: Frame > Show border governs the edge once Use the skin's border is of
             end
         end
     end
+    -- The smoke row's last step (R3B3): Show border off stays off across a skin switch, which only
+    -- S.Shell's replay of the recorded `noBorder` keeps (PaintChrome calls it only when it moves).
+    -- red under: a skin switch re-dressing the chrome without that opt.
+    NS.SetByPath("bar.frame.borderStyleFromSkin", false)
+    NS.SetByPath("bar.frame.borderShow", false)
+    NS.SetByPath("bar.bgFromSkin", true)
+    settle(M)
+    for _, key in ipairs(skinKeys(Skin)) do
+        NS.ApplySkinChoice("ka0s", key)
+        settle(M)
+        if NS.Skin.Token("win.border") ~= nil then
+            assertFalse(shellEdgeShown(Skin, f.chrome), key .. ": the edge stays off across the switch")
+        end
+    end
     NS.ApplySkinChoice("ka0s", "ka0s")
 end)
 
