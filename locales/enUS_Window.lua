@@ -143,3 +143,6 @@ L["Outfitter Reborn (test mode)"] = "Outfitter Reborn (test mode)"
 
 -- Smoke round 2 review fix keys (modules/Bar_Chrome.lua: the bar's degraded test-mode title)
 L["Outfits (test mode)"] = "Outfits (test mode)"
+
+-- Smoke round 3 E4 keys (modules/OutfitMenu.lua: a sample's browse-only menu in test mode)
+L["Not available in test mode"] = "Not available in test mode"

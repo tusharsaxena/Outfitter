@@ -25,8 +25,9 @@ local _, NS = ...
 --
 -- A SAMPLE ROW (test mode, smoke round 2 design G7; the entry's `placeholder`) draws its record's
 -- display fields (worn, triggered, em, status) instead of the live state, and every handler refuses
--- it quietly: the row click, the worn box (which takes its drawn state back), the EM mark and the
--- gear. Its tooltip is the bar's sample line. Only item rows arm, and test mode lists none.
+-- it quietly: the row click, the worn box (which takes its drawn state back) and the EM mark. Its gear
+-- opens the sample's browse-only outfit menu (smoke round 3 E4: every data row disabled, in
+-- NS.OutfitMenu). Its tooltip is the bar's sample line. Only item rows arm, and test mode lists none.
 --
 -- CALLS (at call time; design §12): NS.Window.MarkDirty/ToggleCollapsed, NS.Stack.Wear/Remove/IsWorn/
 -- Select/Selected, NS.Outfits.Get/IsEM, NS.EM.StoreOnServer/StoreLocally, NS.OutfitMenu.Open,
@@ -391,7 +392,9 @@ local function gearMenu(row)
     NS.Skin.Button(menu, { noBg = true, noBorder = true })
     menu:SetScript("OnClick", function()
         local e = row.entry
-        if NS.IsStoodDown() or not (e and e.kind == "outfit") or e.placeholder then return end
+        -- A sample's gear opens its browse-only menu (smoke round 3 E4): NS.OutfitMenu disables every
+        -- row that would change data.
+        if NS.IsStoodDown() or not (e and e.kind == "outfit") then return end
         NS.OutfitMenu.Open(menu, e.id)
     end)
     return menu

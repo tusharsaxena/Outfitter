@@ -456,7 +456,7 @@ test("preview window: the list is the five samples under their headers, no item 
     assertTrue(back, "the real outfits came back when test mode ended")
 end)
 
-test("preview window: every row handler refuses a sample quietly and nothing is written", function()
+test("preview window: every row handler refuses a sample quietly, the gear browses, and nothing is written", function()
     local NS, M, fakes = testScene()
     M.__sheets.place(M.CharacterFrame, 300, 500)
     M.__world:openCharacter()
@@ -486,7 +486,14 @@ test("preview window: every row handler refuses a sample quietly and nothing is 
     -- red under: a row click or worn box that reaches NS.Stack.Wear with the sample's id
     assertEqual(#M.__equipCalls, calls, "a sample reached the equip path")
     assertEqual(#NS.db.char.stack, 0, "nothing worn")
-    assertEqual(fakes.OutfitMenu.__count("Open"), 0, "a sample opened the outfit menu")
+    -- The gear opens the sample's browse-only menu (smoke round 3 E4; test_outfit_menu pins its rows);
+    -- the row's right click still opens nothing.
+    -- red under: a gear that still refuses a sample (20.png)
+    assertEqual(fakes.OutfitMenu.__count("Open"), #rows, "the gear did not open each sample's menu")
+    for i, c in ipairs(fakes.OutfitMenu.__calls) do
+        assertTrue(c[2] == rows[i].menu, "the menu did not open from the sample's gear")
+        assertEqual(c[3], "preview:" .. i)
+    end
     assertNil(NS.Stack.Selected(), "a sample was selected")
     assertEqual(#M.__printed(), 0, "a refusal spoke")
     assertEqual(snapshot(NS), before)

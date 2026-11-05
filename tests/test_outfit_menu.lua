@@ -13,6 +13,7 @@ local T = _G.OUTFITTERREBORN_TEST
 local test, assertEqual, assertTrue, assertFalse, assertNil =
     T.test, T.assertEqual, T.assertTrue, T.assertFalse, T.assertNil
 local scene = dofile(T.root .. "/tests/dialog_scene.lua")(T)
+local spy = dofile(T.root .. "/tests/spy.lua")
 
 local function plain(label) return (tostring(label):gsub("|T.-|t%s*", ""):gsub("%s+$", "")) end
 
@@ -503,6 +504,108 @@ test("menu: nothing opens for an unknown id or while stood down", function()
     NS.SetByPath("enabled", false)
     -- red under: Open without its NS.IsStoodDown() check.
     assertFalse(NS.OutfitMenu.Open({}, acc))
+    assertEqual(#ctl.menus, 0)
+end)
+
+-- ── test mode: the sample's browse-only menu (smoke round 3 E4) ─────────────────────────────
+
+local NOT_IN_TEST = "Not available in test mode"
+
+local function dumpTable(v)
+    if type(v) ~= "table" then return tostring(v) end
+    local keys = {}
+    for k in pairs(v) do keys[#keys + 1] = k end
+    table.sort(keys, function(a, b) return tostring(a) < tostring(b) end)
+    local out = {}
+    for _, k in ipairs(keys) do out[#out + 1] = tostring(k) .. "=" .. dumpTable(v[k]) end
+    return "{" .. table.concat(out, ",") .. "}"
+end
+
+-- Every row of a menu tree, depth first: { row, path } for each that is not a title or divider.
+local function leaves(rows, path, out)
+    out = out or {}
+    for _, r in ipairs(rows) do
+        if not (r.title or r.divider) then
+            local here = path .. "/" .. plain(r.label)
+            out[#out + 1] = { row = r, path = here }
+            if r.submenu then leaves(r.submenu, here, out) end
+        end
+    end
+    return out
+end
+
+test("menu: in test mode a sample opens a browse-only menu, every data row off with the test-mode tooltip", function()
+    local NS, _, ctl = scene()
+    local acc = outfits(NS)
+    NS.Outfits.SetBinding(acc, 2)
+    -- The bank open: its rows' own SetEnabled(true) must not turn a sample's row back on.
+    T.fake(NS, "Bank", { IsOpen = function() return true end })
+    assertTrue(NS.Preview.Start(), "test mode did not start")
+    ctl.menus = {}
+    -- red under: an Open that refuses a preview id in test mode (20.png: the gear did nothing)
+    assertTrue(NS.OutfitMenu.Open({}, "preview:2"), "the sample's menu did not open")
+    local top = ctl.menus[1].rows
+    assertEqual(plain(top[1].label), "Test Outfit 2", "the menu is not the sample's")
+    local all, subs = leaves(top, ""), 0
+    assertTrue(#all > 20, "the tree is not the whole outfit menu: " .. #all)
+    for _, l in ipairs(all) do
+        local r = l.row
+        if r.submenu then
+            subs = subs + 1
+            -- The submenus cascade as usual, so the player can browse every level.
+            assertNil(r.disabled, l.path .. ": a submenu row is disabled")
+        else
+            -- red under: a browse-only wrapper that leaves a data row live
+            assertTrue(r.disabled == true, l.path .. ": a data row is live in test mode")
+            assertEqual(r.tooltip, NOT_IN_TEST, l.path .. ": the row does not say why")
+        end
+    end
+    assertTrue(subs >= 4, "Key binding, Title, Bank and Automation cascade")
+    -- red under: an inert row that still forwards the fill's later SetEnabled (the bank's, open)
+    assertTrue(exact(ctl.row("Bank").submenu, "Withdraw items from bank").disabled == true, "the open bank re-enabled a row")
+    -- The binding holder labels still read the real outfits (browsing reads, never writes).
+    assertTrue(exact(ctl.row("Key binding").submenu, "Outfit 2 (Ride)") ~= nil, "the holder labels")
+end)
+
+test("menu: nothing in the sample's menu reaches a real outfit, whatever row is clicked", function()
+    local NS, _, ctl = scene()
+    local acc = outfits(NS)
+    assertTrue(NS.Preview.Start())
+    local before = dumpTable({ profile = NS.db.profile, char = NS.db.char, global = NS.db.global })
+    local spies = {
+        spy(NS, "OutfitDialog", { "OpenRename" }), spy(NS, "Popups", { "ShowDelete", "ShowSetCurrent", "ShowRebuild" }),
+        spy(NS, "RebuildDialog", { "Open" }), spy(NS, "TriggerDialog", { "Open" }), spy(NS, "IconBrowser", { "Open" }),
+        spy(NS, "Outfits", { "SetFlag", "SetBinding" }),
+    }
+    for n = 1, 5 do
+        ctl.menus = {}
+        assertTrue(NS.OutfitMenu.Open({}, "preview:" .. n))
+        -- The library would refuse a disabled row; click each anyway, so no path through it acts.
+        for _, l in ipairs(leaves(ctl.menus[1].rows, "")) do
+            if l.row.onClick then l.row.onClick(nil, l.row) end
+        end
+    end
+    for _, sp in ipairs(spies) do
+        -- red under: a sample row that hands the click through to its seam
+        assertEqual(#sp.__calls, 0, "a sample row reached " .. tostring(sp.__calls[1] and sp.__calls[1][1]))
+    end
+    assertEqual(dumpTable({ profile = NS.db.profile, char = NS.db.char, global = NS.db.global }), before,
+        "a sample row wrote saved data")
+    assertTrue(NS.Outfits.Get(acc) ~= nil)
+end)
+
+test("menu: a sample's menu needs test mode, and a real outfit's menu stays live during it", function()
+    local NS, _, ctl = scene()
+    local acc = outfits(NS)
+    ctl.menus = {}
+    assertFalse(NS.OutfitMenu.Open({}, "preview:2"), "a sample opened outside test mode")
+    NS.Preview.Start()
+    assertTrue(NS.OutfitMenu.Open({}, acc))
+    -- red under: a browse-only wrapper applied to every menu while test mode is on
+    assertNil(ctl.row("Rename").disabled, "a real outfit's menu went browse-only")
+    NS.Preview.Stop()
+    ctl.menus = {}
+    assertFalse(NS.OutfitMenu.Open({}, "preview:2"), "a sample's menu opened after test mode ended")
     assertEqual(#ctl.menus, 0)
 end)
 

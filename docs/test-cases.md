@@ -1433,7 +1433,7 @@ Total.
 - preview: Diagnose reports the mode, the bar it opened and the sample count
 - preview: every start and stop, from any source, repaints an open settings panel
 - preview window: the list is the five samples under their headers, no item section, nothing armed
-- preview window: every row handler refuses a sample quietly and nothing is written
+- preview window: every row handler refuses a sample quietly, the gear browses, and nothing is written
 - preview window: with the sheet closed, test mode shows the window alone in the screen center
 - preview window: opening the sheet docks it, closing the sheet puts it back alone
 - preview window: with the sheet open, test mode shows the window docked
@@ -1464,7 +1464,7 @@ Total.
 - test place: a drag of the test bar saves as usual, and test mode's end keeps it there
 - test place: test mode's end puts a bar the player had on back at its saved place
 
-### test_outfit_menu.lua (30)
+### test_outfit_menu.lua (33)
 
 - menu: NS.OutfitMenu is published
 - menu: the rows per section are legacy's, less Void Storage and the script editor
@@ -1483,6 +1483,9 @@ Total.
 - menu: an outfit deleted under its open menu leaves rows that paint and click without raising
 - menu: a ticked toggle clicked after its outfit is deleted repaints without its tick
 - menu: nothing opens for an unknown id or while stood down
+- menu: in test mode a sample opens a browse-only menu, every data row off with the test-mode tooltip
+- menu: nothing in the sample's menu reaches a real outfit, whatever row is clicked
+- menu: a sample's menu needs test mode, and a real outfit's menu stays live during it
 - menu: the class category reads the client's class name, the rest their own labels
 - bar menu: /or bar hide closes the outfit menu the bar opened
 - bar menu: /or bar toggle closes the outfit menu the bar opened
@@ -1802,7 +1805,7 @@ Total.
 | test_triggers_parity.lua | 13 |
 | test_preview.lua | 35 |
 | test_preview_place.lua | 7 |
-| test_outfit_menu.lua | 30 |
+| test_outfit_menu.lua | 33 |
 | test_dialogs.lua | 24 |
 | test_trigger_dialog.lua | 11 |
 | test_diagnostics.lua | 12 |
@@ -1816,4 +1819,4 @@ Total.
 | test_lizard_sighted.lua | 8 |
 | test_prose.lua | 15 |
 | Skipped | 1 |
-| **Total** | **1502** |
+| **Total** | **1505** |

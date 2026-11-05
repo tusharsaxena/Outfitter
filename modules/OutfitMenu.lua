@@ -26,12 +26,21 @@ local _, NS = ...
 --               Turn trigger off and Disable outfit in combat, disabled without a trigger.
 --   Outfit bar  Show in outfit bar; Change icon... (one ellipsis: the legacy label doubled it).
 --
+-- A SAMPLE'S MENU (test mode, smoke round 3 E4). While NS.Preview is on, a sample outfit's gear opens
+-- the same four sections for its `preview:<n>` record (NS.PreviewOutfits.Get), written to a
+-- browse-only level (browseOnly below): titles, dividers and the submenu rows pass through, so every
+-- level cascades as usual, and every row that would change data is built DISABLED around a no-op,
+-- with the tooltip L["Not available in test mode"], whatever the fill does to it afterwards. No click
+-- is ever handed a seam, so nothing reaches a real outfit; the reads (a key's holder, the titles) are
+-- the live ones. A real outfit's menu is untouched by test mode.
+--
 -- No label carries a glyph: a submenu's arrow and a toggle's tick are marks the seam draws.
 -- Every write goes through its owner's seam: the instance rows through NS.SetByPath with the id, the
 -- record flags and the binding through NS.Outfits.
 --
 -- CALLS (at call time, no nil guard; design §12): NS.Outfits, NS.Stack.UpdateTitle, NS.Bank, NS.Stats,
--- NS.Triggers, NS.Popups, NS.OutfitDialog, NS.RebuildDialog, NS.TriggerDialog, NS.IconBrowser.
+-- NS.Triggers, NS.Popups, NS.OutfitDialog, NS.RebuildDialog, NS.TriggerDialog, NS.IconBrowser,
+-- NS.Preview.IsActive, NS.PreviewOutfits.Get.
 
 local OM = {}
 NS.OutfitMenu = OM
@@ -245,21 +254,71 @@ local function fillBar(root, rec)
     root:CreateButton(L["Change icon..."], function() NS.IconBrowser.Open(id) end)
 end
 
+-- ── test mode: browse only (smoke round 3 E4) ─────────────────────────────────────────────────
+
+local function noop() end
+
+-- A data row, built off around a no-op: its own SetEnabled and SetTooltip calls are swallowed, so a
+-- fill that enables a row later (the bank's, with the bank open) cannot turn it back on.
+local INERT = setmetatable({}, { __index = function() return noop end })
+
+local function inert(row)
+    row:SetEnabled(false)
+    row:SetTooltip(tip(L["Not available in test mode"]))
+    return INERT
+end
+
+--- `level` (the seam's recorder or the client's description) as a browse-only level: see the header.
+--- @param level table
+--- @return table
+local function browseOnly(level)
+    local w = setmetatable({}, { __index = function(_, k)
+        local v = level[k]
+        if type(v) ~= "function" then return v end
+        return function(_, ...) return v(level, ...) end
+    end })
+    function w.CreateButton(_, text, onClick)
+        if onClick == nil then return browseOnly(level:CreateButton(text)) end
+        return inert(level:CreateButton(text, noop))
+    end
+    function w.CreateCheckbox(_, text, isSelected, _, data)
+        return inert(level:CreateCheckbox(text, isSelected, noop, data))
+    end
+    function w.CreateRadio(_, text, isSelected, _, data)
+        return inert(level:CreateRadio(text, isSelected, noop, data))
+    end
+    return w
+end
+
+local function fillAll(root, rec)
+    fillGeneral(root, rec)
+    fillRebuild(root, rec)
+    fillAutomation(root, rec)
+    fillBar(root, rec)
+end
+
+-- The sample record behind `id` while test mode is on, else nil.
+local function sampleOf(id)
+    if NS.Preview.IsActive() ~= true then return nil end
+    return NS.PreviewOutfits.Get(id)
+end
+
 --- Open the context menu for outfit `id` at the cursor.
 --- @param anchor table the frame the menu belongs to (a row, its menu mark, a bar button)
 --- @param id string
 --- @return boolean opened
 function OM.Open(anchor, id)
     if NS.IsStoodDown() then return false end
+    local sample = sampleOf(id)
+    if sample then
+        return NS.OpenMenu(anchor, function(root) fillAll(browseOnly(root), sample) end) == true
+    end
     if not NS.Outfits.Get(id) then return false end
     -- The record is read on every fill: a keep-open pick fills the menu again to relabel it. A fill
     -- after the outfit is gone adds nothing, and the open rows keep what they show.
     return NS.OpenMenu(anchor, function(root)
         local rec = NS.Outfits.Get(id)
         if not rec then return end
-        fillGeneral(root, rec)
-        fillRebuild(root, rec)
-        fillAutomation(root, rec)
-        fillBar(root, rec)
+        fillAll(root, rec)
     end) == true
 end

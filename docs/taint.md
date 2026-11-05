@@ -58,7 +58,8 @@ through `Dock.Refresh`, never in lockdown. Its drag (smoke round 3 E3) starts on
 only while it stands alone; the drop clears the client's user-placed flag and re-issues the one point,
 and the hide at `PLAYER_REGEN_DISABLED` stops a move in progress before lockdown: `/or test` is refused in combat, and combat ends test mode at `PLAYER_REGEN_DISABLED`,
 before lockdown, hiding the alone window with it. The sample rows arm no secure button: the list
-carries no item section in test mode, and every row handler refuses a `preview:` id.
+carries no item section in test mode, and every row handler refuses a `preview:` id (the gear opens a browse-only menu whose data rows are
+disabled no-ops).
 
 ### The sheet button
 

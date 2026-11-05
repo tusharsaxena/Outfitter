@@ -117,7 +117,9 @@ NS.Equip.Batch(function()  NS.Stack.Wear / Remove (layer, byTrigger)  end) â—„â”
   (`Dock.AloneSpot`) when it is not, never in lockdown. Alone it drags for the session (`Dock.testSpot`,
   never saved); the bar starts just left of it (`st.testPlace`) until the player drags the bar, which
   saves as usual. X or Escape sets `testDismissed` for that test session. Every row action
-  refuses a `preview:` id, so nothing reaches `NS.Outfits` or `NS.Stack`. Combat
+  refuses a `preview:` id but the gear, which opens the sample's browse-only outfit menu (every data
+  row disabled around a no-op, `L["Not available in test mode"]`), so nothing reaches `NS.Outfits` or
+  `NS.Stack`. Combat
   (`PLAYER_STATE_CHANGED "combat"`, before lockdown), its own switch, Reset all and the stand-down
   end it, and `PREVIEW_CHANGED false` puts both surfaces back on live data.
 - **The outfit bar.** `NS.Bar` renders on a coalesced 0 s flag (outfit messages, a `bar.*` or Master

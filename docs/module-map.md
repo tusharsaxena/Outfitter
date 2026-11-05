@@ -81,7 +81,7 @@ The libraries load first, each in its own folder under `libs/`, and are vendored
 | `defaults/Zones.lua` | `NS.Zones.rows` and `BRAWL_MAP_IDS`: the single zone source, one row per battleground and arena |
 | `defaults/TriggerData.lua` | The aura, form, NPC, difficulty, map, skill-line and pet ID tables the triggers and their state producers read; pure data, every key an ID |
 | `defaults/Triggers.lua` | `NS.TriggerCatalog`: one data row per non-zone trigger, and `CATEGORY_ORDER` |
-| `defaults/PreviewOutfits.lua` | The test-mode sample outfits (five, one row state each: worn, triggered, Equipment Manager, missing items, a spec icon and the default icon), read by `modules/Preview.lua` for the bar and `modules/Window_ListModel.lua` for the window, never by the store |
+| `defaults/PreviewOutfits.lua` | The test-mode sample outfits (five, one row state each: worn, triggered, Equipment Manager, missing items, a spec icon and the default icon), read by `modules/Preview.lua` for the bar and `modules/Window_ListModel.lua` for the window, and by `modules/OutfitMenu.lua` (`Get`) for a sample's browse-only menu; never by the store |
 
 ## modules/
 
@@ -143,7 +143,7 @@ the diagnostics sections.
 | `modules/Window_ListModel.lua` | `NS.WindowListModel`: what the outfit list shows, in order; the sample outfits with no item section in test mode |
 | `modules/Window_Rows.lua` | `NS.WindowRows`: the list's 14 rows and the secure child each one owns |
 | `modules/SlotEnables.lua` | `NS.SlotEnables`: the 18 slot checkboxes over the character sheet while an outfit is selected, in the host strata with an accent edge; none in test mode |
-| `modules/OutfitMenu.lua` | `NS.OutfitMenu`: the outfit context menu, as one cascading tree (keep-open radio and toggle rows, act-and-close rows) |
+| `modules/OutfitMenu.lua` | `NS.OutfitMenu`: the outfit context menu, as one cascading tree (keep-open radio and toggle rows, act-and-close rows); in test mode a sample's browse-only copy, every data row disabled |
 | `modules/UIDialogs.lua` | `NS.Dialogs`: the dialogs' shared chrome and controls |
 | `modules/Dialog_Outfit.lua` | `NS.OutfitDialog`: the new-outfit and rename dialog |
 | `modules/Dialog_Trigger.lua` | `NS.TriggerDialog`: the trigger chooser and its settings |
