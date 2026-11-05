@@ -1355,7 +1355,7 @@ Total.
 - bar: Suspend hides it and stops the rebuilds; the stand-down keeps it down
 - bar: test mode shows the sample outfits with the strip, even with the bar off, and they do nothing
 
-### test_bar_look.lua (12)
+### test_bar_look.lua (13)
 
 - bar: a label draws through S.HudFont with its font block, and its color follows the skin until told not to
 - bar: the player's plate and icon edge take the skin's border color while that companion stays on
@@ -1365,8 +1365,9 @@ Total.
 - bar: Icons > Show border draws the skin's icon edge when on and no edge at all when off, in every skin
 - bar: Icons > Show border on draws the skin's window icon outline, which shows on the bar's dark background
 - bar: Frame > Show background is gone, and a stored false from round 2 hides nothing
-- bar: Frame > Show border is dimmed while Use the skin's border is on, and live once it is off, in every skin
-- bar: Frame > Show border governs the edge once Use the skin's border is off, and the skin's edge draws while it is on
+- bar: Frame > Show border is dimmed only while Use the skin's border is on under a skin with a real border style
+- bar: Frame > Show border governs the edge but under a skin's real border style with Use the skin's border on
+- bar: a skin switch moves Frame > Show border's dimming and the edge between a None skin and a real style
 - bar: the Layout tab's Grouping row is Grouped or Collapsed, and Collapsed hides every label row
 - bar: Collapsed draws every shown outfit as one group with no labels; Grouped keeps a row per category
 
@@ -1838,7 +1839,7 @@ Total.
 | test_rows_secure.lua | 22 |
 | test_slot_enables.lua | 29 |
 | test_bar.lua | 45 |
-| test_bar_look.lua | 12 |
+| test_bar_look.lua | 13 |
 | test_outfit_icons.lua | 17 |
 | test_broker.lua | 13 |
 | test_triggers_parity.lua | 13 |
@@ -1860,4 +1861,4 @@ Total.
 | test_lizard_sighted.lua | 8 |
 | test_prose.lua | 15 |
 | Skipped | 1 |
-| **Total** | **1538** |
+| **Total** | **1539** |

@@ -158,12 +158,17 @@ The Background block (`H.ColorPair`,
 (`bar.bgFromSkin`), and the Border block (`H.BorderGroup`, prefix `bar.frame.`, on the skin's bar
 family) with *Use the skin's color*. While *Use the skin's background* is on, the bar is drawn
 exactly as a Ka0s window and the colors wait; off, they draw on a plate of the bar's own. *Show
-border* (`bar.frame.borderShow`) is dimmed (reading ticked, its tooltip saying why) while *Use the
-skin's border* (`bar.frame.borderStyleFromSkin`) is on, in every skin: the edge is then the skin's
-(smoke round 3 E7, the owner's ruling; the row's `disabledIf` and `skinValue` replace the library's,
-which dims it only under a skin with a real bar style). Once that is off it reaches both layers:
-off, the plate draws no edge and the skin's window edge is dropped (`S.Shell`'s `noBorder`,
-replayed on every skin switch).
+border* (`bar.frame.borderShow`) follows skinning-§6 (smoke round 3 E7, the owner's ruling: follow
+the standard). It is dimmed (reading ticked, its tooltip saying why) only while *Use the skin's
+border* (`bar.frame.borderStyleFromSkin`) is on under a skin with a real bar border style (Azeroth,
+High Contrast, WoW Default, WoW Midnight): the skin's edge then draws whatever the switch says. Under
+a skin whose style is None (Ka0s Default and the rest) the skin has no border of its own, so the row
+stays live and governs; with the companion off it governs in every skin. The row keeps the
+composer's own `disabledIf` and `skinValue` (OptionsCompose minor 18, read at call time, so a skin
+switch moves the dimming), and the bar draws through `S.BarBorder`. Where it governs it reaches both
+layers: on, the plate draws the player's style and thickness and the chrome the skin's window edge;
+off, the plate draws no edge and the skin's window edge is dropped (`S.Shell`'s `noBorder`, replayed
+on every skin switch).
 
 **No second switches** (options-ui-§15): scale, opacity, the lock, Reset position and General
 visibility are the Master controls' and govern this one frame. The header's lock writes `locked`

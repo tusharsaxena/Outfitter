@@ -229,22 +229,52 @@ local function skinKeys(Skin)
     return keys
 end
 
-test("bar: Frame > Show border is dimmed while Use the skin's border is on, and live once it is off, in every skin", function()
-    -- Smoke round 3 E7, the owner's ruling (follow the standard): while the companion is on the
-    -- border is the skin's, so the switch is dimmed and reads ticked, and its tooltip says why; off,
-    -- it is the player's. The library's own rule dims it only under a skin with a real bar style.
-    -- red under: the composed row's library disabledIf/skinValue kept (live under Ka0s Default's
-    -- None), or the library's tooltip kept.
-    local NS, M = scene()
-    local Skin = M.LibStub("LibKa0s-Skin-1.0")
-    local row = NS.FindSchemaRow("bar.frame.borderShow")
-    assertTrue(row.tooltip:find("Use the skin's border", 1, true) ~= nil, "the tooltip names the companion")
-    assertTrue(row.tooltip:find("dimmed", 1, true) ~= nil, "the tooltip says the switch is dimmed")
+--- Whether the applied skin's bar border is a real style (one that wins over Show border,
+--- skinning-§6).
+local function realStyle(NS)
+    local style = NS.Skin.Token("bar.borderStyle")
+    return style ~= nil and style ~= "None"
+end
+
+--- The skins the E7 cases walk must hold both kinds, or a case below proves half the rule.
+local function assertBothKinds(NS, Skin)
+    local seen = {}
     for _, key in ipairs(skinKeys(Skin)) do
         NS.ApplySkinChoice("ka0s", key)
+        seen[realStyle(NS)] = true
+    end
+    NS.ApplySkinChoice("ka0s", "ka0s")
+    assertFalse(realStyle(NS), "Ka0s Default's bar border style is None")
+    NS.ApplySkinChoice("ka0s", "azeroth")
+    assertTrue(realStyle(NS), "Azeroth states a real bar border style")
+    NS.ApplySkinChoice("ka0s", "ka0s")
+    assertTrue(seen[true] and seen[false], "the sweep covers None and a real style")
+end
+
+test("bar: Frame > Show border is dimmed only while Use the skin's border is on under a skin with a real border style", function()
+    -- Smoke round 3 E7, the owner's ruling (follow the standard), skinning-§6: a skin's None bar
+    -- border defers, so the switch stays live and the player's; a real style wins with the companion
+    -- on, so the switch is dimmed, reads ticked and its tooltip says why; off, it is the player's in
+    -- every skin. This is LibKa0s's composed BorderGroup rule (compose minor 18), kept as composed.
+    -- red under: a host disabledIf/skinValue that dims it whenever the companion is on (Ka0s
+    -- Default dimmed), or one that never dims it (a real style live), or the library's tooltip kept.
+    local NS, M = scene()
+    local Skin = M.LibStub("LibKa0s-Skin-1.0")
+    assertBothKinds(NS, Skin)
+    local row = NS.FindSchemaRow("bar.frame.borderShow")
+    assertTrue(row.tooltip:find("Use the skin's border", 1, true) ~= nil, "the tooltip names the companion")
+    assertTrue(row.tooltip:find("dimmed", 1, true) ~= nil, "the tooltip says when the switch is dimmed")
+    assertTrue(row.tooltip:find("no border style", 1, true) ~= nil, "the tooltip says a None skin leaves it live")
+    for _, key in ipairs(skinKeys(Skin)) do
+        NS.ApplySkinChoice("ka0s", key)
+        local real = realStyle(NS)
         NS.SetByPath("bar.frame.borderStyleFromSkin", true)
-        assertTrue(row.disabledIf(row) == true, key .. ": dimmed while the border follows the skin")
-        assertEqual(row.skinValue(row), true, key .. ": reads ticked meanwhile")
+        assertEqual(row.disabledIf(row) == true, real, key .. ": dimmed exactly under a real style")
+        if real then
+            assertEqual(row.skinValue(row), true, key .. ": reads ticked under the skin's real style")
+        else
+            T.assertNil(row.skinValue(row), key .. ": the stored value shows under the skin's None")
+        end
         NS.SetByPath("bar.frame.borderStyleFromSkin", false)
         assertFalse(row.disabledIf(row) == true, key .. ": live once the companion is off")
         T.assertNil(row.skinValue(row), key .. ": the stored value shows once the companion is off")
@@ -252,11 +282,14 @@ test("bar: Frame > Show border is dimmed while Use the skin's border is on, and 
     NS.ApplySkinChoice("ka0s", "ka0s")
 end)
 
-test("bar: Frame > Show border governs the edge once Use the skin's border is off, and the skin's edge draws while it is on", function()
-    -- Smoke round 3 E7, the owner's ruling. Both layers: the skin's chrome (Use the skin's background
-    -- on, S.Shell's `noBorder`) and the player's plate (its backdrop edge), in every skin.
-    -- red under: Bar.PaintChrome reading bar.frame.borderShow while borderStyleFromSkin is on, or
-    -- never reading it once it is off.
+test("bar: Frame > Show border governs the edge but under a skin's real border style with Use the skin's border on", function()
+    -- Smoke round 3 E7, skinning-§6. Both layers: the skin's chrome (Use the skin's background on,
+    -- S.Shell's `noBorder`) and the player's plate (its backdrop edge), in every skin. Companion on
+    -- under a None skin: on draws the edge (the plate in the player's style), off draws none.
+    -- Companion on under a real style: the skin's edge whatever the switch says. Companion off: the
+    -- switch, in every skin.
+    -- red under: Bar.PaintChrome forcing the edge whenever the companion is on (None ignores off),
+    -- or reading the switch ahead of S.BarBorder (a real style hidden by off).
     local NS, M, Bar = scene()
     accessory(NS, "Hat")
     settle(M)
@@ -264,34 +297,71 @@ test("bar: Frame > Show border governs the edge once Use the skin's border is of
     local f = Bar.Frame()
     for _, key in ipairs(skinKeys(Skin)) do
         NS.ApplySkinChoice("ka0s", key)
+        local real = realStyle(NS)
         for _, follow in ipairs({ true, false }) do
             NS.SetByPath("bar.frame.borderStyleFromSkin", follow)
             for _, on in ipairs({ false, true }) do
                 local tag = key .. (follow and " following" or " own") .. (on and ": on" or ": off")
+                local want = (follow and real) or on
                 NS.SetByPath("bar.frame.borderShow", on)
                 NS.SetByPath("bar.bgFromSkin", true)
                 settle(M)
                 assertTrue(f.chrome:IsShown(), tag .. ": the skin's chrome")
                 if NS.Skin.Token("win.border") ~= nil then
-                    assertEqual(shellEdgeShown(Skin, f.chrome), follow or on, tag .. ": the chrome's edge")
+                    assertEqual(shellEdgeShown(Skin, f.chrome), want, tag .. ": the chrome's edge")
                 end
                 NS.SetByPath("bar.bgFromSkin", false)
                 settle(M)
                 assertTrue(f.plate:IsShown(), tag .. ": the player's plate")
-                assertEqual(f.plate:GetBackdrop().edgeFile ~= nil, follow or on, tag .. ": the plate's edge")
+                local edge = f.plate:GetBackdrop().edgeFile
+                assertEqual(edge ~= nil, want, tag .. ": the plate's edge")
+                if want then
+                    local style = (follow and real) and NS.Skin.Token("bar.borderStyle") or "Solid"
+                    assertEqual(edge, Bar.BorderFile(style), tag .. ": the plate's edge style")
+                end
             end
         end
     end
-    -- The smoke row's last step (R3B3): Show border off stays off across a skin switch, which only
-    -- S.Shell's replay of the recorded `noBorder` keeps (PaintChrome calls it only when it moves).
-    -- red under: a skin switch re-dressing the chrome without that opt.
-    NS.SetByPath("bar.frame.borderStyleFromSkin", false)
+    NS.ApplySkinChoice("ka0s", "ka0s")
+end)
+
+test("bar: a skin switch moves Frame > Show border's dimming and the edge between a None skin and a real style", function()
+    -- Smoke round 3 E7, skinning-§6, and the smoke row's last step (R3B3). With the companion on and
+    -- Show border off, Ka0s Default (None) draws no edge and leaves the row live; Azeroth (Solid)
+    -- draws its edge and dims the row; back again, both undo. With the companion off, off stays off
+    -- across every switch, which only S.Shell's replay of the recorded `noBorder` keeps
+    -- (PaintChrome calls it only when the answer moves).
+    -- red under: an answer computed once and kept across a skin switch, or a skin switch re-dressing
+    -- the chrome without that opt.
+    local NS, M, Bar = scene()
+    accessory(NS, "Hat")
+    local Skin = M.LibStub("LibKa0s-Skin-1.0")
+    local row = NS.FindSchemaRow("bar.frame.borderShow")
+    local f = Bar.Frame()
+    NS.SetByPath("bar.frame.borderStyleFromSkin", true)
     NS.SetByPath("bar.frame.borderShow", false)
+    for _, bg in ipairs({ true, false }) do
+        NS.SetByPath("bar.bgFromSkin", bg)
+        for _, key in ipairs({ "ka0s", "azeroth", "ka0s" }) do
+            local tag = key .. (bg and " chrome" or " plate")
+            NS.ApplySkinChoice("ka0s", key)
+            settle(M)
+            local real = key == "azeroth"
+            assertEqual(row.disabledIf(row) == true, real, tag .. ": the row's dimming")
+            if bg then
+                assertEqual(shellEdgeShown(Skin, f.chrome), real, tag .. ": the chrome's edge")
+            else
+                assertEqual(f.plate:GetBackdrop().edgeFile ~= nil, real, tag .. ": the plate's edge")
+            end
+        end
+    end
+    NS.SetByPath("bar.frame.borderStyleFromSkin", false)
     NS.SetByPath("bar.bgFromSkin", true)
     settle(M)
     for _, key in ipairs(skinKeys(Skin)) do
         NS.ApplySkinChoice("ka0s", key)
         settle(M)
+        assertFalse(row.disabledIf(row) == true, key .. ": live with the companion off")
         if NS.Skin.Token("win.border") ~= nil then
             assertFalse(shellEdgeShown(Skin, f.chrome), key .. ": the edge stays off across the switch")
         end

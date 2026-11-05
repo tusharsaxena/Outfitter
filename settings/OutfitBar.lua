@@ -224,14 +224,13 @@ end
 -- Ka0s window and these colors wait; off, they draw. The bar always draws one of the two (smoke
 -- round 3 E6 removed Show background; a stored `bar.showBackground` is never read).
 --
--- SHOW BORDER (smoke round 3 E7, the owner's ruling): while *Use the skin's border* is on the edge is
--- the skin's, in every skin, so the switch is dimmed, reads ticked and is not read; once it is off,
--- the switch shows or hides the edge on either layer. The library's own rule (compose minor 18) dims
--- it only under a skin with a real bar style, so the row's disabledIf and skinValue are replaced here,
--- as the Labels block replaces its rows' (options-ui-§16: its tooltip, through the composer's
--- `tooltips`, says why).
-local BORDER_FOLLOWS = "bar.frame.borderStyleFromSkin"
-local function borderFollows() return NS.GetSetting(BORDER_FOLLOWS) == true end
+-- SHOW BORDER (smoke round 3 E7, the owner's ruling: follow the standard, skinning-§6): while *Use the
+-- skin's border* is on under a skin with a real bar border style, the edge is the skin's, so the switch
+-- is dimmed, reads ticked and is not read; under a skin whose style is None the skin has no border of
+-- its own, so the switch stays live and governs; with the companion off it governs in every skin.
+-- That is the composer's own rule (LibKa0s OptionsCompose minor 18, its disabledIf and skinValue on
+-- the row, read at call time so a skin switch moves it), kept as composed; only the tooltip is the
+-- addon's, through the composer's `tooltips` (options-ui-§16), so it says why.
 registerComposed(H.ColorPair({
     prefix = "bar.", page = PAGE, group = FRAME, subgroup = L["Background"], order = 100,
     key = "bgColor", companionKey = "useClassColorBg", label = L["Background color"], classColor = PLAYER_CLASS,
@@ -239,24 +238,15 @@ registerComposed(H.ColorPair({
     extra = { {
         path = "bar.bgFromSkin", type = "bool", startsLine = true, label = L["Use the skin's background"],
         default = DB.bgFromSkin,
-        tooltip = L["Draw the bar as a window of the skin: its background, border and header band. While this is on the Background color rows and the border's style, thickness and color are not read; Show border still hides the edge once Use the skin's border is off."],
+        tooltip = L["Draw the bar as a window of the skin: its background, border and header band. While this is on the Background color rows and the border's style, thickness and color are not read; Show border still hides the edge, except under a skin whose own border style Use the skin's border follows."],
     } },
 }))
-do
-    local rows = H.BorderGroup({
-        prefix = "bar.frame.", page = PAGE, group = FRAME, subgroup = L["Border"], order = 200, show = true,
-        fromSkin = "bar", classColor = PLAYER_CLASS, defaults = DB.frame,
-        tooltips = { borderShow = L["Draw a border around the bar. While Use the skin's border is on, the border is the skin's, so this switch is dimmed and not read; turn that off to show or hide the border yourself."] },
-        extra = { borderColorFollow("bar.frame.", DB.frame) },
-    })
-    for _, row in ipairs(rows) do
-        if row.path == "bar.frame.borderShow" then
-            row.disabledIf = borderFollows
-            row.skinValue = function() return borderFollows() or nil end
-        end
-    end
-    registerComposed(rows)
-end
+registerComposed(H.BorderGroup({
+    prefix = "bar.frame.", page = PAGE, group = FRAME, subgroup = L["Border"], order = 200, show = true,
+    fromSkin = "bar", classColor = PLAYER_CLASS, defaults = DB.frame,
+    tooltips = { borderShow = L["Draw a border around the bar. While Use the skin's border is on under a skin with a border style of its own, the border is the skin's, so this switch is dimmed and not read; under a skin with no border style it stays yours, and turning Use the skin's border off makes it yours in every skin."] },
+    extra = { borderColorFollow("bar.frame.", DB.frame) },
+}))
 
 -- ── The page ────────────────────────────────────────────────────────────────────────────────────
 NS.BAR_PAGE = {

@@ -325,7 +325,7 @@ test("bar: the window look: the skin's Shell while it follows the skin, the play
     assertEqual(bd.edgeSize, 3, "the border thickness")
     r, g, b = f.plate:GetBackdropBorderColor()
     assertTrue(r == 1 and g == 0 and b == 0, "the border swatch")
-    -- Show border is read once Use the skin's border is off (smoke round 3 E7).
+    -- Show border governs once Use the skin's border is off, in every skin (skinning-§6, smoke round 3 E7).
     NS.SetByPath("bar.frame.borderStyleFromSkin", false)
     NS.SetByPath("bar.frame.borderShow", false)
     settle(M)
