@@ -797,7 +797,7 @@ Total.
 - secrets states: a secret icon falls through to the spell; a secret spell id matches nothing
 - secrets states: the last mana reading survives a secret sample
 
-### test_quickslots.lua (43)
+### test_quickslots.lua (44)
 
 - quickslots: NS.QuickSlots and its sort are published
 - quickslots: the hooks are post-hooks, built once however often the addon stands up
@@ -834,6 +834,7 @@ Total.
 - drawer: stood down nothing is moved
 - drawer: a stand-down with the window open puts Blizzard's drawer back
 - drawer: in combat lockdown nothing is moved
+- drawer: a HideAll after lockdown begins, with the drawer already out, shows no arrow
 - drawer: a missing Blizzard function installs nothing and errors nothing
 - arrows: shown on every slot, weapons included, while the window shows; hidden when it closes
 - arrows: shown once per change, not on every sync
@@ -1425,7 +1426,7 @@ Total.
 - preview window: New outfit is disabled in test mode and enabled after
 - preview window: entering test mode clears the selection, and no slot box or Slots button acts
 
-### test_outfit_menu.lua (25)
+### test_outfit_menu.lua (26)
 
 - menu: NS.OutfitMenu is published
 - menu: the rows per section are legacy's, less Void Storage and the script editor
@@ -1442,6 +1443,7 @@ Total.
 - menu: rows that open a dialog, popup or window, and the bank moves, act and close
 - menu: on the client's MenuUtil only keep-open rows answer Refresh, the rest close
 - menu: an outfit deleted under its open menu leaves rows that paint and click without raising
+- menu: a ticked toggle clicked after its outfit is deleted repaints without its tick
 - menu: nothing opens for an unknown id or while stood down
 - menu: the class category reads the client's class name, the rest their own labels
 - bar menu: /or bar hide closes the outfit menu the bar opened
@@ -1730,7 +1732,7 @@ Total.
 | test_companion.lua | 25 |
 | test_states.lua | 29 |
 | test_secrets_states.lua | 6 |
-| test_quickslots.lua | 43 |
+| test_quickslots.lua | 44 |
 | test_equip_bracket.lua | 32 |
 | test_tooltips.lua | 18 |
 | test_stack.lua | 27 |
@@ -1756,7 +1758,7 @@ Total.
 | test_broker.lua | 13 |
 | test_triggers_parity.lua | 13 |
 | test_preview.lua | 29 |
-| test_outfit_menu.lua | 25 |
+| test_outfit_menu.lua | 26 |
 | test_dialogs.lua | 24 |
 | test_trigger_dialog.lua | 11 |
 | test_diagnostics.lua | 12 |
@@ -1770,4 +1772,4 @@ Total.
 | test_lizard_sighted.lua | 8 |
 | test_prose.lua | 15 |
 | Skipped | 1 |
-| **Total** | **1464** |
+| **Total** | **1466** |

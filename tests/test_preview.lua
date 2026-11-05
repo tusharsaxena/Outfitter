@@ -590,16 +590,26 @@ test("preview window: combat ends test mode and hides the alone window before lo
     local NS, M = testScene()
     NS.Preview.Start()
     local w = win(M)
-    local hidLocked
+    local hides, hidLocked = 0, false
     local hide = w.Hide
     rawset(w, "Hide", function(self, ...)
-        hidLocked = M.__lockdown == true
+        hides = hides + 1
+        if M.__lockdown == true then hidLocked = true end
         return hide(self, ...)
     end)
+    -- The client's order: PLAYER_REGEN_DISABLED fires while protected calls still run, then lockdown
+    -- begins, and anything deferred (a timer) runs inside it.
     M.__fire("PLAYER_REGEN_DISABLED")
+    local hidInEvent = hides > 0 and not w:IsShown()
+    M.__lockdown = true
+    M.__fireTimers()
     assertFalse(NS.Preview.IsActive())
+    -- red under: Dock's REGEN_DISABLED hide and Preview's combat Stop both deferred past the event
+    -- (either alone still hides it in time; a deferred hide runs once lockdown has begun)
+    assertTrue(hidInEvent, "the alone window was not hidden inside the event")
     assertFalse(w:IsShown(), "the alone window stayed up into combat")
-    assertEqual(hidLocked, false, "the window was hidden in lockdown")
+    assertFalse(hidLocked, "the window was hidden in lockdown")
+    M.__lockdown = false
     M.__fire("PLAYER_REGEN_ENABLED")
     -- red under: a REGEN_ENABLED Refresh that still reads test mode on
     assertFalse(w:IsShown(), "the window came back after combat with test mode off")

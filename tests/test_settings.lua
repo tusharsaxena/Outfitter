@@ -214,7 +214,8 @@ test("settings: the Outfit Bar page's tabs and rows, the position row never draw
     local ca = NS.FindSchemaRow("bar.combatAlpha")
     assertEqual(ca.label, "Opacity in combat (%)")
     -- options-ui-§15: no "hide in combat" of the bar's own; the row points at General visibility.
-    assertEqual(ca.tooltip, "Multiplied by Master opacity on General > Master controls. To hide the bar in combat, set General visibility there.")
+    -- red under: a tooltip that does not end with the Multiplied-by sentence (options-ui-§21).
+    assertEqual(ca.tooltip, "To hide the bar in combat, set General visibility on General > Master controls. Multiplied by Master opacity on General > Master controls.")
     assertTrue(ca.min == 0 and ca.max == 1 and ca.step == 0.05 and ca.isPercent == true, "the 0..1 percent slider")
     -- red under: the position row without skipRender (the panel would draw a text box for it).
     assertEqual(NS.FindSchemaRow("bar.position").skipRender, true)

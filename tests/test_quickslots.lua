@@ -856,6 +856,20 @@ test("drawer: in combat lockdown nothing is moved", function()
     end
 end)
 
+test("drawer: a HideAll after lockdown begins, with the drawer already out, shows no arrow", function()
+    local NS, M, state = drawerInstance()
+    setWindow(NS, state, true)
+    local before = {}
+    for slot, b in pairs(M.__slotButtons) do before[slot] = b.popoutButton.shows end
+    M.__lockdown = true
+    M.EquipmentFlyoutPopoutButton_HideAll()
+    M.__lockdown = false
+    -- red under: onHideAll without its locked() guard (the drawer is on, so only lockdown stops it)
+    for slot, b in pairs(M.__slotButtons) do
+        assertEqual(b.popoutButton.shows, before[slot], slot .. ": an arrow was re-shown in lockdown")
+    end
+end)
+
 test("drawer: a missing Blizzard function installs nothing and errors nothing", function()
     local NS, M, state = drawerInstance({ drop = { "EquipmentFlyout_UpdateItems",
                                                    "EquipmentFlyoutPopoutButton_SetReversed",

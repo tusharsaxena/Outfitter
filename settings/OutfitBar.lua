@@ -110,7 +110,7 @@ NS.RegisterSchemaRows({
       tooltip = L["How the bar marks an outfit you are wearing: a check mark in its corner, a border in the skin's highlight color, both, or nothing."] },
     { path = "bar.combatAlpha", page = PAGE, group = DISPLAY, type = "number", isPercent = true,
       min = 0, max = 1, step = 0.05, label = L["Opacity in combat (%)"], default = DB.combatAlpha,
-      tooltip = L["Multiplied by Master opacity on General > Master controls. To hide the bar in combat, set General visibility there."] },
+      tooltip = L["To hide the bar in combat, set General visibility on General > Master controls. Multiplied by Master opacity on General > Master controls."] },
     -- Never drawn: the header's drag places the bar, and Reset position (here, and on General > Master
     -- controls) resets this row. Its own get/set are its storage.
     { path = "bar.position", page = PAGE, group = DISPLAY, type = "string", skipRender = true,

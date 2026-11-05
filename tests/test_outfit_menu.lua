@@ -478,6 +478,22 @@ test("menu: an outfit deleted under its open menu leaves rows that paint and cli
     assertNil(NS.Outfits.Get(acc), "a pick brought the deleted outfit back")
 end)
 
+test("menu: a ticked toggle clicked after its outfit is deleted repaints without its tick", function()
+    -- The refill after a delete comes back empty, so relabel keeps the open rows as they are; only the
+    -- keep-open rows' own repaint (menu.refresh) reads the record again, now NO_RECORD.
+    local NS, _, ctl = scene()
+    local acc = outfits(NS)
+    open(NS, ctl, acc)
+    local ignore = exact(ctl.menus[1].rows, "Ignore in comparison tooltips")
+    ignore.onClick(nil, ignore)
+    assertTrue(ignore.label:find("|T", 1, true) ~= nil, "the toggle shows its tick")
+    assertTrue(NS.Outfits.Delete(acc))
+    ignore.onClick(nil, ignore)
+    -- red under: menu.refresh without its repaint of menu.own (the row keeps the stale tick)
+    assertNil(ignore.label:find("|T", 1, true), "the deleted outfit's toggle still shows its tick")
+    assertEqual(plain(ignore.label), "Ignore in comparison tooltips")
+end)
+
 test("menu: nothing opens for an unknown id or while stood down", function()
     local NS, _, ctl = scene()
     local acc = outfits(NS)
