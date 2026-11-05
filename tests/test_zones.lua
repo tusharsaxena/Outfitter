@@ -443,6 +443,18 @@ local function enter(s, spec)
     s.M.__fireTimers()
 end
 
+-- Whether zone id `id` applied at the last update, as `/or zone` reports it: an id on ZoneInfo's
+-- "Zone outfits active" line.
+local function inZone(s, id)
+    local lines = s.S.ZoneInfo()
+    local active = lines[#lines]:match("^Zone outfits active: (.*)$")
+    if not active then return false end
+    for each in (active .. ", "):gmatch("(.-), ") do
+        if each == id then return true end
+    end
+    return false
+end
+
 test("zone engine: ORDER and BY_MAP_ID are derived from the rows at load", function()
     local order = {}
     for i, row in ipairs(Z().rows) do order[i] = row.id end
@@ -496,25 +508,25 @@ test("zone engine: the map decides, never the name", function()
     s.M.GetMinimapZoneText = function() return "Alterac Valley" end
     enter(s, { name = "Alterac Valley", type = "pvp", instanceID = 99999 })
     -- red under: any name match in CurrentIds or the update (the zone texts reached the decision).
-    assertFalse(s.S.InZone("BG_AV"), "a name set the AV outfit")
-    assertTrue(s.S.InZone("PVP_BATTLEGROUND"))
+    assertFalse(inZone(s, "BG_AV"), "a name set the AV outfit")
+    assertTrue(inZone(s, "PVP_BATTLEGROUND"))
     enter(s, { name = "Somewhere", type = "pvp", instanceID = 30 })
-    assertTrue(s.S.InZone("BG_AV"), "the map id")
+    assertTrue(inZone(s, "BG_AV"), "the map id")
 end)
 
 test("zone engine: one battleground never sets another, and leaving clears both", function()
     local s = zoneScene()
     enter(s, { type = "pvp", instanceID = 30 })
-    assertTrue(s.S.InZone("BG_AV"))
+    assertTrue(inZone(s, "BG_AV"))
     for _, row in ipairs(Z().rows) do
         if row.id ~= "BG_AV" and row.id ~= "PVP_BATTLEGROUND" then
-            assertFalse(s.S.InZone(row.id), row.id .. " in Alterac Valley")
+            assertFalse(inZone(s, row.id), row.id .. " in Alterac Valley")
         end
     end
     assertTrue(s.S.InPvPInstance())
     enter(s, nil)
-    assertFalse(s.S.InZone("BG_AV"))
-    assertFalse(s.S.InZone("PVP_BATTLEGROUND"))
+    assertFalse(inZone(s, "BG_AV"))
+    assertFalse(inZone(s, "PVP_BATTLEGROUND"))
     assertFalse(s.S.InPvPInstance())
 end)
 
@@ -543,9 +555,9 @@ test("zone engine: the zone events are debounced into one update 0.01 s out", fu
     end
     -- red under: scheduling without canceling the pending update (four updates for one move).
     assertEqual(live, 1, "one pending update")
-    assertFalse(s.S.InZone("BG_AV"), "nothing before the debounce")
+    assertFalse(inZone(s, "BG_AV"), "nothing before the debounce")
     s.M.__fireTimers()
-    assertTrue(s.S.InZone("BG_AV"))
+    assertTrue(inZone(s, "BG_AV"))
 end)
 
 test("zone engine: the update returns early only when type, map id and zone text all hold", function()
@@ -567,7 +579,7 @@ test("zone engine: the update returns early only when type, map id and zone text
     s.M.__fire("ZONE_CHANGED")
     s.M.__fireTimers()
     assertEqual(s.equip.__count("Batch"), b + 2, "the map id moved")
-    assertTrue(s.S.InZone("BG_AB"))
+    assertTrue(inZone(s, "BG_AB"))
 end)
 
 test("zone engine: a first sighting is seeded from the worn outfit whose trigger subscribes", function()
@@ -581,7 +593,7 @@ test("zone engine: a first sighting is seeded from the worn outfit whose trigger
     enter(s, { type = "pvp", instanceID = 30 })
     -- red under: seeding a nil zone state as false (the AV outfit would be worn a second time).
     assertEqual(table.concat(s.heard, ","), "PVP_BATTLEGROUND=true", "no edge for the worn AV outfit")
-    assertTrue(s.S.InZone("BG_AV"))
+    assertTrue(inZone(s, "BG_AV"))
 end)
 
 test("zone engine: ZoneInfo reports the instance, a missing map entry and the active zone ids", function()
@@ -613,9 +625,9 @@ test("zone engine: SuspendZone drops the events and the pending update; ResumeZo
     -- red under: SuspendZone leaving the zone target registered.
     assertEqual(n, 0, "a zone event survived")
     assertEqual(s.M.__fireTimers(), 0, "the pending update survived")
-    assertFalse(s.S.InZone("BG_AV"), "the current ids cleared")
+    assertFalse(inZone(s, "BG_AV"), "the current ids cleared")
     s.S.ResumeZone()
     s.M.__fireTimers()
     -- The early-out memory went with the stand-down, so the same place is read again.
-    assertTrue(s.S.InZone("BG_AV"))
+    assertTrue(inZone(s, "BG_AV"))
 end)

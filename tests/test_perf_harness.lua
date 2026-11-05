@@ -137,7 +137,7 @@ test("perf scenes: 50 zone flips are 50 zone reads, and the battleground outfit 
     -- red under: a flip that never changes the instance (every read after the first takes the
     -- early-out, and no zone state moves).
     assertTrue((seen.counts.triggerDispatch or 0) >= Scenes.FLIPS, "the zone state never reached the binding")
-    assertFalse(NS.States.InZone("PVP_BATTLEGROUND"), "an even flip count ends in the open world")
+    assertFalse(NS.States.IsActive("PVP_BATTLEGROUND"), "an even flip count ends in the open world")
 end)
 
 test("perf scenes: the fan-out dispatches each of the 40 bindings once per edge", function()
