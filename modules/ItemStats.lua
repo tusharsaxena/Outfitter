@@ -229,32 +229,6 @@ function Stats.ConfigName(cfg)
     return table.concat(names, ", ")
 end
 
--- ── outfit scores ─────────────────────────────────────────────────────────────────────────────
-
-local function resolve(stat)
-    if type(stat) == "string" then return Stats.Get(stat) end
-    return stat
-end
-
---- The sum of `items`' scores on `stat` (a stat or its id); a dropped item adds nothing, and an
---- unknown stat scores 0. `items` is any table of infos (by slot name, or an array).
-function Stats.OutfitScore(items, stat, job)
-    stat = resolve(stat)
-    if not stat or type(items) ~= "table" then return 0 end
-    local total = 0
-    for _, item in pairs(items) do
-        total = total + (stat:Score(item, job) or 0)
-    end
-    return total
-end
-
---- One OutfitScore per cfg row, in order: the compound score the genetic search compares.
-function Stats.MultiScore(items, cfg, job)
-    local out = {}
-    for i, row in ipairs(cfg or {}) do out[i] = Stats.OutfitScore(items, row.stat, job) end
-    return out
-end
-
 -- ── lifecycle ─────────────────────────────────────────────────────────────────────────────────
 -- The module's only registration is the sources' ADDON_LOADED watch (design §5.12). Called at call
 -- time: modules/ItemStats_Sources.lua loads after this file.
