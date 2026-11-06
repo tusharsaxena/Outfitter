@@ -243,8 +243,10 @@ Each needs an in-game probe, recorded with the build, before any section of this
 
 Midnight returns **secret values** from many reads while a restriction is active: `UnitHealth`,
 `UnitPower`, `UnitStat`, `UnitLevel`, item links in some contexts, aura fields, tooltip text, a
-spellcast's spellID, the mouseover or target GUID and name. A secret cannot be compared, formatted,
-concatenated, used in arithmetic or used as a table key; any of those raises.
+spellcast's spellID, the mouseover or target GUID and name. A secret survives `tostring()` (which
+returns another secret string) and the `..` operator (which propagates the secretness), and neither
+raises. It raises the instant it reaches `table.concat` or `string.format`, and it cannot be compared,
+used in arithmetic or used as a table key; any of those raises.
 
 The fork learned what that costs: a raise inside an event handler aborted it after it had called
 `BeginEquipmentUpdate`, leaving the update counter above zero, which silently stopped every later

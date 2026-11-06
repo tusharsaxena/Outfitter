@@ -69,7 +69,9 @@ mklink /J "C:\Program Files (x86)\World of Warcraft\_retail_\Interface\AddOns\Ou
 
 ## Release / assets
 
-**One entry: Pillow**, and only for **regenerating** the logo. The four files in `media/logos/` are
+**Two entries: Pillow and curl.**
+
+**Pillow**, only for **regenerating** the logo. The four files in `media/logos/` are
 committed; `outfitterreborn.logo.128.tga` (the TOC icon, the minimap button and the launcher's
 broker icon; the sheet tab, and the Outfits broker while no outfit is worn, draw the game's own
 chest-armor icon, fileID 132724) and `outfitterreborn.logo.tga` (the settings landing page) are cut from the
@@ -80,6 +82,16 @@ the addon.**
 ```sh
 sudo apt-get install -y python3-pil     # Pillow from apt avoids the PEP 668 pip refusal
 python3 -c "import PIL; print(PIL.__version__)"
+```
+
+**curl**, only for **refreshing** the zone table. `tools/gen-zones.lua` diffs a wago.tools `Map.db2`
+export against `defaults/Zones.lua`, and its header fetches the export with
+`curl -o Map.csv https://wago.tools/db2/Map/csv` before `lua tools/gen-zones.lua Map.csv`. Like
+Pillow, it is not needed to build, run or test the addon.
+
+```sh
+sudo apt-get install -y curl
+curl --version | head -1
 ```
 
 The icons and the fonts come inside the vendored LibKa0s payload; regenerating them is that repo's
