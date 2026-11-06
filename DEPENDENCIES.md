@@ -12,7 +12,7 @@ such rather than listed as a requirement.
 - **World of Warcraft (Retail), Midnight.** A single `## Interface: 120105` line in
   `OutfitterReborn.toc`; Retail only.
 - **Nothing else.** Every library is vendored under `libs/` and committed (library-stack), LibKa0s
-  at **v1.89.0** (the provenance line in `CLAUDE.md`), so the player installs no separate library
+  at **v1.90.0** (the provenance line in `CLAUDE.md`), so the player installs no separate library
   addon. `## OptionalDeps:` names the vendored libraries, EllesmereUI, Pawn and WeightsWatcher for
   load ordering, not as things to download. Pawn and WeightsWatcher are optional stat sources: the
   addon reads them when they are loaded and falls back to its own scoring when they are not.
