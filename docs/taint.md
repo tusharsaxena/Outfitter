@@ -106,7 +106,7 @@ let-go flyout is never written again:
 - **The window closes** (or the sheet hides it): Dock's window `OnHide` calls `DrawerSync`, which
   calls `TintSync` first.
 - **Another host opens the flyout** (Item Upgrade, Item Interaction, Runeforge): the
-  `EquipmentFlyout_UpdateItems` post-hook runs before that flyout shows (EquipmentFlyout.lua:226-228)
+  `EquipmentFlyout_UpdateItems` post-hook runs before that flyout shows (wow-ui-source@297d7aa:Interface/AddOns/Blizzard_FrameXML/EquipmentFlyout.lua:226-228)
   and finds a slot that is not the sheet's.
 - **The stand-down**: `QS.Suspend` calls `DrawerSync`, and `tintWanted` reads `NS.IsStoodDown()`.
 - **A skin with no `win.border`**: `tintRim` restores instead of tinting.
@@ -121,7 +121,7 @@ keeps its shown flag when the sheet hides it), the drawer is the window's (desig
 
 - **Every slot's arrow is shown.** Blizzard's popout template is hidden, and only the Equipment
   Manager pane shows the arrows (its OnShow and OnHide call `EquipmentFlyoutPopoutButton_ShowAll`
-  and `_HideAll`, PaperDollFrame.lua:2316-2319, 2345-2346). `DrawerSync` shows each slot's own
+  and `_HideAll`, wow-ui-source@297d7aa:Interface/AddOns/Blizzard_UIPanels_Game/Mainline/PaperDollFrame.lua:2316-2319, 2345-2346). `DrawerSync` shows each slot's own
   `button.popoutButton`, weapons included, **per button with Show and Hide**, and never calls
   `ShowAll` or `HideAll`, which write `flyoutLocked` from this context. When the window goes it hides
   them again, unless the Equipment Manager pane is shown (those arrows are Blizzard's); a locked
@@ -133,7 +133,7 @@ keeps its shown flag when the sheet hides it), the drawer is the window's (desig
   Blizzard anchors it once, `LEFT` to the slot's `RIGHT` (-8, 0)
   (wow-ui-source@297d7aa:Interface/AddOns/Blizzard_UIPanels_Game/Mainline/PaperDollFrame.lua:1529-1532).
 - **The flyout is re-anchored to its slot.** After `EquipmentFlyout_UpdateItems` anchors
-  `buttonFrame` `TOPLEFT` to the arrow's `TOPRIGHT` (EquipmentFlyout.lua:334-338), the post-hook
+  `buttonFrame` `TOPLEFT` to the arrow's `TOPRIGHT` (wow-ui-source@297d7aa:Interface/AddOns/Blizzard_FrameXML/EquipmentFlyout.lua:334-338), the post-hook
   clears it and, for a character-sheet slot's horizontal flyout, anchors it to the slot itself past
   the arrow's visible 8 px: right column `TOPLEFT` to the slot's `TOPRIGHT` (8, y), left column
   `TOPRIGHT` to the slot's `TOPLEFT` (-8, y), with `y = BORDERWIDTH - (slot height - EFITEM_HEIGHT) / 2`,

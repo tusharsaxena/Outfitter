@@ -52,7 +52,8 @@ entries, the broker menu's automatic-changes toggle (`auto`), and the Toggle out
 
 Added after `version`, with their handlers in `modules/Commands.lua` (`bar`, `auto`, `lock` and
 `unlock` write one setting each from `settings/Slash.lua`). With the fourteen reserved verbs that
-makes 36 entries in `NS.COMMANDS`, and the key bindings number 15 (`Bindings.xml`):
+makes 36 entries in `NS.COMMANDS`, and the key bindings number 15 (`Bindings.xml`), as measured on
+2026-11-06:
 
 | Verb | What it does | While disabled |
 |---|---|---|

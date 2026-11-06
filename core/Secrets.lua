@@ -6,8 +6,9 @@ local _, NS = ...
 --
 -- THE CONTRACT (WoW 12.0 secret values): while an addon restriction is active, health, power, stats,
 -- levels, item links and aura fields may arrive SECRET. Tainted code may store one, pass it, put it in
--- a table VALUE and hand it to a widget setter. It may NOT do arithmetic on it, compare it, truth-test
--- a secret boolean, concatenate it, key a table with it, apply `#` to it or index it. A NON-boolean
+-- a table VALUE and hand it to a widget setter; `tostring` and `..` do not raise but hand back a secret
+-- string. It may NOT do arithmetic on it, compare it, truth-test a secret boolean, pass it to
+-- `table.concat` or `string.format`, key a table with it, apply `#` to it or index it. A NON-boolean
 -- secret may be tested for nil-ness, which is the one operation SafeIterate leans on.
 --
 -- THE RULE (INV §12, design §2.2): no module receives a raw value that might be secret. Every risky
