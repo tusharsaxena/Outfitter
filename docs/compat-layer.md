@@ -22,7 +22,7 @@ routes.
   scope, so Compat loads first, and a file-scope capture of `NS.Secrets` here would read nil
   (`test_loadorder` pins it).
 - **One file.** The family stays one file until `cat core/Compat*.lua | wc -l` would pass 1000
-  (compat; design C39). With the engine's accessors it is 956 lines, close to that budget. A split by size alone,
+  (compat; design C39). With the engine's accessors it is 956 lines as measured on 2026-11-06, close to that budget. A split by size alone,
   or an underscore name such as `Compat_Items`, is outside the family pattern.
 
 ## Routed from LibKa0s-Compat-1.0

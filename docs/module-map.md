@@ -166,7 +166,7 @@ the diagnostics sections.
 | File | Job |
 |---|---|
 | `settings/Schema.lua` | The settings rows, the one write seam, the page filter and the forward to `NS.OutfitSchema` (LibKa0s-Schema) |
-| `settings/Slash.lua` | `NS.COMMANDS` (36 verbs, `bar` among them), the LibKa0s-Slash descriptor and the macro-conditional wrapper ([slash-dispatch.md](slash-dispatch.md)) |
+| `settings/Slash.lua` | `NS.COMMANDS` (36 verbs as measured on 2026-11-06, `bar` among them), the LibKa0s-Slash descriptor and the macro-conditional wrapper ([slash-dispatch.md](slash-dispatch.md)) |
 | `settings/OptionsSetup.lua` | The LibKa0s-Options descriptor (`NS.Helpers`), the tabbed-page helper and the global reset popup |
 | `settings/General.lua` | The General page (Master controls, Behavior, Tooltips, Skin, Keybindings) and the landing page spec, `NS.LANDING` |
 | `settings/OutfitBar.lua` | The Outfit Bar page, `bar` (tabs Display, Layout, Icons, Labels, Frame), registered between General and Profiles; `NS.EncodeBarPosition` |
