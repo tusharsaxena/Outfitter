@@ -242,6 +242,13 @@ Each needs an in-game probe, recorded with the build, before any section of this
 
 ## OutfitterReborn-specific quirks
 
+### Action bar page reads are invisible to the client_globals gate
+
+`modules/Triggers_Effects.lua` reads `_G.C_ActionBar` and `_G.GetActionBarPage` (and `_G.ChangeActionBarPage`) off `_G`
+so each is looked up when the page is set, with `C_ActionBar` tried first. The kit's missing-globals gate only sees
+bare global reads, so it cannot flag these. The port must not trust a green gate for them: check by hand that every
+rung of both ladders is guarded.
+
 ## Secret values (12.0)
 
 Midnight returns **secret values** from many reads while a restriction is active: `UnitHealth`,

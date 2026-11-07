@@ -71,7 +71,8 @@ local function setPage(page)
 end
 
 local function currentPage()
-    local get = _G.GetActionBarPage
+    local api = _G.C_ActionBar
+    local get = (api and api.GetActionBarPage) or _G.GetActionBarPage
     return get and Secrets.PlainNumber(get()) or nil
 end
 

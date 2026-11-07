@@ -520,20 +520,21 @@ test("triggers: the action bar page uses C_ActionBar.SetActionBarPage, then the 
     local ctx = { persist = {}, params = { changeActionBar = true, actionBarPage = 3 } }
     local names = { "ActionBarPage" }
     local page, viaGlobal = 1, 0
-    M.GetActionBarPage = function() return page end
-    -- the live client: only the C_ function exists
-    M.ChangeActionBarPage = nil
-    M.C_ActionBar = { SetActionBarPage = function(p) page = p end }
+    -- the live client: only C_ActionBar exists, with no old getter or setter global
+    M.GetActionBarPage, M.ChangeActionBarPage = nil, nil
+    M.C_ActionBar = { SetActionBarPage = function(p) page = p end, GetActionBarPage = function() return page end }
     assertEqual(E.Apply(ctx, names), 1)
     assertEqual(page, 3, "the C_ function ran")
     assertEqual(E.Restore(ctx, names), 1)
     assertEqual(page, 1)
-    -- an older client: only the global exists
+    -- an older client: only the globals exist
     M.C_ActionBar = nil
+    M.GetActionBarPage = function() return page end
     M.ChangeActionBarPage = function(p) page = p; viaGlobal = viaGlobal + 1 end
     E.Apply(ctx, names)
     assertEqual(page, 3); assertEqual(viaGlobal, 1, "the global ran when there is no C_ function")
-    E.Restore(ctx, names)
+    assertEqual(E.Restore(ctx, names), 1)
+    assertEqual(page, 1, "Restore returned to the original page via the old global")
     -- neither: the effect does nothing and writes one debug line
     M.ChangeActionBarPage = nil
     local lines = {}
