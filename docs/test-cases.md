@@ -1007,7 +1007,7 @@ Total.
 - optimize: Rebuild of an EM outfit goes through EM.SetItems, which wears it
 - optimize: Rebuild with nothing to pick says so and leaves the outfit alone
 
-### test_triggers.lua (21)
+### test_triggers.lua (22)
 
 - triggers: CATEGORY_ORDER, ids unique SCREAMING_SNAKE, categories and real classFiles
 - triggers: every event is a pseudo key or UPPER_SNAKE, and every state one is produced
@@ -1029,6 +1029,7 @@ Total.
 - triggers: gathering, the vehicle quests and the spec rows
 - triggers: a spec change reads the client's spec, not PlayerState's cache of it
 - triggers: the effects record what they changed and restore exactly that
+- triggers: the action bar page uses C_ActionBar.SetActionBarPage, then the old global, then does nothing and says so
 - triggers: SavePet and RestorePet put the cook's pet back, or dismiss the one summoned
 
 ### test_trigger_binder.lua (19)
@@ -1714,6 +1715,12 @@ Total.
 - skin switch: a compare tooltip changes
 - skin switch: a compare tooltip changes with the Scope ignored
 
+### test_client_globals.lua (3)
+
+- client globals: no call of a global a client lacks
+- client globals: every allowlist row has a reason and a finding to excuse
+- client globals: the check is falsifiable, a planted bare call is flagged for both clients
+
 ### test_eol.lua (2)
 
 - eol: every tracked file carries the terminator .gitattributes declares for it
@@ -1821,7 +1828,7 @@ Total.
 | test_em_sync.lua | 27 |
 | test_bank.lua | 14 |
 | test_optimize.lua | 30 |
-| test_triggers.lua | 21 |
+| test_triggers.lua | 22 |
 | test_trigger_binder.lua | 19 |
 | test_no_loadstring.lua | 4 |
 | test_api.lua | 20 |
@@ -1852,10 +1859,11 @@ Total.
 | test_skin.lua | 14 |
 | test_skin_values.lua | 3 |
 | test_skin_switch.lua | 84 |
+| test_client_globals.lua | 3 |
 | test_eol.lua | 2 |
 | test_layout_cap.lua | 13 |
 | test_diagnostics_contract.lua | 8 |
 | test_lizard_sighted.lua | 8 |
 | test_prose.lua | 15 |
 | Skipped | 1 |
-| **Total** | **1536** |
+| **Total** | **1540** |

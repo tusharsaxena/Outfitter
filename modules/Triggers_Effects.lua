@@ -15,7 +15,7 @@ local _, NS = ...
 -- A catalog row lists its effects in `effects`; Finalize wires Apply to the outfit's own OUTFIT_WORN
 -- and Restore to its OUTFIT_REMOVED and to the stand-down (`onSuspend`).
 --
--- PROTECTED: ChangeActionBarPage may be refused in combat (O23), so the page change goes through
+-- PROTECTED: the action bar page change (C_ActionBar.SetActionBarPage) may be refused in combat (O23), so the page change goes through
 -- NS.SecureQueue: it runs now out of lockdown, and when combat ends otherwise.
 
 local E = {}
@@ -52,9 +52,22 @@ end
 
 local PAGE_KEY = "triggerActionBarPage"
 
+-- Live Retail has no global ChangeActionBarPage: C_ActionBar.SetActionBarPage replaced it (Gethe/wow-ui-source
+-- branch live, 297d7aa: the global survives only as a shim in Blizzard_DeprecatedActionBar). Prefer the
+-- C_ function, fall back to the global for a client that still has it, and read both when the page is set so
+-- neither is captured at load.
+local function pageSetter()
+    local api = _G.C_ActionBar
+    return (api and api.SetActionBarPage) or _G.ChangeActionBarPage
+end
+
 local function setPage(page)
     if type(page) ~= "number" then return end
-    NS.SecureQueue.Run(PAGE_KEY, function() ChangeActionBarPage(page) end)
+    NS.SecureQueue.Run(PAGE_KEY, function()
+        local set = pageSetter()
+        if set then set(page)
+        else NS.Debug("Trigger", "no action bar page function on this client: the page effect did nothing") end
+    end)
 end
 
 local function currentPage()

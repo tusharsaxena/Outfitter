@@ -513,6 +513,37 @@ test("triggers: the effects record what they changed and restore exactly that", 
     assertEqual(page, 4, "changed when combat ended")
 end)
 
+test("triggers: the action bar page uses C_ActionBar.SetActionBarPage, then the old global, then does nothing and says so", function()
+    local inst = T.load()
+    local ns, M = inst.NS, inst.mocks
+    local E = ns.TriggerEffects
+    local ctx = { persist = {}, params = { changeActionBar = true, actionBarPage = 3 } }
+    local names = { "ActionBarPage" }
+    local page, viaGlobal = 1, 0
+    M.GetActionBarPage = function() return page end
+    -- the live client: only the C_ function exists
+    M.ChangeActionBarPage = nil
+    M.C_ActionBar = { SetActionBarPage = function(p) page = p end }
+    assertEqual(E.Apply(ctx, names), 1)
+    assertEqual(page, 3, "the C_ function ran")
+    assertEqual(E.Restore(ctx, names), 1)
+    assertEqual(page, 1)
+    -- an older client: only the global exists
+    M.C_ActionBar = nil
+    M.ChangeActionBarPage = function(p) page = p; viaGlobal = viaGlobal + 1 end
+    E.Apply(ctx, names)
+    assertEqual(page, 3); assertEqual(viaGlobal, 1, "the global ran when there is no C_ function")
+    E.Restore(ctx, names)
+    -- neither: the effect does nothing and writes one debug line
+    M.ChangeActionBarPage = nil
+    local lines = {}
+    ns.Debug = function(tag, fmt, ...) lines[#lines + 1] = tag .. ": " .. fmt:format(...) end
+    E.Apply(ctx, names)
+    assertEqual(page, 1, "no page function, no change")
+    assertEqual(#lines, 1, "one debug line")
+    assertTrue(lines[1]:find("no action bar page function", 1, true) ~= nil, lines[1])
+end)
+
 test("triggers: SavePet and RestorePet put the cook's pet back, or dismiss the one summoned", function()
     local inst = T.load()
     local ns, M = inst.NS, inst.mocks

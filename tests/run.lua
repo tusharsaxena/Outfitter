@@ -210,6 +210,7 @@ local SUITES = {
 
     { name = "test_skin_values", dir = "tests/_kit/" },
     { name = "test_skin_switch", dir = "tests/_kit/" },
+    { name = "test_client_globals", dir = "tests/_kit/" },
     { name = "test_eol", dir = "tests/_kit/" },
     { name = "test_layout_cap", dir = "tests/_kit/" },
     { name = "test_diagnostics_contract", dir = "tests/_kit/" },
@@ -286,5 +287,9 @@ Kit.diagnostics = {
 
 -- The 1500-line cap gate's census lives in the hub (layout-§1); nothing here is generated data.
 Kit.layoutCap = { hub = "docs/ARCHITECTURE.md", exempt = {} }
+
+-- The missing-globals gate (kit revision 53) reads this addon's tracked source; tools/ runs on a
+-- developer's machine and never ships.
+Kit.clientGlobals = { skip = { "tools/" } }
 
 Kit.run{ dir = root .. "/tests/", suites = SUITES }
