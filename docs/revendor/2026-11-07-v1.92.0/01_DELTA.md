@@ -75,7 +75,7 @@ none
 
 ## 3i Icon declaration
 - `grep -n 'LibKa0s icons:' CLAUDE.md`: 44:LibKa0s icons: all (icon browser).
-- Provenance line at CLAUDE.md:43; next non-blank line: 44: LibKa0s icons: all (icon browser).. The declaration is kept as written; no icon name changes in this run.
+- Provenance line at CLAUDE.md:43; next non-blank line: 44: LibKa0s icons: all (icon browser).. The declaration is kept as written; no icon name changes in this run.
 - README provenance line (must be absent): none
 
 ## 3j Tests that assume the whole icon folder
