@@ -111,6 +111,7 @@ has no row here, or a row leaves its §9.3 group or order.
 | kit `test_diagnostics_contract` | `/or diagnostics` meets debug-logging-§14 |
 | kit `test_lizard_sighted` | The complexity suite's sighted shadow |
 | kit `test_skin_values`, `test_skin_switch` | The typed-color gate and the skin switch over `tests/skin_surfaces.lua` |
+| kit `test_client_globals` | No bare call of a global a client lacks (kit revision 53); `tools/` is skipped and the allowlist is `tests/client_globals_allow.lua` |
 
 **Data, settings and slash**
 

@@ -18,6 +18,7 @@ such rather than listed as a requirement.
   addon reads them when they are loaded and falls back to its own scoring when they are not.
   EllesmereUI and ChonkyCharacterSheet are optional too: when one's character sheet is up, the
   outfit tab and window follow it (`modules/Sheet.lua`), and EllesmereUI can be the skin source.
+  Ace3: WoWUIDev/Ace3@ac3d1225 (untagged master; LibKa0s#76).
 
 ## Development: the contributor toolchain
 

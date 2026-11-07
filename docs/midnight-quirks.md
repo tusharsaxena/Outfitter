@@ -7,7 +7,7 @@ The first part below is the collection's client-quirks catalog (`client-quirks`)
 from the standard and replaced wholesale on every revendor (never edit inside its markers); the
 second, `## OutfitterReborn-specific quirks`, is this addon's own.
 
-<!-- BEGIN VENDORED: quirks catalog v2.102.2 (source: WowAddonStandards) -->
+<!-- BEGIN VENDORED: quirks catalog v2.103.1 (source: WowAddonStandards) -->
 > Part of the **[Ka0s WoW Addon Standard](https://github.com/tusharsaxena/WowAddonStandards/blob/master/standards/STANDARDS.md)** — the split standard. This section is vendored whole into every addon's `docs/midnight-quirks.md` (§1), so its links are absolute. Cross-references use the `filename-§N` form (see the index's section map).
 
 ## Client quirks
@@ -34,6 +34,7 @@ Every entry **MUST** carry:
 - **Measured:** the client build or date it was observed on, where any write-up recorded one. An entry with
   no measurement says *not measured*; that is a weaker entry, not a missing field.
 - **Cost:** what happened to an addon that did not know it.
+- **Client:** the client it was measured on, `Retail` or `Forever` (clients-§1). An entry that names none is a Retail entry, which is every entry written before v2.103.0; a Forever behavior is written with `Forever` and its build, and it is not assumed to hold on Retail.
 - **Do:** the workaround, as a rule an addon can follow.
 - **Source:** the deepest write-up — the repo and document that probed furthest — and the harvest that
   promoted it. Every version is quoted in that harvest's `03_EVIDENCE.md`.
@@ -225,6 +226,8 @@ mock enforces it. *Source:* MultiMeters `tests/mock_frame.lua`, the font-not-set
 
 Each needs an in-game probe, recorded with the build, before any section of this standard changes.
 
+- **WoW Forever behaviors (none recorded yet).** The catalog was written on Retail. The Forever client (build 70790) has a missing-API surface, `SetDesaturation` among it, that LibKa0s tracks in LibKa0s#44, and no quirk entry yet meets this section's two-repo bar for it. Record a Forever behavior in the repo that meets it, with the build, and promote it by a harvest like any other.
+
 - **`string.format` on a secret.** events-frames-taint-§8 says it raises, with three repos; two say it
   works, one with a mid-combat observation. The likely difference is the specifier (`%s` against `%d` and
   `%.1f`) or that the result is itself a secret string. Probe each specifier, in combat, on a damage-meter
@@ -238,6 +241,13 @@ Each needs an in-game probe, recorded with the build, before any section of this
 <!-- END VENDORED -->
 
 ## OutfitterReborn-specific quirks
+
+### Action bar page reads are invisible to the client_globals gate
+
+`modules/Triggers_Effects.lua` reads `_G.C_ActionBar` and `_G.GetActionBarPage` (and `_G.ChangeActionBarPage`) off `_G`
+so each is looked up when the page is set, with `C_ActionBar` tried first. The kit's missing-globals gate only sees
+bare global reads, so it cannot flag these. The port must not trust a green gate for them: check by hand that every
+rung of both ladders is guarded.
 
 ## Secret values (12.0)
 
