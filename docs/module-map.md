@@ -22,6 +22,7 @@ one of them:
 | `core\CoreSetup.lua` | `NS.Util.print` (reclaimed by `core\OutfitterReborn.lua` at file scope) and `NS.LIBKA0S_MISSING` (read by every stub below) |
 | `core\SkinSetup.lua` | `RegisterOwner` at file scope, before EllesmereUI dispatches; `NS.SKIN_OPTIONS` is read by `settings\General.lua` at file scope |
 | `core\Compat.lua` | `NS.Compat`, whose secret detectors `core\Secrets.lua` binds at file scope. Compat reaches `NS.Secrets` at call time only, so it may precede Secrets |
+| `core\ClientSetup.lua` | `NS.CLIENT`, `NS.PerClient` and `NS.ForClientRows`, which `defaults\` and `modules\` read at file scope |
 | `core\Secrets.lua` | `NS.Secrets`, captured at file scope by the modules that read possibly secret values |
 | `core\LifecycleSetup.lua` | `NS.lifecycle`, which LibKa0s-Perf `:New` raises without |
 | `core\PerfSetup.lua` | `NS.Perf`, captured at file scope by the modules |
@@ -59,6 +60,7 @@ The libraries load first, each in its own folder under `libs/`, and are vendored
 | `core/CoreSetup.lua` | `NS.Print`, `NS.SafeToString`, the `SafeRegister*` family, the window chrome, `NS.ResolveColor` (a swatch through its class-color companion) (LibKa0s-Core) |
 | `core/SkinSetup.lua` | `NS.Skin`, the owner registration and its `of.*` tokens, the skin choice and picker seams, `NS.SkinBandGeometry` (where the title band lies, for the bar's header) (LibKa0s-Skin) |
 | `core/Compat.lua` | `NS.Compat`: every version-variant client call and every LibKa0s-Compat member the addon consumes ([compat-layer.md](compat-layer.md)) |
+| `core/ClientSetup.lua` | The per-client picks (clients-§5): `NS.CLIENT`, read once from `Compat.ClientKey`, and `NS.PerClient` / `NS.ForClientRows` over it |
 | `core/Secrets.lua` | `NS.Secrets`, the only file that inspects a possibly secret value, and the `NS.IsSecret`/`NS.Unsecret`/`NS.SafeNumber` aliases |
 | `core/Bus.lua` | `NS.MSG`, `NS.NewBusTarget`, `NS.SendBus`, `NS.BusStandDown`/`BusStandUp` (LibKa0s-Bus; [message-bus.md](message-bus.md)) |
 | `core/PoolSetup.lua` | `NS.Pool`, the array and keyed widget pools (LibKa0s-Pool) |

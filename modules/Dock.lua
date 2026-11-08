@@ -190,7 +190,8 @@ end
 function Dock.ApplyLayers()
     NS.SlotEnables.MaybeRestack()
     if not (win and holder) then return end
-    local strata = holder:GetFrameStrata()
+    local strata = NS.Secrets.PlainString(holder:GetFrameStrata())
+    if not strata then return end   -- a secret strata is never copied (the secret guard)
     local level = NS.SafeNumber(holder:GetFrameLevel(), 0) + LEVEL.DOCK_OVER_HOST
     if strata == Dock.lastStrata and level == Dock.lastLevel then return end
     NS.SecureQueue.Run("dock.layers", function()

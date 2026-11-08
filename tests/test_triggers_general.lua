@@ -244,6 +244,40 @@ test("general: TARGET is nil-safe and secret-guarded, and unequips on a change w
     assertNil(call(NS, "TARGET", { params = { targets = { { player = "Ann-Realm" } } } }), "a secret name")
 end)
 
+test("general: TARGET keys a player as 'First Surname', no realm, under regional names (OR-F4)", function()
+    local NS, M = fresh()
+    M.RegionalUniqueNamesEnabled = function() return true end
+    M.GetNormalizedRealmName = function() return "Ourrealm" end
+    M.__units.target = { guid = "Player-1-0000BEEF" }
+    M.UnitName = function() return "Ryz", "Rockheart" end
+    -- red under: UnitName's second return (the surname on WoW Forever) read as a realm: "Ryz-Rockheart".
+    assertEqual(NS.TriggerParams.CaptureTarget().player, "Ryz Rockheart", "no realm is appended")
+    local list = { targets = { { player = "Ryz Rockheart" } } }
+    assertEqual(call(NS, "TARGET", { params = list }), "equip")
+    M.UnitName = function() return "Ryz", "Stonefist" end
+    assertNil(call(NS, "TARGET", { params = list }), "another Ryz is another character")
+    M.UnitName = function() return "Ryz", nil end
+    assertEqual(NS.TriggerParams.CaptureTarget().player, "Ryz", "a character with no surname")
+end)
+
+test("general: Compat.UnitCharacterName is 'First Surname' with no realm under regional names (OR-F4)", function()
+    local NS, M = fresh()
+    local C = NS.Compat
+    M.UnitName = function() return "Ryz", "Rockheart" end
+    local name, realm = C.UnitCharacterName("target")
+    assertEqual(name, "Ryz"); assertEqual(realm, "Rockheart")
+    assertFalse(C.RegionalNames(), "no RegionalUniqueNamesEnabled: not regional")
+    M.RegionalUniqueNamesEnabled = function() return true end
+    name, realm = C.UnitCharacterName("target")
+    assertEqual(name, "Ryz Rockheart"); assertNil(realm)
+    assertTrue(C.RegionalNames())
+    M.RegionalUniqueNamesEnabled = nil
+    M.UnitName = function() return T.secret("Ryz"), T.secret("Realm") end
+    name, realm = C.UnitCharacterName("target")
+    -- red under: UnitCharacterName passing the library's answer through unguarded.
+    assertNil(name, "a secret name never leaves Compat"); assertNil(realm)
+end)
+
 -- ── TRINKET_QUEUE and FEET_QUEUE ──────────────────────────────────────────────────────────────
 
 -- A recorded Inventory: NextCooldownItem answers the first listed id as an info, `same` and `active`

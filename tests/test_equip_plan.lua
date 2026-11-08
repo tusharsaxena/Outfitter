@@ -10,6 +10,8 @@
 -- in tests/mock_gear.lua. NS.Changes and NS.Moves call no module that has not landed, so no fakes.
 
 local T = _G.OUTFITTERREBORN_TEST
+-- Titan's Grip is Retail's alone (OR-F4): on the forever kit profile no warrior grips.
+local FOREVER = dofile("tests/_kit/mock_client.lua").current() == "forever"
 local test, assertEqual, assertTrue, assertFalse, assertNil =
     T.test, T.assertEqual, T.assertTrue, T.assertFalse, T.assertNil
 
@@ -181,13 +183,24 @@ test("equip plan: TGFix over the client's gear, with CanDualWield2H = a WARRIOR 
         local inst = T.load({ mutate = function(M) M.__gear:load("tg_warrior", { spec = case.spec }) end })
         local N = inst.NS
         N.PlayerState.Refresh()
-        assertEqual(N.PlayerState.CanDualWield2H(), case.spec == 2, "spec " .. case.spec)
+        assertEqual(N.PlayerState.CanDualWield2H(), case.spec == 2 and not FOREVER, "spec " .. case.spec)
         local cache = N.Inventory.Cache()
         local compiled = {}
         for _, slot in ipairs({ "HeadSlot", MH, OH }) do compiled[slot] = N.ItemInfo.Snapshot(cache.worn[slot]) end
         local changes = N.Changes.Build(compiled, cache, { canDW2H = N.PlayerState.CanDualWield2H() })
-        assertEqual(#changes > 0 and changes[1].tgFix == true, case.tg, "spec " .. case.spec .. " TGFix")
+        assertEqual(#changes > 0 and changes[1].tgFix == true, case.tg or FOREVER, "spec " .. case.spec .. " TGFix")
     end
+end)
+
+test("equip plan: Titan's Grip is Retail's alone; spec 2 on Forever never grips (OR-F4)", function()
+    -- The spec is read on both profiles: the forever kit removes the spec globals, so the case puts one back.
+    local inst = T.load({ mutate = function(M) M.__gear:load("tg_warrior", { spec = 2 }) end })
+    local N = inst.NS
+    inst.mocks.GetSpecialization = function() return 2 end
+    N.PlayerState.Refresh()
+    assertEqual(N.PlayerState.Spec(), 2, "a warrior in spec 2 on both clients")
+    -- red under: PS.CanDualWield2H without the Retail-only spec pair (modules/PlayerState.lua).
+    assertEqual(N.PlayerState.CanDualWield2H(), not FOREVER)
 end)
 
 test("equip plan: unique-equip deltas are -1 per key going out and +1 per key coming in", function()

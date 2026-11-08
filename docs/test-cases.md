@@ -455,7 +455,7 @@ Total.
 - mock gear: a case installs a fake and leaves it in place
 - mock gear: the next case sees the original again (restored when the last case ended)
 
-### test_slots.lua (16)
+### test_slots.lua (17)
 
 - slots: NS.ItemData is published by defaults/Items.lua
 - slots: SLOT_NAMES is the legacy durability-first order, all 18 (19 with Forever's ranged slot)
@@ -473,6 +473,7 @@ Total.
 - slots: PHANTOM_IDS holds the 18 legacy artifact off-hands
 - slots: CORRECTIONS are the three legacy item-class overrides
 - slots: the dropped tables stay dropped (design §5.1, INV §18)
+- slots: C_PaperDollInfo.GetInventorySlotInfo is asked before the deprecated shim (OR-F4)
 
 ### test_zones.lua (38)
 
@@ -669,7 +670,7 @@ Total.
 - reset: Delete all asks through OUTFITTERREBORN_DELETE_ALL, refuses in combat and stood down
 - reset: Reset all closes every open dialog first, and a draft writes nothing
 
-### test_equip_plan.lua (31)
+### test_equip_plan.lua (32)
 
 - equip plan: NS.Changes and NS.Moves are published
 - equip plan: changes run in SLOT_NAMES order, durability slots first (Q4)
@@ -681,6 +682,7 @@ Total.
 - equip plan: a matching plan is empty, a table and not nil (B3's no-execute input)
 - equip plan: TGFix unequips a two-hander held in the off hand without Titan's Grip, first
 - equip plan: TGFix over the client's gear, with CanDualWield2H = a WARRIOR in spec 2
+- equip plan: Titan's Grip is Retail's alone; spec 2 on Forever never grips (OR-F4)
 - equip plan: unique-equip deltas are -1 per key going out and +1 per key coming in
 - equip plan: a two-hander the player cannot grip carries meta TwoHandSlot, a gripped one Weapon0Slot
 - equip plan: unique-equip ranks equal the legacy captures (fixtures/legacy/plans.lua)
@@ -1087,7 +1089,7 @@ Total.
 - api: after load, init and enable every outfitter-named global is on the allow-list
 - api: no shipped file names an Outfitter_*, gOutfitter_* or OutfitterItemList_* identifier in code
 
-### test_triggers_general.lua (18)
+### test_triggers_general.lua (20)
 
 - general: each bespoke id resolves to this file's condition; SPIRIT_REGEN stays a family row
 - general: SPIRIT_REGEN equips on its state and unequips half a second later, only its own
@@ -1098,6 +1100,8 @@ Total.
 - general: HAS_BUFF evaluates at bind, follows the aura scan, and reads false while restricted
 - general: TARGET matches NPCs by creatureID and players by full name
 - general: TARGET is nil-safe and secret-guarded, and unequips on a change when asked
+- general: TARGET keys a player as 'First Surname', no realm, under regional names (OR-F4)
+- general: Compat.UnitCharacterName is 'First Surname' with no realm under regional names (OR-F4)
 - general: TRINKET_QUEUE fills each slot from its own list, in one Batch, only while worn
 - general: TRINKET_QUEUE skips the outfit's own item and an active trinket; an empty list reads nothing
 - general: TRINKET_QUEUE refuses an Equipment Manager set at bind
@@ -1132,7 +1136,7 @@ Total.
 - trade: on WoW Forever fishing has no Track Fish and leaves tracking alone; the other helpers stay
 - trade: on WoW Forever cooking keeps its core and has no fire pets to summon
 
-### test_triggers_quest.lua (13)
+### test_triggers_quest.lua (14)
 
 - quest: the vehicle NPC lists equal the legacy scripts', by faction
 - quest: each vehicle trigger equips on every NPC of its list, by its own GUID type
@@ -1143,6 +1147,7 @@ Total.
 - quest: the turn-in outfit goes on at QUEST_PROGRESS and off at QUEST_FINISHED if it put it on
 - quest: a pet battle's opening equips and its close unequips
 - quest: DANCE dances when its outfit is worn, and changes nothing itself
+- quest: DANCE asks C_ChatInfo.PerformEmote before the DoEmote shim (OR-F4)
 - quest: COMPANION summons its pet two seconds after the wear, or says it couldn't find it
 - quest: COMPANION says it couldn't find the pet when the summon is refused
 - quest: bound, the shipped conditions answer the binder's events
@@ -1193,11 +1198,12 @@ Total.
 - sheet: with no Chonky panel shown DockRight is the backdrop's edge
 - sheet: the adapter creates, anchors and shows nothing
 
-### test_dock.lua (48)
+### test_dock.lua (49)
 
 - dock: NS.Dock is published with the §7.2 surface
 - dock: the holder fills the sheet, and the sheet button toggles the window
 - dock: strata and level are copied from the host, level + DOCK_OVER_HOST, never toplevel
+- dock: a secret host strata is never copied onto the window (OR-F4)
 - dock: the layer writes go through NS.SecureQueue in lockdown and replay on REGEN_ENABLED
 - dock: Refresh never shows or hides the window in lockdown
 - dock: PLAYER_REGEN_DISABLED hides the window, PLAYER_REGEN_ENABLED restores it, dialogs stay
@@ -1816,14 +1822,14 @@ Total.
 | test_file_budget.lua | 2 |
 | test_removed_apis.lua | 2 |
 | test_mock_gear.lua | 27 |
-| test_slots.lua | 16 |
+| test_slots.lua | 17 |
 | test_zones.lua | 38 |
 | test_itemlink.lua | 42 |
 | test_item_match.lua | 20 |
 | test_inventory.lua | 24 |
 | test_outfits.lua | 45 |
 | test_reset.lua | 8 |
-| test_equip_plan.lua | 31 |
+| test_equip_plan.lua | 32 |
 | test_item_stats.lua | 22 |
 | test_companion.lua | 25 |
 | test_states.lua | 29 |
@@ -1839,13 +1845,13 @@ Total.
 | test_trigger_binder.lua | 19 |
 | test_no_loadstring.lua | 4 |
 | test_api.lua | 20 |
-| test_triggers_general.lua | 18 |
+| test_triggers_general.lua | 20 |
 | test_triggers_trade.lua | 21 |
-| test_triggers_quest.lua | 13 |
+| test_triggers_quest.lua | 14 |
 | test_triggers_class.lua | 11 |
 | test_triggers_pvp.lua | 7 |
 | test_sheet.lua | 18 |
-| test_dock.lua | 48 |
+| test_dock.lua | 49 |
 | test_list_model.lua | 8 |
 | test_rows_secure.lua | 22 |
 | test_slot_enables.lua | 29 |
@@ -1873,4 +1879,4 @@ Total.
 | test_lizard_sighted.lua | 8 |
 | test_prose.lua | 15 |
 | Skipped | 1 |
-| **Total** | **1547** |
+| **Total** | **1553** |

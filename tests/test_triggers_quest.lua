@@ -264,6 +264,20 @@ test("quest: DANCE dances when its outfit is worn, and changes nothing itself", 
     assertNil(ctx.desc.onRemoved, "nothing to undo")
 end)
 
+test("quest: DANCE asks C_ChatInfo.PerformEmote before the DoEmote shim (OR-F4)", function()
+    local ns, M = fresh()
+    local modern, bare = {}, {}
+    M.C_ChatInfo = { PerformEmote = function(token) modern[#modern + 1] = token end }
+    M.DoEmote = function(token) bare[#bare + 1] = token end
+    local ctx = ctxFor(ns, "DANCE")
+    ctx.desc.onWorn(ctx)
+    -- red under: Compat.PerformEmote calling DoEmote first.
+    assertEqual(table.concat(modern, ","), "DANCE")
+    assertEqual(#bare, 0, "the shim is not asked")
+    M.C_ChatInfo, M.DoEmote = false, false
+    assertFalse(ns.Compat.PerformEmote("DANCE"), "neither API: no emote, no raise")
+end)
+
 test("quest: COMPANION summons its pet two seconds after the wear, or says it couldn't find it", function()
     local ns, M = fresh()
     local pet = M.__world.pets[2].guid

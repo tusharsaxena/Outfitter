@@ -449,3 +449,15 @@ never built on Forever: no picker entry, no setting, no saved value read. No pro
 | F3-4 (D5) | Make an outfit on *Cooking*; open its settings; open the Cooking window | No fire-pet toggles ("No settings"). The outfit goes on with the window and comes off when it closes |
 | F3-5 | Open *In Dungeon*'s and *Swimming*'s settings | No *Equip in Arena instances*, no *Don't equip in Vashj'ir* |
 | F3-6 (Retail) | The same five checks on Retail | Every row above is back: the quests, Pet Battle, Tree of Life, Track Fish, the fire pets, arenas and Vashj'ir |
+
+## 16. WoW Forever: behavior guards (OR-F4, 2026-11-08)
+
+On WoW Forever, unless a row says Retail. No probe is open for this step.
+
+| # | Do | See |
+|---|---|---|
+| F4-1 | As a warrior in spec 2, make an outfit with a two-handed axe in each hand, then wear it | No second two-hander is equipped in the off hand (WoW Forever has no Titan's Grip); the off hand is left empty |
+| F4-2 | Target a player; make an outfit on *Target*, add the target; retarget them, then a player sharing their first name only | The list entry reads "First Surname" with no realm suffix. The outfit goes on for that character and not for the other |
+| F4-3 | Make an outfit on *Dance* and wear it | The character dances, with no Lua error |
+| F4-4 | Dock the window on the character sheet; open and close the bags and the spellbook over it | The window keeps to the sheet's layer, with no Lua error |
+| F4-5 (Retail) | F4-1 to F4-4 on Retail as a Fury warrior | Fury grips the second two-hander; a target entry reads "Name-Realm"; the dance and the dock are unchanged |

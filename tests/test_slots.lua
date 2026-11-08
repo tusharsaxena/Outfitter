@@ -204,3 +204,19 @@ test("slots: the dropped tables stay dropped (design §5.1, INV §18)", function
         end
     end
 end)
+
+test("slots: C_PaperDollInfo.GetInventorySlotInfo is asked before the deprecated shim (OR-F4)", function()
+    local inst = T.load()
+    local C, M = inst.NS.Compat, inst.mocks
+    M.GetInventorySlotInfo = function() error("the shim is not asked while C_PaperDollInfo answers") end
+    M.C_PaperDollInfo = { GetInventorySlotInfo = function(name)
+        if name ~= "RangedSlot" then error("Invalid inventory slot") end
+        return 18
+    end }
+    -- red under: Compat.InventorySlotID reading the bare GetInventorySlotInfo first.
+    assertEqual(C.InventorySlotID("RangedSlot"), 18)
+    assertEqual(C.InventorySlotID("NoSuchSlot"), nil, "a raise is nil")
+    M.C_PaperDollInfo = false
+    M.GetInventorySlotInfo = function(name) return name == "HeadSlot" and 1 or nil end
+    assertEqual(C.InventorySlotID("HeadSlot"), 1, "the shim without C_PaperDollInfo")
+end)

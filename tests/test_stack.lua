@@ -7,6 +7,8 @@
 -- the real modules, and the items move for real in tests/mock_gear.lua.
 
 local T = _G.OUTFITTERREBORN_TEST
+-- Titan's Grip is Retail's alone (OR-F4): on the forever kit profile no warrior grips.
+local FOREVER = dofile("tests/_kit/mock_client.lua").current() == "forever"
 -- A unit instance: the login without the resume walk, so the module under test is the one this
 -- suite stands up (tests/unit_load.lua).
 local unitLoad = dofile(T.root .. "/tests/unit_load.lua")(T)
@@ -328,7 +330,8 @@ test("stack: Compile empties the off-hand under a two-hander, unless Titan's Gri
     assertEqual(St.Compile().SecondaryHandSlot.id, 0)
     local NS2, _, St2 = scene("tg_warrior")
     St2.Init()
-    assertTrue(St2.Compile().SecondaryHandSlot.id ~= 0, "a Fury warrior keeps the second two-hander")
+    assertEqual(St2.Compile().SecondaryHandSlot.id ~= 0, not FOREVER,
+                "a Fury warrior keeps the second two-hander (no Titan's Grip on Forever)")
     assertTrue(NS2 ~= nil)
 end)
 

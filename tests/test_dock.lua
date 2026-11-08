@@ -88,6 +88,18 @@ test("dock: strata and level are copied from the host, level + DOCK_OVER_HOST, n
     assertTrue(M.OutfitterRebornWindowScroll:GetFrameLevel() > NS.WindowRows.rows[1]:GetFrameLevel())
 end)
 
+test("dock: a secret host strata is never copied onto the window (OR-F4)", function()
+    local NS, M, _, win = opened()
+    local holder = M.OutfitterRebornSheetHolder
+    local before, get = win:GetFrameStrata(), holder.GetFrameStrata
+    rawset(holder, "GetFrameStrata", function() return T.secret(RAISED_HOST_STRATA) end)
+    NS.Dock.lastStrata = nil
+    NS.Dock.ApplyLayers()
+    holder.GetFrameStrata = get
+    -- red under: Dock.ApplyLayers copying holder:GetFrameStrata() without the secret guard.
+    assertEqual(win:GetFrameStrata(), before)
+end)
+
 test("dock: the layer writes go through NS.SecureQueue in lockdown and replay on REGEN_ENABLED", function()
     local NS, M, _, win = opened()
     local holder = M.OutfitterRebornSheetHolder

@@ -8,6 +8,8 @@
 -- rule), and test_equip_bracket pins the real behavior.
 
 local T = _G.OUTFITTERREBORN_TEST
+-- Titan's Grip is Retail's alone (OR-F4): on the forever kit profile no warrior grips.
+local FOREVER = dofile("tests/_kit/mock_client.lua").current() == "forever"
 -- A unit instance: the login without the resume walk, so the module under test is the one this
 -- suite stands up (tests/unit_load.lua).
 local unitLoad = dofile(T.root .. "/tests/unit_load.lua")(T)
@@ -382,8 +384,8 @@ test("itemlink: UsesBothHands and MetaSlot follow the Titan's Grip spec", functi
     W:setClass("WARRIOR", 2)
     PS.Refresh()
     -- red under: UsesBothHands ignoring PS.CanDualWield2H.
-    assertFalse(I.UsesBothHands(great), "Fury grips it in one hand")
-    assertEqual(I.MetaSlot(great), "Weapon0Slot")
+    assertEqual(I.UsesBothHands(great), FOREVER, "Fury grips it in one hand (no grip on Forever)")
+    assertEqual(I.MetaSlot(great), FOREVER and "TwoHandSlot" or "Weapon0Slot")
 end)
 
 test("itemlink: LinkInfoLines names every field, and passes each through SafeToString", function()

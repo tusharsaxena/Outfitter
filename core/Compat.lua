@@ -7,7 +7,8 @@ local _, NS = ...
 --   Compat.IsSecret(v)  Compat.CanAccess(v)  Compat.IsSafeKey(v)   the three secret-value guards
 --   Compat.GetSpecialization()  Compat.GetSpecializationInfo(index)
 --                                C_SpecializationInfo first, then the deprecated globals
---   Compat.ClientKey()  Compat.ForClient(clients)   the client helpers, read once at load (clients-§5)
+--   Compat.ClientKey()  Compat.ForClient(clients)   the client helpers (clients-§5)
+--   Compat.UnitCharacterName(unit)  Compat.RegionalNames()   regional names (client-quirks-§5)
 -- Hand-written ladders and reads (P3 C6):
 --   Compat.CanAccessTable(t)     canaccesstable, then issecrettable, then "readable"
 --   Compat.NumSpecializations()  the class's spec count, 0 when unknown
@@ -21,6 +22,7 @@ local _, NS = ...
 --   Compat.SetCVar(name, value)  true when the client took the write
 --   Compat.GetTime()             the client clock, 0 without one
 --   Compat.IsAddOnLoaded(name)   true / false
+--   Compat.PerformEmote(token)   C_ChatInfo.PerformEmote first, then DoEmote; true when one ran
 -- The P4.2 accessors (design §5.13), below the C6 reads: item links, info, stats and cooldowns;
 -- binding, uniqueness, usability, upgrade and azerite reads by location; tooltip data; pets and the
 -- two hooks; the Equipment Manager; titles; the bank; containers (and the last equipped bag, P4.5)
@@ -137,9 +139,8 @@ end
 -- ---------------------------------------------------------------------------
 -- The client (clients-§3, §5): LibKa0s-Compat-1.0's helpers, with the stub arm
 -- ---------------------------------------------------------------------------
--- The ONE place the addon asks which client it runs on: NS.CLIENT, read once here at load, from
--- which the defaults/ files pick their per-client data. Feature code never asks. Without the library
--- both stubs answer as Retail, the build a degraded install was already running.
+-- The ONE place the addon asks which client it runs on: core/ClientSetup.lua reads ClientKey once
+-- into NS.CLIENT. Without the library both stubs answer as Retail, the build a degraded install ran.
 
 --- "retail", "forever", or nil when the client cannot say.
 Compat.ClientKey = CompatLib and CompatLib.ClientKey or function() return nil end
@@ -154,23 +155,20 @@ Compat.ForClient = CompatLib and CompatLib.ForClient or function(clients)
     return false
 end
 
-NS.CLIENT = (Compat.ClientKey() == "forever") and "forever" or "retail"
-
---- This client's value out of a `{ retail = ..., forever = ... }` pair; nil if the pair lacks it.
-function NS.PerClient(pair) return pair and pair[NS.CLIENT] end
-
---- The rows of `list` whose `clients` admits this client, in order (clients-§4).
-function NS.ForClientRows(list)
-    local out = {}
-    for _, row in ipairs(list) do
-        if Compat.ForClient(row.clients) then out[#out + 1] = row end
-    end
-    return out
-end
-
 -- ---------------------------------------------------------------------------
 -- Unit reads
 -- ---------------------------------------------------------------------------
+
+--- Whether names are unique per region (WoW Forever: "First Surname", no realm). False without the library.
+Compat.RegionalNames = CompatLib and CompatLib.RegionalNames or function() return false end
+
+--- A unit's name and realm, each plain or nil: the library's UnitCharacterName, else UnitName's two returns.
+function Compat.UnitCharacterName(unit)
+    local read = CompatLib and CompatLib.UnitCharacterName or UnitName
+    if not read or not unit then return nil, nil end
+    local name, realm = read(unit)
+    return NS.Secrets.PlainString(name), NS.Secrets.PlainString(realm)
+end
 
 --- The player's class token ("WARRIOR"): UnitClass's SECOND return, which is locale-independent.
 --- @return string|nil
@@ -374,9 +372,11 @@ function Compat.InventoryItemID(slotID)
 end
 
 --- The inventory slot ID of a slot name ("MainHandSlot"), or nil. The client raises on a bad name.
+--- C_PaperDollInfo.GetInventorySlotInfo first: the bare global is a deprecation shim on both clients.
 function Compat.InventorySlotID(slotName)
-    if not GetInventorySlotInfo or type(slotName) ~= "string" then return nil end
-    local ok, id = pcall(GetInventorySlotInfo, slotName)
+    local fn = member(C_PaperDollInfo, "GetInventorySlotInfo") or GetInventorySlotInfo
+    if type(fn) ~= "function" or type(slotName) ~= "string" then return nil end
+    local ok, id = pcall(fn, slotName)
     if not ok then return nil end
     return NS.Secrets.PlainNumber(id)
 end
@@ -976,6 +976,14 @@ end
 function Compat.CanDualWield()
     if type(CanDualWield) ~= "function" then return false end
     return NS.Secrets.PlainTruth(CanDualWield()) == true
+end
+
+--- Play an emote ("DANCE"): C_ChatInfo.PerformEmote first, then the DoEmote shim. False without either.
+function Compat.PerformEmote(token)
+    local fn = member(C_ChatInfo, "PerformEmote") or DoEmote
+    if type(fn) ~= "function" then return false end
+    fn(token)
+    return true
 end
 
 --- The bitwise AND of two non-negative integers (the specialty-bag family test). Plain arithmetic, so

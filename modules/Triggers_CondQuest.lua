@@ -69,8 +69,7 @@ end
 -- ── DANCE (OutfitterScripting.lua:1620-1633) ──────────────────────────────────────────────────
 
 local function dance()
-    local emote = DoEmote
-    if type(emote) == "function" then emote("DANCE") end
+    NS.Compat.PerformEmote("DANCE")
 end
 
 Cond.DANCE = { condition = none, onWorn = dance }
