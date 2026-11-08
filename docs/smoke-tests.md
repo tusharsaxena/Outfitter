@@ -7,7 +7,9 @@ rows that verify it. Section 11 is the sheet, window and broker round of 2026-11
 pass; section 12 is smoke round 2 of 2026-11-05 (the sheet button, slots, flyouts, menus, the
 outfit bar and test mode), the owner's CP5 pass; section 13 is smoke round 3 of 2026-11-05 (the flyout,
 the sheet button's icon, the bar's options, test mode's placement and menu, the Outfit Window page),
-the owner's R7 pass.
+the owner's R7 pass. Sections 14 to 18 are the WoW Forever port (2026-11-08 design): each runs on the
+Forever client unless a row says Retail, and a row tagged with a probe settles a value the build took
+from the inventory's best evidence (`-- PROBE Pn` at the code site).
 
 ## Sign-off
 
@@ -476,3 +478,15 @@ best evidence.
 | F5-4 (D4, P25) | With the window open, look at every slot; open Head's, Hands', Main Hand's and Ranged's flyouts | Every slot shows its arrow, Ranged's included, pointing as Blizzard draws it. Head's flyout opens right, Hands' left, the weapons' and Ranged's up, each where Blizzard opens it. Closing the window hides the arrows |
 | F5-5 (D4) | Turn off *Show the flyout arrows* on the Outfit Window page with the window open | The arrows hide; turning it on shows them again |
 | F5-6 (Retail) | F5-1 to F5-5 on Retail | The button sits right of the Equipment Manager tab; the left column's arrows and flyouts open outward, as before |
+
+## 18. WoW Forever: load and the port shape (OR-F6, 2026-11-09)
+
+On WoW Forever, unless a row says Retail. The TOC declares `## Interface: 120105, 16001`.
+
+| # | Do | See |
+|---|---|---|
+| F6-1 | Install the build in the Forever client's `Interface\AddOns\OutfitterReborn\`; open the AddOns list at the character screen; log in | The addon is listed without *Out of date*, loads with no Lua error, and `/or version` prints 1.1.0 |
+| F6-2 | With no saved settings, log in | The skin is *WoW Forever* (the per-client default); `/or skin` offers the others |
+| F6-3 (P1) | Log in a new character | *Normal* and *Birthday Suit* are seeded, plus the class outfits for a druid, rogue or shaman. Record which spec outfits appear: Forever has one specialization per class |
+| F6-4 | `/or diagnostics` | It prints with no Lua error, and nothing in it reads as failed |
+| F6-5 (Retail) | F6-1 to F6-4 on Retail | The same, on Ka0s Default, with one spec outfit per specialization |

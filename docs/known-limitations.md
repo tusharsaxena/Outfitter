@@ -84,6 +84,23 @@ in [smoke-tests.md](smoke-tests.md) §12 for the owner's eye.
   pet, not the owned-pet list: that needs a journal walk Compat does not publish yet
   (`Compat.OwnedPets()`, due when `core/Compat.lua` splits; it is at its line budget).
 
+## WoW Forever, step 1
+
+The port's first step (the 2026-11-08 design, `superpowers/specs/2026-11-08-forever-port-design.md`)
+makes the addon Forever-compatible; these wait for step 2 or for an open probe.
+
+- **The ammo slot** (ruling D1) is not in the slot table yet: it needs a stack-aware equip path.
+- **Spell ranks** (D10): a trigger keyed by a Retail spell ID matches only that rank's ID.
+- **No Forever seed data:** no Forever spec outfits, optimizer weights for the vanilla stats, or
+  gathering and lockpicking tooltip wording beyond Retail's.
+- **Spec reads on the forever kit profile:** 32 cases (the spec triggers, the first-login spec
+  outfits, the spec icons, the Titan's Grip spec pin) fail under `KA0S_KIT_CLIENT=forever`, because the
+  profile removes the spec API that Forever has with one spec per class (probe P1). The mock, or the
+  cases, are still to be brought to Forever's one-spec answer.
+- **Open probes** (P14 vanilla stat keys, P17 dungeon and battleground IDs, P18 raid IDs, P25 the
+  flyouts, P27 the side-tab strip's geometry): each value is coded from the inventory's best evidence,
+  marked `-- PROBE Pn` at its site, and checked by a row in `smoke-tests.md` sections 14 to 18.
+
 ## Client checks still owed
 
 Each is a row in [smoke-tests.md](smoke-tests.md) with its pass criterion.

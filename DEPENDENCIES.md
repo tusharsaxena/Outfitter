@@ -9,10 +9,11 @@ such rather than listed as a requirement.
 
 ## Runtime (in-game): what a player needs
 
-- **World of Warcraft (Retail), Midnight.** A single `## Interface: 120105` line in
-  `OutfitterReborn.toc`; Retail only.
+- **World of Warcraft, Retail (Midnight) or WoW Forever,** at the interface the TOC declares for
+  that client: `## Interface: 120105, 16001` in `OutfitterReborn.toc`, Retail's number first and
+  Forever's second (toc-file-§3). One codebase serves both clients (clients-§1).
 - **Nothing else.** Every library is vendored under `libs/` and committed (library-stack), LibKa0s
-  at **v1.91.0** (the provenance line in `CLAUDE.md`), so the player installs no separate library
+  at the release the provenance line in `CLAUDE.md` names (no version is restated here), so the player installs no separate library
   addon. `## OptionalDeps:` names the vendored libraries, EllesmereUI, Pawn and WeightsWatcher for
   load ordering, not as things to download. Pawn and WeightsWatcher are optional stat sources: the
   addon reads them when they are loaded and falls back to its own scoring when they are not.
@@ -68,6 +69,9 @@ checkout. A junction named `Outfitter` loads nothing.
 mklink /J "C:\Program Files (x86)\World of Warcraft\_retail_\Interface\AddOns\OutfitterReborn" "<path to this checkout>"
 ```
 
+A WoW Forever install is the same junction, named `OutfitterReborn`, in the Forever client's own
+`Interface\AddOns\` folder; both junctions can point at the one checkout.
+
 ## Release / assets
 
 **Two entries: Pillow and curl.**
@@ -102,6 +106,7 @@ job and its toolchain.
 
 ```sh
 lua tests/run.lua                                             # the suite: must be green
+KA0S_KIT_CLIENT=forever lua tests/run.lua                     # the suite as WoW Forever (clients-§6)
 ~/.claude/dev-copilot/bin/ka0s-bounded luacheck .             # must be 0 warnings / 0 errors
 bash tests/_kit/run-automated-tests.sh --suite lint --suite tests --no-bundle   # the commit gate
 ```

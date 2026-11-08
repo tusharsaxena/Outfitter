@@ -40,7 +40,8 @@ test("toc: Title, Version and the brand agree", function()
     assertEqual(f["X-License"], "MIT")
     assertEqual(f["X-Standard"], "https://github.com/tusharsaxena/WowAddonStandards")
     assertEqual(f["X-Curse-Project-ID"], "1698220")
-    assertTrue(f.Interface:match("^%d+$") ~= nil, "Interface is a number: " .. tostring(f.Interface))
+    -- Retail's number first, then WoW Forever's (toc-file-§3; the port's one codebase, clients-§1).
+    assertEqual(f.Interface, "120105, 16001", "Interface names Retail and WoW Forever")
 end)
 
 test("toc: the IconTexture is the shipped 128 logo, under the folder name", function()

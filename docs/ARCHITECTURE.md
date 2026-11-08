@@ -10,12 +10,14 @@ the build order is
 
 ## Overview
 
-Ka0s Outfitter Reborn is an equipment manager for Retail (Midnight, 12.x). A player builds named
+Ka0s Outfitter Reborn is an equipment manager for Retail (Midnight, 12.x) and WoW Forever, from one
+codebase (`## Interface: 120105, 16001`; see Per-client features below). A player builds named
 outfits, wears them by hand from a window docked to the character sheet, from an outfit bar, from key
 bindings or from `/or`, and lets **native triggers** wear and remove them automatically: fishing,
 gathering, a battleground or arena by map, a druid form, a spec, a mount, and about seventy more
 (77 in all). It is a rewrite of the community fork of Outfitter by John Stephen (mundocani), MIT
-licensed, as an Ace3 addon in the standard's modular layout, on the vendored `LibKa0s` v1.91.0.
+licensed, as an Ace3 addon in the standard's modular layout, on the vendored `LibKa0s` (the release
+the `CLAUDE.md` provenance line names).
 
 Three ideas carry the design:
 
@@ -37,6 +39,41 @@ slot checkboxes, the outfit bar, the dialogs and menus, the tooltips and quick s
 public API, four settings pages (General, Outfit Bar, Outfit Window, Profiles), 36 slash verbs and 15 key bindings (as measured on 2026-11-06)
 and six translation overlays. What it does not do yet, and what a client has still to confirm, is
 under Known Limitations.
+
+### Per-client features
+
+The addon serves Retail and WoW Forever from one codebase (clients-§1; the roster's Clients value is
+`Retail · Forever`). The client is asked in one place: `core/ClientSetup.lua` reads `NS.CLIENT` once at
+load from `NS.Compat.ClientKey()` (`LibKa0s-Compat-1.0`, clients-§3; without the library it answers
+Retail) and publishes `NS.PerClient(pair)` and `NS.ForClientRows(list)`, which the `defaults/` files and
+the modules call at **file scope** (clients-§5). Feature code never asks which client it runs on. A
+Retail-only feature is declared `clients = { "retail" }` and never built on Forever: no descriptor,
+picker entry, schema row or setting (clients-§4), so it is absent, never hidden. The owner's rulings
+D1 to D10 and the probes behind each value are in
+[`superpowers/specs/2026-11-08-forever-port-design.md`](superpowers/specs/2026-11-08-forever-port-design.md);
+a value an open probe has still to confirm is marked `-- PROBE Pn` at its site and has a smoke row in
+`smoke-tests.md` sections 14 to 18.
+
+| Feature | Retail | WoW Forever | Picked in |
+|---|---|---|---|
+| Equipment slots (D2) | the 18 slots | the same 18 plus `RangedSlot` (18) after the two hands; ranged, thrown and relic invtypes go there | `defaults/Items.lua` (`ID.SLOT_NAMES`), `modules/SlotEnables.lua` |
+| Ammo slot (D1) | — | not built yet (needs a stack-aware equip path) | — |
+| Stats (D9) | Haste, Versatility, Mastery | spell damage, healing, attack power, MP5, hit, defense (PROBE P14) | `modules/ItemStats.lua` (`STAT_KEYS`) |
+| PvP zones (D3) | every battleground, arena and brawl row | the generic battleground row, AV, AB, WSG (PROBE P17); no brawls | `defaults/Zones.lua` (`Z.rows`, `Z.BRAWL_MAP_IDS`) |
+| Instance difficulty (D7) | Retail's groups | open world, normal dungeon (PROBE P17), 20-player raid 148 and 40-player raid 9 (PROBE P18) | `defaults/TriggerData.lua` (`DIFFICULTY_GROUPS`, `DIFFICULTY_ORDER`) |
+| Retail-only triggers (D5, D6) | the four content quests, Pet Battle, Tree of Life | absent; Quest Turn-in and Cooking's core stay | `defaults/Triggers.lua` (`clients`), `modules/Triggers.lua` (`Finalize`) |
+| Retail-only params | arena, Vashj'ir, Find Fish, Cooking's fire pets | absent | `defaults/Triggers.lua`, `modules/Triggers.lua` (`buildParams`) |
+| The Tree of Life state | `FORM_TREE` | absent | `defaults/TriggerData.lua`, `modules/States.lua` |
+| Shadowmeld (P4) | 58984 | 20580 | `defaults/TriggerData.lua` |
+| Titan's Grip | spec 2 grips | never | `modules/PlayerState.lua` (`TITANS_GRIP_SPEC`) |
+| `TARGET` names | `Name-Realm` | `First Surname` (regional names) | `Compat.UnitCharacterName` |
+| Sheet button (D8) | the sidebar tab row (stock, EllesmereUI, Chonky) | the last button of `CharacterFrame.ModeTabs`, a `LargeSideTabButtonTemplate` CheckButton outside Blizzard's mode switching (PROBE P27) | `modules/Sheet.lua` (`Sheet.ButtonAnchor`), `modules/Dock.lua` |
+| Flyout drawer (D4) | arrows placed and flyouts mirrored outward | every arrow shown, Blizzard's inward flyouts and atlas arrows left as drawn (PROBE P25) | `modules/QuickSlots.lua` (`MOVES_DRAWER`) |
+| Default skin | Ka0s Default | WoW Forever | `core/SkinSetup.lua` (`Skin:DefaultSkin()`) |
+
+Both clients take the modern APIs first: `C_PaperDollInfo.GetInventorySlotInfo` and
+`C_ChatInfo.PerformEmote`, with the bare globals behind them, and the host strata read passes the
+secret guard. The suite runs under both kit profiles (`docs/testing.md`).
 
 ## Module Map
 
@@ -219,6 +256,8 @@ owed: [`taint.md`](taint.md).
 - The sheet button copies each host sheet's tab, so it inherits that sheet's quirks: Chonky's tab row
   sits about 18 px right-heavy with it, and the EllesmereUI label takes EllesmereUI's face when it is
   placed, not when EllesmereUI changes it.
+- On WoW Forever the ammo slot is not supported yet, and triggers match one spell rank's ID; the
+  port's step-1 limits are in `known-limitations.md`.
 
 The full list, with the client checks still owed: [`known-limitations.md`](known-limitations.md).
 

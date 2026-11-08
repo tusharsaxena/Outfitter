@@ -1,4 +1,4 @@
-## Interface: 120105
+## Interface: 120105, 16001
 ## Title: Ka0s Outfitter Reborn
 ## Notes: Clothing and weapon management and automated equipment changes.
 ## Author: add1kted2ka0s

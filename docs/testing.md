@@ -9,6 +9,7 @@ How to verify Ka0s Outfitter Reborn (testing-§6). What to install first is in t
 | Command | What it does |
 |---|---|
 | `lua tests/run.lua` | The headless suite. Exits non-zero on any failure |
+| `KA0S_KIT_CLIENT=forever lua tests/run.lua` | The same suite under the kit's WoW Forever profile (clients-§6) |
 | `lua tests/run.lua -j auto` | The same, split across one worker per CPU (testing-§14) |
 | `lua tests/run.lua --list > docs/test-cases.md` | Regenerates the case inventory without running anything |
 | `~/.claude/dev-copilot/bin/ka0s-bounded luacheck .` | Lint, configured by `.luacheckrc`; must report 0 warnings and 0 errors. `luacheck` loads no kit, so it runs through the bounded runner (testing-§15) |
@@ -19,9 +20,22 @@ Every Lua run is bounded by the vendored kit as it loads (memory, time, process 
 
 ## The commit gate
 
-Before **every** commit: `lua tests/run.lua` green **and** `~/.claude/dev-copilot/bin/ka0s-bounded
-luacheck .` at 0/0 (testing-§4). The runner's `--suite lint --suite tests --no-bundle` is the same
-pair and writes nothing. Work is test-first: a failing case that pins the behavior, then the code.
+Before **every** commit: `lua tests/run.lua` green, `KA0S_KIT_CLIENT=forever lua tests/run.lua` green
+**and** `~/.claude/dev-copilot/bin/ka0s-bounded luacheck .` at 0/0 (testing-§4). The runner's
+`--suite lint --suite tests --no-bundle` is the Retail pair and writes nothing;
+`KA0S_KIT_CLIENT=forever tests/_kit/run-automated-tests.sh --suite tests --no-bundle` is the Forever
+half. Work is test-first: a failing case that pins the behavior, then the code.
+
+### Both clients
+
+The addon serves Retail and WoW Forever (Interface 120105, 16001), one codebase, so the `tests` suite
+gates under **both** kit profiles (clients-§6). The forever profile answers as the Forever client
+(`tests/_kit/mock_client.lua`: build 1.60.1, interface 16001) and removes the Retail-only globals, so
+`NS.CLIENT` and every file-scope per-client pick load as Forever's. A case that pins one client's
+behavior says so and skips on the other (`FOREVER` in the case files); a case that pins a per-client
+value asserts each client's. On the port branch the forever profile still carries **32 known
+failures**, all spec reads (`known-limitations.md`, WoW Forever, step 1); none may be added, and the
+profile is not green until they are fixed.
 
 ## The four out-of-game suites
 
@@ -30,7 +44,7 @@ A suite gates a **commit** and a **release** (the tag) differently, so both are 
 | Suite | Command | Gates the commit? | Gates the release (tag)? |
 |---|---|---|---|
 | `lint` | `~/.claude/dev-copilot/bin/ka0s-bounded luacheck .` | yes | yes |
-| `tests` | `lua tests/run.lua` | yes | yes |
+| `tests` | `lua tests/run.lua`, then `KA0S_KIT_CLIENT=forever lua tests/run.lua` | yes, both profiles | yes, both profiles |
 | `perf` | `lua tests/perf.lua` | no, recorded only | yes, at `pass` (a `skip` is not evaluated) |
 | `complexity` | `bash tests/_kit/run-automated-tests.sh --suite complexity` | no, recorded only | yes, at `pass` with zero functions above CCN 15 |
 

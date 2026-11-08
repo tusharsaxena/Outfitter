@@ -35,7 +35,8 @@ Start here, then read the docs:
   `debug.md`, `performance.md`, `smoke-tests.md`, `compat-layer.md`, `midnight-quirks.md`,
   `known-limitations.md`, `taint.md`).
 
-Green gate before every commit: `lua tests/run.lua` and
+Green gate before every commit: `lua tests/run.lua`, `KA0S_KIT_CLIENT=forever lua tests/run.lua` (the
+addon serves Retail and WoW Forever, so the suite runs under both kit profiles, clients-§6) and
 `~/.claude/dev-copilot/bin/ka0s-bounded luacheck .` (0/0; the kit bounds the suite on load, and
 `luacheck` loads no kit, so it runs through the bounded runner, testing-§15). Never
 auto-stage/commit/push and never bump the version without an explicit instruction.
