@@ -547,7 +547,8 @@ test("player state: the spec follows the spec events, and Fury warriors dual wie
     M.__world:setClass("WARRIOR", 2)
     M.__fire("ACTIVE_PLAYER_SPECIALIZATION_CHANGED", "player")
     assertEqual(PS.Spec(), 2)
-    assertTrue(PS.CanDualWield2H())
+    -- Titan's Grip is Retail's alone (spec §4): WoW Forever's spec-2 warrior grips no two-hander.
+    assertEqual(PS.CanDualWield2H(), not FOREVER)
     assertEqual(table.concat(heard, ","), "spec=2")
     M.__world:setClass("ROGUE", 2)
     M.__fire("PLAYER_TALENT_UPDATE")

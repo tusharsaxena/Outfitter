@@ -182,6 +182,7 @@ local SUITES = {
 
     { name = "test_sheet" },
     { name = "test_dock" },
+    { name = "test_dock_forever" },
     { name = "test_list_model" },
     { name = "test_rows_secure" },
     { name = "test_slot_enables" },

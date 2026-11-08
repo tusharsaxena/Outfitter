@@ -205,6 +205,11 @@ end)
 test("secrets: the library-absent spec stubs walk C_SpecializationInfo, then the globals", function()
     local inst = T.load({ libFiles = {}, init = false })
     local Cs = inst.NS.Compat
+    -- The bare rung on its own, whichever client profile runs: the forever profile has no bare
+    -- globals and answers through the namespace (tests/wow_mock.lua), so the case sets the rung.
+    inst.mocks.C_SpecializationInfo = nil
+    inst.mocks.GetSpecialization = inst.mocks.GetSpecialization or function() return 1 end
+    inst.mocks.GetSpecializationInfo = inst.mocks.GetSpecializationInfo or function() return 250 end
     assertEqual(Cs.GetSpecialization(), 1, "the bare global rung")
     assertEqual((Cs.GetSpecializationInfo(1)), 250)
     assertNil(Cs.GetSpecializationInfo(nil), "no index, no client call")

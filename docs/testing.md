@@ -33,9 +33,9 @@ gates under **both** kit profiles (clients-§6). The forever profile answers as 
 (`tests/_kit/mock_client.lua`: build 1.60.1, interface 16001) and removes the Retail-only globals, so
 `NS.CLIENT` and every file-scope per-client pick load as Forever's. A case that pins one client's
 behavior says so and skips on the other (`FOREVER` in the case files); a case that pins a per-client
-value asserts each client's. On the port branch the forever profile still carries **32 known
-failures**, all spec reads (`known-limitations.md`, WoW Forever, step 1); none may be added, and the
-profile is not green until they are fixed.
+value asserts each client's. On the forever profile the mock answers the spec through
+`C_SpecializationInfo` (`tests/wow_mock.lua`), as the Forever client does (probe P1), because the
+profile removes the bare spec globals; both profiles gate green.
 
 ## The four out-of-game suites
 
@@ -181,6 +181,7 @@ has no row here, or a row leaves its §9.3 group or order.
 |---|---|
 | `test_sheet` | The sheet adapter: stock, EllesmereUI and Chonky told apart (addon loaded and its frame there: EllesmereUI's tab built, so its hidden state off the Character tab still reads eui; Chonky's backdrop shown), the fallback to stock when a sheet addon's skin is off, the button anchor per sheet, the dock edge past an open Chonky side panel |
 | `test_dock` | The window dock: strata and level from the host, the secure queue under lockdown, combat hide and restore, the follow driver, Escape; the sheet button in each host's tab look (sidebar tab on stock and Chonky, selected while the window shows; EllesmereUI's text tab), the header gear at the close X's size and tint |
+| `test_dock_forever` | WoW Forever's sheet button (ruling D8): below the last mode tab of the outer strip, from `LargeSideTabButtonTemplate` when the client has it, the template's unsized Icon filled as the mode tabs fill theirs; forever kit profile only |
 | `test_list_model` | The list model: section order, both sorts, nil names last, collapse; the sample outfits with no item section in test mode |
 | `test_rows_secure` | The secure row children: built once, never moved after the build, disarmed in lockdown; the EM mark's one-click toggle and its state-and-hint tooltip |
 | `test_slot_enables` | The slot checkboxes: one per slot on the character sheet, the tri-state, All and None, the restack to the host strata (the slot buttons' included) and its level cap, the accent edge |

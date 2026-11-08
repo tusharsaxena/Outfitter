@@ -291,8 +291,11 @@ local EUI_FONT_SIZE = 10
 -- WoW Forever's outer side-tab strip (ruling D8): the button is made from the strip's own
 -- LargeSideTabButtonTemplate, as a CheckButton, when the client has the template; its own scripts
 -- replace the template's, so it never joins the strip's mode switching (CharacterModeTabButtonMixin).
--- Which regions the template carries is unread: an `Icon` it has takes the outfit icon, else the
--- button's own icon draws centered, and the selected state goes through SetChecked. PROBE P27.
+-- The template (F-UI Blizzard_SharedXML/Mainline/SharedUIPanelTemplates.xml:1008, SidePanelTabButtonMixin)
+-- carries an `Icon` with NO size: its OnLoad only centers it, and the mode tabs get theirs from
+-- fillToInterior (CharacterFrame.xml:394-401, SetFillToInterior's 50 px square). So the template's
+-- Icon takes the outfit icon through SetFillToInterior, as the strip's own tabs do; without the
+-- template the button's own icon draws centered. The selected state goes through SetChecked.
 local SIDE_TAB_TEMPLATE = NS.PerClient({ forever = "LargeSideTabButtonTemplate" })
 local SIDE_TAB_ICON_SIZE = 32 -- PROBE P27: the strip's icon size is unread
 
@@ -380,7 +383,15 @@ local function applyLook(look)
     button.label:SetShown(look == "text")
     if look == "sidetab" then
         local own = templateIcon()
-        if own then own:SetTexture(NS.Constants.DEFAULT_OUTFIT_ICON) end
+        if own then
+            own:SetTexture(NS.Constants.DEFAULT_OUTFIT_ICON)
+            -- An unsized texture draws nothing: size it as the mode tabs size theirs.
+            if type(button.SetFillToInterior) == "function" then
+                button:SetFillToInterior(true)
+            else
+                own:SetSize(SIDE_TAB_ICON_SIZE, SIDE_TAB_ICON_SIZE)
+            end
+        end
         button.icon:SetShown(own == nil)
         button.icon:SetSize(SIDE_TAB_ICON_SIZE, SIDE_TAB_ICON_SIZE)
         button.icon:ClearAllPoints()

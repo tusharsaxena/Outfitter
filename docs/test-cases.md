@@ -1203,7 +1203,7 @@ Total.
 - sheet (Forever): a hidden last tab gives the place to the last shown one
 - sheet (Forever): unlaid tabs take the fallback gap, and no tab at all the close X's place
 
-### test_dock.lua (52)
+### test_dock.lua (50)
 
 - dock: NS.Dock is published with the §7.2 surface
 - dock: the holder fills the sheet, and the sheet button toggles the window
@@ -1254,9 +1254,13 @@ Total.
 - dock: a sheet tab built after the paper doll's OnShow is picked up on the next frame
 - dock: the next frame's sheet check does nothing once the doll is gone or stood down
 - dock: on Chonky the Reputation tab takes the button and window down, the Character tab brings them back
+- dock: on Retail the sheet button is a plain Button with no template
+
+### test_dock_forever.lua (3)
+
 - dock (Forever): the button sits below the last mode tab in the strip's look
 - dock (Forever): with the client's template the button is a LargeSideTabButtonTemplate CheckButton
-- dock: on Retail the sheet button is a plain Button with no template
+- dock (Forever): the template's unsized Icon takes the outfit icon, filled as the mode tabs fill theirs
 
 ### test_list_model.lua (8)
 
@@ -1859,7 +1863,8 @@ Total.
 | test_triggers_class.lua | 11 |
 | test_triggers_pvp.lua | 7 |
 | test_sheet.lua | 21 |
-| test_dock.lua | 52 |
+| test_dock.lua | 50 |
+| test_dock_forever.lua | 3 |
 | test_list_model.lua | 8 |
 | test_rows_secure.lua | 22 |
 | test_slot_enables.lua | 29 |
@@ -1887,4 +1892,4 @@ Total.
 | test_lizard_sighted.lua | 8 |
 | test_prose.lua | 15 |
 | Skipped | 1 |
-| **Total** | **1561** |
+| **Total** | **1562** |

@@ -9,7 +9,6 @@
 local T = _G.OUTFITTERREBORN_TEST
 local FOREVER = dofile("tests/_kit/mock_client.lua").current() == "forever"
 local RETAIL_ONLY = "Retail's sheet button (sidebar tab, EllesmereUI, Chonky); WoW Forever's is the outer side-tab strip (ruling D8)"
-local FOREVER_ONLY = "pins WoW Forever's sheet button (ruling D8); runs on the forever kit profile"
 local test, assertEqual, assertTrue, assertFalse, assertNil =
     T.test, T.assertEqual, T.assertTrue, T.assertFalse, T.assertNil
 local scene = dofile(T.root .. "/tests/dock_scene.lua")(T)
@@ -950,40 +949,6 @@ test("dock: on Chonky the Reputation tab takes the button and window down, the C
     toTab(M, true)
     assertTrue(button:IsShown())
     assertEqual(buttonPoint(M)[2], M.PaperDollSidebarTab3)
-end)
-
--- ── WoW Forever's sheet button: the outer side-tab strip (ruling D8, OR-F5) ─────────────────────
-test("dock (Forever): the button sits below the last mode tab in the strip's look", function()
-    if not FOREVER then T.skip(FOREVER_ONLY) end
-    local _, M = scene()
-    M.__world:openCharacter()
-    local button = M.OutfitterRebornSheetButton
-    local p = buttonPoint(M)
-    assertEqual(p[1], "TOPLEFT"); assertEqual(p[2], M.CharacterFrameModeTab6); assertEqual(p[3], "BOTTOMLEFT")
-    assertEqual(button:GetParent(), M.CharacterFrame); assertTrue(button:IsShown())
-    -- red under: Retail's hand-built sidebar art on Forever's strip.
-    for _, key in ipairs({ "TabBg", "Hider", "Highlight", "label" }) do
-        assertFalse(button[key]:IsShown(), key .. " shows on the side tab")
-    end
-    assertTrue(button.icon:IsShown(), "no template Icon, so the button's own icon draws")
-    assertEqual(button.icon:GetTexture(), 132724)
-end)
-
-test("dock (Forever): with the client's template the button is a LargeSideTabButtonTemplate CheckButton", function()
-    if not FOREVER then T.skip(FOREVER_ONLY) end
-    local _, M = scene({ mutate = function(M)
-        M.C_XMLUtil = { GetTemplateInfo = function(name)
-            if name == "LargeSideTabButtonTemplate" then return { type = "CheckButton" } end
-        end }
-    end })
-    local button = M.OutfitterRebornSheetButton
-    -- red under: a plain Button with no template (Retail's), or the template on a Button.
-    assertEqual(button.__frameType, "CheckButton"); assertEqual(button.__template, "LargeSideTabButtonTemplate")
-    M.__world:openCharacter()
-    button:__fire("OnClick")
-    assertTrue(button:GetChecked(), "the click opened the window and the tab is checked")
-    button:__fire("OnClick")
-    assertFalse(button:GetChecked(), "the second click closed it")
 end)
 
 test("dock: on Retail the sheet button is a plain Button with no template", function()

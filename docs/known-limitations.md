@@ -93,10 +93,9 @@ makes the addon Forever-compatible; these wait for step 2 or for an open probe.
 - **Spell ranks** (D10): a trigger keyed by a Retail spell ID matches only that rank's ID.
 - **No Forever seed data:** no Forever spec outfits, optimizer weights for the vanilla stats, or
   gathering and lockpicking tooltip wording beyond Retail's.
-- **Spec reads on the forever kit profile:** 32 cases (the spec triggers, the first-login spec
-  outfits, the spec icons, the Titan's Grip spec pin) fail under `KA0S_KIT_CLIENT=forever`, because the
-  profile removes the spec API that Forever has with one spec per class (probe P1). The mock, or the
-  cases, are still to be brought to Forever's one-spec answer.
+- **Spec cases on the forever kit profile** run on the mock's Retail spec lists (three or four per
+  class), answered through `C_SpecializationInfo` as Forever answers; Forever's one spec per class
+  (probe P1) is not modeled in the mock yet.
 - **Open probes** (P14 vanilla stat keys, P17 dungeon and battleground IDs, P18 raid IDs, P25 the
   flyouts, P27 the side-tab strip's geometry): each value is coded from the inventory's best evidence,
   marked `-- PROBE Pn` at its site, and checked by a row in `smoke-tests.md` sections 14 to 18.

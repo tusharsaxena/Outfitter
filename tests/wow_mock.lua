@@ -318,6 +318,18 @@ local function build()
     World.install(M, { isSecret = Secrets.isSecret, gear = Gear })
     installSheets(M)
 
+    -- WoW Forever reads the spec through C_SpecializationInfo (probe P1 answered there), and the
+    -- forever kit profile removes the bare GetSpecialization and GetSpecializationInfo when the
+    -- environment is built. On that profile the namespace answers what the globals would: the one a
+    -- case set on the mocks since, else the world's own, captured here before the profile strips it.
+    if FOREVER and M.C_SpecializationInfo == nil then
+        local spec, specInfo = M.GetSpecialization, M.GetSpecializationInfo
+        M.C_SpecializationInfo = {
+            GetSpecialization = function() return (rawget(M, "GetSpecialization") or spec)() end,
+            GetSpecializationInfo = function(i) return (rawget(M, "GetSpecializationInfo") or specInfo)(i) end,
+        }
+    end
+
     return M
 end
 
