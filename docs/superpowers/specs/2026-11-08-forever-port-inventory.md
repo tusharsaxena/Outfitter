@@ -528,6 +528,8 @@ Type each line in chat. Every line is under 255 characters. "(where)" says what 
   `/run local f=CreateFrame("Frame",nil,UIParent) f:SetAllPoints() for i,d in ipairs({1376041,132724,134400,136041,132132}) do local t=f:CreateTexture() t:SetSize(40,40) t:SetPoint("CENTER",i*44,0) t:SetTexture(d) end C_Timer.After(8,function()f:Hide()end)`
 - **P25. The flyout geometry** (sheet open).
   `/dump CharacterHeadSlot.flyoutDirection, CharacterHandsSlot.flyoutDirection, CharacterMainHandSlot.flyoutDirection, CharacterRangedSlot.flyoutDirection, EquipmentFlyoutFrame.NavigationFrame ~= nil`
+- **P27. The outer side-tab strip** (character sheet open; added for the owner's D8 placement).
+  `/dump CharacterFrameModeTab6:GetSize(), CharacterFrameModeTab6:GetPoint(1), CharacterFrame.ModeTabs:GetHeight(), CharacterFrameModeTab6:IsShown()`
 - **P26. The deprecation fallbacks** (the GetInventorySlotInfo and DoEmote shims).
   `/dump GetCVar("loadDeprecationFallbacks"), GetInventorySlotInfo ~= nil, DoEmote ~= nil`
 

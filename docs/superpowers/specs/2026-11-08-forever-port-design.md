@@ -33,7 +33,7 @@ them** (marked). The build follows this table.
 | D5 | Pet Battle and cooking-pet params | Absent on Forever; the Cooking trigger keeps its core |
 | D6 | Quest triggers | The four content quests are absent on Forever; Quest Turn-in stays |
 | D7 | Instance difficulty | **Open world, normal dungeon, 40-player raid and the 20-player raid row, all in step 1 (departs).** The 20-player ID is confirmed by probe P18 |
-| D8 | Character-sheet button | **Both placements (departs).** With the right pane expanded, the button is the last sidebar tab in Forever's atlas look; with it collapsed, the button moves to the left pane's top strip. Retail unchanged |
+| D8 | Character-sheet button | **The outer side-tab strip (departs; revised by the owner the same day, with a screenshot).** On Forever the button is the last button of the vertical strip outside the character frame's right edge (`CharacterFrame.ModeTabs`, `CharacterFrameModeTab1`..`6`: Character, Reputation, Skills, PvP, Currency, Statistics), below Statistics, drawn with the strip's `LargeSideTabButtonTemplate`. The strip shows whether the inner right pane is expanded or collapsed, so one placement covers both. The button is Outfitter's own frame, anchored below the last shown mode tab; it toggles the Outfitter window and never joins Blizzard's mode switching (`CharacterModeTabButtonMixin`), so it adds no taint. Retail unchanged |
 | D9 | Stats | **Vanilla stats in step 1 (departs):** Haste, Versatility and Mastery absent on Forever; spell damage, healing, attack power, MP5, hit and defense added, with keys confirmed by probe P14 |
 | D10 | Spell ranks | Match by base spell if probes P3/P4 show Forever maps ranks to a base; otherwise per-rank ID lists per client |
 
@@ -59,9 +59,8 @@ Step 1 follows the ConsumableMaster port: Forever-compatible, Retail-only featur
    - The bare `GetInventorySlotInfo` and `DoEmote` become `C_PaperDollInfo.GetInventorySlotInfo` and
      `C_ChatInfo.PerformEmote` first, on both clients.
    - The one strata read gets the secret guard.
-5. **The character-sheet adapter (D8).** On Forever the sheet button anchors after the last shown sidebar tab and
-   wears Forever's 42x42 atlas tab look while the right pane is expanded, and moves to the left pane's top strip while it is collapsed (`Camelot/PaperDollFrame.lua`,
-   `Camelot/CharacterFrame.lua`). Retail's placement is unchanged.
+5. **The character-sheet adapter (D8).** On Forever the sheet button is Outfitter's own `LargeSideTabButtonTemplate`
+   frame anchored below the last shown button of `CharacterFrame.ModeTabs` (the outer vertical strip) (`Camelot/CharacterFrame.xml:574-599`, `Camelot/CharacterFrame.lua:154`). Retail's placement is unchanged.
 6. **The flyout drawer (D4)** is adapted to Forever's inward flyouts and atlas arrows. **The ammo slot (D1)** joins the slot table on Forever, with a stack-aware equip path. Retail's are unchanged.
 
 ## Step 2 (later, its own spec)
