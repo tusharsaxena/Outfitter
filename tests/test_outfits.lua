@@ -19,6 +19,8 @@ local SLOTS = {
     "MainHandSlot", "SecondaryHandSlot", "BackSlot", "NeckSlot", "ShirtSlot", "TabardSlot", "Finger0Slot",
     "Finger1Slot", "Trinket0Slot", "Trinket1Slot",
 }
+-- WoW Forever adds the ranged slot (defaults/Items.lua, ruling D2).
+if dofile("tests/_kit/mock_client.lua").current() == "forever" then SLOTS[#SLOTS + 1] = "RangedSlot" end
 
 --- A fresh instance: a gear scenario, and a class (and spec) set before the files load.
 local function scene(opts)

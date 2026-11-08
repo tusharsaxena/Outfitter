@@ -7,6 +7,7 @@ local _, NS = ...
 --   Compat.IsSecret(v)  Compat.CanAccess(v)  Compat.IsSafeKey(v)   the three secret-value guards
 --   Compat.GetSpecialization()  Compat.GetSpecializationInfo(index)
 --                                C_SpecializationInfo first, then the deprecated globals
+--   Compat.ClientKey()  Compat.ForClient(clients)   the client helpers, read once at load (clients-§5)
 -- Hand-written ladders and reads (P3 C6):
 --   Compat.CanAccessTable(t)     canaccesstable, then issecrettable, then "readable"
 --   Compat.NumSpecializations()  the class's spec count, 0 when unknown
@@ -131,6 +132,40 @@ function Compat.NumSpecializations()
     local fn = (api and api.GetNumSpecializations) or GetNumSpecializations
     if not fn then return 0 end
     return NS.Secrets.UnsecretNumber(fn(), 0)
+end
+
+-- ---------------------------------------------------------------------------
+-- The client (clients-§3, §5): LibKa0s-Compat-1.0's helpers, with the stub arm
+-- ---------------------------------------------------------------------------
+-- The ONE place the addon asks which client it runs on: NS.CLIENT, read once here at load, from
+-- which the defaults/ files pick their per-client data. Feature code never asks. Without the library
+-- both stubs answer as Retail, the build a degraded install was already running.
+
+--- "retail", "forever", or nil when the client cannot say.
+Compat.ClientKey = CompatLib and CompatLib.ClientKey or function() return nil end
+
+--- Whether a `clients` declaration (nil, "both", or a list of client tokens) admits this client.
+Compat.ForClient = CompatLib and CompatLib.ForClient or function(clients)
+    if clients == nil or clients == "both" then return true end
+    if type(clients) ~= "table" then return false end
+    for _, token in ipairs(clients) do
+        if token == "retail" or token == "both" then return true end
+    end
+    return false
+end
+
+NS.CLIENT = (Compat.ClientKey() == "forever") and "forever" or "retail"
+
+--- This client's value out of a `{ retail = ..., forever = ... }` pair; nil if the pair lacks it.
+function NS.PerClient(pair) return pair and pair[NS.CLIENT] end
+
+--- The rows of `list` whose `clients` admits this client, in order (clients-§4).
+function NS.ForClientRows(list)
+    local out = {}
+    for _, row in ipairs(list) do
+        if Compat.ForClient(row.clients) then out[#out + 1] = row end
+    end
+    return out
 end
 
 -- ---------------------------------------------------------------------------

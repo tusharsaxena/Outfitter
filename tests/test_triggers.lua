@@ -59,6 +59,9 @@ end
 
 -- ── the catalog and the descriptors ───────────────────────────────────────────────────────────
 
+-- The zone rows are per client (defaults/Zones.lua, ruling D3): WoW Forever keeps four of the 33.
+local FOREVER = dofile("tests/_kit/mock_client.lua").current() == "forever"
+
 test("triggers: CATEGORY_ORDER, ids unique SCREAMING_SNAKE, categories and real classFiles", function()
     local C = NS.TriggerCatalog
     assertEqual(table.concat(C.CATEGORY_ORDER, ","), "GENERAL,TRADE,PVP,QUEST,ENTERTAIN,CLASS")
@@ -74,10 +77,10 @@ test("triggers: CATEGORY_ORDER, ids unique SCREAMING_SNAKE, categories and real 
         assertTrue(type(row.desc) == "string" and row.desc ~= "", row.id .. " has a description")
         assertTrue((row.family ~= nil) ~= (BESPOKE[row.id] == true), row.id .. ": a family XOR a bespoke condition")
     end
-    -- 40 static rows + 33 zone rows = the 73 static ports of design §6.8.
+    -- 40 static rows + 33 zone rows = the 73 static ports of design §6.8 (Forever: 40 + 4).
     assertEqual(#C.rows, 40)
     for _, z in ipairs(NS.Zones.rows) do assertNil(seen[z.id], z.id .. " is also a catalog row") end
-    assertEqual(#NS.Triggers.All(), 73, "no spec rows without a class (the shared instance)")
+    assertEqual(#NS.Triggers.All(), FOREVER and 44 or 73, "no spec rows without a class (the shared instance)")
 end)
 
 test("triggers: every event is a pseudo key or UPPER_SNAKE, and every state one is produced", function()
@@ -170,6 +173,7 @@ test("triggers: every descriptor declares an icon, the legacy default where ther
                    PVP_BATTLEGROUND = 1376041, BG_AV = 1376041, INSTANCE_DIFFICULTY = 132132, GATHER_MINING = 134708 }
     for id, icon in pairs(want) do assertEqual(NS.Triggers.Get(id).icon, icon, id) end
     -- red under: a zone row taking another row's icon (ZONE_ICONS read for every zone).
+    if FOREVER then assertNil(NS.Triggers.Get("BG_DEEPHAUL"), "a Retail-only zone row is absent") return end
     assertEqual(NS.Triggers.Get("BG_DEEPHAUL").icon, false, "no legacy icon: the outfit's own")
 end)
 
@@ -231,7 +235,11 @@ test("triggers: one zone trigger per zone row, family zone, spec toggles on, the
         for _, p in ipairs(d.params) do assertTrue(p.default, z.id .. "." .. p.key .. " defaults on") end
     end
     assertEqual(ns.Triggers.Get("BG_AV").name, "Battleground: Alterac Valley")
-    assertEqual(ns.Triggers.Get("ARENA_NAGRAND").name, "Arena: ARENA_NAGRAND", "no client name: the id")
+    if FOREVER then
+        assertNil(ns.Triggers.Get("ARENA_NAGRAND"), "no arena rows on Forever (ruling D3)")
+    else
+        assertEqual(ns.Triggers.Get("ARENA_NAGRAND").name, "Arena: ARENA_NAGRAND", "no client name: the id")
+    end
     assertEqual(ns.Triggers.Get("PVP_BATTLEGROUND").name, "Battleground")
 end)
 

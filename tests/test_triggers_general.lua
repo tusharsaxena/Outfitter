@@ -136,7 +136,9 @@ test("general: INSTANCE_DIFFICULTY equips in every id of an enabled group, and o
                 "smart: its own outfit comes off")
         end
     end
-    assertEqual(n, 16, "every id design §6.8.1 row 17 lists")
+    -- WoW Forever's four groups hold one id each (ruling D7: 0, 1, 148, 9).
+    local forever = dofile("tests/_kit/mock_client.lua").current() == "forever"
+    assertEqual(n, forever and 4 or 16, "every id design §6.8.1 row 17 lists")
 end)
 
 test("general: INSTANCE_DIFFICULTY matches the open world (0) and leaves an unreadable id alone", function()

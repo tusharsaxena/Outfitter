@@ -48,6 +48,30 @@ local function unequipComplete()
 end
 
 -- The three vehicle quests share their events (OutfitterScripting.lua:1376-1567).
+-- INSTANCE_DIFFICULTY's toggles: one per NS.TriggerData.DIFFICULTY_GROUPS key, in DIFFICULTY_ORDER,
+-- which is per client (ruling D7), so a group the client lacks has no toggle at all.
+local DIFFICULTY_LABELS = {
+    openWorld     = L["Equip in the open world"],
+    dungeonNormal = L["Equip in normal dungeons"],
+    dungeonHeroic = L["Equip in heroic dungeons"],
+    dungeonMythic = L["Equip in mythic dungeons"],
+    mythicPlus    = L["Equip in Mythic+ dungeons"],
+    raidFinder    = L["Equip in raid finder"],
+    raidNormal    = L["Equip in normal raids"],
+    raidHeroic    = L["Equip in heroic raids"],
+    raidMythic    = L["Equip in mythic raids"],
+    raid20        = L["Equip in 20 player raids"],
+    raid40        = L["Equip in 40 player raids"],
+    delve         = L["Equip in delves"],
+}
+local function difficultyParams()
+    local out = {}
+    for _, key in ipairs(NS.TriggerData.DIFFICULTY_ORDER) do
+        out[#out + 1] = { key = key, type = "bool", label = DIFFICULTY_LABELS[key], default = false }
+    end
+    return out
+end
+
 local VEHICLE_EVENTS = { "TOOLTIP_SHOW", "UPDATE_MOUSEOVER_UNIT", "TOOLTIP_HIDE", "UNIT_ENTERED_VEHICLE",
                          "UNIT_EXITED_VEHICLE" }
 local function vehicleEvents(extra)
@@ -81,20 +105,8 @@ C.rows = {
       name = L["Instance Difficulty"],
       desc = L["Equips the outfit in the open world or the instance difficulties you select"],
       events = { "PLAYER_ENTERING_WORLD", "GROUP_ROSTER_UPDATE", "PLAYER_DIFFICULTY_CHANGED", "BIND" },
-      -- One toggle per NS.TriggerData.DIFFICULTY_GROUPS key, in DIFFICULTY_ORDER.
-      params = {
-          { key = "openWorld",     type = "bool", label = L["Equip in the open world"],       default = false },
-          { key = "dungeonNormal", type = "bool", label = L["Equip in normal dungeons"],      default = false },
-          { key = "dungeonHeroic", type = "bool", label = L["Equip in heroic dungeons"],      default = false },
-          { key = "dungeonMythic", type = "bool", label = L["Equip in mythic dungeons"],      default = false },
-          { key = "mythicPlus",    type = "bool", label = L["Equip in Mythic+ dungeons"],     default = false },
-          { key = "raidFinder",    type = "bool", label = L["Equip in raid finder"],          default = false },
-          { key = "raidNormal",    type = "bool", label = L["Equip in normal raids"],         default = false },
-          { key = "raidHeroic",    type = "bool", label = L["Equip in heroic raids"],         default = false },
-          { key = "raidMythic",    type = "bool", label = L["Equip in mythic raids"],         default = false },
-          { key = "raid40",        type = "bool", label = L["Equip in 40 player raids"],      default = false },
-          { key = "delve",         type = "bool", label = L["Equip in delves"],               default = false },
-      } },
+      -- One toggle per NS.TriggerData.DIFFICULTY_GROUPS key, in DIFFICULTY_ORDER (per client).
+      params = difficultyParams() },
     { id = "HAS_BUFF", category = "GENERAL", icon = 135826,
       name = L["Has Buff"],
       desc = L["Equips the outfit when you have one of the listed buffs"],

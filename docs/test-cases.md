@@ -148,15 +148,16 @@ Total.
 - bus: a stand-up is refused while the latch says the addon is down
 - bus: NS.SendBus before NS.addon exists is a silent no-op
 
-### test_skinsetup.lua (21)
+### test_skinsetup.lua (22)
 
 - skin seam: the owner is the folder name, and NS.Skin is its facade
 - skin seam: the owner is registered at file load, before the profile store exists
-- skin seam: the read answers Ka0s Default before the profile store exists
+- skin seam: the read answers the client's default skin before the profile store exists
 - skin seam: Core's window edge is handed the owner
 - skin seam: the dropdown, the context menu and the test strip are handed the owner
 - skin seam: the test strip's End test stops test mode, and a caller's option wins
 - skin seam: login applies the stored skin before anything is built
+- skin seam: a new profile defaults to the client's default skin (skinning-§2)
 - skin seam: a profile switch applies the profile's skin
 - skin seam: the owner tokens are exactly design §7.1's, namespaced of. and registered
 - skin seam: under Ka0s Default each owner token is the old addon's pixel
@@ -454,13 +455,14 @@ Total.
 - mock gear: a case installs a fake and leaves it in place
 - mock gear: the next case sees the original again (restored when the last case ended)
 
-### test_slots.lua (15)
+### test_slots.lua (16)
 
 - slots: NS.ItemData is published by defaults/Items.lua
-- slots: SLOT_NAMES is the legacy durability-first order, all 18
+- slots: SLOT_NAMES is the legacy durability-first order, all 18 (19 with Forever's ranged slot)
 - slots: SLOT_ORDER is SLOT_NAMES' reverse index, and the legacy one
 - slots: every slot has exactly one label source, a GlobalString key or an L string
 - slots: INVTYPE_TO_SLOT is the legacy inventory-type map, as { slot, meta }
+- slots: the slot table is picked per client: Forever adds the ranged slot, Retail's is unchanged
 - slots: every INVTYPE_TO_SLOT target is one of the 18 slots
 - slots: the alternate-slot tables are the legacy ones
 - slots: SLOT_SWAP pairs the two rings, the two trinkets and the two hands
@@ -472,7 +474,7 @@ Total.
 - slots: CORRECTIONS are the three legacy item-class overrides
 - slots: the dropped tables stay dropped (design §5.1, INV §18)
 
-### test_zones.lua (37)
+### test_zones.lua (38)
 
 - zones: NS.Zones is published with its rows and the brawl list
 - zones: every row has a unique SCREAMING_SNAKE id and a known kind
@@ -488,6 +490,7 @@ Total.
 - zones: one battleground never sets another's outfit
 - zones: a brawl map sets the generic battleground and nothing specific
 - zones: an arena map sets both generics and its own row
+- zones: the rows are picked per client: Forever keeps the generic and the three vanilla battlegrounds
 - zones: the regeneration header is in place
 - zones: no legacy lockstep table is kept by hand
 - gen-zones: the CSV reader keeps a quoted field's commas, quotes and newlines in one field
@@ -1795,7 +1798,7 @@ Total.
 | test_vendor_sync.lua | 3 |
 | test_secrets.lua | 42 |
 | test_bus.lua | 12 |
-| test_skinsetup.lua | 21 |
+| test_skinsetup.lua | 22 |
 | test_surface_parity.lua | 29 |
 | test_perf_harness.lua | 19 |
 | test_schema.lua | 25 |
@@ -1809,8 +1812,8 @@ Total.
 | test_file_budget.lua | 2 |
 | test_removed_apis.lua | 2 |
 | test_mock_gear.lua | 27 |
-| test_slots.lua | 15 |
-| test_zones.lua | 37 |
+| test_slots.lua | 16 |
+| test_zones.lua | 38 |
 | test_itemlink.lua | 42 |
 | test_item_match.lua | 20 |
 | test_inventory.lua | 24 |
@@ -1866,4 +1869,4 @@ Total.
 | test_lizard_sighted.lua | 8 |
 | test_prose.lua | 15 |
 | Skipped | 1 |
-| **Total** | **1540** |
+| **Total** | **1543** |

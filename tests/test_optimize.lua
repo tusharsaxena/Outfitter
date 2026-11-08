@@ -556,6 +556,8 @@ local ALL_SLOTS = {
     "MainHandSlot", "SecondaryHandSlot", "BackSlot", "NeckSlot", "ShirtSlot", "TabardSlot", "Finger0Slot",
     "Finger1Slot", "Trinket0Slot", "Trinket1Slot",
 }
+-- WoW Forever adds the ranged slot (defaults/Items.lua, ruling D2).
+if dofile("tests/_kit/mock_client.lua").current() == "forever" then ALL_SLOTS[#ALL_SLOTS + 1] = "RangedSlot" end
 
 local function rebuildScene()
     local NS = unitLoad().NS

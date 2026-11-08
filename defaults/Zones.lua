@@ -16,52 +16,67 @@ local _, NS = ...
 -- A generic row matches by instance type, so a map Blizzard ships tomorrow still sets it. A specific
 -- row has no name: Triggers.Finalize names it GetRealZoneText(mapIDs[1]), the client's own localized
 -- name for that map.
+--
+-- PER CLIENT (clients-§4, §5; owner ruling D3). A row with `clients = { "retail" }` is Retail's alone:
+-- Z.ALL keeps every row for the docs and the tests, and Z.rows, which every reader walks, holds only
+-- the running client's, picked once at load. WoW Forever has the generic battleground and the three
+-- vanilla battlegrounds (AV, WSG, AB); arenas, the later battlegrounds and the brawls are absent.
 
 local L = NS.L
+local RETAIL = { "retail" }
 
 NS.Zones = NS.Zones or {}                            -- architecture-§3 idempotent
 local Z = NS.Zones
 
 Z.rows = {
     { id = "PVP_BATTLEGROUND", kind = "generic", instanceTypes = { pvp = true, arena = true }, name = L["Battleground"] },
-    { id = "PVP_ARENA",        kind = "generic", instanceTypes = { arena = true },             name = L["Arena"] },
+    { id = "PVP_ARENA",        kind = "generic", instanceTypes = { arena = true },             name = L["Arena"],
+      clients = RETAIL },
 
     -- Battlegrounds
+    -- On WoW Forever the three below are matched by their Classic ids (30, 529, 489). PROBE P17
     { id = "BG_AV",          kind = "bg", mapIDs = { 30, 2197 } },             -- Alterac Valley, Korrak's Revenge
     { id = "BG_AB",          kind = "bg", mapIDs = { 529, 1681, 2107, 2177 } }, -- Classic, Winter, current, Comp Stomp
     { id = "BG_WSG",         kind = "bg", mapIDs = { 489, 2106 } },            -- Classic, current
-    { id = "BG_EOTS",        kind = "bg", mapIDs = { 566, 968 } },             -- Eye of the Storm, Rated
-    { id = "BG_SOTA",        kind = "bg", mapIDs = { 607 } },                  -- Strand of the Ancients
-    { id = "BG_IOC",         kind = "bg", mapIDs = { 628 } },                  -- Isle of Conquest
-    { id = "BG_TWINPEAKS",   kind = "bg", mapIDs = { 726 } },                  -- Twin Peaks
-    { id = "BG_GILNEAS",     kind = "bg", mapIDs = { 761 } },                  -- The Battle for Gilneas
-    { id = "BG_WINTERGRASP", kind = "bg", mapIDs = { 2118 } },                 -- Battle for Wintergrasp (epic)
-    { id = "BG_SILVERSHARD", kind = "bg", mapIDs = { 727 } },                  -- Silvershard Mines
-    { id = "BG_KOTMOGU",     kind = "bg", mapIDs = { 998 } },                  -- Temple of Kotmogu
-    { id = "BG_DEEPWIND",    kind = "bg", mapIDs = { 1105, 2245 } },           -- Deepwind Gorge (Legacy), current
-    { id = "BG_SEETHING",    kind = "bg", mapIDs = { 1803 } },                 -- Seething Shore
-    { id = "BG_DEEPHAUL",    kind = "bg", mapIDs = { 2656 } },                 -- Deephaul Ravine
-    { id = "BG_ASHRAN",      kind = "bg", mapIDs = { 1191 } },                 -- Ashran
+    { id = "BG_EOTS",        kind = "bg", mapIDs = { 566, 968 }, clients = RETAIL },             -- Eye of the Storm, Rated
+    { id = "BG_SOTA",        kind = "bg", mapIDs = { 607 }, clients = RETAIL },                  -- Strand of the Ancients
+    { id = "BG_IOC",         kind = "bg", mapIDs = { 628 }, clients = RETAIL },                  -- Isle of Conquest
+    { id = "BG_TWINPEAKS",   kind = "bg", mapIDs = { 726 }, clients = RETAIL },                  -- Twin Peaks
+    { id = "BG_GILNEAS",     kind = "bg", mapIDs = { 761 }, clients = RETAIL },                  -- The Battle for Gilneas
+    { id = "BG_WINTERGRASP", kind = "bg", mapIDs = { 2118 }, clients = RETAIL },                 -- Battle for Wintergrasp (epic)
+    { id = "BG_SILVERSHARD", kind = "bg", mapIDs = { 727 }, clients = RETAIL },                  -- Silvershard Mines
+    { id = "BG_KOTMOGU",     kind = "bg", mapIDs = { 998 }, clients = RETAIL },                  -- Temple of Kotmogu
+    { id = "BG_DEEPWIND",    kind = "bg", mapIDs = { 1105, 2245 }, clients = RETAIL },           -- Deepwind Gorge (Legacy), current
+    { id = "BG_SEETHING",    kind = "bg", mapIDs = { 1803 }, clients = RETAIL },                 -- Seething Shore
+    { id = "BG_DEEPHAUL",    kind = "bg", mapIDs = { 2656 }, clients = RETAIL },                 -- Deephaul Ravine
+    { id = "BG_ASHRAN",      kind = "bg", mapIDs = { 1191 }, clients = RETAIL },                 -- Ashran
 
     -- Arenas: each also sets both generics
-    { id = "ARENA_LORDAERON",     kind = "arena", mapIDs = { 572 } },          -- Ruins of Lordaeron
-    { id = "ARENA_SEWERS",        kind = "arena", mapIDs = { 617 } },          -- Dalaran Sewers
-    { id = "ARENA_BLADESEDGE",    kind = "arena", mapIDs = { 562, 1672 } },    -- Blade's Edge, old and current
-    { id = "ARENA_NAGRAND",       kind = "arena", mapIDs = { 559, 1505 } },    -- Nagrand, old and current
-    { id = "ARENA_TOLVIRON",      kind = "arena", mapIDs = { 980 } },          -- Tol'Viron
-    { id = "ARENA_TIGERSPEAK",    kind = "arena", mapIDs = { 1134 } },         -- The Tiger's Peak
-    { id = "ARENA_BLACKROOK",     kind = "arena", mapIDs = { 1504 } },         -- Black Rook Hold
-    { id = "ARENA_ASHAMANE",      kind = "arena", mapIDs = { 1552 } },         -- Ashamane's Fall
-    { id = "ARENA_HOOKPOINT",     kind = "arena", mapIDs = { 1825 } },         -- Hook Point
-    { id = "ARENA_MUGAMBALA",     kind = "arena", mapIDs = { 1911 } },         -- Mugambala
-    { id = "ARENA_ROBODROME",     kind = "arena", mapIDs = { 2167 } },         -- The Robodrome
-    { id = "ARENA_EMPYREAN",      kind = "arena", mapIDs = { 2373 } },         -- Empyrean Domain
-    { id = "ARENA_MALDRAXXUS",    kind = "arena", mapIDs = { 2509 } },         -- Maldraxxus Coliseum
-    { id = "ARENA_ENIGMA",        kind = "arena", mapIDs = { 2547 } },         -- Enigma Crucible
-    { id = "ARENA_NOKHUDON",      kind = "arena", mapIDs = { 2563 } },         -- Nokhudon Proving Grounds
-    { id = "ARENA_CAGEOFCARNAGE", kind = "arena", mapIDs = { 2759 } },         -- Cage of Carnage
+    { id = "ARENA_LORDAERON",     kind = "arena", mapIDs = { 572 }, clients = RETAIL },          -- Ruins of Lordaeron
+    { id = "ARENA_SEWERS",        kind = "arena", mapIDs = { 617 }, clients = RETAIL },          -- Dalaran Sewers
+    { id = "ARENA_BLADESEDGE",    kind = "arena", mapIDs = { 562, 1672 }, clients = RETAIL },    -- Blade's Edge, old and current
+    { id = "ARENA_NAGRAND",       kind = "arena", mapIDs = { 559, 1505 }, clients = RETAIL },    -- Nagrand, old and current
+    { id = "ARENA_TOLVIRON",      kind = "arena", mapIDs = { 980 }, clients = RETAIL },          -- Tol'Viron
+    { id = "ARENA_TIGERSPEAK",    kind = "arena", mapIDs = { 1134 }, clients = RETAIL },         -- The Tiger's Peak
+    { id = "ARENA_BLACKROOK",     kind = "arena", mapIDs = { 1504 }, clients = RETAIL },         -- Black Rook Hold
+    { id = "ARENA_ASHAMANE",      kind = "arena", mapIDs = { 1552 }, clients = RETAIL },         -- Ashamane's Fall
+    { id = "ARENA_HOOKPOINT",     kind = "arena", mapIDs = { 1825 }, clients = RETAIL },         -- Hook Point
+    { id = "ARENA_MUGAMBALA",     kind = "arena", mapIDs = { 1911 }, clients = RETAIL },         -- Mugambala
+    { id = "ARENA_ROBODROME",     kind = "arena", mapIDs = { 2167 }, clients = RETAIL },         -- The Robodrome
+    { id = "ARENA_EMPYREAN",      kind = "arena", mapIDs = { 2373 }, clients = RETAIL },         -- Empyrean Domain
+    { id = "ARENA_MALDRAXXUS",    kind = "arena", mapIDs = { 2509 }, clients = RETAIL },         -- Maldraxxus Coliseum
+    { id = "ARENA_ENIGMA",        kind = "arena", mapIDs = { 2547 }, clients = RETAIL },         -- Enigma Crucible
+    { id = "ARENA_NOKHUDON",      kind = "arena", mapIDs = { 2563 }, clients = RETAIL },         -- Nokhudon Proving Grounds
+    { id = "ARENA_CAGEOFCARNAGE", kind = "arena", mapIDs = { 2759 }, clients = RETAIL },         -- Cage of Carnage
 }
 
 -- Brawls (InstanceType 3) set the generic battleground only: no outfit is made for a rotating map.
 -- Shado-Pan Showdown, Southshore vs. Tarren Mill, Cooking: Impossible, Slayer's Rise.
-Z.BRAWL_MAP_IDS = { 1170, 1280, 1691, 2799 }
+-- Retail's alone: WoW Forever has no brawls.
+Z.ALL_BRAWL_MAP_IDS = { 1170, 1280, 1691, 2799 }
+Z.BRAWL_MAP_IDS = NS.PerClient({ retail = Z.ALL_BRAWL_MAP_IDS, forever = {} })
+
+-- The running client's rows, picked once (core/Compat.lua loads in the # Core block, before this file).
+-- Z.ALL and Z.ALL_BRAWL_MAP_IDS keep the whole table for tools/gen-zones.lua and the tests only.
+Z.ALL = Z.rows
+Z.rows = NS.ForClientRows(Z.ALL)

@@ -219,7 +219,9 @@ test("class: Prowl and Shadowmeld feed the druid's Prowl outfit", function()
     settle(s)
     assertEqual(log(s), "wear " .. id .. ",remove " .. id)
     clear(s)
-    s.W:setAuras("player", "HELPFUL", { aura(58984) })
+    -- Shadowmeld's spell is per client (probe P4): 20580 on WoW Forever, 58984 on Retail.
+    local forever = dofile("tests/_kit/mock_client.lua").current() == "forever"
+    s.W:setAuras("player", "HELPFUL", { aura(forever and 20580 or 58984) })
     settle(s)
     assertEqual(log(s), "wear " .. id, "Shadowmeld")
 end)

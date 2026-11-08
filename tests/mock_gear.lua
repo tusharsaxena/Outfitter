@@ -55,6 +55,8 @@ local SLOT_IDS = {
     Trinket0Slot = 13, Trinket1Slot = 14, BackSlot = 15, MainHandSlot = 16, SecondaryHandSlot = 17,
     TabardSlot = 19,
 }
+-- WoW Forever also has the ranged slot (inventory id 18, probe P5); Retail's client raises on the name.
+if dofile("tests/_kit/mock_client.lua").current() == "forever" then SLOT_IDS.RangedSlot = 18 end
 local SLOT_NAMES = {}
 for name, id in pairs(SLOT_IDS) do SLOT_NAMES[id] = name end
 local EQUIP_IDS = {}

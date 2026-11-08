@@ -17,6 +17,10 @@ local test, assertEqual, assertTrue, assertFalse = T.test, T.assertEqual, T.asse
 local assertNil = T.assertNil
 
 local function Z() return T.NS.Zones end
+-- The whole table, every client's rows and the brawls (defaults/Zones.lua Z.ALL): what the TABLE half
+-- and the regeneration tool pin. Z().rows is the running client's (clients-§5), pinned per client below.
+local function All() return { rows = Z().ALL, BRAWL_MAP_IDS = Z().ALL_BRAWL_MAP_IDS } end
+local FOREVER = dofile("tests/_kit/mock_client.lua").current() == "forever"
 
 -- The legacy special id of each row, from the design §6.8.2 table (rows 37-69).
 local OLD_TO_NEW = {
@@ -53,7 +57,7 @@ local function deriveByMapID(zones)
 end
 
 local function rowById(id)
-    for _, row in ipairs(Z().rows) do if row.id == id then return row end end
+    for _, row in ipairs(Z().ALL) do if row.id == id then return row end end
     return nil
 end
 
@@ -69,15 +73,15 @@ local function genZones() return dofile(T.root .. "/tools/gen-zones.lua") end
 -- ── the table ────────────────────────────────────────────────────────────────────────────────
 
 test("zones: NS.Zones is published with its rows and the brawl list", function()
-    assertEqual(type(Z()), "table", "NS.Zones")
-    assertEqual(type(Z().rows), "table", "NS.Zones.rows")
-    assertEqual(type(Z().BRAWL_MAP_IDS), "table", "NS.Zones.BRAWL_MAP_IDS")
-    assertEqual(#Z().rows, 33, "the 33 zone ids (design §6.10)")
+    assertEqual(type(All()), "table", "NS.Zones")
+    assertEqual(type(All().rows), "table", "NS.Zones.rows")
+    assertEqual(type(All().BRAWL_MAP_IDS), "table", "NS.Zones.BRAWL_MAP_IDS")
+    assertEqual(#All().rows, 33, "the 33 zone ids (design §6.10)")
 end)
 
 test("zones: every row has a unique SCREAMING_SNAKE id and a known kind", function()
     local seen = {}
-    for i, row in ipairs(Z().rows) do
+    for i, row in ipairs(All().rows) do
         assertTrue(type(row.id) == "string" and row.id:match("^[A-Z][A-Z0-9_]*$") ~= nil, "row " .. i .. " id")
         -- red under: a second row with `id = "BG_AB"` in defaults/Zones.lua.
         assertFalse(seen[row.id] ~= nil, row.id .. " appears twice")
@@ -96,15 +100,15 @@ test("zones: every map id is a positive integer used once, across the rows and t
         owner[mapID] = who
         n = n + 1
     end
-    for _, row in ipairs(Z().rows) do
+    for _, row in ipairs(All().rows) do
         for _, mapID in ipairs(row.mapIDs or {}) do claim(mapID, row.id) end
     end
-    for _, mapID in ipairs(Z().BRAWL_MAP_IDS) do claim(mapID, "a brawl") end
+    for _, mapID in ipairs(All().BRAWL_MAP_IDS) do claim(mapID, "a brawl") end
     assertEqual(n, 44, "the full battleground, arena and brawl set")
 end)
 
 test("zones: a generic row matches by instance type and lists no map; a specific row the reverse", function()
-    for _, row in ipairs(Z().rows) do
+    for _, row in ipairs(All().rows) do
         if row.kind == "generic" then
             assertEqual(type(row.instanceTypes), "table", row.id .. " instanceTypes")
             assertNil(row.mapIDs, row.id .. " lists maps")
@@ -125,7 +129,7 @@ test("zones: a generic row matches by instance type and lists no map; a specific
 end)
 
 test("zones: every row has one name source", function()
-    for _, row in ipairs(Z().rows) do
+    for _, row in ipairs(All().rows) do
         if row.kind == "generic" then
             -- The generics have no map to name them; the L key is theirs.
             assertTrue(type(row.name) == "string" and row.name ~= "", row.id .. " name")
@@ -139,13 +143,13 @@ end)
 
 test("zones: the rows are the legacy cZoneSpecialIDs, in its wear order", function()
     local want = T.legacy.zones.zoneSpecialIDs
-    local rows = Z().rows
+    local rows = All().rows
     assertEqual(#rows, #want, "the zone id count")
     for i, old in ipairs(want) do assertEqual(rows[i].id, OLD_TO_NEW[old], "row " .. i .. " (" .. old .. ")") end
 end)
 
 test("zones: wear order puts both generics first, Battleground under Arena", function()
-    local rows = Z().rows
+    local rows = All().rows
     assertEqual(rows[1].id, "PVP_BATTLEGROUND", "the first row")
     assertEqual(rows[2].id, "PVP_ARENA", "the second row")
     -- red under: a generic row moved after a specific one (it would then be worn over the
@@ -154,7 +158,7 @@ test("zones: wear order puts both generics first, Battleground under Arena", fun
 end)
 
 test("zones: the derived map table equals the legacy cInstanceMapIDZoneIDs", function()
-    local got = deriveByMapID(Z())
+    local got = deriveByMapID(All())
     local want, n = T.legacy.zones.instanceMapIDZoneIDs, 0
     for mapID, oldIds in pairs(want) do
         n = n + 1
@@ -171,8 +175,8 @@ end)
 
 test("zones: every special id a map sets is a row the engine iterates", function()
     local declared = {}
-    for _, row in ipairs(Z().rows) do declared[row.id] = true end
-    for mapID, ids in pairs(deriveByMapID(Z())) do
+    for _, row in ipairs(All().rows) do declared[row.id] = true end
+    for mapID, ids in pairs(deriveByMapID(All())) do
         for _, id in ipairs(ids) do assertTrue(declared[id], id .. " (map " .. mapID .. ") is not a row") end
     end
 end)
@@ -189,28 +193,47 @@ test("zones: the re-issued maps sit beside their originals", function()
 end)
 
 test("zones: one battleground never sets another's outfit", function()
-    local ids = deriveByMapID(Z())[30]                         -- Alterac Valley
+    local ids = deriveByMapID(All())[30]                         -- Alterac Valley
     assertEqual(table.concat(ids, ","), "PVP_BATTLEGROUND,BG_AV", "Alterac Valley")
 end)
 
 test("zones: a brawl map sets the generic battleground and nothing specific", function()
     -- red under: 1691 (Cooking: Impossible) moved out of BRAWL_MAP_IDS into a bg row's mapIDs (it
     -- would then set that row's outfit; listed in both places, the one-use case above fails instead).
-    assertEqual(table.concat(Z().BRAWL_MAP_IDS, ","), "1170,1280,1691,2799", "the brawls")
-    local by = deriveByMapID(Z())
-    for _, mapID in ipairs(Z().BRAWL_MAP_IDS) do
+    assertEqual(table.concat(All().BRAWL_MAP_IDS, ","), "1170,1280,1691,2799", "the brawls")
+    local by = deriveByMapID(All())
+    for _, mapID in ipairs(All().BRAWL_MAP_IDS) do
         assertEqual(table.concat(by[mapID], ","), "PVP_BATTLEGROUND", "brawl " .. mapID)
     end
 end)
 
 test("zones: an arena map sets both generics and its own row", function()
-    for _, row in ipairs(Z().rows) do
+    for _, row in ipairs(All().rows) do
         if row.kind == "arena" then
             for _, mapID in ipairs(row.mapIDs) do
-                assertEqual(table.concat(deriveByMapID(Z())[mapID], ","), "PVP_BATTLEGROUND,PVP_ARENA," .. row.id,
+                assertEqual(table.concat(deriveByMapID(All())[mapID], ","), "PVP_BATTLEGROUND,PVP_ARENA," .. row.id,
                     row.id .. " map " .. mapID)
             end
         end
+    end
+end)
+
+test("zones: the rows are picked per client: Forever keeps the generic and the three vanilla battlegrounds", function()
+    local ids = {}
+    for i, row in ipairs(Z().rows) do ids[i] = row.id end
+    if FOREVER then
+        -- red under: an arena, a later battleground or PVP_ARENA left on Forever (ruling D3).
+        assertEqual(table.concat(ids, ","), "PVP_BATTLEGROUND,BG_AV,BG_AB,BG_WSG", "Forever's rows")
+        assertEqual(#Z().BRAWL_MAP_IDS, 0, "no brawls on Forever")
+    else
+        -- red under: a Retail row dropped by a stray `clients` declaration.
+        assertEqual(#ids, 33, "Retail keeps every row")
+        assertEqual(table.concat(Z().BRAWL_MAP_IDS, ","), "1170,1280,1691,2799", "Retail's brawls")
+    end
+    for _, row in ipairs(Z().ALL) do
+        local kept = false
+        for _, id in ipairs(ids) do kept = kept or id == row.id end
+        assertEqual(kept, T.NS.Compat.ForClient(row.clients), row.id .. " follows its clients")
     end
 end)
 
@@ -260,19 +283,19 @@ test("gen-zones: a clean export diffs clean", function()
     local G = genZones()
     -- Every map the table knows, as an export would list it: rows by kind, brawls as battlegrounds.
     local lines = { "ID,MapName_lang,InstanceType" }
-    for _, row in ipairs(Z().rows) do
+    for _, row in ipairs(All().rows) do
         for _, mapID in ipairs(row.mapIDs or {}) do
             lines[#lines + 1] = ("%d,%s,%d"):format(mapID, row.id, row.kind == "arena" and 4 or 3)
         end
     end
-    for _, mapID in ipairs(Z().BRAWL_MAP_IDS) do lines[#lines + 1] = mapID .. ",brawl,3" end
-    local d = G.diff(Z(), G.parseCSV(table.concat(lines, "\n")))
+    for _, mapID in ipairs(All().BRAWL_MAP_IDS) do lines[#lines + 1] = mapID .. ",brawl,3" end
+    local d = G.diff(All(), G.parseCSV(table.concat(lines, "\n")))
     assertEqual(#d.added + #d.removed + #d.wrongKind, 0, G.report(d))
 end)
 
 test("gen-zones: the diff names a new map, a vanished one and a kind that moved", function()
     local G = genZones()
-    local d = G.diff(Z(), G.parseCSV(CSV))
+    local d = G.diff(All(), G.parseCSV(CSV))
     -- red under: a diff that skips InstanceType 3 rows (9001 would not be reported).
     assertEqual(#d.added, 1, "added")
     assertEqual(d.added[1].id, 9001, "the new map")
@@ -280,7 +303,7 @@ test("gen-zones: the diff names a new map, a vanished one and a kind that moved"
     -- Every known map but 30 and 572 is absent from the three-line export.
     assertEqual(#d.removed, 42, "removed")
     assertEqual(#d.wrongKind, 0, "kind")
-    local moved = G.diff(Z(), G.parseCSV("ID,MapName_lang,InstanceType\n30,AV,4\n"))
+    local moved = G.diff(All(), G.parseCSV("ID,MapName_lang,InstanceType\n30,AV,4\n"))
     assertEqual(#moved.wrongKind, 1, "AV exported as an arena")
     assertEqual(moved.wrongKind[1].id, 30, "the moved map")
     assertTrue(G.report(d):find("9001", 1, true) ~= nil, "the report names the new map")
@@ -288,8 +311,8 @@ end)
 
 test("gen-zones: it loads defaults/Zones.lua without the client", function()
     local zones = genZones().loadZones(T.root .. "/defaults/Zones.lua")
-    assertEqual(#zones.rows, #Z().rows, "the rows it read")
-    assertEqual(#zones.BRAWL_MAP_IDS, #Z().BRAWL_MAP_IDS, "the brawls it read")
+    assertEqual(#zones.rows, #All().rows, "the rows it read")
+    assertEqual(#zones.BRAWL_MAP_IDS, #All().BRAWL_MAP_IDS, "the brawls it read")
 end)
 
 -- ── defaults/TriggerData.lua ─────────────────────────────────────────────────────────────────
@@ -329,8 +352,10 @@ end)
 test("trigger data: the aura and form tables are design §6.10's, each naming a known state", function()
     assertEqual(mapList(D().AURA_ICON_STATE), "132805=DINING,134062=DINING", "AURA_ICON_STATE")
     -- red under: Evocation's 12051 kept (no consumer; design §6.8 "Pseudo-events that disappear").
-    assertEqual(mapList(D().AURA_SPELL_STATE), "2645=GHOST_WOLF,5215=STEALTH,5384=FEIGN_DEATH,58984=STEALTH",
-        "AURA_SPELL_STATE")
+    -- Shadowmeld is 20580 on WoW Forever (probe P4), 58984 on Retail.
+    -- red under: Retail's 58984 kept on Forever (a night elf's Shadowmeld would never feed STEALTH).
+    assertEqual(mapList(D().AURA_SPELL_STATE), FOREVER and "20580=STEALTH,2645=GHOST_WOLF,5215=STEALTH,5384=FEIGN_DEATH"
+        or "2645=GHOST_WOLF,5215=STEALTH,5384=FEIGN_DEATH,58984=STEALTH", "AURA_SPELL_STATE")
     assertEqual(mapList(D().FORM_SPELL_STATE),
         "1784=STEALTH,24858=FORM_MOONKIN,33891=FORM_TREE,5487=FORM_BEAR,768=FORM_CAT,783=FORM_TRAVEL",
         "FORM_SPELL_STATE")
@@ -366,7 +391,9 @@ test("trigger data: the vehicle quests' NPCs are the legacy ids", function()
 end)
 
 test("trigger data: DIFFICULTY_GROUPS are design §6.8.1 row 17's, no id in two groups", function()
-    local want = {
+    -- WoW Forever's four (ruling D7): the open world, normal dungeons, the 20- and 40-player raids.
+    -- red under: a Retail-only group (heroic, mythic, LFR, delve) left on Forever.
+    local want = FOREVER and { openWorld = "0", dungeonNormal = "1", raid20 = "148", raid40 = "9" } or {
         openWorld = "0", dungeonNormal = "1", dungeonHeroic = "2", dungeonMythic = "23", mythicPlus = "8",
         raidFinder = "17,7", raidNormal = "14,3,4", raidHeroic = "15,5,6", raidMythic = "16", raid40 = "9",
         delve = "208",
@@ -381,7 +408,10 @@ test("trigger data: DIFFICULTY_GROUPS are design §6.8.1 row 17's, no id in two 
             owner[id] = key
         end
     end
-    assertEqual(n, 11, "the group count")
+    assertEqual(n, FOREVER and 4 or 11, "the group count")
+    assertEqual(table.concat(D().DIFFICULTY_ORDER, ","), FOREVER and "openWorld,dungeonNormal,raid20,raid40"
+        or "openWorld,dungeonNormal,dungeonHeroic,dungeonMythic,mythicPlus,raidFinder,raidNormal,raidHeroic,"
+        .. "raidMythic,raid40,delve", "DIFFICULTY_ORDER")
     -- DIFFICULTY_ORDER lists every group once.
     local seen = {}
     for _, key in ipairs(D().DIFFICULTY_ORDER) do
@@ -467,14 +497,17 @@ test("zone engine: ORDER and BY_MAP_ID are derived from the rows at load", funct
     local extra = 0
     for mapID in pairs(Z().BY_MAP_ID) do if not want[mapID] then extra = extra + 1 end end
     assertEqual(extra, 0, "maps the rows do not list")
-    assertEqual(n, 44)
+    -- Forever's eight are AV's two, AB's four and WSG's two (ruling D3).
+    assertEqual(n, FOREVER and 8 or 44)
 end)
 
 test("zone engine: an unknown battleground gives the generic only; an unknown arena both generics", function()
     local S = T.NS.States
     -- red under: generics only from BY_MAP_ID (a map Blizzard adds tomorrow would set nothing).
     assertEqual(idList(S.CurrentIds("pvp", 99999)), "PVP_BATTLEGROUND", "an unknown battleground")
-    assertEqual(idList(S.CurrentIds("arena", 99999)), "PVP_BATTLEGROUND,PVP_ARENA", "an unknown arena")
+    -- Forever has no PVP_ARENA row (ruling D3), so an arena-typed instance sets the battleground only.
+    assertEqual(idList(S.CurrentIds("arena", 99999)), FOREVER and "PVP_BATTLEGROUND" or "PVP_BATTLEGROUND,PVP_ARENA",
+        "an unknown arena")
     assertEqual(idList(S.CurrentIds("none", nil)), "", "the open world")
     assertEqual(idList(S.CurrentIds("party", 1)), "", "a dungeon")
     assertEqual(idList(S.CurrentIds(nil, nil)), "", "nothing readable")
@@ -533,13 +566,20 @@ end)
 test("zone engine: the states go out in wear order, generic first, inside one Batch", function()
     local s = zoneScene()
     local b = s.equip.__count("Batch")
-    enter(s, { type = "arena", instanceID = 572 })
+    -- Forever has no arenas (ruling D3): Alterac Valley's two ids stand in for the three.
+    local ids = FOREVER and { "PVP_BATTLEGROUND", "BG_AV" } or { "PVP_BATTLEGROUND", "PVP_ARENA", "ARENA_LORDAERON" }
+    local function heard(on)
+        local out = {}
+        for i, id in ipairs(ids) do out[i] = id .. "=" .. tostring(on) end
+        return table.concat(out, ",")
+    end
+    enter(s, FOREVER and { type = "pvp", instanceID = 30 } or { type = "arena", instanceID = 572 })
     assertEqual(s.equip.__count("Batch"), b + 1, "one bracket")
     -- red under: iterating the current ids with pairs (the specific outfit could go on under the generic).
-    assertEqual(table.concat(s.heard, ","), "PVP_BATTLEGROUND=true,PVP_ARENA=true,ARENA_LORDAERON=true")
+    assertEqual(table.concat(s.heard, ","), heard(true))
     for i = #s.heard, 1, -1 do s.heard[i] = nil end
     enter(s, nil)
-    assertEqual(table.concat(s.heard, ","), "PVP_BATTLEGROUND=false,PVP_ARENA=false,ARENA_LORDAERON=false")
+    assertEqual(table.concat(s.heard, ","), heard(false))
 end)
 
 test("zone engine: the zone events are debounced into one update 0.01 s out", function()
@@ -598,6 +638,22 @@ end)
 
 test("zone engine: ZoneInfo reports the instance, a missing map entry and the active zone ids", function()
     local s = zoneScene()
+    if FOREVER then
+        -- Forever has no arenas (ruling D3): Alterac Valley and an unknown battleground instead.
+        enter(s, { name = "Alterac Valley", type = "pvp", instanceID = 30 })
+        local lines = s.S.ZoneInfo()
+        assertEqual(lines[1], "Instance: Alterac Valley (type pvp, map ID 30)")
+        assertEqual(lines[2], "Zone outfits active: PVP_BATTLEGROUND, BG_AV")
+        assertEqual(#lines, 2)
+        enter(s, { name = "New Battleground", type = "pvp", instanceID = 99999 })
+        lines = s.S.ZoneInfo()
+        assertEqual(lines[2], "This map has no entry in the zone table")
+        assertEqual(lines[3], "Zone outfits active: PVP_BATTLEGROUND")
+        enter(s, nil)
+        lines = s.S.ZoneInfo()
+        assertEqual(lines[#lines], "No zone outfits apply here")
+        return
+    end
     enter(s, { name = "Ruins of Lordaeron", type = "arena", instanceID = 572 })
     local lines = s.S.ZoneInfo()
     assertEqual(lines[1], "Instance: Ruins of Lordaeron (type arena, map ID 572)")

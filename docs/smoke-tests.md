@@ -421,3 +421,17 @@ the set once the swap lands.
 | R3M3 (E12) | Open an outfit's gear menu | *Save in equipment manager* sits directly below *Rename...*; its submenu has *On* and *Off*, the outfit's state ticked. Pick the other one: the menu stays open, the change is the same as R3M2's click, and the tick moves once the save lands |
 | R3M4 (E12) | Attack a training dummy; in combat, click an EM icon, then pick On or Off in the menu | Refused with *Outfits can't be changed in combat.*; nothing is worn and the Equipment Manager is unchanged. A full Equipment Manager shows its popup before anything is worn |
 | R3M5 (E12) | `/or test`: hover sample 4's EM icon and another sample's; open a sample's gear menu, then *Save in equipment manager* | The tooltip gives the sample's drawn state and *Not available in test mode*. The submenu opens, and *On* and *Off* are grayed |
+
+## 14. WoW Forever: per-client data (OR-F2, 2026-11-08)
+
+On WoW Forever. Each row checks a value the build took from the inventory's best evidence where a
+probe is still open; the code site is marked `-- PROBE Pn`. Retail is unchanged by this step.
+
+| # | Do | See |
+|---|---|---|
+| F2-1 (D2) | Select an outfit with the character sheet open; equip a gun or bow, then save the outfit | A slot box sits on the ranged slot, clear of the off-hand's box; the outfit records the ranged item and wears it back |
+| F2-2 (D9, P14) | Rebuild an outfit by a stat; open the stat list | Haste, Versatility and Mastery are not offered. Spell damage, healing, attack power, mana per five, hit and defense are, each with the client's label; an item carrying one scores it above 0 |
+| F2-3 (D7, P17) | Make an outfit with *Instance Difficulty*, *Equip in normal dungeons* only; enter a vanilla dungeon | The toggles are open world, normal dungeons, 20 player raids and 40 player raids, nothing else. In the dungeon the outfit goes on (`/dump GetInstanceInfo()` third return is 1) |
+| F2-4 (D7, P18) | The same with *Equip in 20 player raids*, then *Equip in 40 player raids*; enter Zul'Gurub or AQ20, then Molten Core | The outfit goes on in each. Record `/dump GetInstanceInfo()`'s third return: 148 for the 20-player raid, 9 for the 40 |
+| F2-5 (D3, P17) | Open the trigger picker's PvP list; then queue Warsong Gulch, Arathi Basin and Alterac Valley with an outfit on each | The list holds Battleground and the three battlegrounds only, no arena. Each battleground wears its own outfit over the generic one; record `/dump select(8, GetInstanceInfo())` (489, 529, 30 expected) |
+| F2-6 (P4) | As a night elf druid, make an outfit on *Druid: Prowl*; cast Shadowmeld | The outfit goes on (Shadowmeld is 20580 on Forever and feeds the stealth state) |

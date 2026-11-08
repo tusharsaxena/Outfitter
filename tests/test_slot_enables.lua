@@ -20,6 +20,10 @@ local LEFT = { "HeadSlot", "NeckSlot", "ShoulderSlot", "BackSlot", "ChestSlot", 
 local RIGHT = { "HandsSlot", "WaistSlot", "LegsSlot", "FeetSlot", "Finger0Slot", "Finger1Slot", "Trinket0Slot",
                 "Trinket1Slot" }
 local BOTTOM = { "MainHandSlot", "SecondaryHandSlot" }
+-- WoW Forever adds the ranged slot to the bottom row (ruling D2); the slot count follows.
+local FOREVER = dofile("tests/_kit/mock_client.lua").current() == "forever"
+if FOREVER then BOTTOM[#BOTTOM + 1] = "RangedSlot" end
+local N_SLOTS = FOREVER and 19 or 18
 local function asSet(list)
     local out = {}
     for _, v in ipairs(list) do out[v] = true end
@@ -69,7 +73,7 @@ test("slot enables: one 14x14 checkbox per slot, anchored to Character<Slot> (ol
             assertEqual(p[4], 2, slot); assertEqual(p[5], 2, slot)
         end
     end
-    assertEqual(n, 18)
+    assertEqual(n, N_SLOTS)
     assertEqual(M.OutfitterRebornSlotEnables:GetParent(), M.OutfitterRebornSheetHolder)
 end)
 
@@ -175,7 +179,7 @@ test("slot enables: All and None are named for what they do", function()
     local n = 0
     for _ in pairs(NS.Outfits.Get(id).items) do n = n + 1 end
     -- red under: swap the two buttons' handlers (the old OutfitterEnableAll/None swap).
-    assertEqual(n, 18, "All did not enable every slot")
+    assertEqual(n, N_SLOTS, "All did not enable every slot")
     M.OutfitterRebornSlotsNone:__fire("OnClick", "LeftButton")
     assertEqual(next(NS.Outfits.Get(id).items), nil, "None did not clear every slot")
 end)
@@ -398,7 +402,7 @@ test("slot enables: each box carries an edge in the skin's accent", function()
     NS.Stack.Select(NS.Outfits.Create("Hat", { HeadSlot = { id = 0 } }))
     NS.Skin.Mark = mark
     -- red under: newBox without the edge (the 1 px near-black check.border alone, hard to see).
-    assertEqual(#marks, 4 * 18, "four accent sides per box")
+    assertEqual(#marks, 4 * N_SLOTS, "four accent sides per box")
     assertTrue(M.OutfitterRebornEnableHeadSlot.edge ~= nil, "the box keeps its edge")
 end)
 

@@ -82,12 +82,18 @@ end
 
 -- ── the built-in stats (B13) ──────────────────────────────────────────────────────────────────
 
+-- The stat set is per client (ruling D9): Haste, Versatility and Mastery are Retail's alone, and WoW
+-- Forever adds the six vanilla bonuses after CRI.
+local FOREVER = dofile("tests/_kit/mock_client.lua").current() == "forever"
+
 test("stats: the built-in category holds the nine stats, TOTAL_STATS and ITEM_LEVEL in order", function()
     -- red under: drop SPI from STAT_KEYS, or reorder the list
     local NS = T.load().NS
     local cat = category(NS, "Stat")
     assertTrue(cat ~= nil, "no built-in category")
-    assertEqual(statIDs(cat), "STA,STR,INT,AGI,SPI,HAS,VER,MAS,CRI,TOTAL_STATS,ITEM_LEVEL")
+    -- red under: HAS, VER or MAS left on Forever, or a vanilla stat on Retail.
+    assertEqual(statIDs(cat), FOREVER and "STA,STR,INT,AGI,SPI,CRI,SPD,HEA,ATK,MP5,HIT,DEF,TOTAL_STATS,ITEM_LEVEL"
+        or "STA,STR,INT,AGI,SPI,HAS,VER,MAS,CRI,TOTAL_STATS,ITEM_LEVEL")
     assertEqual(NS.Stats.Get("TOTAL_STATS").label, NS.L["Total stats"])
     assertEqual(NS.Stats.Get("ITEM_LEVEL").label, NS.L["Item level"])
     assertEqual(cat.label, NS.L["Base stats"])
@@ -98,6 +104,14 @@ test("stats: labels are the client's GlobalStrings, so a deDE client reads its o
     -- red under: hard-code an English label ("Versatility") for VER instead of _G[key]
     local NS = deInstance().NS
     assertEqual(NS.Stats.Get("STA").label, "Ausdauer")
+    if FOREVER then
+        assertNil(NS.Stats.Get("VER"), "no Versatility on Forever")
+        assertEqual(NS.Stats.Get("CRI").label, "Kritischer Trefferwert")
+        -- A vanilla stat is labeled by its own GlobalString too, or its id when the client has none
+        -- (the deDE mock carries no ITEM_MOD_SPELL_DAMAGE_DONE_SHORT).
+        assertEqual(NS.Stats.Get("SPD").label, "SPD")
+        return
+    end
     assertEqual(NS.Stats.Get("VER").label, "Vielseitigkeit")
     assertEqual(NS.Stats.Get("CRI").label, "Kritischer Trefferwert")
     assertEqual(NS.Stats.ConfigName({ { stat = "VER" }, { stat = "CRI" } }), "Vielseitigkeit, Kritischer Trefferwert")
@@ -107,10 +121,14 @@ test("stats: a deDE client scores VER, CRI, MAS, HAS and ITEM_LEVEL from the sta
     -- red under: read VER through an English stat name rather than ITEM_MOD_VERSATILITY
     local NS = deInstance().NS
     local S = NS.Stats
-    assertEqual(S.Get("VER"):Score(info(NS, "ring_plain_b")), 500)
-    assertEqual(S.Get("MAS"):Score(info(NS, "ring_plain_a")), 500)
+    if FOREVER then
+        for _, id in ipairs({ "VER", "MAS", "HAS" }) do assertNil(S.Get(id), id .. " on Forever") end
+    else
+        assertEqual(S.Get("VER"):Score(info(NS, "ring_plain_b")), 500)
+        assertEqual(S.Get("MAS"):Score(info(NS, "ring_plain_a")), 500)
+        assertEqual(S.Get("HAS"):Score(info(NS, "neck_chain")), 600)
+    end
     assertEqual(S.Get("CRI"):Score(info(NS, "head_plate")), 210)
-    assertEqual(S.Get("HAS"):Score(info(NS, "neck_chain")), 600)
     assertEqual(S.Get("ITEM_LEVEL"):Score(info(NS, "head_plate")), DB.head_plate.level)
     assertEqual(S.Get("STR"):Score(info(NS, "neck_chain")), 0, "a stat the item lacks scores 0")
 end)
@@ -216,8 +234,9 @@ end)
 test("stats: ConfigName joins the labels, and answers nil when any stat is missing", function()
     -- red under: skip the unknown stat instead of answering nil
     local NS = T.load().NS
-    local sta, mas = NS.Stats.Get("STA").label, NS.Stats.Get("MAS").label
-    assertEqual(NS.Stats.ConfigName({ { stat = "STA" }, { stat = "MAS" } }), sta .. ", " .. mas)
+    local second = FOREVER and "HIT" or "MAS"
+    local sta, mas = NS.Stats.Get("STA").label, NS.Stats.Get(second).label
+    assertEqual(NS.Stats.ConfigName({ { stat = "STA" }, { stat = second } }), sta .. ", " .. mas)
     assertNil(NS.Stats.ConfigName({ { stat = "STA" }, { stat = "Pawn_Gone" } }))
     assertNil(NS.Stats.ConfigName(nil))
 end)

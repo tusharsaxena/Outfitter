@@ -209,11 +209,26 @@ end
 local NSI = instance()
 local Tr, Params = NSI.Triggers, NSI.TriggerParams
 
+-- A ported trigger the running client leaves out by declaration (clients-§4): on WoW Forever, the
+-- zone rows defaults/Zones.lua declares Retail's alone (ruling D3). The legacy menu was Retail's, so
+-- such a row is absent here, not lost; every other ported row must still be a trigger.
+local ABSENT = {}
+do
+    local here = {}
+    for _, z in ipairs(NSI.Zones.rows) do here[z.id] = true end
+    for _, z in ipairs(NSI.Zones.ALL) do
+        if not here[z.id] then ABSENT[z.id] = true end
+    end
+end
+local function absentHere(id) return ABSENT[id] == true end
+
 local function ported()
     local out = {}
     for _, p in ipairs(LEGACY.presets) do
         local row = PARITY[p.id]
-        if row and row.id then out[#out + 1] = { legacy = p, row = row, desc = Tr.Get(row.id) } end
+        if row and row.id and not absentHere(row.id) then
+            out[#out + 1] = { legacy = p, row = row, desc = Tr.Get(row.id) }
+        end
     end
     return out
 end
@@ -225,7 +240,8 @@ test("parity: every legacy preset maps to a new trigger or a listed drop reason"
         local row = PARITY[p.id]
         assertTrue(row ~= nil, "legacy " .. p.id .. " has no parity row")
         if row.id then
-            assertTrue(Tr.Get(row.id) ~= nil, p.id .. " -> " .. row.id .. " is not a trigger")
+            -- red under: a declared-absent row still registered (it would be a trigger on this client).
+            assertEqual(Tr.Get(row.id) ~= nil, not absentHere(row.id), p.id .. " -> " .. row.id .. " is not a trigger")
         else
             assertTrue(row.drop == "retired" and type(row.why) == "string", p.id .. " drops with a reason")
         end
@@ -272,7 +288,9 @@ test("parity: 77 ported, 6 retired, 1 dropped by H1, 84 in all (design §6.8 tot
     assertEqual(n.retired, 6)
     assertEqual(n.H1, 1)
     assertEqual(#LEGACY.presets + 1, 84)
-    assertEqual(#Tr.All(), 77, "the registry holds exactly the ported rows")
+    local absent = 0
+    for _ in pairs(ABSENT) do absent = absent + 1 end
+    assertEqual(#Tr.All(), 77 - absent, "the registry holds exactly the ported rows this client has")
 end)
 
 -- ── events ────────────────────────────────────────────────────────────────────────────────────

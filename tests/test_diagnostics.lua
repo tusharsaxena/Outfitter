@@ -81,8 +81,19 @@ end
 
 -- ── /or zone: the two producers, called directly ─────────────────────────────────────────────
 
+-- WoW Forever has no arenas (ruling D3): its cases read Alterac Valley and an unknown battleground.
+local FOREVER = dofile("tests/_kit/mock_client.lua").current() == "forever"
+
 test("diagnostics: ZoneInfo gives the instance line and the active zone outfits", function()
     local s = scene()
+    if FOREVER then
+        enter(s, { name = "Alterac Valley", type = "pvp", instanceID = 30 })
+        local lines = s.NS.States.ZoneInfo()
+        assertEqual(lines[1], "Instance: Alterac Valley (type pvp, map ID 30)")
+        assertEqual(lines[2], "Zone outfits active: PVP_BATTLEGROUND, BG_AV")
+        assertEqual(#lines, 2, shown(lines))
+        return
+    end
     enter(s, { name = "Ruins of Lordaeron", type = "arena", instanceID = 572 })
     local lines = s.NS.States.ZoneInfo()
     assertEqual(lines[1], "Instance: Ruins of Lordaeron (type arena, map ID 572)")
@@ -92,10 +103,11 @@ end)
 
 test("diagnostics: ZoneInfo names a map the zone table misses", function()
     local s = scene()
-    enter(s, { name = "New Arena", type = "arena", instanceID = 99999 })
+    enter(s, FOREVER and { name = "New Battleground", type = "pvp", instanceID = 99999 }
+        or { name = "New Arena", type = "arena", instanceID = 99999 })
     local lines = s.NS.States.ZoneInfo()
     assertEqual(lines[2], "This map has no entry in the zone table")
-    assertEqual(lines[3], "Zone outfits active: PVP_BATTLEGROUND, PVP_ARENA")
+    assertEqual(lines[3], FOREVER and "Zone outfits active: PVP_BATTLEGROUND" or "Zone outfits active: PVP_BATTLEGROUND, PVP_ARENA")
 end)
 
 test("diagnostics: ZoneInfo says when no zone outfit applies", function()

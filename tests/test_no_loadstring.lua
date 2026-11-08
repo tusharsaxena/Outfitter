@@ -106,7 +106,8 @@ test("no code from text: no descriptor or catalog row carries a Script or Source
         n = n + 1
         clean(desc, "descriptor " .. desc.id)
     end
-    assertTrue(n > 70, "the registry is finalized (" .. n .. ")")
+    -- WoW Forever's registry holds four of the 33 zone rows (ruling D3), so 44 rather than 73.
+    assertTrue(n > 40, "the registry is finalized (" .. n .. ")")
 end)
 
 test("no code from text: no trigger answers to CUSTOM, and nothing can name one", function()
