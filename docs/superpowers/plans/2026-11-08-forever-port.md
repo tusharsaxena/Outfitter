@@ -3,8 +3,8 @@
 Spec: `docs/superpowers/specs/2026-11-08-forever-port-design.md`. Evidence:
 `docs/superpowers/specs/2026-11-08-forever-port-inventory.md`. Branch `feat/2026-11-08-forever-port`.
 
-**Status: planned, not started.** The build waits for the owner's usage reset, and for the owner's rulings on
-D1 to D10.
+**Status: planned, not started.** The owner ruled D1 to D10 on 2026-11-08 (the spec's table). The build waits
+for the owner's usage reset and the probe output.
 
 | Step | What | Done when |
 |---|---|---|

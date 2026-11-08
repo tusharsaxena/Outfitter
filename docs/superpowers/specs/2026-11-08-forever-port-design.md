@@ -19,23 +19,23 @@ that file.
     on both clients.
   - Forever's character sheet has its own Equipment Manager pane.
 
-## Decisions for the owner (inventory §2)
+## The owner's rulings (2026-11-08)
 
-Each carries the inventory's recommendation. **None is ruled yet:** the owner confirms or changes each before the
-build starts, and the build follows the ruling recorded here.
+The inventory's recommendations are in §2 of the inventory file. The owner ruled on each, and **five depart from
+them** (marked). The build follows this table.
 
-| # | Decision | Recommendation |
+| # | Decision | Ruling |
 |---|---|---|
-| D1 | Ammo slot (0) | Not in step 1 |
-| D2 | Ranged slot (18) | Yes, Forever only (a slot table per client) |
-| D3 | PvP zones | The generic battleground row plus AV, WSG and AB on Forever; arenas and post-vanilla battlegrounds absent |
-| D4 | Flyout drawer | Absent on Forever (Forever's flyouts open inward, with their own arrows) |
-| D5 | Pet Battle and cooking-pet triggers | Absent on Forever |
-| D6 | Content quest triggers | Absent on Forever |
-| D7 | Instance difficulty | Open world, normal dungeon and 40-player raid on Forever; a 20-player raid row in step 2 |
-| D8 | Character-sheet button | After the last shown sidebar tab, in Forever's atlas look, hidden while the pane is collapsed |
-| D9 | Stats | Haste, Versatility and Mastery absent on Forever; vanilla stats (spell damage, healing, attack power, MP5) in step 2 |
-| D10 | Spell ranks (forms, stealth) | Match by base spell if Forever supports it, else per-rank ID lists in step 2 |
+| D1 | Ammo slot (0) | **Yes, in step 1 (departs).** Outfits can hold ammo on Forever. That means the stack and cursor-drop equip path, and slot 0 handled in every slot walk (the engine walks 1..19 today) |
+| D2 | Ranged slot (18) | Yes, Forever only, through a slot table per client |
+| D3 | PvP zones | The generic battleground row plus AV, WSG and AB on Forever; arenas, post-vanilla battlegrounds and brawls absent |
+| D4 | Flyout drawer | **Adapt the drawer to Forever (departs).** Rebuild the drawer for Forever's inward flyouts and rotated atlas arrows instead of dropping it. Retail unchanged |
+| D5 | Pet Battle and cooking-pet params | Absent on Forever; the Cooking trigger keeps its core |
+| D6 | Quest triggers | The four content quests are absent on Forever; Quest Turn-in stays |
+| D7 | Instance difficulty | **Open world, normal dungeon, 40-player raid and the 20-player raid row, all in step 1 (departs).** The 20-player ID is confirmed by probe P18 |
+| D8 | Character-sheet button | **Both placements (departs).** With the right pane expanded, the button is the last sidebar tab in Forever's atlas look; with it collapsed, the button moves to the left pane's top strip. Retail unchanged |
+| D9 | Stats | **Vanilla stats in step 1 (departs):** Haste, Versatility and Mastery absent on Forever; spell damage, healing, attack power, MP5, hit and defense added, with keys confirmed by probe P14 |
+| D10 | Spell ranks | Match by base spell if probes P3/P4 show Forever maps ranks to a base; otherwise per-rank ID lists per client |
 
 ## Design, step 1
 
@@ -51,7 +51,7 @@ Step 1 follows the ConsumableMaster port: Forever-compatible, Retail-only featur
    params (D5, D6), zone rows (D3), difficulty groups (D7) and stat set (D9). The engine loops over
    `ID.SLOT_NAMES` (about 30 call sites), so a per-client slot table needs no engine change.
 3. **Features absent on Forever** (clients-§4): declared with `clients = { "retail" }` and gated at registration,
-   never hidden. They are D3 to D6's triggers and rows and D9's stats.
+   never hidden. They are D3, D5 and D6's triggers and rows, and D9's Retail stats.
 4. **Behavior guards.**
    - `PS.CanDualWield2H`'s Titan's Grip rule (`PlayerState.lua:88-90`) applies only on Retail.
    - The `TARGET` trigger compares names through `Compat.UnitCharacterName` (client-quirks-§5; `Triggers_Params.lua:321`
@@ -59,10 +59,10 @@ Step 1 follows the ConsumableMaster port: Forever-compatible, Retail-only featur
    - The bare `GetInventorySlotInfo` and `DoEmote` become `C_PaperDollInfo.GetInventorySlotInfo` and
      `C_ChatInfo.PerformEmote` first, on both clients.
    - The one strata read gets the secret guard.
-5. **The character-sheet adapter (D8).** On Forever the sheet button anchors after the last shown sidebar tab,
-   wears Forever's 42x42 atlas tab look, and hides while the right pane is collapsed (`Camelot/PaperDollFrame.lua`,
+5. **The character-sheet adapter (D8).** On Forever the sheet button anchors after the last shown sidebar tab and
+   wears Forever's 42x42 atlas tab look while the right pane is expanded, and moves to the left pane's top strip while it is collapsed (`Camelot/PaperDollFrame.lua`,
    `Camelot/CharacterFrame.lua`). Retail's placement is unchanged.
-6. **The flyout drawer (D4)** is absent on Forever. Retail's is unchanged.
+6. **The flyout drawer (D4)** is adapted to Forever's inward flyouts and atlas arrows. **The ammo slot (D1)** joins the slot table on Forever, with a stack-aware equip path. Retail's are unchanged.
 
 ## Step 2 (later, its own spec)
 
