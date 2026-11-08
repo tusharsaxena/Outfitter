@@ -3,8 +3,9 @@
 Spec: `docs/superpowers/specs/2026-11-08-forever-port-design.md`. Evidence:
 `docs/superpowers/specs/2026-11-08-forever-port-inventory.md`. Branch `feat/2026-11-08-forever-port`.
 
-**Status: planned, not started.** The owner ruled D1 to D10 on 2026-11-08 (the spec's table). The build waits
-for the owner's usage reset and the probe output.
+**Status: planned, not started.** The owner ruled D1 to D10 on 2026-11-08 (the spec's table). Most probes ran the
+same day (`specs/2026-11-08-forever-port-probes.md`); P3, P17, P18, P21, P24 and the vanilla stat keys are still
+open and do not block OR-F1 to OR-F6. The build waits for the owner's usage reset.
 
 | Step | What | Done when |
 |---|---|---|
