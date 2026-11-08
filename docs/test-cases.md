@@ -758,7 +758,7 @@ Total.
 
 ### test_states.lua (29)
 
-- states: NS.States publishes the §6.10 surface and the 13 state ids
+- states: NS.States publishes the §6.10 surface and the state ids, FORM_TREE on Retail only
 - states: Set coerces to a boolean, publishes the edge once, and an unchanged value is a no-op
 - states: an unknown id is a debug line, not a raise, and publishes nothing
 - states: a nil state is seeded from the worn outfits whose trigger subscribes to it
@@ -1108,7 +1108,7 @@ Total.
 - general: TALENT_TREE equips for an enabled spec and unequips for another, half a second late
 - general: PVP_FLAGGED is edge-triggered through outfit.triggerState, the player's flag only
 
-### test_triggers_trade.lua (18)
+### test_triggers_trade.lua (21)
 
 - trade: every bespoke TRADE id has its condition from Triggers_CondTrade.lua
 - trade: gathering reads skill lines 182, 186 and 393, equips on a found line and waits 1 s on hide
@@ -1128,8 +1128,11 @@ Total.
 - trade: cooking summons its fire pet 0.2 s on, saves the pet that was out, and puts it back on close
 - trade: a cooking wear that never reached its restore leaves no stale pet for the next one
 - trade: cooking with randomPet picks among the enabled pets only, and dismisses when none was out
+- trade: on WoW Forever swimming has no Vashj'ir toggle and equips on Vashj'ir's map ids
+- trade: on WoW Forever fishing has no Track Fish and leaves tracking alone; the other helpers stay
+- trade: on WoW Forever cooking keeps its core and has no fire pets to summon
 
-### test_triggers_quest.lua (12)
+### test_triggers_quest.lua (13)
 
 - quest: the vehicle NPC lists equal the legacy scripts', by faction
 - quest: each vehicle trigger equips on every NPC of its list, by its own GUID type
@@ -1143,6 +1146,7 @@ Total.
 - quest: COMPANION summons its pet two seconds after the wear, or says it couldn't find it
 - quest: COMPANION says it couldn't find the pet when the summon is refused
 - quest: bound, the shipped conditions answer the binder's events
+- quest: the four content quests and Pet Battle exist on Retail only; Quest Turn-in on both
 
 ### test_triggers_class.lua (11)
 
@@ -1836,8 +1840,8 @@ Total.
 | test_no_loadstring.lua | 4 |
 | test_api.lua | 20 |
 | test_triggers_general.lua | 18 |
-| test_triggers_trade.lua | 18 |
-| test_triggers_quest.lua | 12 |
+| test_triggers_trade.lua | 21 |
+| test_triggers_quest.lua | 13 |
 | test_triggers_class.lua | 11 |
 | test_triggers_pvp.lua | 7 |
 | test_sheet.lua | 18 |
@@ -1869,4 +1873,4 @@ Total.
 | test_lizard_sighted.lua | 8 |
 | test_prose.lua | 15 |
 | Skipped | 1 |
-| **Total** | **1543** |
+| **Total** | **1547** |

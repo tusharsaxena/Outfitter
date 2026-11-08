@@ -20,6 +20,9 @@ local test, assertEqual, assertTrue, assertFalse, assertNil =
 -- The druid's shapes, by form index, and the state each one sets (defaults/TriggerData.lua).
 local FORMS = { { spellID = 5487 }, { spellID = 768 }, { spellID = 783 }, { spellID = 24858 }, { spellID = 33891 } }
 local FORM_TRIGGER = { "DRUID_BEAR", "DRUID_CAT", "DRUID_TRAVEL", "DRUID_MOONKIN", "DRUID_TREE" }
+-- Tree of Life is Retail's alone (clients-§4): on the forever kit profile there is no DRUID_TREE.
+local FOREVER = dofile("tests/_kit/mock_client.lua").current() == "forever"
+if FOREVER then FORMS[#FORMS], FORM_TRIGGER[#FORM_TRIGGER] = nil, nil end
 
 local function aura(spellId) return { spellId = spellId, icon = 136000, name = "aura" .. spellId } end
 
@@ -271,7 +274,9 @@ end)
 test("class: each class is offered its own class triggers and no other class's", function()
     local s = scene("DRUID", 1)
     local mine = {
-        DRUID = "DRUID_BEAR,DRUID_CASTER,DRUID_CAT,DRUID_MOONKIN,DRUID_PROWL,DRUID_TRAVEL,DRUID_TREE",
+        -- red under: Finalize building DRUID_TREE on Forever (no Tree of Life there, clients-§4).
+        DRUID = "DRUID_BEAR,DRUID_CASTER,DRUID_CAT,DRUID_MOONKIN,DRUID_PROWL,DRUID_TRAVEL"
+            .. (FOREVER and "" or ",DRUID_TREE"),
         ROGUE = "ROGUE_STEALTH", SHAMAN = "SHAMAN_GHOST_WOLF", HUNTER = "HUNTER_FEIGN_DEATH", WARRIOR = "",
     }
     for class, want in pairs(mine) do

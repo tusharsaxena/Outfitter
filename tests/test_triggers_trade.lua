@@ -92,6 +92,16 @@ local function tick(NS, ctx) NS.TriggerBinder.Dispatch(ctx, "TIMER") end
 
 local OWN = { "LOCKPICKING", "RIDING", "FALLING", "RESTING", "SPELLCAST", "COOKING" }
 
+-- Vashj'ir's guard, Find Fish and the cooking fire pets are Retail's alone (clients-§4; P19, D5):
+-- their cases skip on the forever kit profile, and the Forever cases below pin the absence.
+local FOREVER = dofile("tests/_kit/mock_client.lua").current() == "forever"
+local function retailOnly()
+    if FOREVER then T.skip("a Retail-only param or effect, absent on WoW Forever (clients-§4)") end
+end
+local function foreverOnly()
+    if not FOREVER then T.skip("pins WoW Forever's absences; runs on the forever kit profile") end
+end
+
 -- ── the file ──────────────────────────────────────────────────────────────────────────────────
 
 test("trade: every bespoke TRADE id has its condition from Triggers_CondTrade.lua", function()
@@ -261,6 +271,7 @@ end)
 -- ── SWIMMING, FISHING, DINING (rows 12-14) ────────────────────────────────────────────────────
 
 test("trade: swimming waits 2.5 s to unequip and skips Vashj'ir's three maps by default", function()
+    retailOnly()
     local NS, M = scene()
     local id, st, equip = bound(NS, "SWIMMING")
     state(NS, "SWIMMING", true)
@@ -279,6 +290,7 @@ test("trade: swimming waits 2.5 s to unequip and skips Vashj'ir's three maps by 
 end)
 
 test("trade: fishing never equips itself, records Find Fish (spell 43308 or texture 133888) and restores it", function()
+    retailOnly()
     local NS, M = scene()
     local tracking = { { name = "Find Herbs", texture = 1, active = false, spellID = 2383 },
                        { name = "Find Fish", texture = 133888, active = false } }      -- no spellID: the texture
@@ -439,6 +451,7 @@ test("trade: cooking equips on the Cooking window (profession 185) only, and sma
 end)
 
 test("trade: cooking summons its fire pet 0.2 s on, saves the pet that was out, and puts it back on close", function()
+    retailOnly()
     local NS, M = scene()
     local calls = fakePets(NS)
     M.__world.summonedPet = "BattlePet-0-000000000001"
@@ -456,6 +469,7 @@ test("trade: cooking summons its fire pet 0.2 s on, saves the pet that was out, 
 end)
 
 test("trade: a cooking wear that never reached its restore leaves no stale pet for the next one", function()
+    retailOnly()
     local NS, M = scene()
     local calls = fakePets(NS)
     M.__world.summonedPet = "BattlePet-0-00000000000A"
@@ -482,6 +496,7 @@ test("trade: a cooking wear that never reached its restore leaves no stale pet f
 end)
 
 test("trade: cooking with randomPet picks among the enabled pets only, and dismisses when none was out", function()
+    retailOnly()
     local NS, M = scene()
     local calls = fakePets(NS)
     local id = bound(NS, "COOKING", { summonPierre = true, randomPet = true })
@@ -501,4 +516,57 @@ test("trade: cooking with randomPet picks among the enabled pets only, and dismi
     M.__fire("TRADE_SKILL_SHOW")
     assertEqual(table.concat(picks, ","), "1,2", "two enabled")
     assertEqual(calls[3], "species 1204@0.2", "the pick's second: Pierre")
+end)
+
+-- ── WoW Forever's absences (clients-§4) ───────────────────────────────────────────────────────
+
+test("trade: on WoW Forever swimming has no Vashj'ir toggle and equips on Vashj'ir's map ids", function()
+    foreverOnly()
+    local NS, M = scene()
+    -- red under: buildParams copying the Retail-only disableVashjir (a Cataclysm zone).
+    assertNil(NS.OutfitSchema.FindRow("trigger.SWIMMING.disableVashjir"), "no schema row")
+    local id, st, equip = bound(NS, "SWIMMING")
+    state(NS, "SWIMMING", true)
+    state(NS, "SWIMMING", false)
+    assertEqual(log(st), "wear,remove")
+    assertEqual(delays(equip), "2.5")
+    M.__world:setMap(204)
+    state(NS, "SWIMMING", true)
+    assertTrue(st.worn[id], "no Vashj'ir on Forever, so no guard")
+end)
+
+test("trade: on WoW Forever fishing has no Track Fish and leaves tracking alone; the other helpers stay", function()
+    foreverOnly()
+    local NS, M = scene()
+    local calls = 0
+    M.C_Minimap = {
+        GetNumTrackingTypes = function() calls = calls + 1; return 0 end,
+        GetTrackingInfo = function() calls = calls + 1 end,
+        SetTracking = function() calls = calls + 1 end,
+    }
+    M.__cvars.autoLootDefault, M.__cvars.autoInteract = "0", "1"
+    assertNil(NS.OutfitSchema.FindRow("trigger.FISHING.trackFish"), "no Track Fish toggle (probe P19)")
+    local id, st = bound(NS, "FISHING", { autoLoot = true })
+    st.worn[id] = true
+    NS.SendBus(NS.MSG.OUTFIT_WORN, id, nil, false)
+    -- red under: FishTracking left in FISHING's effects on Forever.
+    assertEqual(calls, 0, "the tracking list is never read")
+    assertEqual(M.__cvars.autoLootDefault, "1"); assertEqual(M.__cvars.autoInteract, "0")
+    st.worn[id] = nil
+    NS.SendBus(NS.MSG.OUTFIT_REMOVED, id, false)
+    assertEqual(M.__cvars.autoLootDefault, "0"); assertEqual(M.__cvars.autoInteract, "1")
+end)
+
+test("trade: on WoW Forever cooking keeps its core and has no fire pets to summon", function()
+    foreverOnly()
+    local NS, M = scene()
+    local calls = fakePets(NS)
+    -- red under: the cooking-pet params left on Forever (ruling D5).
+    assertEqual(#NS.Triggers.Get("COOKING").params, 0, "no pet toggles")
+    local id, st = bound(NS, "COOKING")
+    M.__world.profession = { professionID = 185 }
+    M.__fire("TRADE_SKILL_SHOW")
+    assertTrue(st.worn[id], "the Cooking window still wears it")
+    M.__fire("TRADE_SKILL_CLOSE")
+    assertEqual(#calls, 0, "no pet summoned or restored")
 end)

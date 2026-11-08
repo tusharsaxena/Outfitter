@@ -356,8 +356,10 @@ test("trigger data: the aura and form tables are design §6.10's, each naming a 
     -- red under: Retail's 58984 kept on Forever (a night elf's Shadowmeld would never feed STEALTH).
     assertEqual(mapList(D().AURA_SPELL_STATE), FOREVER and "20580=STEALTH,2645=GHOST_WOLF,5215=STEALTH,5384=FEIGN_DEATH"
         or "2645=GHOST_WOLF,5215=STEALTH,5384=FEIGN_DEATH,58984=STEALTH", "AURA_SPELL_STATE")
-    assertEqual(mapList(D().FORM_SPELL_STATE),
-        "1784=STEALTH,24858=FORM_MOONKIN,33891=FORM_TREE,5487=FORM_BEAR,768=FORM_CAT,783=FORM_TRAVEL",
+    -- red under: 33891 kept on Forever, a FORM_TREE state no trigger there reads (clients-§4).
+    assertEqual(mapList(D().FORM_SPELL_STATE), FOREVER
+        and "1784=STEALTH,24858=FORM_MOONKIN,5487=FORM_BEAR,768=FORM_CAT,783=FORM_TRAVEL"
+        or "1784=STEALTH,24858=FORM_MOONKIN,33891=FORM_TREE,5487=FORM_BEAR,768=FORM_CAT,783=FORM_TRAVEL",
         "FORM_SPELL_STATE")
     for _, t in ipairs({ D().AURA_ICON_STATE, D().AURA_SPELL_STATE, D().FORM_SPELL_STATE, D().FORM_MAYBE_IN_COMBAT }) do
         for k, v in pairs(t) do

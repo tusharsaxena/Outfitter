@@ -210,14 +210,22 @@ local NSI = instance()
 local Tr, Params = NSI.Triggers, NSI.TriggerParams
 
 -- A ported trigger the running client leaves out by declaration (clients-§4): on WoW Forever, the
--- zone rows defaults/Zones.lua declares Retail's alone (ruling D3). The legacy menu was Retail's, so
--- such a row is absent here, not lost; every other ported row must still be a trigger.
-local ABSENT = {}
+-- zone rows defaults/Zones.lua declares Retail's alone (ruling D3) and the catalog rows and params
+-- defaults/Triggers.lua declares so (rulings D5, D6). The legacy menu was Retail's, so such a row or
+-- param is absent here, not lost; every other ported row and param must still be there.
+local ABSENT, ABSENT_PARAM = {}, {}
 do
     local here = {}
     for _, z in ipairs(NSI.Zones.rows) do here[z.id] = true end
     for _, z in ipairs(NSI.Zones.ALL) do
         if not here[z.id] then ABSENT[z.id] = true end
+    end
+    local admits = NSI.Compat.ForClient
+    for _, row in ipairs(NSI.TriggerCatalog.rows) do
+        if not admits(row.clients) then ABSENT[row.id] = true end
+        for _, p in ipairs(row.params or {}) do
+            if not admits(p.clients) then ABSENT_PARAM[row.id .. "." .. p.key] = true end
+        end
     end
 end
 local function absentHere(id) return ABSENT[id] == true end
@@ -355,8 +363,10 @@ local function expectedParams(e)
         local ptype = (e.row.types and e.row.types[key]) or TYPE_RENAME[input.type]
         local default = input.default
         if default == nil or (e.row.types and e.row.types[key]) then default = Params.TYPES[ptype].default end
-        out[#out + 1] = { key = key, type = ptype, default = default, suffix = input.suffix,
-                          label = (e.row.labels and e.row.labels[key]) or input.label }
+        if not ABSENT_PARAM[e.row.id .. "." .. key] then
+            out[#out + 1] = { key = key, type = ptype, default = default, suffix = input.suffix,
+                              label = (e.row.labels and e.row.labels[key]) or input.label }
+        end
     end
     return out
 end

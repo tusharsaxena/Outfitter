@@ -16,6 +16,9 @@ local unitLoad = dofile(T.root .. "/tests/unit_load.lua")(T)
 local test, assertEqual, assertTrue, assertFalse, assertNil =
     T.test, T.assertEqual, T.assertTrue, T.assertFalse, T.assertNil
 
+-- Arenas are Retail's alone (clients-§4): on the forever kit profile IN_DUNGEON has no enableArena.
+local FOREVER = dofile("tests/_kit/mock_client.lua").current() == "forever"
+
 local IDS = { "PVP_FLAGGED", "IN_DUNGEON", "TRINKET_QUEUE", "FEET_QUEUE", "IN_ZONES", "TALENT_TREE",
               "INSTANCE_DIFFICULTY", "HAS_BUFF", "TARGET" }
 
@@ -110,7 +113,10 @@ test("general: IN_DUNGEON equips by instance type, and arena reads enableArena",
     W:setInstance({ type = "arena" })
     -- red under: the legacy arena arm reading enableBG (OutfitterScripting.lua:565).
     assertEqual(call(NS, "IN_DUNGEON", { params = { enableBG = true } }), "unequip", "BG does not enable arenas")
-    assertEqual(call(NS, "IN_DUNGEON", { params = { enableArena = true } }), "equip")
+    -- red under: buildParams copying enableArena on Forever (vanilla has no arenas), where a stored
+    -- true is then ignored rather than read.
+    assertEqual(call(NS, "IN_DUNGEON", { params = { enableArena = true } }), FOREVER and "unequip" or "equip")
+    assertEqual(NS.OutfitSchema.FindRow("trigger.IN_DUNGEON.enableArena") ~= nil, not FOREVER, "enableArena, Retail only")
     W:setInstance({ type = "scenario" })
     assertEqual(call(NS, "IN_DUNGEON", { params = { enable5Man = true, enableRaid = true } }), "unequip")
     W:setInstance(nil)

@@ -36,9 +36,10 @@ D.FORM_SPELL_STATE = {
     [768]   = "FORM_CAT",     -- Cat Form
     [783]   = "FORM_TRAVEL",  -- Travel Form
     [24858] = "FORM_MOONKIN", -- Moonkin Form
-    [33891] = "FORM_TREE",    -- Incarnation: Tree of Life
     [1784]  = "STEALTH",      -- rogue Stealth
 }
+-- Tree of Life is Retail's alone (clients-§4): WoW Forever has no DRUID_TREE trigger, so no FORM_TREE.
+D.FORM_SPELL_STATE[33891] = NS.PerClient({ retail = "FORM_TREE" })   -- Incarnation: Tree of Life
 
 -- Forms that mean the player may be in combat before PLAYER_REGEN_DISABLED says so (the legacy
 -- MaybeInCombat flag on Bear Form): the producer calls PS.SetMaybeInCombat(true) on entering one.

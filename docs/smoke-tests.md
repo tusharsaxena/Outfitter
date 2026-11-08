@@ -435,3 +435,17 @@ probe is still open; the code site is marked `-- PROBE Pn`. Retail is unchanged 
 | F2-4 (D7, P18) | The same with *Equip in 20 player raids*, then *Equip in 40 player raids*; enter Zul'Gurub or AQ20, then Molten Core | The outfit goes on in each. Record `/dump GetInstanceInfo()`'s third return: 148 for the 20-player raid, 9 for the 40 |
 | F2-5 (D3, P17) | Open the trigger picker's PvP list; then queue Warsong Gulch, Arathi Basin and Alterac Valley with an outfit on each | The list holds Battleground and the three battlegrounds only, no arena. Each battleground wears its own outfit over the generic one; record `/dump select(8, GetInstanceInfo())` (489, 529, 30 expected) |
 | F2-6 (P4) | As a night elf druid, make an outfit on *Druid: Prowl*; cast Shadowmeld | The outfit goes on (Shadowmeld is 20580 on Forever and feeds the stealth state) |
+
+## 15. WoW Forever: Retail-only triggers absent (OR-F3, 2026-11-08)
+
+On WoW Forever, unless a row says Retail. Each feature below is declared `clients = { "retail" }` and is
+never built on Forever: no picker entry, no setting, no saved value read. No probe is open for this step.
+
+| # | Do | See |
+|---|---|---|
+| F3-1 (D6, D5) | Open the trigger picker's Quest list | Only *Quest Turn-in*. No Argent Tournament, Vigilance on Wings, Flame Leviathan, Multiphase Survey or Pet Battle |
+| F3-2 | As a druid, open the picker's Class list; log in a new druid | Caster, Bear, Cat, Travel, Moonkin and Prowl; no *Tree of Life*, and the new druid's first login seeds no *Druid: Tree of Life* outfit |
+| F3-3 (P19) | Make an outfit on *Fishing*; open its automation settings; wear it | No *Select Track Fish* toggle; the minimap tracking is unchanged. Auto loot, Click-to-Move and the action-bar page still work |
+| F3-4 (D5) | Make an outfit on *Cooking*; open its settings; open the Cooking window | No fire-pet toggles ("No settings"). The outfit goes on with the window and comes off when it closes |
+| F3-5 | Open *In Dungeon*'s and *Swimming*'s settings | No *Equip in Arena instances*, no *Don't equip in Vashj'ir* |
+| F3-6 (Retail) | The same five checks on Retail | Every row above is back: the quests, Pet Battle, Tree of Life, Track Fish, the fire pets, arenas and Vashj'ir |
