@@ -40,7 +40,7 @@ NS.defaults = {
                        marks = { em = true, trigger = true } },
         -- Named non-setting state (architecture-§5): the bar's dragged place, each dialog's.
         windows    = { bar = { point = "TOPLEFT", x = 200, y = -200 }, dialogs = {} },
-        skin       = { source = "ka0s", skin = "ka0s", ignorePanel = true, ignoreFonts = false,
+        skin       = { source = "ka0s", skin = NS.DEFAULT_SKIN or "ka0s", ignorePanel = true, ignoreFonts = false,
                        font = "", texture = "", outline = "hud", pickerSeen = false },
     },
     char = {

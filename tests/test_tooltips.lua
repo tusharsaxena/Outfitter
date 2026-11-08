@@ -130,6 +130,7 @@ end)
 
 test("tooltips: names are colored by status; banked is blue |cff4033ff", function()
     local NS, M = scene("bank_closed")
+    NS.ApplySkinChoice("ka0s", "ka0s")   -- Ka0s Default's pixels; Forever's new profile wears WoW Forever
     openBank(NS, M)
     outfit(NS, "Worn", { HeadSlot = "head_plate" })
     outfit(NS, "Banked", { HeadSlot = "head_plate", LegsSlot = "legs_plate" })
@@ -407,6 +408,7 @@ end
 
 test("outfit tooltip: the name, the trigger description, Missing: in red and Banked: in blue", function()
     local NS, M = scene("bank_closed")
+    NS.ApplySkinChoice("ka0s", "ka0s")   -- Ka0s Default's pixels; Forever's new profile wears WoW Forever
     openBank(NS, M)
     triggers(NS, "Worn while you are swimming")
     local id = outfit(NS, "Dive", { HeadSlot = "head_plate", LegsSlot = "legs_plate", NeckSlot = "neck_chain" })
