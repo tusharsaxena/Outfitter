@@ -799,7 +799,7 @@ Total.
 - secrets states: a secret icon falls through to the spell; a secret spell id matches nothing
 - secrets states: the last mana reading survives a secret sample
 
-### test_quickslots.lua (44)
+### test_quickslots.lua (46)
 
 - quickslots: NS.QuickSlots and its sort are published
 - quickslots: the hooks are post-hooks, built once however often the addon stands up
@@ -845,6 +845,8 @@ Total.
 - arrows: Blizzard's HideAll with the window closed leaves them hidden
 - arrows: Blizzard's HideAll never reopens a flyout it closed
 - arrows: a stand-down with the window open hides them
+- drawer (Forever): the window open shows every arrow and moves none
+- drawer (Forever): an open flyout keeps Blizzard's own anchor and coords
 
 ### test_equip_bracket.lua (32)
 
@@ -1177,7 +1179,7 @@ Total.
 - pvp: a disabled spec keeps the outfit off, and the spec change puts it on or takes it off
 - pvp: every zone trigger honors each of the four spec toggles
 
-### test_sheet.lua (18)
+### test_sheet.lua (21)
 
 - sheet: NS.Sheet is published with the adapter's surface
 - sheet: stock by default
@@ -1197,8 +1199,11 @@ Total.
 - sheet: a scaled Chonky panel's edge is read in the sheet's units
 - sheet: with no Chonky panel shown DockRight is the backdrop's edge
 - sheet: the adapter creates, anchors and shows nothing
+- sheet (Forever): the button is one more tab below the last mode tab, at the strip's spacing
+- sheet (Forever): a hidden last tab gives the place to the last shown one
+- sheet (Forever): unlaid tabs take the fallback gap, and no tab at all the close X's place
 
-### test_dock.lua (49)
+### test_dock.lua (52)
 
 - dock: NS.Dock is published with the §7.2 surface
 - dock: the holder fills the sheet, and the sheet button toggles the window
@@ -1249,6 +1254,9 @@ Total.
 - dock: a sheet tab built after the paper doll's OnShow is picked up on the next frame
 - dock: the next frame's sheet check does nothing once the doll is gone or stood down
 - dock: on Chonky the Reputation tab takes the button and window down, the Character tab brings them back
+- dock (Forever): the button sits below the last mode tab in the strip's look
+- dock (Forever): with the client's template the button is a LargeSideTabButtonTemplate CheckButton
+- dock: on Retail the sheet button is a plain Button with no template
 
 ### test_list_model.lua (8)
 
@@ -1834,7 +1842,7 @@ Total.
 | test_companion.lua | 25 |
 | test_states.lua | 29 |
 | test_secrets_states.lua | 6 |
-| test_quickslots.lua | 44 |
+| test_quickslots.lua | 46 |
 | test_equip_bracket.lua | 32 |
 | test_tooltips.lua | 18 |
 | test_stack.lua | 27 |
@@ -1850,8 +1858,8 @@ Total.
 | test_triggers_quest.lua | 14 |
 | test_triggers_class.lua | 11 |
 | test_triggers_pvp.lua | 7 |
-| test_sheet.lua | 18 |
-| test_dock.lua | 49 |
+| test_sheet.lua | 21 |
+| test_dock.lua | 52 |
 | test_list_model.lua | 8 |
 | test_rows_secure.lua | 22 |
 | test_slot_enables.lua | 29 |
@@ -1879,4 +1887,4 @@ Total.
 | test_lizard_sighted.lua | 8 |
 | test_prose.lua | 15 |
 | Skipped | 1 |
-| **Total** | **1553** |
+| **Total** | **1561** |

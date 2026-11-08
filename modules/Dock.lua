@@ -18,6 +18,8 @@ local _, NS = ...
 -- to CharacterFrame and set above the close button's level: in the sheet holder it shared
 -- PaperDollFrame's level (useParentLevel), and the frame's NineSlice (500) and close button (510)
 -- drew over it, which hid it on the stock sheet. It is a plain button: no secure frame is touched.
+-- On WoW Forever it is one more tab of the outer side-tab strip (ruling D8), made from that strip's
+-- template: the "sidetab" look below.
 -- It wears the HOST'S look, not the skin (smoke round 2 design G2; the accepted deviation
 -- DEV-SKIN-SHEET-BUTTON, skinning-§1/§9, docs/ARCHITECTURE.md -> Documented deviations): on the stock
 -- and Chonky sheets a hand-built copy of PaperDollSidebarTabTemplate (its OnLoad indexes
@@ -286,6 +288,29 @@ local ICON_CROP = { 0.07, 0.93, 0.07, 0.93 }
 -- EllesmereUI's label face size (CreateEUIButton: SetFont(fontPath, 10, "")).
 local EUI_FONT_SIZE = 10
 
+-- WoW Forever's outer side-tab strip (ruling D8): the button is made from the strip's own
+-- LargeSideTabButtonTemplate, as a CheckButton, when the client has the template; its own scripts
+-- replace the template's, so it never joins the strip's mode switching (CharacterModeTabButtonMixin).
+-- Which regions the template carries is unread: an `Icon` it has takes the outfit icon, else the
+-- button's own icon draws centered, and the selected state goes through SetChecked. PROBE P27.
+local SIDE_TAB_TEMPLATE = NS.PerClient({ forever = "LargeSideTabButtonTemplate" })
+local SIDE_TAB_ICON_SIZE = 32 -- PROBE P27: the strip's icon size is unread
+
+-- The template to build the sheet button from, when this client has it; nil on Retail.
+local function sheetButtonTemplate()
+    local xml = _G.C_XMLUtil
+    if not SIDE_TAB_TEMPLATE or type(xml) ~= "table" or type(xml.GetTemplateInfo) ~= "function" then return nil end
+    if xml.GetTemplateInfo(SIDE_TAB_TEMPLATE) == nil then return nil end
+    return SIDE_TAB_TEMPLATE
+end
+
+-- The template's own icon texture, when it carries one.
+local function templateIcon()
+    local icon = rawget(button, "Icon")
+    if type(icon) == "table" and type(icon.SetTexture) == "function" then return icon end
+    return nil
+end
+
 local function tabTexture(layer, w, h, coords)
     local t = button:CreateTexture(nil, layer)
     t:SetTexture(TAB_ART)
@@ -334,20 +359,33 @@ local function paintLabel(selected)
     end
 end
 
+-- The side tab (Forever): checked while the window shows, as the strip's own tabs are for their mode.
+local function paintSideTab(selected)
+    if type(button.SetChecked) == "function" then button:SetChecked(selected) end
+end
+
 -- Repaint the look the button wears for the window's state now.
 local function paintButton()
     if not button then return end
     local selected = Dock.IsShown()
     if placedLook == "text" then return paintLabel(selected) end
+    if placedLook == "sidetab" then return paintSideTab(selected) end
     paintTab(selected)
 end
 
 -- Show one look's regions and hide the other's; the label copies EllesmereUI's face on each placing.
 local function applyLook(look)
-    local tab = look ~= "text"
+    local tab = look == "tab"
     for _, key in ipairs({ "TabBg", "icon", "Hider", "Highlight" }) do button[key]:SetShown(tab) end
-    button.label:SetShown(not tab)
-    if tab then
+    button.label:SetShown(look == "text")
+    if look == "sidetab" then
+        local own = templateIcon()
+        if own then own:SetTexture(NS.Constants.DEFAULT_OUTFIT_ICON) end
+        button.icon:SetShown(own == nil)
+        button.icon:SetSize(SIDE_TAB_ICON_SIZE, SIDE_TAB_ICON_SIZE)
+        button.icon:ClearAllPoints()
+        button.icon:SetPoint("CENTER", button, "CENTER", 0, 0)
+    elseif tab then
         button.icon:ClearAllPoints()
         button.icon:SetPoint("CENTER", button, "CENTER", NS.Sheet.TabIconOffset())
     else
@@ -552,11 +590,16 @@ local function buildSheet()
     holder = CreateFrame("Frame", "OutfitterRebornSheetHolder", PaperDollFrame)
     holder:SetAllPoints(PaperDollFrame)
     holder:EnableMouse(false)
-    button = CreateFrame("Button", "OutfitterRebornSheetButton", CharacterFrame)
+    local template = sheetButtonTemplate()
+    button = CreateFrame(template and "CheckButton" or "Button", "OutfitterRebornSheetButton", CharacterFrame, template)
     button:Hide()
     -- The host's look, never the skin's (DEV-SKIN-SHEET-BUTTON): no NS.Skin call on this button.
     buildLooks()
-    button:SetScript("OnClick", function() if not NS.IsStoodDown() then Dock.Toggle() end end)
+    -- The repaint undoes a CheckButton's own click toggle when the window did not change (Forever).
+    button:SetScript("OnClick", function()
+        if not NS.IsStoodDown() then Dock.Toggle() end
+        paintButton()
+    end)
     button:SetScript("OnEnter", function(self)
         self.hovered = true
         paintButton()

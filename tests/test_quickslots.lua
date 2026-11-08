@@ -19,6 +19,9 @@
 -- No module QuickSlots calls is owned by a later group, so no case installs a fake (design §12).
 
 local T = _G.OUTFITTERREBORN_TEST
+local FOREVER = dofile("tests/_kit/mock_client.lua").current() == "forever"
+local RETAIL_ONLY = "Retail's outward drawer moves arrows and flyouts; WoW Forever's adapted drawer moves nothing (ruling D4)"
+local FOREVER_ONLY = "pins WoW Forever's adapted drawer (ruling D4); runs on the forever kit profile"
 -- A unit instance: the login without the resume walk, so the module under test is the one this
 -- suite stands up (tests/unit_load.lua).
 local unitLoad = dofile(T.root .. "/tests/unit_load.lua")(T)
@@ -635,6 +638,7 @@ local function levelY(h) return 3 - (h - 37) / 2 end
 local GAP = 8          -- the arrow's visible half: 16 wide, 8 over the slot (PaperDollFrame.lua:1530-1532)
 
 test("drawer: with the window open a left-column flyout's buttonFrame is anchored TOPRIGHT to the slot's TOPLEFT", function()
+    if FOREVER then T.skip(RETAIL_ONLY) end
     local NS, M, state = drawerInstance()
     setWindow(NS, state, true)
     local bf = openFlyout(M, "HeadSlot")
@@ -647,6 +651,7 @@ test("drawer: with the window open a left-column flyout's buttonFrame is anchore
 end)
 
 test("drawer: a right-column flyout's first item is level with its slot, past the arrow", function()
+    if FOREVER then T.skip(RETAIL_ONLY) end
     local NS, M, state = drawerInstance()
     setWindow(NS, state, true)
     local legs = M.__slotButtons.LegsSlot
@@ -660,6 +665,7 @@ test("drawer: a right-column flyout's first item is level with its slot, past th
 end)
 
 test("drawer: a left-column flyout on a taller slot is level with it too", function()
+    if FOREVER then T.skip(RETAIL_ONLY) end
     local NS, M, state = drawerInstance()
     setWindow(NS, state, true)
     M.__slotButtons.ChestSlot:__setGeom(37, 40)
@@ -668,6 +674,7 @@ test("drawer: a left-column flyout on a taller slot is level with it too", funct
 end)
 
 test("drawer: with the window open the left-column arrows sit on the slot's left, mirrored", function()
+    if FOREVER then T.skip(RETAIL_ONLY) end
     local NS, M, state = drawerInstance()
     setWindow(NS, state, true)
     for _, slot in ipairs(LEFT_COLUMN) do
@@ -683,6 +690,7 @@ test("drawer: with the window open the left-column arrows sit on the slot's left
 end)
 
 test("drawer: a right-column arrow stays where Blizzard put it, the flyout beside the slot", function()
+    if FOREVER then T.skip(RETAIL_ONLY) end
     local NS, M, state = drawerInstance()
     setWindow(NS, state, true)
     local hands = M.__slotButtons.HandsSlot
@@ -718,6 +726,7 @@ test("drawer: the weapons' flyout opens down as Blizzard has it", function()
 end)
 
 test("drawer: a right-column flyout after a left one drops the left one's anchor", function()
+    if FOREVER then T.skip(RETAIL_ONLY) end
     local NS, M, state = drawerInstance()
     setWindow(NS, state, true)
     openFlyout(M, "HeadSlot")
@@ -728,6 +737,7 @@ test("drawer: a right-column flyout after a left one drops the left one's anchor
 end)
 
 test("drawer: another host's flyout after a left-column one keeps that host's own anchor", function()
+    if FOREVER then T.skip(RETAIL_ONLY) end
     -- The Item Upgrade frame shares EquipmentFlyoutFrame with its own flyoutSettings (20, -8)
     -- (wow-ui-source@297d7aa:Interface/AddOns/Blizzard_ItemUpgradeUI/Mainline/Blizzard_ItemUpgradeUI.lua:917-922),
     -- read off the button's parent (Blizzard_FrameXML/EquipmentFlyout.lua:244).
@@ -748,6 +758,7 @@ test("drawer: another host's flyout after a left-column one keeps that host's ow
 end)
 
 test("drawer: SetReversed on a left-column arrow mirrors its coords", function()
+    if FOREVER then T.skip(RETAIL_ONLY) end
     local NS, M, state = drawerInstance()
     setWindow(NS, state, true)
     local popout = M.__slotButtons.ChestSlot.popoutButton
@@ -955,4 +966,33 @@ test("arrows: a stand-down with the window open hides them", function()
     -- red under: a stand-down that leaves the arrows to the window.
     NS.ApplyEnabled(false)
     assertEqual(arrowsShown(M), 0)
+end)
+
+-- ── WoW Forever's adapted drawer (ruling D4, OR-F5): every arrow shown, nothing moved (probe P25) ──
+test("drawer (Forever): the window open shows every arrow and moves none", function()
+    if not FOREVER then T.skip(FOREVER_ONLY) end
+    local NS, M, state = drawerInstance()
+    local total = 0
+    for _ in pairs(M.__slotButtons) do total = total + 1 end
+    setWindow(NS, state, true)
+    -- red under: MOVES_DRAWER true on Forever (placeArrow on the left column).
+    assertEqual(arrowsShown(M), total, "every arrow, Ranged's included, shows with the window")
+    for name, b in pairs(M.__slotButtons) do
+        assertEqual(b.popoutButton.writes, 0, name .. ": an arrow was moved")
+    end
+    setWindow(NS, state, false)
+    assertEqual(arrowsShown(M), 0, "the arrows hide with the window")
+end)
+
+test("drawer (Forever): an open flyout keeps Blizzard's own anchor and coords", function()
+    if not FOREVER then T.skip(FOREVER_ONLY) end
+    local NS, M, state = drawerInstance()
+    setWindow(NS, state, true)
+    local head = M.__slotButtons.HeadSlot
+    local bf = openFlyout(M, "HeadSlot")
+    -- red under: placeFlyout's alignFlyout on Forever (TOPRIGHT -> the slot's TOPLEFT).
+    assertEqual(#bf.pts, 1)
+    assertEqual(bf.pts[1][1], "TOPLEFT"); assertEqual(bf.pts[1][2], head.popoutButton); assertEqual(bf.pts[1][3], "TOPRIGHT")
+    -- red under: the SetReversed post-hook mirroring a left-column arrow's coords.
+    sameCoords(head.popoutButton:GetNormalTexture().coords, ARROW_BACK, "Blizzard's own reversed coords")
 end)

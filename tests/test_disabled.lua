@@ -13,6 +13,9 @@
 -- LoadPass timer and the Pawn/WeightsWatcher watch, and the rebuild from current state.
 
 local T = _G.OUTFITTERREBORN_TEST
+-- OR-F5: the cases that pin Retail's placement skip on the forever kit profile.
+local FOREVER = dofile("tests/_kit/mock_client.lua").current() == "forever"
+local RETAIL_ONLY = "Retail's outward drawer moves arrows and flyouts; WoW Forever's adapted drawer moves nothing (ruling D4)"
 local test, assertEqual, assertTrue, assertFalse = T.test, T.assertEqual, T.assertTrue, T.assertFalse
 local installPaint = dofile(T.root .. "/tests/_kit/mock_paint.lua")
 
@@ -765,6 +768,7 @@ test("Disabled (Outfitter): the tooltip, compare, pet and PaperDoll hook bodies 
 end)
 
 test("Disabled (Outfitter): the outward drawer goes back to Blizzard's at stand-down and stays there", function()
+    if FOREVER then T.skip(RETAIL_ONLY) end
     -- The head slot's popout arrow, a recorder: Blizzard anchors it `LEFT` -> slot `RIGHT` (-8, 0)
     -- (wow-ui-source@297d7aa:Interface/AddOns/Blizzard_UIPanels_Game/Mainline/PaperDollFrame.lua:1532).
     -- Shown and hidden too: the open window shows every slot's arrow (smoke round 2 design G3).

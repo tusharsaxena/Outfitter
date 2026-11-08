@@ -10,6 +10,9 @@
 -- the EllesmereUI tab and the Chonky backdrop and side panels only when a case asks for them.
 
 local T = _G.OUTFITTERREBORN_TEST
+-- OR-F5: the cases that pin Retail's placement skip on the forever kit profile.
+local FOREVER = dofile("tests/_kit/mock_client.lua").current() == "forever"
+local RETAIL_ONLY = "Retail's sheet button (sidebar tab, EllesmereUI, Chonky); WoW Forever's is the outer side-tab strip (ruling D8)"
 local test, assertEqual, assertTrue = T.test, T.assertEqual, T.assertTrue
 
 local function fresh()
@@ -32,6 +35,7 @@ test("sheet: NS.Sheet is published with the adapter's surface", function()
 end)
 
 test("sheet: stock by default", function()
+    if FOREVER then T.skip(RETAIL_ONLY) end
     local NS, M = fresh()
     NS.Sheet.Refresh()
     assertEqual(NS.Sheet.Kind(), "stock")
@@ -47,6 +51,7 @@ test("sheet: stock by default", function()
 end)
 
 test("sheet: without the stock tab the button keeps its place left of the close X, as a tab", function()
+    if FOREVER then T.skip(RETAIL_ONLY) end
     local NS, M = fresh()
     M.PaperDollSidebarTab3 = nil
     NS.Sheet.Refresh()
@@ -98,6 +103,7 @@ test("sheet: the tab icon falls back to the template's offset when the neighbor'
 end)
 
 test("sheet: EllesmereUI with its equipment tab shown is eui", function()
+    if FOREVER then T.skip(RETAIL_ONLY) end
     local NS, M = fresh()
     local tab = M.__sheets.eui()
     markLoaded(NS, M, "EllesmereUIBlizzardSkin")
@@ -112,6 +118,7 @@ test("sheet: EllesmereUI with its equipment tab shown is eui", function()
 end)
 
 test("sheet: EllesmereUI loaded with the blizzard style resolves to stock", function()
+    if FOREVER then T.skip(RETAIL_ONLY) end
     local NS, M = fresh()
     markLoaded(NS, M, "EllesmereUIBlizzardSkin")
     assertEqual(M.EUI_CharSheet_Equipment, nil)
@@ -122,6 +129,7 @@ test("sheet: EllesmereUI loaded with the blizzard style resolves to stock", func
 end)
 
 test("sheet: EllesmereUI's tab hidden off the Character tab still reads eui", function()
+    if FOREVER then T.skip(RETAIL_ONLY) end
     local NS, M = fresh()
     -- EllesmereUI hides its three text tabs on the Reputation and Currency tabs and shows them again
     -- from a PaperDollFrame OnShow hook (EllesmereUIBlizzardSkin_CharacterSheet.lua:1025-1090) that
@@ -143,6 +151,7 @@ test("sheet: the EllesmereUI tab without the addon loaded is stock", function()
 end)
 
 test("sheet: Chonky with its backdrop shown is chonky", function()
+    if FOREVER then T.skip(RETAIL_ONLY) end
     local NS, M = fresh()
     local bg = M.__sheets.chonky()
     markLoaded(NS, M, "ChonkyCharacterSheet")
@@ -235,4 +244,42 @@ test("sheet: the adapter creates, anchors and shows nothing", function()
     NS.Sheet.Kind(); NS.Sheet.Frame(); NS.Sheet.ButtonAnchor(); NS.Sheet.DockRight()
     assertTrue(#M.__shownFrames() == after, "no frame shown by the reads")
     assertTrue(after == before + 1, "only the mock's own tab")
+end)
+
+-- ── WoW Forever's outer side-tab strip (ruling D8, OR-F5) ────────────────────────────────────────
+-- The mock's strip (tests/wow_mock.lua): CharacterFrameModeTab1..6, shown, 55 x 60, 6 px apart.
+
+local FOREVER_ONLY = "pins WoW Forever's sheet button (ruling D8); runs on the forever kit profile"
+
+test("sheet (Forever): the button is one more tab below the last mode tab, at the strip's spacing", function()
+    if not FOREVER then T.skip(FOREVER_ONLY) end
+    local NS, M = fresh()
+    NS.Sheet.Refresh()
+    -- red under: Retail's anchor on Forever (right of PaperDollSidebarTab3, which is Titles there).
+    local point, rel, relPoint, x, y, w, h, look = NS.Sheet.ButtonAnchor()
+    assertEqual(point, "TOPLEFT"); assertEqual(rel, M.CharacterFrameModeTab6); assertEqual(relPoint, "BOTTOMLEFT")
+    assertEqual(x, 0); assertEqual(y, -6)
+    assertEqual(w, 55); assertEqual(h, 60)
+    assertEqual(look, "sidetab")
+end)
+
+test("sheet (Forever): a hidden last tab gives the place to the last shown one", function()
+    if not FOREVER then T.skip(FOREVER_ONLY) end
+    local NS, M = fresh()
+    M.CharacterFrameModeTab6:Hide()
+    local _, rel, _, _, y = NS.Sheet.ButtonAnchor()
+    -- red under: anchoring to Tab6 by name, shown or not.
+    assertEqual(rel, M.CharacterFrameModeTab5); assertEqual(y, -6)
+end)
+
+test("sheet (Forever): unlaid tabs take the fallback gap, and no tab at all the close X's place", function()
+    if not FOREVER then T.skip(FOREVER_ONLY) end
+    local NS, M = fresh()
+    rawset(M.CharacterFrameModeTab5, "GetBottom", function() return nil end)
+    local _, rel, _, _, y = NS.Sheet.ButtonAnchor()
+    assertEqual(rel, M.CharacterFrameModeTab6); assertEqual(y, -4)
+    for i = 1, 6 do M["CharacterFrameModeTab" .. i]:Hide() end
+    local point, rel2, relPoint, x, y2, w, h, look = NS.Sheet.ButtonAnchor()
+    assertEqual(point, "RIGHT"); assertEqual(rel2, M.CharacterFrameCloseButton); assertEqual(relPoint, "LEFT")
+    assertEqual(x, -2); assertEqual(y2, 0); assertEqual(w, 55); assertEqual(h, 55); assertEqual(look, "sidetab")
 end)

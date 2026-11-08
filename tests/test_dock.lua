@@ -7,6 +7,9 @@
 -- lockdown: PLAYER_REGEN_DISABLED hides it, PLAYER_REGEN_ENABLED brings it back.
 
 local T = _G.OUTFITTERREBORN_TEST
+local FOREVER = dofile("tests/_kit/mock_client.lua").current() == "forever"
+local RETAIL_ONLY = "Retail's sheet button (sidebar tab, EllesmereUI, Chonky); WoW Forever's is the outer side-tab strip (ruling D8)"
+local FOREVER_ONLY = "pins WoW Forever's sheet button (ruling D8); runs on the forever kit profile"
 local test, assertEqual, assertTrue, assertFalse, assertNil =
     T.test, T.assertEqual, T.assertTrue, T.assertFalse, T.assertNil
 local scene = dofile(T.root .. "/tests/dock_scene.lua")(T)
@@ -436,6 +439,7 @@ local function recordSize(frame)
 end
 
 test("dock: the sheet button sits right of the Equipment Manager tab", function()
+    if FOREVER then T.skip(RETAIL_ONLY) end
     local _, M = scene()
     local sized = recordSize(M.OutfitterRebornSheetButton)
     M.__world:openCharacter()
@@ -448,6 +452,7 @@ test("dock: the sheet button sits right of the Equipment Manager tab", function(
 end)
 
 test("dock: on EllesmereUI the button is a label above the Equipment label", function()
+    if FOREVER then T.skip(RETAIL_ONLY) end
     local _, M = scene()
     local tab = M.__sheets.eui()
     M.__loadedAddOns.EllesmereUIBlizzardSkin = true
@@ -548,6 +553,7 @@ local function assertTabLook(button, selected)
 end
 
 test("dock: on the stock sheet the button is a sidebar tab, selected while the window shows", function()
+    if FOREVER then T.skip(RETAIL_ONLY) end
     local NS, M = scene()
     M.__sheets.place(M.CharacterFrame, 300, 500)
     M.__world:openCharacter()
@@ -563,6 +569,7 @@ test("dock: on the stock sheet the button is a sidebar tab, selected while the w
 end)
 
 test("dock: on Chonky the button is the same sidebar tab", function()
+    if FOREVER then T.skip(RETAIL_ONLY) end
     local _, M = scene()
     M.__sheets.chonky()
     M.__loadedAddOns.ChonkyCharacterSheet = true
@@ -591,6 +598,7 @@ local function assertTabIcon(NS, button, dx, dy)
 end
 
 test("dock: the tab's icon is the neighbors' size, on their center, inside the bevel", function()
+    if FOREVER then T.skip(RETAIL_ONLY) end
     local NS, M = scene()
     M.__sheets.place(M.CharacterFrame, 300, 500)
     M.__world:openCharacter()
@@ -599,6 +607,7 @@ test("dock: the tab's icon is the neighbors' size, on their center, inside the b
 end)
 
 test("dock: the tab's icon follows the neighbor's icon, read on each sheet show", function()
+    if FOREVER then T.skip(RETAIL_ONLY) end
     local NS, M = scene()
     M.__world:openCharacter()
     assertTabIcon(NS, M.OutfitterRebornSheetButton, 1, -2)
@@ -614,6 +623,7 @@ test("dock: the tab's icon follows the neighbor's icon, read on each sheet show"
 end)
 
 test("dock: on Chonky the tab's icon sits as on the stock sheet", function()
+    if FOREVER then T.skip(RETAIL_ONLY) end
     local NS, M = scene()
     M.__sheets.chonky()
     M.__loadedAddOns.ChonkyCharacterSheet = true
@@ -639,6 +649,7 @@ local function textColor(button)
 end
 
 test("dock: on EllesmereUI the button is a text label in EUI's tab style", function()
+    if FOREVER then T.skip(RETAIL_ONLY) end
     local NS, M, button = euiScene({ r = 0.2, g = 0.8, b = 0.4 })
     -- red under: the tab look on EllesmereUI's sheet (TabBg and the icon over its text labels).
     assertTrue(button.label:IsShown(), "no label")
@@ -666,6 +677,7 @@ test("dock: on EllesmereUI the button is a text label in EUI's tab style", funct
 end)
 
 test("dock: without EllesmereUI's accent the active label takes EUI's own fallback", function()
+    if FOREVER then T.skip(RETAIL_ONLY) end
     local NS, _, button = euiScene(nil)
     NS.Dock.Open()
     -- EllesmereUIBlizzardSkin_CharacterSheet.lua _paintTopButton's fallback { 0.51, 0.784, 1 }.
@@ -704,6 +716,7 @@ test("dock: the sheet button's label has a face before its text is set", functio
 end)
 
 test("dock: a sheet kind that changes after the show re-places and re-looks the button", function()
+    if FOREVER then T.skip(RETAIL_ONLY) end
     local _, M = scene()
     M.__loadedAddOns.EllesmereUIBlizzardSkin = true
     M.__world:openCharacter()
@@ -720,6 +733,7 @@ test("dock: a sheet kind that changes after the show re-places and re-looks the 
 end)
 
 test("dock: the button is placed and shown in combat: it is a plain, insecure button", function()
+    if FOREVER then T.skip(RETAIL_ONLY) end
     local _, M = scene()
     local button = M.OutfitterRebornSheetButton
     -- The mock protects a Secure* frame by installing its own IsProtected (tests/mock_world.lua).
@@ -854,6 +868,7 @@ local function toTab(M, doll)
 end
 
 test("dock: switching to the Reputation tab on EllesmereUI does not re-anchor the button to stock", function()
+    if FOREVER then T.skip(RETAIL_ONLY) end
     local NS, M = scene()
     local tab = M.__sheets.eui()
     M.__loadedAddOns.EllesmereUIBlizzardSkin = true
@@ -880,6 +895,7 @@ test("dock: switching to the Reputation tab on EllesmereUI does not re-anchor th
 end)
 
 test("dock: a sheet tab built after the paper doll's OnShow is picked up on the next frame", function()
+    if FOREVER then T.skip(RETAIL_ONLY) end
     local NS, M = scene()
     M.__loadedAddOns.EllesmereUIBlizzardSkin = true
     M.__world:openCharacter()
@@ -920,6 +936,7 @@ test("dock: the next frame's sheet check does nothing once the doll is gone or s
 end)
 
 test("dock: on Chonky the Reputation tab takes the button and window down, the Character tab brings them back", function()
+    if FOREVER then T.skip(RETAIL_ONLY) end
     local NS, M = scene()
     M.__sheets.place(M.__sheets.chonky(), 400, 520)
     M.__loadedAddOns.ChonkyCharacterSheet = true
@@ -933,4 +950,46 @@ test("dock: on Chonky the Reputation tab takes the button and window down, the C
     toTab(M, true)
     assertTrue(button:IsShown())
     assertEqual(buttonPoint(M)[2], M.PaperDollSidebarTab3)
+end)
+
+-- ── WoW Forever's sheet button: the outer side-tab strip (ruling D8, OR-F5) ─────────────────────
+test("dock (Forever): the button sits below the last mode tab in the strip's look", function()
+    if not FOREVER then T.skip(FOREVER_ONLY) end
+    local _, M = scene()
+    M.__world:openCharacter()
+    local button = M.OutfitterRebornSheetButton
+    local p = buttonPoint(M)
+    assertEqual(p[1], "TOPLEFT"); assertEqual(p[2], M.CharacterFrameModeTab6); assertEqual(p[3], "BOTTOMLEFT")
+    assertEqual(button:GetParent(), M.CharacterFrame); assertTrue(button:IsShown())
+    -- red under: Retail's hand-built sidebar art on Forever's strip.
+    for _, key in ipairs({ "TabBg", "Hider", "Highlight", "label" }) do
+        assertFalse(button[key]:IsShown(), key .. " shows on the side tab")
+    end
+    assertTrue(button.icon:IsShown(), "no template Icon, so the button's own icon draws")
+    assertEqual(button.icon:GetTexture(), 132724)
+end)
+
+test("dock (Forever): with the client's template the button is a LargeSideTabButtonTemplate CheckButton", function()
+    if not FOREVER then T.skip(FOREVER_ONLY) end
+    local _, M = scene({ mutate = function(M)
+        M.C_XMLUtil = { GetTemplateInfo = function(name)
+            if name == "LargeSideTabButtonTemplate" then return { type = "CheckButton" } end
+        end }
+    end })
+    local button = M.OutfitterRebornSheetButton
+    -- red under: a plain Button with no template (Retail's), or the template on a Button.
+    assertEqual(button.__frameType, "CheckButton"); assertEqual(button.__template, "LargeSideTabButtonTemplate")
+    M.__world:openCharacter()
+    button:__fire("OnClick")
+    assertTrue(button:GetChecked(), "the click opened the window and the tab is checked")
+    button:__fire("OnClick")
+    assertFalse(button:GetChecked(), "the second click closed it")
+end)
+
+test("dock: on Retail the sheet button is a plain Button with no template", function()
+    if FOREVER then T.skip(RETAIL_ONLY) end
+    local _, M = scene({ mutate = function(M) M.C_XMLUtil = { GetTemplateInfo = function() return {} end } end })
+    local button = M.OutfitterRebornSheetButton
+    -- red under: SIDE_TAB_TEMPLATE set for Retail.
+    assertEqual(button.__frameType, "Button"); assertNil(button.__template)
 end)

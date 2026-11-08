@@ -46,6 +46,8 @@ local installLayers = dofile(root .. "/tests/_kit/mock_layers.lua")
 -- Mainline/SharedUIPanelTemplates.xml:134, :381, :680; CharacterFrame is a ButtonFrameTemplate,
 -- Blizzard_UIPanels_Game/Mainline/CharacterFrame.xml:147).
 local CLOSE_BUTTON_LEVEL = 510
+local FOREVER = dofile(root .. "/tests/_kit/mock_client.lua").current() == "forever"
+local MODE_TAB_COUNT, MODE_TAB_W, MODE_TAB_H, MODE_TAB_TOP, MODE_TAB_PITCH = 6, 55, 60, 500, 66
 -- A sidebar tab's Icon: points and size, as a Texture keeps them.
 local function sidebarIcon()
     local icon = { points = {}, w = 0, h = 0 }
@@ -82,6 +84,22 @@ local function installSheets(M)
         { icon = SIDEBAR_TABS, texCoords = { 0.01562500, 0.53125000, 0.32421875, 0.46093750 } },
         { icon = SIDEBAR_TABS, texCoords = { 0.01562500, 0.53125000, 0.46875000, 0.60546875 } },
     }
+    -- WoW Forever's outer side-tab strip (ruling D8; F-UI Camelot/CharacterFrame.xml:574-599), on the
+    -- forever kit profile only: CharacterFrame.ModeTabs and CharacterFrameModeTab1..6, shown, 55 wide
+    -- (probe P27), laid out MODE_TAB_PITCH apart from MODE_TAB_TOP, MODE_TAB_H tall, so the strip's
+    -- spacing reads 6 px. Their template's art is not modeled.
+    if FOREVER then
+        local strip = M.CreateFrame("Frame", nil, M.CharacterFrame)
+        M.CharacterFrame.ModeTabs = strip
+        for i = 1, MODE_TAB_COUNT do
+            local tab = M.CreateFrame("Button", "CharacterFrameModeTab" .. i, strip)
+            local top = MODE_TAB_TOP - (i - 1) * MODE_TAB_PITCH
+            rawset(tab, "GetSize", function() return MODE_TAB_W, MODE_TAB_H end)
+            rawset(tab, "GetTop", function() return top end)
+            rawset(tab, "GetBottom", function() return top - MODE_TAB_H end)
+            tab:Show()
+        end
+    end
     M.__sheets = {
         place  = place,
         eui    = function() return M.CreateFrame("Frame", "EUI_CharSheet_Equipment", M.CharacterFrame) end,

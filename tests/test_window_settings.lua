@@ -6,6 +6,7 @@
 -- writes no row.
 
 local T = _G.OUTFITTERREBORN_TEST
+local FOREVER = dofile("tests/_kit/mock_client.lua").current() == "forever"
 local test, assertEqual, assertTrue, assertFalse, assertNil =
     T.test, T.assertEqual, T.assertTrue, T.assertFalse, T.assertNil
 local scene = dofile(T.root .. "/tests/dock_scene.lua")(T)
@@ -200,8 +201,9 @@ test("window settings: Show the flyout arrows turns the drawer off and on with t
     NS.SetByPath("window.drawer", false)
     -- red under: drawerWanted without the row (modules/QuickSlots.lua), or no Dock receiver to sync.
     assertEqual(arrowsShown(M), 0, "the arrows stayed out with the row off")
+    -- Retail's drawer moved the left column's arrow out; WoW Forever's moves none (ruling D4, OR-F5).
     local pts = M.__slotButtons.HeadSlot.popoutButton.__pts
-    assertEqual(pts[#pts][1], "LEFT", "the left column's arrow is back at Blizzard's anchor")
+    if not FOREVER then assertEqual(pts[#pts][1], "LEFT", "the left column's arrow is back at Blizzard's anchor") end
     NS.SetByPath("window.drawer", true)
     assertEqual(arrowsShown(M), total)
     -- Off, a fresh open leaves Blizzard's arrows alone.

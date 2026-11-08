@@ -2,7 +2,8 @@ local _, NS = ...
 -- modules/Sheet.lua — NS.Sheet: which character sheet is up and where on it the outfit button and the
 -- window go (sheet and window feedback design G1-G3). Three sheets: the stock one, EllesmereUI's
 -- skinned sheet and ChonkyCharacterSheet. READS ONLY: it creates, anchors, shows and hides nothing;
--- modules/Dock.lua asks it on every sheet show and from the follow.
+-- modules/Dock.lua asks it on every sheet show and from the follow. On WoW Forever the button anchors
+-- to the outer side-tab strip instead (ruling D8, foreverButtonAnchor); the sheet addons are Retail's.
 --
 -- DETECTION. A sheet addon counts only when it is loaded AND the frame it builds is there, so a sheet
 -- addon whose skin is off falls back to the stock anchors instead of anchoring to a frame that was
@@ -30,7 +31,7 @@ local _, NS = ...
 -- Retail/mythicPlusStats.lua:1047-1064). A panel carries its own scale (mplus_sp_scale), so its edge
 -- is converted into the sheet frame's units.
 --
--- CALLS (at call time): NS.Compat.IsAddOnLoaded, NS.SafeNumber.
+-- CALLS (at call time): NS.Compat.IsAddOnLoaded, NS.SafeNumber. At load: NS.PerClient (core/ClientSetup.lua).
 
 local Sheet = {}
 NS.Sheet = Sheet
@@ -94,14 +95,60 @@ local function stockTabSize(tab)
     return w, h
 end
 
+-- WoW Forever's outer side-tab strip (ruling D8): CharacterFrame.ModeTabs holds CharacterFrameModeTab1..6
+-- (Character, Reputation, Skills, PvP, Currency, Statistics), a vertical strip outside the frame's
+-- right edge, drawn with LargeSideTabButtonTemplate (F-UI Camelot/CharacterFrame.xml:574-599,
+-- Camelot/CharacterFrame.lua:154). It shows with the inner right pane expanded or collapsed, so one
+-- placement covers both. Tab6 is 55 px wide and the strip 384 tall (probe P27); the height and the
+-- spacing are read live from the tabs, these are the fallbacks.
+local MODE_TAB = "CharacterFrameModeTab"
+local MODE_TAB_COUNT = 6
+local MODE_TAB_W, MODE_TAB_H = 55, 55 -- PROBE P27: the height is a guess; the width is the probe's
+local MODE_TAB_GAP = 4                -- PROBE P27: used only when two shown tabs give no spacing
+
+-- A frame's top or bottom, plain, or nil.
+local function plainEdge(f, method)
+    if type(f[method]) ~= "function" then return nil end
+    return NS.SafeNumber(f[method](f), nil)
+end
+
+-- The shown mode tabs, top to bottom.
+local function shownModeTabs()
+    local out = {}
+    for i = 1, MODE_TAB_COUNT do out[#out + 1] = shownFrame(MODE_TAB .. i) end
+    return out
+end
+
+-- The strip's spacing: the gap between the last two shown tabs, when both are laid out.
+local function modeTabGap(prev, last)
+    local bottom, top = prev and plainEdge(prev, "GetBottom"), plainEdge(last, "GetTop")
+    if not bottom or not top or bottom < top then return MODE_TAB_GAP end
+    return bottom - top
+end
+
+-- Forever: one more button of the outer strip, below the last shown mode tab, at its size and the
+-- strip's spacing. Outfitter's own frame (modules/Dock.lua): it never joins the strip's mode switching.
+-- With no mode tab shown the button keeps the close X's place.
+local function foreverButtonAnchor()
+    local tabs = shownModeTabs()
+    local last = tabs[#tabs]
+    if not last then return "RIGHT", CharacterFrameCloseButton, "LEFT", -2, 0, MODE_TAB_W, MODE_TAB_H, "sidetab" end
+    local w, h = last:GetSize()
+    w, h = NS.SafeNumber(w, 0), NS.SafeNumber(h, 0)
+    if w <= 0 or h <= 0 then w, h = MODE_TAB_W, MODE_TAB_H end
+    return "TOPLEFT", last, "BOTTOMLEFT", 0, -modeTabGap(tabs[#tabs - 1], last), w, h, "sidetab"
+end
+
 --- Where the outfit button goes and which host look it wears (smoke round 2 design G2): a sidebar
 --- tab right of the Equipment Manager tab, bottoms on one line, on the stock and Chonky sheets
 --- (Chonky keeps Blizzard's sidebar tabs); a text label stacked directly above the Equipment label,
 --- centered on it, on EllesmereUI. Without the stock tab (another addon removed it) the tab keeps
 --- the button's old place, left of the close X.
+--- On WoW Forever (ruling D8) the button is one more tab of the outer side-tab strip instead, below
+--- the last shown mode tab, in the strip's own look ("sidetab").
 --- @return string point, table relFrame, string relPoint, number x, number y, number w, number h,
----         string look  "tab" | "text"
-function Sheet.ButtonAnchor()
+---         string look  "tab" | "text" | "sidetab"
+local function retailButtonAnchor()
     if Sheet.Kind() == "eui" then
         return "BOTTOM", _G[EUI_TAB], "TOP", 0, 0, EUI_LABEL_W, EUI_LABEL_H, "text"
     end
@@ -112,6 +159,7 @@ function Sheet.ButtonAnchor()
     end
     return "RIGHT", CharacterFrameCloseButton, "LEFT", -2, 0, TAB_W, TAB_H, "tab"
 end
+Sheet.ButtonAnchor = NS.PerClient({ retail = retailButtonAnchor, forever = foreverButtonAnchor })
 
 -- The template's Icon: 33 x 35, BOTTOM 1,-2 on the 33 x 35 tab, so its center sits 1 right of and 2
 -- below the tab's (wow-ui-source@297d7aa:Interface/AddOns/Blizzard_UIPanels_Game/Mainline/

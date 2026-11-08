@@ -461,3 +461,18 @@ On WoW Forever, unless a row says Retail. No probe is open for this step.
 | F4-3 | Make an outfit on *Dance* and wear it | The character dances, with no Lua error |
 | F4-4 | Dock the window on the character sheet; open and close the bags and the spellbook over it | The window keeps to the sheet's layer, with no Lua error |
 | F4-5 (Retail) | F4-1 to F4-4 on Retail as a Fury warrior | Fury grips the second two-hander; a target entry reads "Name-Realm"; the dance and the dock are unchanged |
+
+## 17. WoW Forever: the sheet button and the drawer (OR-F5, 2026-11-09)
+
+On WoW Forever, unless a row says Retail. Probes P25 (the flyouts) and P27 (the side-tab strip's geometry and
+template) are settled by these rows: the sizes, the gap and the template's regions are coded from the inventory's
+best evidence.
+
+| # | Do | See |
+|---|---|---|
+| F5-1 (D8, P27) | Open the character sheet | The Outfitter button is the last button of the outer side-tab strip, directly below Statistics, the same width as the strip's tabs, at the strip's spacing, wearing the strip's tab art with the default outfit icon. No Lua error at login |
+| F5-2 (D8) | Collapse and expand the inner right pane; switch to Reputation, Skills, PvP, Currency and Statistics and back | The button stays below Statistics through both pane states. It hides off the Character tab and comes back on it, as on Retail |
+| F5-3 (D8) | Click the button twice | The first click opens the Outfitter window and the button reads selected; the second closes it and the button reads unselected. The strip's own tab stays on Character, and no mode switches |
+| F5-4 (D4, P25) | With the window open, look at every slot; open Head's, Hands', Main Hand's and Ranged's flyouts | Every slot shows its arrow, Ranged's included, pointing as Blizzard draws it. Head's flyout opens right, Hands' left, the weapons' and Ranged's up, each where Blizzard opens it. Closing the window hides the arrows |
+| F5-5 (D4) | Turn off *Show the flyout arrows* on the Outfit Window page with the window open | The arrows hide; turning it on shows them again |
+| F5-6 (Retail) | F5-1 to F5-5 on Retail | The button sits right of the Equipment Manager tab; the left column's arrows and flyouts open outward, as before |

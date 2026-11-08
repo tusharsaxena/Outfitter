@@ -178,6 +178,15 @@ local ARROW_WIDTH = 16            -- PaperDollFrame.lua:1530, a horizontal arrow
 local FLYOUT_GAP = ARROW_WIDTH - ARROW_INSET  -- the arrow's visible half, between slot and items
 local SLOT_HEIGHT = 37            -- a stock slot button, when the client answers no height
 
+-- WoW Forever's drawer (ruling D4, adapted): its flyouts already open inward, each by its slot's
+-- flyoutDirection (Head RIGHT, Hands LEFT, the weapons and Ranged UP; probe P25), and its arrows are
+-- rotated atlases, so Retail's coords would paint them wrong (F-UI Camelot/PaperDollFrame.lua:1976-1989,
+-- Camelot/EquipmentFlyout.lua:687-760). There the drawer is every slot's arrow, Ranged's included,
+-- shown while the window is up, each where and as Blizzard draws it: no arrow moved or repainted, no
+-- flyout re-anchored. EquipmentFlyoutPopoutButton_SetReversed is gone on Forever, so its hook never
+-- installs. PROBE P25: the arrows' show/hide and the HideAll post-hook on Forever's flyout code.
+local MOVES_DRAWER = NS.PerClient({ retail = true, forever = false })
+
 local drawerOn = false            -- the arrows are shown and the left column's sit on the slot's left
 local flyoutMoved = false         -- buttonFrame carries this file's point, not Blizzard's
 
@@ -269,6 +278,7 @@ end
 -- The flyout's item frame: beside a character-sheet slot's horizontal flyout while wanted, else
 -- Blizzard's own point, written back only when this file moved it.
 local function placeFlyout()
+    if not MOVES_DRAWER then return end
     local flyout = _G.EquipmentFlyoutFrame
     local frame = flyout and flyout.buttonFrame
     if not frame then return end
@@ -399,7 +409,7 @@ end
 
 -- EquipmentFlyoutPopoutButton_SetReversed's post-hook: a moved arrow keeps pointing outward.
 local function onSetReversed(popout, reversed)
-    if not drawerOn or locked() or type(popout) ~= "table" or not popout.GetParent then return end
+    if not MOVES_DRAWER or not drawerOn or locked() or type(popout) ~= "table" or not popout.GetParent then return end
     if leftColumn(popout:GetParent()) then paintArrow(popout, reversed == true, true) end
 end
 
@@ -419,7 +429,7 @@ function QS.DrawerSync()
     local want = drawerWanted()
     if want == drawerOn then return placeFlyout() end
     for button, slot in pairs(slotOf) do
-        if NS.SlotEnables.COLUMN[slot] == "LEFT" then placeArrow(button, want) end
+        if MOVES_DRAWER and NS.SlotEnables.COLUMN[slot] == "LEFT" then placeArrow(button, want) end
     end
     drawerOn = want
     placeFlyout()
