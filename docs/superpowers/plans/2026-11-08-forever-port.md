@@ -22,3 +22,18 @@ Every step ends green under both kit profiles (`lua tests/run.lua`, `KA0S_KIT_CL
 through `ka0s-bounded`) with luacheck at 0/0. This repo's `CLAUDE.md` forbids staging or committing without an
 instruction, so commits go through `/dev-copilot:commit`. Smoke is the owner's. Nothing is merged, tagged or
 version-bumped without the owner.
+
+## Resuming (build started 2026-11-08)
+
+The owner authorized the build on 2026-11-08 with incremental commits and pushes of this branch at milestones
+(no merge). **Git is the only state:** a step is done when a commit whose subject starts `OR-Fn: ` exists on
+`feat/2026-11-08-forever-port`. Find where things stand with
+
+    git log --oneline master..feat/2026-11-08-forever-port | grep -oE '^[0-9a-f]+ OR-F[0-9]+' 
+
+and resume at the lowest step with no commit. On a dirty tree, read the diff first: finish it if it belongs to the
+next step, otherwise stash it. Never `reset --hard` unread work. Open probes (P3, P17, P18, P21, P24, the vanilla
+stat keys) do not block the build: each value they would confirm is coded from the inventory's best evidence,
+marked `-- PROBE Pn` at the site, and listed as a smoke check in `docs/smoke-tests.md`. Milestones and pushes: after
+OR-F3 (data), after OR-F5 (behavior and UI), after OR-F7 (docs and roster). OR-F7 lands in `../WowAddonStandards`
+on a branch of the same name.
