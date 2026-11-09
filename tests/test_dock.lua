@@ -774,7 +774,7 @@ test("dock: an open Chonky side panel pushes the window right", function()
     local p = win.__pts[#win.__pts]
     -- red under: positionWindow reading PaperDollFrame's corner instead of NS.Sheet.DockRight().
     assertEqual(p[4], 700, "the window sits on top of the open M+ panel")
-    assertEqual(p[5], 520)
+    assertEqual(p[5], 517, "level with Chonky's visible top line (S2)")
     -- The panel closes: the follow brings the window back to the backdrop's edge.
     mplus:Hide()
     M.OutfitterRebornDockDriver:__fire("OnUpdate", 0.05)

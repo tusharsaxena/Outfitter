@@ -299,9 +299,23 @@ function Sheet.EUILabelText()
     return text
 end
 
+-- Chonky's backdrop draws its visible border its `insets` inside the frame's edge (CCS-F
+-- Modules/Forever.lua:1277-1281: edgeSize 16, insets 3), so a window flush with the frame's top sits
+-- above the line the eye reads as the top (Forever smoke feedback S2; measured in the owner's 6.png).
+local CHONKY_TOP_INSET = 3
+
+-- The Chonky backdrop's top inset, read off BackdropTemplateMixin's backdropInfo, else its value.
+local function chonkyTopInset(frame)
+    local info = rawget(frame, "backdropInfo")
+    local insets = type(info) == "table" and info.insets
+    local top = type(insets) == "table" and NS.SafeNumber(insets.top, nil)
+    if not top or top < 0 then return CHONKY_TOP_INSET end
+    return top
+end
+
 --- Where the window docks: the right edge of the sheet, or of the rightmost shown Chonky side panel,
 --- and the sheet's top, both in the sheet frame's (Sheet.Frame()'s) units. nil, nil while the sheet
---- has never been laid out.
+--- has never been laid out. On Chonky the top is its border's visible line (S2), not the frame's.
 --- @return number|nil x, number|nil top
 function Sheet.DockRight()
     local frame = Sheet.Frame()
@@ -309,6 +323,7 @@ function Sheet.DockRight()
     local top = NS.SafeNumber(frame:GetTop(), nil)
     if not right or not top then return nil, nil end
     if not loaded.chonky then return right, top end
+    if Sheet.Kind() == "chonky" then top = top - chonkyTopInset(frame) end
     local sheetScale = scaleOf(frame)
     for _, name in ipairs(Sheet.CHONKY_PANELS) do
         local panel = shownFrame(name)
@@ -320,3 +335,39 @@ function Sheet.DockRight()
     end
     return right, top
 end
+
+-- A strip starting this close to the window's left edge hangs over it; past that it stands clear (a
+-- Chonky side panel opens 63 px right of the sheet for the strip, CCS-F Modules/Forever.lua:1409).
+local STRIP_SLACK = 12
+-- The empty band's spare width past the strip's right edge.
+local STRIP_MARGIN = 4
+
+--- How far a side-tab strip down the sheet's right edge reaches over a window docked at `x` (Forever
+--- smoke feedback S5), in the sheet frame's units: the strip's right edge past `x`, plus a margin, when
+--- the shown mode tabs run down and their left edge sits within STRIP_SLACK of `x`; else 0. The
+--- window widens by this much and keeps its contents right of it (modules/Window.lua), so the tabs lie
+--- over an empty band of the window's own background. The sheet button sits in the same column, as
+--- wide as a tab, so the tabs' edges are the strip's. Retail has no such strip: always 0 there.
+--- @param x number|nil the window's left edge, in the sheet frame's units
+--- @return number
+local function retailStripInset() return 0 end
+
+local function foreverStripInset(x)
+    if not x then return 0 end
+    local tabs = shownModeTabs()
+    if #tabs == 0 or Sheet.StripAcross(tabs) then return 0 end
+    local sheetScale = scaleOf(Sheet.Frame())
+    local left, right
+    for _, tab in ipairs(tabs) do
+        local l, r = plainEdge(tab, "GetLeft"), plainEdge(tab, "GetRight")
+        if l and r then
+            local k = scaleOf(tab) / sheetScale
+            l, r = l * k, r * k
+            left = left and math.min(left, l) or l
+            right = right and math.max(right, r) or r
+        end
+    end
+    if not (left and right) or math.abs(left - x) > STRIP_SLACK or right <= x then return 0 end
+    return right - x + STRIP_MARGIN
+end
+Sheet.StripInset = NS.PerClient({ retail = retailStripInset, forever = foreverStripInset })

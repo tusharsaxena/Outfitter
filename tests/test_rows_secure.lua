@@ -409,6 +409,7 @@ end)
 
 test("rows: the menu control is a borderless gear that opens the outfit menu", function()
     -- G4: the gear replaces the ... button. red under: NS.Icon("ellipses"), or S.Button(menu) boxed.
+    -- Forever smoke feedback S6: painted as the title gear is, S.CloseButton (rest, hot under the pointer).
     local NS, M, fakes = opened()
     local row = rowOf(NS, "outfit")
     local menu = row.menu
@@ -416,8 +417,8 @@ test("rows: the menu control is a borderless gear that opens the outfit menu", f
     local p = lastPoint(menu)
     assertEqual(p[1], "RIGHT"); assertEqual(p[2], row); assertEqual(p[3], "RIGHT"); assertEqual(p[4], -4)
     local rec = M.LibStub("LibKa0s-Skin-1.0").painted[menu]
-    local opts = rec and rec.calls.Button and rec.calls.Button[1]
-    assertTrue(type(opts) == "table" and opts.noBg == true and opts.noBorder == true, "S.Button(menu, { noBg, noBorder })")
+    assertTrue(rec ~= nil and rec.calls.CloseButton ~= nil, "S.CloseButton(menu)")
+    assertTrue(rec.calls.Button == nil, "no boxed S.Button on the gear")
     menu:__fire("OnClick", "LeftButton")
     assertEqual(fakes.OutfitMenu.__count("Open"), 1)
     assertEqual(fakes.OutfitMenu.__calls[1][2], menu); assertEqual(fakes.OutfitMenu.__calls[1][3], row.entry.id)
@@ -486,4 +487,70 @@ test("rows: an item with no quality color is drawn muted, never in the previous 
     r, g, b = row.itemName:GetTextColor()
     -- red under: RENDER.item setting the color only when NS.QualityColor answers one.
     assertEqual(("%s,%s,%s"):format(r, g, b), ("%s,%s,%s"):format(mr, mg, mb), "no quality: muted")
+end)
+
+-- ── hover (Forever smoke feedback S6) ────────────────────────────────────────────────────────────
+
+-- Record the state each ListRow paint gave a row.
+local function rowStates(NS)
+    local seen = {}
+    local paint = NS.Skin.ListRow
+    NS.Skin.ListRow = function(row, state, ...)
+        seen[row] = state
+        return paint(row, state, ...)
+    end
+    return seen
+end
+
+test("rows: a row wears the hover wash while the pointer is over it or its controls", function()
+    local NS = opened()
+    local seen = rowStates(NS)
+    local row = rowOf(NS, "outfit")
+    row:__fire("OnEnter")
+    -- red under: a row with no hover state (Bind paints stripe and selection only).
+    assertTrue(seen[row].hover, "the row's own enter")
+    rawset(row, "IsMouseOver", function() return true end)
+    row:__fire("OnLeave")
+    row.worn:__fire("OnEnter")
+    assertTrue(seen[row].hover, "onto the worn box the wash stays")
+    row.worn:__fire("OnLeave")
+    assertTrue(seen[row].hover, "back onto the row it stays")
+    rawset(row, "IsMouseOver", function() return false end)
+    row.menu:__fire("OnLeave")
+    assertFalse(seen[row].hover, "off the row it goes")
+end)
+
+test("rows: a blank row takes no hover, and a rebind keeps the stripe and selection", function()
+    local NS = opened()
+    local seen = rowStates(NS)
+    local rs = rows(NS)
+    local blank
+    for _, row in ipairs(rs) do if not row.entry then blank = row end end
+    if blank then
+        blank:__fire("OnEnter")
+        assertFalse(seen[blank] ~= nil and seen[blank].hover == true, "a blank row lit up")
+    end
+    local row = rowOf(NS, "outfit")
+    row:__fire("OnEnter")
+    assertEqual(seen[row].stripe, row.stripe, "the hover paint keeps the stripe")
+end)
+
+test("rows: the worn box and the EM mark wash in the skin's accent; the gear is painted as the title gear", function()
+    local NS, M = opened()
+    local row = rowOf(NS, "outfit")
+    for _, ctl in ipairs({ row.worn, row.em }) do
+        assertTrue(ctl.hot ~= nil, "a hover wash on " .. tostring(ctl:GetName()))
+        ctl:__fire("OnEnter")
+        local p = M.__paint(ctl.hot)
+        local r, g, b = NS.SkinColor("icon.arrow")
+        -- red under: no wash (the box's faint menu.hover, the mark's none).
+        assertEqual(p.color and p.color[1], r); assertEqual(p.color[2], g); assertEqual(p.color[3], b)
+        assertEqual(p.color[4], 0.35)
+        assertEqual(p.layer, "HIGHLIGHT")
+    end
+    -- red under: NS.Skin.Button's noBg pass (no tint on the gear's art, so no hover color either).
+    local title = M.__paint(M.OutfitterRebornWindowSettings.icon)
+    local gear = M.__paint(row.menu.icon)
+    assertTrue(gear.vertex ~= nil, "the row gear's art is tinted")
+    assertEqual(table.concat(gear.vertex, ","), table.concat(title.vertex or {}, ","), "as the title gear's is")
 end)

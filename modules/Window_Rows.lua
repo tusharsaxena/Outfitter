@@ -32,6 +32,13 @@ local _, NS = ...
 -- opens the sample's browse-only outfit menu (smoke round 3 E4: every data row disabled, in
 -- NS.OutfitMenu). Its tooltip is the bar's sample line. Only item rows arm, and test mode lists none.
 --
+-- HOVER (Forever smoke feedback S6, both clients). A row wears the skin's `list.hover` wash while the
+-- pointer is anywhere over it, its controls and its secure child included: each one's enter sets the
+-- row's hover, each one's leave clears it unless the pointer is still over the row. The worn box and
+-- the Equipment Manager mark add their own wash in the skin's accent (`icon.arrow` at HOT_ALPHA),
+-- colored on each enter so it is the live skin's; the gear is painted as the title gear is
+-- (NS.Skin.CloseButton: `close.rest`, `close.hot` under the pointer).
+--
 -- CALLS (at call time; design §12): NS.Window.MarkDirty/ToggleCollapsed, NS.Stack.Wear/Remove/IsWorn/
 -- Select/Selected, NS.Outfits.Get/IsEM, NS.EM.SetStored, NS.OutfitMenu.Open,
 -- NS.OutfitTooltip.Show, NS.OutfitIcon (the one icon resolver), NS.Compat (pickup, use, sell
@@ -49,6 +56,8 @@ local STATUS_TOKEN = { disabled = "of.outfit.disabled", missing = "of.outfit.mis
 Rows.STATUS_TOKEN = STATUS_TOKEN
 
 local DIM_ALPHA = 0.4
+-- A control's hover wash: the skin's accent at this alpha (S6).
+local HOT_ALPHA = 0.35
 local BUYBACK_TAB = 2
 
 -- The Equipment Manager mark's alpha for an outfit the Equipment Manager does not hold (design G4).
@@ -222,13 +231,36 @@ function HOVER.outfit(row, e)
 end
 function HOVER.item(row, e) itemTooltip(row, e.item) end
 
+-- The row's washes for its bound state and the hover now (S6): the stripe and selection Bind set,
+-- through the ListRow record, so a skin switch repaints the hover too.
+local function paintRow(row)
+    NS.Skin.ListRow(row, { stripe = row.stripe, selected = row.selected, hover = row.hovered })
+end
+
+--- The pointer entered the row or one of its controls: the row's hover wash, unless it is blank.
+--- @param row table
+function Rows.SetHover(row, on)
+    on = on == true and row.entry ~= nil
+    if row.hovered == on then return end
+    row.hovered = on
+    paintRow(row)
+end
+
+-- The pointer left the row or one of its controls: the wash stays while it is still over the row
+-- (it moved onto a control, or back off one).
+local function leaveRow(row)
+    Rows.SetHover(row, row:IsMouseOver() == true)
+end
+
 function Rows.OnEnter(row)
+    Rows.SetHover(row, true)
     local e = row.entry
     if NS.IsStoodDown() or not e then return end
     HOVER[e.kind](row, e)
 end
 
-function Rows.OnLeave()
+function Rows.OnLeave(row)
+    if type(row) == "table" and row.__rowName then leaveRow(row) end
     GameTooltip:Hide()
 end
 
@@ -311,18 +343,40 @@ function Rows.Bind(row, entry, index)
     row.entry = entry
     for _, key in ipairs(REGIONS) do row[key]:Hide() end
     if entry then RENDER[entry.kind](row, entry) end
-    local selected = entry ~= nil and entry.kind == "outfit" and entry.id == NS.Stack.Selected()
-    NS.Skin.ListRow(row, { stripe = (index or 0) % 2 == 1, selected = selected })
+    row.selected = entry ~= nil and entry.kind == "outfit" and entry.id == NS.Stack.Selected()
+    row.stripe = (index or 0) % 2 == 1
+    if not entry then row.hovered = false end
+    paintRow(row)
     if entry and entry.kind == "item" then Rows.ArmSecure(row) end
 end
 
 -- ── build ─────────────────────────────────────────────────────────────────────────────────────
 
+-- A control's hover wash (S6): a HIGHLIGHT texture the client shows under the pointer, colored the
+-- skin's accent on each enter.
+local function hotWash(ctl)
+    local t = ctl:CreateTexture(nil, "HIGHLIGHT")
+    t:SetAllPoints(ctl)
+    ctl.hot = t
+    ctl:HookScript("OnEnter", function()
+        local r, g, b = NS.SkinColor("icon.arrow")
+        if r then t:SetColorTexture(r, g, b, HOT_ALPHA) end
+    end)
+end
+
+-- The row's hover follows the pointer onto and off `ctl` (S6).
+local function hoverWith(row, ctl)
+    ctl:HookScript("OnEnter", function() Rows.SetHover(row, true) end)
+    ctl:HookScript("OnLeave", function() leaveRow(row) end)
+end
+
 local function checkbox(row, suffix, x)
     local cb = CreateFrame("CheckButton", row.__rowName .. suffix, row)
     cb:SetSize(16, 16)
     cb:SetPoint("LEFT", row, "LEFT", x, 0)
-    NS.Skin.Checkbox(cb, { hover = true })
+    -- The accent wash replaces the skin's faint `menu.hover` one (S6).
+    NS.Skin.Checkbox(cb)
+    hotWash(cb)
     return cb
 end
 
@@ -381,7 +435,8 @@ local function emMark(row)
     end
     em:SetScript("OnClick", function() onEmClick(row) end)
     em:SetScript("OnEnter", function(b) emTooltip(b, row) end)
-    em:SetScript("OnLeave", Rows.OnLeave)
+    em:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    hotWash(em)
     return em
 end
 
@@ -393,7 +448,8 @@ local function gearMenu(row)
     menu.icon = menu:CreateTexture(nil, "ARTWORK")
     menu.icon:SetAllPoints(menu)
     menu.icon:SetTexture(NS.Icon("ph:gear-six"))
-    NS.Skin.Button(menu, { noBg = true, noBorder = true })
+    -- Painted as the title gear is: `close.rest`, `close.hot` under the pointer (S6).
+    NS.Skin.CloseButton(menu)
     menu:SetScript("OnClick", function()
         local e = row.entry
         -- A sample's gear opens its browse-only menu (smoke round 3 E4): NS.OutfitMenu disables every
@@ -409,6 +465,7 @@ local function controls(row)
     row.worn:SetScript("OnClick", function() onWornClick(row) end)
     row.em = emMark(row)
     row.menu = gearMenu(row)
+    for _, ctl in ipairs({ row.worn, row.em, row.menu }) do hoverWith(row, ctl) end
 end
 
 -- The secure child: SetAllPoints at birth, its hooks wired to the row's handlers, hidden.
@@ -420,7 +477,7 @@ local function secureChild(row)
     s:HookScript("PreClick", function() Rows.PreClick(row) end)
     s:HookScript("PostClick", function(_, button) Rows.OnClick(row, button) end)
     s:HookScript("OnEnter", function() Rows.OnEnter(row) end)
-    s:HookScript("OnLeave", Rows.OnLeave)
+    s:HookScript("OnLeave", function() Rows.OnLeave(row) end)
     s:Hide()
     row.secure = s
 end
@@ -435,7 +492,7 @@ local function newRow(list, i)
     row:HookScript("PreClick", function() Rows.PreClick(row) end)
     row:HookScript("PostClick", function(_, button) Rows.OnClick(row, button) end)
     row:SetScript("OnEnter", function() Rows.OnEnter(row) end)
-    row:SetScript("OnLeave", Rows.OnLeave)
+    row:SetScript("OnLeave", function() Rows.OnLeave(row) end)
     regions(row)
     controls(row)
     secureChild(row)

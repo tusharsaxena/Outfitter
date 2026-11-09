@@ -1187,7 +1187,7 @@ Total.
 - pvp: a disabled spec keeps the outfit off, and the spec change puts it on or takes it off
 - pvp: every zone trigger honors each of the four spec toggles
 
-### test_sheet.lua (24)
+### test_sheet.lua (29)
 
 - sheet: NS.Sheet is published with the adapter's surface
 - sheet: stock by default
@@ -1213,6 +1213,11 @@ Total.
 - sheet (Forever): on a strip that runs across, the button sits right of the last tab
 - sheet (Forever): the button takes the strip's scale
 - sheet (Forever): a last tab in Chonky's skin asks for its look, and its art and colors read live
+- sheet: on Chonky the dock's top is the backdrop's visible line, its insets read live (S2)
+- sheet: the stock sheet's top is the frame's (S2 is Chonky's only)
+- sheet (Forever): a strip down the window's edge reaches over it by its width and a margin (S5)
+- sheet (Forever): a scaled strip's reach is read in the sheet's units (S5)
+- sheet: Retail has no side strip (S5)
 
 ### test_dock.lua (50)
 
@@ -1267,7 +1272,7 @@ Total.
 - dock: on Chonky the Reputation tab takes the button and window down, the Character tab brings them back
 - dock: on Retail the sheet button is a plain Button with no template
 
-### test_dock_forever.lua (6)
+### test_dock_forever.lua (7)
 
 - dock (Forever): the button sits below the last mode tab in the strip's look
 - dock (Forever): with the client's template the button is a LargeSideTabButtonTemplate CheckButton
@@ -1275,6 +1280,7 @@ Total.
 - dock (Forever): the button stays on the other tabs and goes with CharacterFrame (S4)
 - dock (Forever): the button takes the strip's scale (S1)
 - dock (Forever): on Chonky's skinned strip the button wears its skin, not the template's (S1)
+- dock (Forever): a strip down the sheet's edge widens the window and moves its contents right (S5)
 
 ### test_list_model.lua (8)
 
@@ -1287,7 +1293,7 @@ Total.
 - list model: Status caches O.Status in the table it is handed, until that is wiped
 - list model: in test mode the list is the sample outfits under their headers, no item section
 
-### test_rows_secure.lua (22)
+### test_rows_secure.lua (25)
 
 - rows: NS.WindowRows is published with the secure surface
 - rows: fourteen rows and their secure children are created once, each SetAllPoints'd at birth
@@ -1311,6 +1317,9 @@ Total.
 - rows: an outfit row's name is colored by its status, and a disabled one says so
 - rows: a profile switch redraws the trigger mark from the new profile's auto.enabled
 - rows: an item with no quality color is drawn muted, never in the previous item's color
+- rows: a row wears the hover wash while the pointer is over it or its controls
+- rows: a blank row takes no hover, and a rebind keeps the stripe and selection
+- rows: the worn box and the EM mark wash in the skin's accent; the gear is painted as the title gear
 
 ### test_slot_enables.lua (29)
 
@@ -1877,11 +1886,11 @@ Total.
 | test_triggers_quest.lua | 14 |
 | test_triggers_class.lua | 11 |
 | test_triggers_pvp.lua | 7 |
-| test_sheet.lua | 24 |
+| test_sheet.lua | 29 |
 | test_dock.lua | 50 |
-| test_dock_forever.lua | 6 |
+| test_dock_forever.lua | 7 |
 | test_list_model.lua | 8 |
-| test_rows_secure.lua | 22 |
+| test_rows_secure.lua | 25 |
 | test_slot_enables.lua | 29 |
 | test_bar.lua | 45 |
 | test_bar_look.lua | 13 |
@@ -1907,4 +1916,4 @@ Total.
 | test_lizard_sighted.lua | 8 |
 | test_prose.lua | 15 |
 | Skipped | 1 |
-| **Total** | **1573** |
+| **Total** | **1582** |

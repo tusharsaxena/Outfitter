@@ -20,7 +20,7 @@ local _, NS = ...
 -- NS.Outfits.SetAllSlotsEnabled, NS.OutfitDialog.OpenNew, NS.OpenOptionsPanel, NS.Preview.IsActive,
 -- NS.MakeTestStrip.
 
-local Win = { collapsed = {}, offset = 0, dirty = true, entries = {}, WIDTH = 260, HEIGHT = 320 }
+local Win = { collapsed = {}, offset = 0, dirty = true, entries = {}, WIDTH = 260, HEIGHT = 320, inset = 0 }
 NS.Window = Win
 
 local L = NS.L
@@ -121,7 +121,7 @@ local function ensureStrip()
         local strip = NS.MakeTestStrip(frame, L["Test mode: sample outfits, nothing equipped"])
         frame.strip = strip or false
         if strip then
-            strip:SetPoint("TOPLEFT", frame, "TOPLEFT", 1, STRIP_TOP)
+            strip:SetPoint("TOPLEFT", frame, "TOPLEFT", 1 + Win.inset, STRIP_TOP)
             strip:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -1, STRIP_TOP)
             chrome[#chrome + 1] = strip
             strip:SetFrameLevel(NS.SafeNumber(frame:GetFrameLevel(), 0) + LEVEL.CHROME)
@@ -133,7 +133,26 @@ end
 --- The window's size as this file set it, in its own units: the width and the height with the test
 --- strip's push. Read where the client's rect may not be laid yet (the dock's alone spot).
 --- @return number width, number height
-function Win.Size() return Win.WIDTH, Win.HEIGHT + (Win.push or 0) end
+function Win.Size() return Win.WIDTH + Win.inset, Win.HEIGHT + (Win.push or 0) end
+
+--- Widen the window by `px` on its left and move its contents right by as much (Forever smoke
+--- feedback S5): a side-tab strip that hangs over the docked window's left edge then lies over an
+--- empty band of the window's own background, and the window is extended, never moved. The dock
+--- passes the strip's reach (NS.Sheet.StripInset) on every placing and 0 standing alone. Out of
+--- lockdown only (the list holds secure children); a no-op when the inset is unchanged.
+--- @param px number
+function Win.SetLeftInset(px)
+    if not frame then return end
+    px = math.floor(math.max(0, NS.SafeNumber(px, 0)) + 0.5)
+    if px == Win.inset then return end
+    Win.inset = px
+    frame:SetWidth(Win.WIDTH + px)
+    frame.title:SetPoint("TOPLEFT", frame, "TOPLEFT", 10 + px, -8)
+    frame.divider:SetPoint("TOPLEFT", frame, "TOPLEFT", 1 + px, -26)
+    if frame.strip then frame.strip:SetPoint("TOPLEFT", frame, "TOPLEFT", 1 + px, STRIP_TOP) end
+    list:SetPoint("TOPLEFT", frame, "TOPLEFT", 8 + px, LIST_TOP - (Win.push or 0))
+    newButton:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 8 + px, 8)
+end
 
 --- Dress the window for test mode or take it off: the strip, the list's push, the height, New outfit
 --- and the degraded title. Dock.Refresh only (the list holds secure children: never in lockdown).
@@ -147,7 +166,7 @@ function Win.SetTestMode(on)
     if strip then strip:Show() elseif frame.strip then frame.strip:Hide() end
     local push = strip and (NS.TEST_STRIP_HEIGHT + STRIP_GAP) or 0
     Win.push = push
-    list:SetPoint("TOPLEFT", frame, "TOPLEFT", 8, LIST_TOP - push)
+    list:SetPoint("TOPLEFT", frame, "TOPLEFT", 8 + Win.inset, LIST_TOP - push)
     frame:SetHeight(Win.HEIGHT + push)
     frame.title:SetText((on and not strip) and L["Outfitter Reborn (test mode)"] or L["Outfitter Reborn"])
     newButton:SetEnabled(not on)

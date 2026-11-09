@@ -490,3 +490,22 @@ On WoW Forever, unless a row says Retail. The TOC declares `## Interface: 120105
 | F6-3 (P1) | Log in a new character | *Normal* and *Birthday Suit* are seeded, plus the class outfits for a druid, rogue or shaman. Record which spec outfits appear: Forever has one specialization per class |
 | F6-4 | `/or diagnostics` | It prints with no Lua error, and nothing in it reads as failed |
 | F6-5 (Retail) | F6-1 to F6-4 on Retail | The same, on Ka0s Default, with one spec outfit per specialization |
+
+## 19. WoW Forever smoke feedback 1 (2026-11-09)
+
+The owner's checks for `docs/superpowers/specs/2026-11-09-forever-smoke-feedback-design.md`. On WoW Forever unless a
+row says Retail. Run the sheet rows on the stock sheet, on EllesmereUI's skin, and on ChonkyCharacterSheet with
+*Skin Character Tabs* on and off.
+
+| # | Do | See |
+|---|---|---|
+| FS1-1 (S1) | Chonky, *Skin Character Tabs* on: open the character sheet | The Outfitter button is one more tab at the end of Chonky's row under the sheet, the same size, at the same spacing, in Chonky's tab art with the outfit icon in its round mask. Its glow is yellow while the window shows, and its tint follows the neighbors |
+| FS1-2 (S1) | Chonky, *Skin Character Tabs* off | The button is the last tab of the vertical strip, the same size as the tabs above it and lined up with them |
+| FS1-3 (S2) | Chonky: open the window | The window's top edge is level with Chonky's visible top border line |
+| FS1-4 (S3) | Chonky: look at the slot arrows | Each arrow touches its slot, with no gap |
+| FS1-5 (S4) | Stock: switch to Reputation, Skills, PvP, Currency and Statistics; click the Outfitter button from one of them | The button stays at the bottom of the strip on every tab. The click opens the Character tab and the window |
+| FS1-6 (S5) | Stock, EllesmereUI, and Chonky with its tabs off: open the window | The window starts at the sheet's edge and is wider. The tabs lie over an empty band of its own background, and the title, list and footer start right of the tabs. Nothing floats in empty space. Open a Chonky side panel: the window moves past it and loses the band |
+| FS1-7 (S6) | Any client and skin: point at an outfit row, its check box, its EM mark and its gear | The row lights up in the skin's hover color, and stays lit over its controls. The check box and EM mark take an accent wash, and the gear brightens as the title gear does. Switch the skin: the colors follow |
+| FS1-8 (S7) | With the window closed, open the character sheet; then open the Equipment Manager (Retail) and the window | Every slot shows its arrow. The left column's flyouts open left, the right column's right and the bottom row's down, on the plain Character tab, on the Equipment Manager and with the window open |
+| FS1-9 (S7) | Turn off *Show the flyout arrows and open flyouts outward* | The arrows and flyouts are Blizzard's own again; turned on, they are outward |
+| FS1-10 (Retail) | FS1-7 to FS1-9 on Retail | The same |

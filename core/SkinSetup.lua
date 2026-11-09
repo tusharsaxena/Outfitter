@@ -113,6 +113,9 @@ NS.SKIN_FALLBACK = {
     ["gtip.title"]     = { 1, 0.82, 0, 1 },
     ["gtip.body"]      = { 0.9, 0.9, 0.9, 1 },
     ["icon.tint"]      = { 0.7, 0.7, 0.72, 1 },
+    -- The list's control hover wash (modules/Window_Rows.lua, Forever smoke feedback S6): Ka0s
+    -- Default's gold accent.
+    ["icon.arrow"]     = { 1, 0.82, 0, 1 },
 }
 
 -- ── the owner tokens (skinning-§1/§9) ───────────────────────────────────────────────────────

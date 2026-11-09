@@ -122,3 +122,35 @@ test("dock (Forever): on Chonky's skinned strip the button wears its skin, not t
     assertFalse(button.icon:IsShown(), "the plain icon is hidden")
     assertFalse(button.ccsGlow:IsShown(), "no glow with the window closed")
 end)
+
+-- ── Forever smoke feedback S5: the window widens under a side strip ────────────────────────────────
+test("dock (Forever): a strip down the sheet's edge widens the window and moves its contents right (S5)", function()
+    if not FOREVER then T.skip(FOREVER_ONLY) end
+    local NS, M = scene()
+    M.__sheets.place(M.CharacterFrame, 300, 500)
+    for i = 1, 6 do
+        rawset(M["CharacterFrameModeTab" .. i], "GetLeft", function() return 298 end)
+        rawset(M["CharacterFrameModeTab" .. i], "GetRight", function() return 353 end)
+    end
+    M.__world:openCharacter()
+    NS.Dock.Open()
+    local win = M.OutfitterRebornWindow
+    local p = win.__pts[#win.__pts]
+    -- red under: moving the window clear of the strip instead of widening it (the owner's ruling).
+    assertEqual(p[4], 300, "the window keeps its dock point")
+    local inset = 353 - 300 + 4
+    assertEqual(NS.Window.Size(), NS.Window.WIDTH + inset, "the window is wider by the strip's reach")
+    local list = M.OutfitterRebornWindowList
+    local lp = list.__pts[#list.__pts]
+    assertEqual(lp[4], 8 + inset, "the list starts right of the strip")
+    local new = M.OutfitterRebornNewOutfitButton
+    assertEqual(new.__pts[#new.__pts][4], 8 + inset, "so does the footer")
+    -- The strip moves clear (a Chonky side panel opens): the follow narrows the window again.
+    for i = 1, 6 do
+        rawset(M["CharacterFrameModeTab" .. i], "GetLeft", function() return 900 end)
+        rawset(M["CharacterFrameModeTab" .. i], "GetRight", function() return 955 end)
+    end
+    M.OutfitterRebornDockDriver:__fire("OnUpdate", 0.05)
+    assertEqual(NS.Window.Size(), NS.Window.WIDTH)
+    assertEqual(list.__pts[#list.__pts][4], 8)
+end)

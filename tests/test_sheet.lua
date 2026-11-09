@@ -207,7 +207,7 @@ test("sheet: DockRight takes the rightmost shown Chonky side panel", function()
     markLoaded(NS, M, "ChonkyCharacterSheet")
     local x, top = NS.Sheet.DockRight()
     assertEqual(x, 700, "the shown M+ panel, not the hidden raid one")
-    assertEqual(top, 520)
+    assertEqual(top, 517, "Chonky's visible top line, 3 inside the frame (S2)")
     mplus:Hide()
     x = NS.Sheet.DockRight()
     assertEqual(x, 650)
@@ -232,7 +232,7 @@ test("sheet: with no Chonky panel shown DockRight is the backdrop's edge", funct
     M.__sheets.chonkyPanel("CCSf", 900, 520):Hide()
     markLoaded(NS, M, "ChonkyCharacterSheet")
     local x, top = NS.Sheet.DockRight()
-    assertEqual(x, 400); assertEqual(top, 520)
+    assertEqual(x, 400); assertEqual(top, 517)
 end)
 
 test("sheet: the adapter creates, anchors and shows nothing", function()
@@ -343,4 +343,58 @@ test("sheet (Forever): a last tab in Chonky's skin asks for its look, and its ar
     local idle, active = NS.Sheet.ChonkyTabColors()
     assertEqual(idle[1], 0.3, "an unselected tab's tint for idle")
     assertEqual(active[1], 1, "the selected tab's tint for active")
+end)
+
+-- ── Forever smoke feedback S2 and S5 ─────────────────────────────────────────────────────────────
+
+test("sheet: on Chonky the dock's top is the backdrop's visible line, its insets read live (S2)", function()
+    local NS, M = fresh()
+    local bg = M.__sheets.place(M.__sheets.chonky(), 400, 520)
+    markLoaded(NS, M, "ChonkyCharacterSheet")
+    local _, top = NS.Sheet.DockRight()
+    -- red under: the frame's own top (the window then sits above Chonky's border, 8.png).
+    assertEqual(top, 517, "the fallback inset, 3")
+    rawset(bg, "backdropInfo", { insets = { left = 5, right = 5, top = 5, bottom = 5 } })
+    _, top = NS.Sheet.DockRight()
+    assertEqual(top, 515, "BackdropTemplateMixin's insets")
+end)
+
+test("sheet: the stock sheet's top is the frame's (S2 is Chonky's only)", function()
+    local NS, M = fresh()
+    M.__sheets.place(M.CharacterFrame, 300, 500)
+    local _, top = NS.Sheet.DockRight()
+    assertEqual(top, 500)
+end)
+
+-- The mock's strip laid down the sheet's right edge: each tab from `left`, 55 wide.
+local function downStrip(M, left)
+    for i = 1, 6 do
+        rawset(M["CharacterFrameModeTab" .. i], "GetLeft", function() return left end)
+        rawset(M["CharacterFrameModeTab" .. i], "GetRight", function() return left + 55 end)
+    end
+end
+
+test("sheet (Forever): a strip down the window's edge reaches over it by its width and a margin (S5)", function()
+    if not FOREVER then T.skip(FOREVER_ONLY) end
+    local NS, M = fresh()
+    downStrip(M, 302)
+    -- red under: no StripInset (the tabs cover the window's left edge, 14.png).
+    assertEqual(NS.Sheet.StripInset(300), 357 - 300 + 4)
+    assertEqual(NS.Sheet.StripInset(400), 0, "a window docked clear of the strip (a Chonky panel open)")
+    across(M, 48, 1)
+    assertEqual(NS.Sheet.StripInset(100), 0, "a strip that runs across hangs over nothing")
+end)
+
+test("sheet (Forever): a scaled strip's reach is read in the sheet's units (S5)", function()
+    if not FOREVER then T.skip(FOREVER_ONLY) end
+    local NS, M = fresh()
+    downStrip(M, 375)                       -- 300 / 0.8, the strip at Chonky's 0.8
+    for i = 1, 6 do rawset(M["CharacterFrameModeTab" .. i], "GetEffectiveScale", function() return 0.8 end) end
+    assertEqual(NS.Sheet.StripInset(300), (375 + 55) * 0.8 - 300 + 4)
+end)
+
+test("sheet: Retail has no side strip (S5)", function()
+    if FOREVER then T.skip("pins Retail's StripInset; Forever's strip is the case above") end
+    local NS = fresh()
+    assertEqual(NS.Sheet.StripInset(300), 0)
 end)

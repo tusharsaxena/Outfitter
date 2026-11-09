@@ -157,32 +157,35 @@ local function dockGap()
     return gap > 0 and gap or 0
 end
 
--- The corner and the frame whose units it is in: the sheet's, `window.dockGap` right of its edge, or,
--- standing alone in test mode with the sheet closed, the alone spot, in UIParent's. The follow compares
--- this corner, so a new gap re-docks the window on its next tick.
+-- The corner, the frame whose units it is in, and the side strip's reach over the window: the
+-- sheet's, `window.dockGap` right of its edge, with NS.Sheet.StripInset at that x (Forever smoke
+-- feedback S5), or, standing alone in test mode with the sheet closed, the alone spot, in UIParent's,
+-- with none. The follow compares the corner and the reach, so a new gap, or a strip that moved
+-- (a Chonky side panel opened), re-docks the window on its next tick.
 local function corner()
     if PaperDollFrame:IsVisible() ~= true and Dock.TestWanted() then
         local x, top = Dock.AloneSpot()
-        return x, top, UIParent
+        return x, top, UIParent, 0
     end
     local x, top = NS.Sheet.DockRight()
     if x then x = x + dockGap() end
-    return x, top, NS.Sheet.Frame()
+    return x, top, NS.Sheet.Frame(), NS.Sheet.StripInset(x)
 end
 
 -- The one SetPoint, at the corner times the anchor-to-own scale ratio.
 local function positionWindow()
-    local right, top, host = corner()
+    local right, top, host, reach = corner()
     if not right or not top then
         -- The sheet has never been laid out: park it; it is placed properly when the sheet opens.
-        Dock.followRight, Dock.followTop = nil, nil
+        Dock.followRight, Dock.followTop, Dock.followReach = nil, nil, nil
         win:SetPoint("TOPLEFT", UIParent, "TOPLEFT", 0, 0)
         return
     end
     local scale = NS.SafeNumber(win:GetEffectiveScale(), 1)
     local hostScale = NS.SafeNumber(host:GetEffectiveScale(), 1)
     if scale <= 0 then scale = 1 end
-    Dock.followRight, Dock.followTop = right, top
+    Dock.followRight, Dock.followTop, Dock.followReach = right, top, reach
+    NS.Window.SetLeftInset(reach * hostScale / scale)
     win:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", right * hostScale / scale, top * hostScale / scale + Dock.Y_OFFSET)
 end
 
@@ -259,9 +262,9 @@ end
 
 local function cornerMoved()
     if Dock.followDisabled then return false end
-    local right, top = corner()
+    local right, top, _, reach = corner()
     if not right or not top then return false end
-    return right ~= Dock.followRight or top ~= Dock.followTop
+    return right ~= Dock.followRight or top ~= Dock.followTop or reach ~= Dock.followReach
 end
 
 local function followTick(_, elapsed)
