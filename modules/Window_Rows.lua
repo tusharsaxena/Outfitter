@@ -440,13 +440,19 @@ local function emMark(row)
     return em
 end
 
--- The menu control: a borderless gear (design G4, G10).
+-- The gear's art, and the room its hover and click area takes around it on each side (Forever smoke
+-- feedback 4, owner 2026-11-09): right to the row's edge, as much on the left, and the row's full
+-- height, so the target is GEAR_PAD wider than the art each side.
+local GEAR_ART, GEAR_PAD = 14, 4
+
+-- The menu control: a borderless gear (design G4, G10), its art centered in the larger target.
 local function gearMenu(row)
     local menu = CreateFrame("Button", row.__rowName .. "Menu", row)
-    menu:SetSize(14, 14)
-    menu:SetPoint("RIGHT", row, "RIGHT", -4, 0)
+    menu:SetSize(GEAR_ART + 2 * GEAR_PAD, Rows.ROW_H)
+    menu:SetPoint("RIGHT", row, "RIGHT", 0, 0)
     menu.icon = menu:CreateTexture(nil, "ARTWORK")
-    menu.icon:SetAllPoints(menu)
+    menu.icon:SetSize(GEAR_ART, GEAR_ART)
+    menu.icon:SetPoint("CENTER", menu, "CENTER", 0, 0)
     menu.icon:SetTexture(NS.Icon("ph:gear-six"))
     -- Painted as the title gear is: `close.rest`, `close.hot` under the pointer (S6).
     NS.Skin.CloseButton(menu)

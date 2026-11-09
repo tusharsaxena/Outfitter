@@ -543,3 +543,9 @@ The owner's third pass. On both clients unless a row says WoW Forever.
 | FS3-7 (Forever) | Character sheet closed: left-click the Outfits broker (Bazooka or another display) | The sheet opens on the Character tab with the outfit window, and there is **no** Lua error (before: `TextStatusBar.lua:110: attempt to compare a secret number value (execution tainted by 'OutfitterReborn')`) |
 | FS3-8 (Forever) | Character sheet closed: `/or show`, the *Toggle the Outfitter window* key, and the hover menu's *Open outfit window* | Each prints *Open the character sheet to see the outfit window.* and opens nothing. Opening the sheet then brings the window. No Lua error |
 | FS3-9 (Retail) | FS3-7 and FS3-8 on Retail | The broker's left-click opens the sheet with the window. The other three open the sheet with the window as before |
+
+### 21.2 The gear's target (2026-11-09)
+
+| # | Do | See |
+|---|---|---|
+| FS3-10 | Retail and Forever: point just right of, left of, above and below an outfit row's gear, then click there | The gear lights as on the art itself, and the click opens the outfit menu. The target runs to the row's right edge, as far again on the left, and the row's full height |

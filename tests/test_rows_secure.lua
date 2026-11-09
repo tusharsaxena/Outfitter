@@ -415,7 +415,9 @@ test("rows: the menu control is a borderless gear that opens the outfit menu", f
     local menu = row.menu
     assertEqual(menu.icon:GetTexture(), NS.Icon("ph:gear-six"))
     local p = lastPoint(menu)
-    assertEqual(p[1], "RIGHT"); assertEqual(p[2], row); assertEqual(p[3], "RIGHT"); assertEqual(p[4], -4)
+    -- Forever smoke feedback 4: the target runs to the row's right edge, 4 px past the art each side,
+    -- the row's full height; the art stays 14 px where it was.
+    assertEqual(p[1], "RIGHT"); assertEqual(p[2], row); assertEqual(p[3], "RIGHT"); assertEqual(p[4], 0)
     local rec = M.LibStub("LibKa0s-Skin-1.0").painted[menu]
     assertTrue(rec ~= nil and rec.calls.CloseButton ~= nil, "S.CloseButton(menu)")
     assertTrue(rec.calls.Button == nil, "no boxed S.Button on the gear")
