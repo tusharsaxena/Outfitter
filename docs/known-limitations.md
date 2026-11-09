@@ -90,7 +90,7 @@ The port's first step (the 2026-11-08 design, `superpowers/specs/2026-11-08-fore
 makes the addon Forever-compatible; these wait for step 2 or for an open probe.
 
 - **The ammo slot** (ruling D1) is not in the slot table yet: it needs a stack-aware equip path
-  (tusharsaxena/Outfitter#1). The slot has a flyout arrow (Forever smoke feedback 3), so ammo can be
+  (tusharsaxena/OutfitterReborn#1). The slot has a flyout arrow (Forever smoke feedback 3), so ammo can be
   equipped from the sheet, but no outfit saves or wears it.
 - **The sheet is the player's to open** (the owner's report, 2026-11-09). Forever's CharacterFrame
   OnShow compares the player frame's secret health values, which raises when addon code opened it.

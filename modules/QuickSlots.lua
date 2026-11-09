@@ -216,7 +216,7 @@ local ART = { LEFT = SIDE_ART, RIGHT = SIDE_ART, UP = UP_ART, DOWN = UP_ART }
 -- EquipmentFlyoutPopoutButtonTemplate. Its click runs Blizzard's EquipmentFlyout_Show on the slot,
 -- which lists ammo through PaperDollItemsFrame's flyoutSettings like any slot. The arrow is the
 -- slot's `popoutButton` so Blizzard's lock and close logic finds it. Ammo is not part of an outfit
--- yet (tusharsaxena/Outfitter#1): this is the flyout only.
+-- yet (tusharsaxena/OutfitterReborn#1): this is the flyout only.
 local AMMO_TEMPLATE = "EquipmentFlyoutPopoutButtonTemplate"
 local POP_OUT_GAP = 5             -- Camelot/PaperDollFrame.lua:1981-1987
 -- POP_OUT_DIRECTION_DATA's rotations (Camelot/EquipmentFlyout.lua:713-718): the baseline pi/2 added.
