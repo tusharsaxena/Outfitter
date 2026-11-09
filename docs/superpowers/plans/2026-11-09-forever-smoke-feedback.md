@@ -75,3 +75,8 @@ player frame's secret health values, so the tainted execution raised (TextStatus
   PostClick opens the window, or the settings on a right-click.
 - On Forever, `NS.Dock.Open` never opens a closed sheet from addon code. That covers `/or show`, the
   key, the menu row and the display's own click: it keeps the wish and says so.
+
+## Smoke result
+
+The owner passed every check on 2026-11-09 ("everything looks good"): `docs/smoke-tests.md` sections
+14 to 21, which cover the port (OR-F2 to OR-F6) and the feedback rounds (OR-S1 to OR-S10).

@@ -238,11 +238,16 @@ combat lockdown, otherwise it waits (latest per key) and replays on `PLAYER_REGE
 accepted exception, the equipment flyout's rim tint (`DEV-SKIN-FLYOUT-TINT`, below): hooks are
 `hooksecurefunc` or `HookScript`, and every hook body checks the stand-down latch first. The outfit
 list's secure item buttons make the window protected, so it hides for the length of combat and is
-moved rather than its rows re-anchored. While the outfit window is shown, every slot's own popout
-arrow is shown per button (never `EquipmentFlyoutPopoutButton_ShowAll`/`HideAll`, which write
-`flyoutLocked`), re-shown after Blizzard's `HideAll` through a post-hook, and a character-sheet
-slot's horizontal flyout is re-anchored level with its slot; all of it out of lockdown only and put
-back when the window goes. The full notes, with each secure surface and the client checks still
+moved rather than its rows re-anchored. While the paper doll is shown (Forever smoke feedback S7),
+every slot's own popout arrow is shown per button (never `EquipmentFlyoutPopoutButton_ShowAll`/`HideAll`,
+which write `flyoutLocked`), re-shown after Blizzard's `HideAll` through a post-hook, and turned
+outward with its flyout (Retail: the left column moved and mirrored; Forever: by F-UI's own rules
+through post-hooks, never writing `flyoutDirection`); all of it out of lockdown only and put back
+when the doll goes. On Forever the ammo slot's arrow is made from Blizzard's popout template and set
+as the slot's `popoutButton`, the one field this addon writes on a Blizzard frame. On Forever
+CharacterFrame is never opened from addon code: its OnShow compares secret health values, which
+raises under taint, so the broker opens it through a secure click (`OutfitterRebornBrokerClick`) and
+`NS.Dock.Open` keeps the wish instead. The full notes, with each secure surface and the client checks still
 owed: [`taint.md`](taint.md).
 
 ## Known Limitations
@@ -257,8 +262,9 @@ owed: [`taint.md`](taint.md).
 - The sheet button copies each host sheet's tab, so it inherits that sheet's quirks: Chonky's tab row
   sits about 18 px right-heavy with it, and the EllesmereUI label takes EllesmereUI's face when it is
   placed, not when EllesmereUI changes it.
-- On WoW Forever the ammo slot is not supported yet, and triggers match one spell rank's ID; the
-  port's step-1 limits are in `known-limitations.md`.
+- On WoW Forever outfits do not hold ammo yet (the slot has a flyout only), triggers match one spell
+  rank's ID, and `/or show`, the window key and the broker menu's *Open outfit window* cannot open a
+  closed sheet (they keep the wish and say so); the port's step-1 limits are in `known-limitations.md`.
 
 The full list, with the client checks still owed: [`known-limitations.md`](known-limitations.md).
 

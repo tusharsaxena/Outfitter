@@ -104,7 +104,7 @@ NS.Equip.Batch(function()  NS.Stack.Wear / Remove (layer, byTrigger)  end) â—„â”
   wear asked for in combat is queued exactly as theirs is.
 - **The sheet and the window.** `NS.Sheet` reads which character sheet is up (stock, EllesmereUI,
   ChonkyCharacterSheet) and where its button and right edge are; `NS.Dock` asks it on every sheet
-  show and from its 0.05 s follow, places the sheet button in that sheet's tab look (Blizzard's
+  show and from its follow (the corner every frame, the layers and render every 0.05 s), places the sheet button in that sheet's tab look (Blizzard's
   sidebar tab on stock and Chonky, EllesmereUI's text tab; re-placed on the next frame when the
   sheet kind changes) and paints it selected while the window shows. On WoW Forever the button follows
   CharacterFrame, at the mode strip's scale, and a strip down the sheet's edge widens the window

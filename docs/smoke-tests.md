@@ -426,6 +426,8 @@ the set once the swap lands.
 
 ## 14. WoW Forever: per-client data (OR-F2, 2026-11-08)
 
+Sections 14 to 21 passed: the owner's in-game pass, 2026-11-09 ("everything looks good").
+
 On WoW Forever. Each row checks a value the build took from the inventory's best evidence where a
 probe is still open; the code site is marked `-- PROBE Pn`. Retail is unchanged by this step.
 

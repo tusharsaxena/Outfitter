@@ -38,7 +38,7 @@ Composed by `H.MasterControls` from one declaration, the canonical rows in canon
 |---|---|---|
 | Enable Ka0s Outfitter Reborn | `enabled` | `NS.ApplyEnabled`: the stand-down latch's `disabled` hold |
 | General visibility | `visibility` (`always`, `inCombat`, `outOfCombat`, `never`) | `NS.OnVisibilityChanged()`; governs the bar, after `bar.shown` |
-| Master scale | `scale` | `NS.Bar.ApplyScale()`; the bar only (the note says the window follows the sheet) |
+| Master scale | `scale` | `NS.Bar.ApplyScale()`; the bar only (the note says the window follows the sheet), over the bar's 1.25 base (`Bar.BASE_SCALE`), so 1.0 draws as 1.25 did before |
 | Master opacity | `alpha` | `NS.Bar.ApplyAlpha()` |
 | Lock frame | `locked` | `NS.Bar.SetLocked(v)` |
 | Debug console | `state.debugConsole` | `NS.DebugLog:ConsoleCheckbox()` (session; Reset all turns it off) |
@@ -187,7 +187,7 @@ its own get/set are its storage.
 
 `settings/OutfitWindow.lua`, page `window` (smoke round 3 E11): everything configurable about the
 docked outfit window and the sheet surfaces it brings. The Master controls govern the bar only, so
-the window takes no scale, opacity or lock here; General > Behavior's flyout row (`quickSlots.enabled`,
+the window takes no scale, opacity or lock here (it draws at its own fixed 1.25, `NS.Window.SCALE`); General > Behavior's flyout row (`quickSlots.enabled`,
 the flyout's lists and clicks) is a different state from the drawer row and stays on General. Tabs in
 declaration order:
 
