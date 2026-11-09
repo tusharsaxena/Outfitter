@@ -535,3 +535,11 @@ The owner's third pass. On both clients unless a row says WoW Forever.
 | FS3-4 | Show the outfit bar with Master scale at 1.0 | The bar draws as it did at 1.25 before. Master scale still multiplies it |
 | FS3-5 | Hover the *Ka0s Outfitter Reborn: Outfits* broker; move onto the menu; move off both | The outfit menu drops under the display, stays while the pointer is on the display or the menu, and closes a moment after it leaves both. It ends with the two click hints |
 | FS3-6 | Left-click the broker; right-click it | The left-click opens the character sheet with the outfit window. The right-click opens the settings |
+
+### 21.1 The broker's left-click taint (owner's report, 2026-11-09)
+
+| # | Do | See |
+|---|---|---|
+| FS3-7 (Forever) | Character sheet closed: left-click the Outfits broker (Bazooka or another display) | The sheet opens on the Character tab with the outfit window, and there is **no** Lua error (before: `TextStatusBar.lua:110: attempt to compare a secret number value (execution tainted by 'OutfitterReborn')`) |
+| FS3-8 (Forever) | Character sheet closed: `/or show`, the *Toggle the Outfitter window* key, and the hover menu's *Open outfit window* | Each prints *Open the character sheet to see the outfit window.* and opens nothing. Opening the sheet then brings the window. No Lua error |
+| FS3-9 (Retail) | FS3-7 and FS3-8 on Retail | The broker's left-click opens the sheet with the window. The other three open the sheet with the window as before |

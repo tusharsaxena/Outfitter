@@ -1275,7 +1275,7 @@ Total.
 - dock: on Retail the sheet button is a plain Button with no template
 - dock: the window is built at its own 1.25 scale, and the alone spot centers its scaled size
 
-### test_dock_forever.lua (8)
+### test_dock_forever.lua (9)
 
 - dock (Forever): the button sits below the last mode tab in the strip's look
 - dock (Forever): with the client's template the button is a LargeSideTabButtonTemplate CheckButton
@@ -1285,6 +1285,7 @@ Total.
 - dock (Forever): on Chonky's skinned strip the button wears its skin, not the template's (S1)
 - dock (Forever): a strip down the sheet's edge widens the window and moves its contents right (S5)
 - dock (Forever): a strip re-laid while the sheet is open places the button again (R2-1)
+- dock (Forever): Open with the character sheet closed keeps the wish and says so, never opening it
 
 ### test_list_model.lua (8)
 
@@ -1443,7 +1444,7 @@ Total.
 - icons: a pruned mirror on the set id another mirror moved to does not take that mirror's glyph
 - icons: deleting a mirror leaves an override another outfit's set id still owns
 
-### test_broker.lua (14)
+### test_broker.lua (16)
 
 - broker: a data source named OutfitterRebornOutfits exists and is not on the minimap
 - broker: text and icon follow the worn outfit
@@ -1459,6 +1460,8 @@ Total.
 - broker: a modifier-click closes the menu before the set-current prompt
 - broker: the hover menu ends with both click hints, and there is no tooltip
 - broker: in combat a wear is queued or refused as the window's is
+- broker (Forever): with the sheet closed the display's own click never opens the sheet from addon code
+- broker: hovering lays a secure button over the display that clicks the character micro button
 
 ### test_triggers_parity.lua (13)
 
@@ -1895,14 +1898,14 @@ Total.
 | test_triggers_pvp.lua | 7 |
 | test_sheet.lua | 29 |
 | test_dock.lua | 51 |
-| test_dock_forever.lua | 8 |
+| test_dock_forever.lua | 9 |
 | test_list_model.lua | 8 |
 | test_rows_secure.lua | 26 |
 | test_slot_enables.lua | 29 |
 | test_bar.lua | 46 |
 | test_bar_look.lua | 13 |
 | test_outfit_icons.lua | 17 |
-| test_broker.lua | 14 |
+| test_broker.lua | 16 |
 | test_triggers_parity.lua | 13 |
 | test_preview.lua | 35 |
 | test_preview_place.lua | 8 |
@@ -1923,4 +1926,4 @@ Total.
 | test_lizard_sighted.lua | 8 |
 | test_prose.lua | 15 |
 | Skipped | 1 |
-| **Total** | **1589** |
+| **Total** | **1592** |

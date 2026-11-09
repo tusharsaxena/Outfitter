@@ -64,3 +64,14 @@ Built as `OR-S7: ` on the same branch.
   tooltip is retired.
 
 Smoke: `docs/smoke-tests.md` section 21 (FS3-1 to FS3-6).
+
+### OR-S8: the broker's left-click taint (owner's report, 2026-11-09)
+
+The broker's left-click opened CharacterFrame from addon code. On Forever its OnShow compares the
+player frame's secret health values, so the tainted execution raised (TextStatusBar.lua:110).
+
+- The broker's hover now lays a SecureActionButtonTemplate button over the display, out of lockdown.
+  Its left button clicks CharacterMicroButton, so the hardware click opens the sheet untainted. Its
+  PostClick opens the window, or the settings on a right-click.
+- On Forever, `NS.Dock.Open` never opens a closed sheet from addon code. That covers `/or show`, the
+  key, the menu row and the display's own click: it keeps the wish and says so.

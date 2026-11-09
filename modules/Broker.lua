@@ -21,6 +21,20 @@ local _, NS = ...
 --   left-click    the character sheet with the outfit window open (NS.Dock.Open)
 --   right-click   the settings (NS.OpenOptionsPanel)
 --
+-- THE SECURE CLICK (the owner's report, 2026-11-09). Opening CharacterFrame from addon code taints
+-- its OnShow, and on WoW Forever that OnShow compares the player frame's secret health values
+-- (F-UI Camelot/CharacterFrame.lua:710-729 -> TextStatusBar.lua:110): "attempt to compare a secret
+-- number value (execution tainted by 'OutfitterReborn')". A broker display's click is addon code, so
+-- the sheet is opened by the hardware click itself instead. While the pointer is on the display, out
+-- of combat lockdown, an invisible SecureActionButtonTemplate button (`OutfitterRebornBrokerClick`)
+-- lies over it at the display's screen rect (never anchored to the display, so no foreign frame is
+-- restricted). Its left button is `type1 = "click"` on CharacterMicroButton, which runs Blizzard's
+-- own ToggleCharacter("PaperDollFrame") untainted, set only while the sheet is closed. Its PostClick
+-- then does the rest (NS.Dock.Open, which finds the sheet up, or the settings). It hides when the
+-- pointer leaves it, at PLAYER_REGEN_DISABLED, and stood down. Without it (in lockdown, no micro
+-- button) the display's own click goes through NS.Dock.Open, which on WoW Forever never opens a closed
+-- sheet from addon code: it keeps the wish and says to open the sheet.
+--
 -- An outfit row's click: a modifier closes the menu and asks to set the outfit to the worn items
 -- (the legacy AskSetCurrent); a worn outfit that is not Complete comes off; anything else is worn.
 -- The menu stays open and repaints every row's tick (core/WidgetsSetup.lua). These are the
@@ -133,17 +147,23 @@ local function autoOn() return NS.GetSetting("auto.enabled") ~= false end
 --- The `auto` verb's handler, so the menu and the verb cannot differ.
 local function toggleAuto() NS.RunVerb("auto", autoOn() and "off" or "on") end
 
--- The menu's Open outfit window: an open, never a close (G9 names it so).
-local function openWindow()
+-- The right-click: the settings.
+local function openSettings()
+    NS.OpenOptionsPanel()
+end
+
+-- The left-click: the window, the sheet already up when the secure click opened it. With the sheet
+-- closed and no secure click, NS.Dock.Open decides: Retail opens the sheet, WoW Forever keeps the
+-- wish and says so (THE SECURE CLICK).
+local function leftClick()
     local line = NS.StoodDownRefusal()
     if line then return NS.Print(line) end
     NS.Dock.Open()
 end
 
--- The right-click: the settings.
-local function openSettings()
-    NS.OpenOptionsPanel()
-end
+-- The menu's Open outfit window: an open, never a close (G9 names it so). A menu row is addon code,
+-- so it opens as the fallback left-click does (THE SECURE CLICK).
+local openWindow = leftClick
 
 --- Whether an outfit is on the menu: the legacy OutfitIsVisible (Outfitter.lua:2452 at d396f11), not
 --- Disabled (its trigger off, design §3.3) and not hidden from the bar, the rule Bar.LiveSource keeps.
@@ -216,8 +236,11 @@ local function watchTick(_, elapsed)
     NS.CloseMenuFrom(function(anchor) return anchor == from end)
 end
 
--- Hover: the outfit menu under the object, unless it is already up from it.
+local showOverlay -- the secure click's placing, defined with it below
+
+-- Hover: the secure click over the object, and the outfit menu under it unless it is already up.
 local function onEnter(frame)
+    showOverlay(frame)
     if menuUp() and hoverFrom == frame then return end
     local _, menu = NS.OpenMenu(frame, fill, { below = true })
     if type(menu) ~= "table" or type(menu.IsShown) ~= "function" then return end
@@ -233,7 +256,57 @@ local function onClick(_, button)
     NS.CloseMenu()
     stopWatch()
     if button == "RightButton" then return openSettings() end
-    openWindow()
+    leftClick()
+end
+
+-- ── the secure click ────────────────────────────────────────────────────────────────────────
+
+local overlay
+
+local function locked() return NS.Compat.InCombatLockdown() end
+
+local function hideOverlay()
+    if overlay and not locked() then overlay:Hide() end
+end
+
+local function buildOverlay()
+    local o = CreateFrame("Button", "OutfitterRebornBrokerClick", UIParent, "SecureActionButtonTemplate")
+    o:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+    o:SetAttribute("useOnKeyDown", false)
+    o:SetFrameStrata(NS.Constants.LAYERS.STRATA.POPUP)
+    o:Hide()
+    o:HookScript("PostClick", function(_, button) onClick(o, button) end)
+    o:SetScript("OnLeave", hideOverlay)
+    o:RegisterEvent("PLAYER_REGEN_DISABLED")
+    o:SetScript("OnEvent", function(self) self:Hide() end)
+    return o
+end
+
+-- The display's screen rect in UIParent's units, or nil before it is laid out.
+local function rectOf(frame)
+    local l, b = NS.SafeNumber(frame:GetLeft(), nil), NS.SafeNumber(frame:GetBottom(), nil)
+    local w, h = NS.SafeNumber(frame:GetWidth(), nil), NS.SafeNumber(frame:GetHeight(), nil)
+    if not (l and b and w and h) or w <= 0 or h <= 0 then return nil end
+    local k = NS.SafeNumber(frame:GetEffectiveScale(), 1) / NS.SafeNumber(UIParent:GetEffectiveScale(), 1)
+    return l * k, b * k, w * k, h * k
+end
+
+-- Lay the secure button over `frame`, its left button clicking the micro button while the sheet is
+-- closed. Out of lockdown and standing up only.
+function showOverlay(frame)
+    local micro = _G.CharacterMicroButton
+    if locked() or NS.IsStoodDown() or type(micro) ~= "table" or type(frame) ~= "table"
+        or type(frame.GetLeft) ~= "function" then return end
+    local l, b, w, h = rectOf(frame)
+    if not l then return end
+    overlay = overlay or buildOverlay()
+    overlay:ClearAllPoints()
+    overlay:SetPoint("BOTTOMLEFT", UIParent, "BOTTOMLEFT", l, b)
+    overlay:SetSize(w, h)
+    local open = _G.CharacterFrame:IsShown() == true
+    overlay:SetAttribute("type1", (not open) and "click" or nil)
+    overlay:SetAttribute("clickbutton1", (not open) and micro or nil)
+    overlay:Show()
 end
 
 --- The registered object, or nil without LibDataBroker.
@@ -261,9 +334,11 @@ end
 local REDRAW_ON = { "OUTFIT_WORN", "OUTFIT_REMOVED", "STACK_CHANGED", "OUTFIT_EDITED", "OUTFIT_RENAMED",
                     "OUTFIT_DELETED" }
 
---- The stand-down (design §5.12): the bus record drops the receivers; the text goes to the brand.
+--- The stand-down (design §5.12): the bus record drops the receivers; the text goes to the brand,
+--- and the secure click goes (queued past lockdown: it is a protected frame).
 function Broker.Suspend()
     render(true)
+    if overlay then NS.SecureQueue.Run("broker.overlay", function() overlay:Hide() end) end
 end
 
 --- The stand-up: the receivers (once per session; the bus record replays them) and the redraw.

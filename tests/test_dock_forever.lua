@@ -177,3 +177,21 @@ test("dock (Forever): a strip re-laid while the sheet is open places the button 
     -- red under: no SetPoint post-hook on the strip (the button kept the old row's place and skin).
     assertEqual(#button.__pts, before + 1, "placed again once, on the next frame")
 end)
+
+-- The owner's report, 2026-11-09: a tainted CharacterFrame show raises on Forever's secret health.
+test("dock (Forever): Open with the character sheet closed keeps the wish and says so, never opening it", function()
+    if not FOREVER then T.skip(FOREVER_ONLY) end
+    local NS, M = scene()
+    M.__world:closeCharacter()
+    local toggles = 0
+    M.ToggleCharacter = function() toggles = toggles + 1 end
+    M.__resetPrinted()
+    assertFalse(NS.Dock.Open())
+    -- red under: ToggleCharacter from addon code (CharacterFrame's OnShow then raises on secret health).
+    assertEqual(toggles, 0)
+    assertTrue(NS.Dock.wanted, "the wish is kept")
+    assertTrue(table.concat(M.__printed(), "\n"):find("Open the character sheet", 1, true) ~= nil)
+    M.ToggleCharacter = nil
+    M.__world:openCharacter()
+    assertTrue(NS.Dock.IsShown(), "the sheet's next show brings the window")
+end)

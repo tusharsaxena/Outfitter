@@ -193,6 +193,7 @@ test("broker: left-click opens the sheet with the window; right-click opens the 
     NS.Dock.Open = function() opens = opens + 1 end
     NS.OpenOptionsPanel = function() settings = settings + 1 end
     ctl.menus = {}
+    M.CharacterFrame:Show()
     object(M).OnClick(M.UIParent, "LeftButton")
     -- red under: the 2026-11-08 left-click (the outfit menu).
     assertEqual(opens, 1, "left-click did not open the window")
@@ -250,6 +251,7 @@ test("broker: the menu's Open outfit window opens, and never closes, the window"
     local realOpen, realToggle = NS.Dock.Open, NS.Dock.Toggle
     NS.Dock.Open = function() opens = opens + 1 end
     NS.Dock.Toggle = function() toggles = toggles + 1 end
+    M.CharacterFrame:Show()
     find(open(M, ctl), "Open outfit window").onClick()
     NS.Dock.Open, NS.Dock.Toggle = realOpen, realToggle
     -- red under: the entry sharing the right-click's NS.Dock.Toggle(true) (a second pick closes both).
@@ -322,4 +324,58 @@ test("broker: in combat a wear is queued or refused as the window's is", functio
     -- red under: a broker that refuses in combat on its own (the window queues the wear).
     assertEqual(wornB, wornW, "the broker's combat wear differs from the window's")
     assertEqual(printedB, printedW)
+end)
+
+-- ── the secure click (owner's report 2026-11-09: a tainted CharacterFrame show on Forever) ─────────
+
+test("broker (Forever): with the sheet closed the display's own click never opens the sheet from addon code", function()
+    if dofile("tests/_kit/mock_client.lua").current() ~= "forever" then
+        T.skip("WoW Forever's secret-health CharacterFrame; Retail opens the sheet as before")
+    end
+    local NS, M = scene()
+    local toggles = 0
+    M.ToggleCharacter = function() toggles = toggles + 1 end
+    M.CharacterFrame:Hide()
+    M.__resetPrinted()
+    object(M).OnClick(M.UIParent, "LeftButton")
+    -- red under: NS.Dock.Open from the click (ToggleCharacter tainted: Forever's secret-health error).
+    assertEqual(toggles, 0, "addon code opened the sheet")
+    assertTrue(NS.Dock.wanted, "the wish is kept for the sheet's next show")
+    assertTrue(table.concat(M.__printed(), "\n"):find("Open the character sheet", 1, true) ~= nil, "the player is told")
+end)
+
+test("broker: hovering lays a secure button over the display that clicks the character micro button", function()
+    local NS, M = scene({ mutate = function(M)
+        M.CharacterMicroButton = M.CreateFrame("Button", "CharacterMicroButton", M.UIParent)
+    end })
+    local display = M.CreateFrame("Button", nil, M.UIParent)
+    rawset(display, "GetLeft", function() return 100 end)
+    rawset(display, "GetBottom", function() return 700 end)
+    rawset(display, "GetWidth", function() return 80 end)
+    rawset(display, "GetHeight", function() return 20 end)
+    M.CharacterFrame:Hide()
+    object(M).OnEnter(display)
+    local o = M.OutfitterRebornBrokerClick
+    assertTrue(o ~= nil, "no secure button")
+    assertEqual(o.__template, "SecureActionButtonTemplate")
+    assertTrue(o:IsShown(), "it lies over the display")
+    -- red under: no secure click (the display's click opened the sheet tainted).
+    assertEqual(o:GetAttribute("type1"), "click")
+    assertEqual(o:GetAttribute("clickbutton1"), M.CharacterMicroButton)
+    -- The sheet already up: the left button clicks nothing; the PostClick opens the window.
+    M.CharacterFrame:Show()
+    object(M).OnEnter(display)
+    assertNil(o:GetAttribute("type1"), "an open sheet would be closed by the micro button")
+    local opens, settings = 0, 0
+    NS.Dock.Open = function() opens = opens + 1 end
+    NS.OpenOptionsPanel = function() settings = settings + 1 end
+    o:__fire("PostClick", "LeftButton")
+    o:__fire("PostClick", "RightButton")
+    assertEqual(opens, 1); assertEqual(settings, 1)
+    -- In lockdown it is never shown or moved.
+    o:Hide()
+    M.__lockdown = true
+    object(M).OnEnter(display)
+    M.__lockdown = false
+    assertFalse(o:IsShown(), "the secure button moved in lockdown")
 end)

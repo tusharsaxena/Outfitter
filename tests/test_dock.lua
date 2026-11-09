@@ -321,6 +321,7 @@ test("dock: the window is in UISpecialFrames, by its global name", function()
 end)
 
 test("dock: Open shows the sheet first when it is hidden, and Toggle closes the window", function()
+    if FOREVER then T.skip("Retail's Open; WoW Forever never opens a closed sheet from addon code (the case below)") end
     local NS, M = scene()
     assertFalse(M.PaperDollFrame:IsShown())
     -- red under: drop the ToggleCharacter call from Dock.Open.
@@ -342,6 +343,7 @@ test("dock: Toggle(true), the launcher's, closes the sheet with the window; the 
     assertFalse(M.PaperDollFrame:IsShown(), "the sheet stayed open")
     -- red under: the sheet's OnHide closing the dialogs again after the window's OnHide did.
     assertEqual(fakes.Dialogs.__count("CloseAll"), 1)
+    if FOREVER then return end -- reopening the closed sheet is Retail's (the Forever case below)
     NS.Dock.Toggle(true)
     assertTrue(NS.Dock.IsShown() and M.PaperDollFrame:IsShown(), "an open shows the sheet and the window")
 end)

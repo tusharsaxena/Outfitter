@@ -575,9 +575,20 @@ end
 
 --- Open the window, showing the sheet first when it is hidden (INV §7.1). In lockdown it says once
 --- that the window opens when combat ends, and keeps the wish.
+-- WoW Forever's CharacterFrame OnShow compares the player frame's secret health values, which raises
+-- when addon code opened it (F-UI Camelot/CharacterFrame.lua:710-729 -> TextStatusBar.lua:110;
+-- the owner's report, 2026-11-09). There a closed CharacterFrame is never opened from here: the wish
+-- is kept and the player told; the broker's hover lays a secure click over its display instead
+-- (modules/Broker.lua). Switching tabs on an open CharacterFrame fires no OnShow and stays allowed.
+local OPENS_SHEET = NS.PerClient({ retail = true, forever = false })
+
 function Dock.Open()
     if NS.IsStoodDown() then return false end
     Dock.wanted = true
+    if not OPENS_SHEET and CharacterFrame:IsShown() ~= true then
+        NS.Print(L["Open the character sheet to see the outfit window."])
+        return false
+    end
     if PaperDollFrame:IsVisible() ~= true then ToggleCharacter("PaperDollFrame") end
     if locked() then
         if not toldCombat then
