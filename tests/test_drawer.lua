@@ -673,3 +673,15 @@ test("drawer (Forever): in combat lockdown nothing is moved or turned", function
     assertEqual(head.writes, 0, "an arrow was moved in lockdown")
     assertEqual(head:GetNormalTexture().rotation, math.pi, "Blizzard's own turn stands")
 end)
+
+test("drawer (Forever): a BorderFrame hidden after the doll's show is caught by the refresh (S3)", function()
+    if not FOREVER then T.skip(FOREVER_ONLY) end
+    local NS, M, state = drawerInstance()
+    setWindow(NS, state, true)
+    local head = M.__slotButtons.HeadSlot
+    head.BorderFrame.shown = false              -- Chonky's own OnShow, after ours
+    QS(NS).DrawerRefresh()
+    -- red under: the gap read once, at the drawer's turn (the first open keeps F-UI's 5 px).
+    local p = head.popoutButton.pts[#head.popoutButton.pts]
+    assertEqual(p[1], "RIGHT"); assertEqual(p[4], 0)
+end)

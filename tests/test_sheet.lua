@@ -381,6 +381,8 @@ test("sheet (Forever): a strip down the window's edge reaches over it by its wid
     -- red under: no StripInset (the tabs cover the window's left edge, 14.png).
     assertEqual(NS.Sheet.StripInset(300), 357 - 300 + 4)
     assertEqual(NS.Sheet.StripInset(400), 0, "a window docked clear of the strip (a Chonky panel open)")
+    -- red under: a strip read only when it starts at the window's edge (a dock gap leaves it hanging over).
+    assertEqual(NS.Sheet.StripInset(320), 357 - 320 + 4, "a window 20 px off the sheet still under the strip")
     across(M, 48, 1)
     assertEqual(NS.Sheet.StripInset(100), 0, "a strip that runs across hangs over nothing")
 end)

@@ -550,6 +550,14 @@ function QS.DrawerSync()
     placeFlyout()
     showArrows(want)
 end
+--- Place the outward arrows again where they stand (Forever): a sheet addon may hide the slots'
+--- BorderFrame art after the doll's OnShow (Chonky sets its sheet up from its own hook), which moves
+--- S3's flush rule. Dock's next-frame sheet check calls it. Never in lockdown; a no-op off the drawer.
+function QS.DrawerRefresh()
+    if not installed or locked() or not drawerOn or not FOREVER_DRAWER then return end
+    for button in pairs(slotOf) do placeForeverArrow(button, true) end
+end
+
 -- Post-hook the client global `name` with `fn` when the client has it (hooksecurefunc raises on a
 -- missing one).
 local function hookGlobal(name, fn)

@@ -632,6 +632,8 @@ end
 local function recheckSheet()
     if NS.IsStoodDown() or PaperDollFrame:IsVisible() ~= true then return end
     if NS.Sheet.Kind() ~= placedKind then placeButton() end
+    -- The slots' art may have changed under the drawer's arrows too (Forever smoke feedback S3).
+    NS.QuickSlots.DrawerRefresh()
 end
 
 -- Forever (S4): CharacterFrame's show places the button, and places it again on the next frame,

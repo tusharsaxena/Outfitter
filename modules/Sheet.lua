@@ -336,15 +336,17 @@ function Sheet.DockRight()
     return right, top
 end
 
--- A strip starting this close to the window's left edge hangs over it; past that it stands clear (a
--- Chonky side panel opens 63 px right of the sheet for the strip, CCS-F Modules/Forever.lua:1409).
+-- A strip that starts at most this far right of the window's left edge, and ends past it, hangs over
+-- the window; one that ends before it stands clear (a Chonky side panel opens 63 px right of the
+-- sheet to make room for the strip, CCS-F Modules/Forever.lua:1409, and the window docks past it).
 local STRIP_SLACK = 12
 -- The empty band's spare width past the strip's right edge.
 local STRIP_MARGIN = 4
 
 --- How far a side-tab strip down the sheet's right edge reaches over a window docked at `x` (Forever
 --- smoke feedback S5), in the sheet frame's units: the strip's right edge past `x`, plus a margin, when
---- the shown mode tabs run down and their left edge sits within STRIP_SLACK of `x`; else 0. The
+--- the shown mode tabs run down, start no further than STRIP_SLACK right of `x` and end past it (a
+--- `window.dockGap` included); else 0. The
 --- window widens by this much and keeps its contents right of it (modules/Window.lua), so the tabs lie
 --- over an empty band of the window's own background. The sheet button sits in the same column, as
 --- wide as a tab, so the tabs' edges are the strip's. Retail has no such strip: always 0 there.
@@ -367,7 +369,7 @@ local function foreverStripInset(x)
             right = right and math.max(right, r) or r
         end
     end
-    if not (left and right) or math.abs(left - x) > STRIP_SLACK or right <= x then return 0 end
+    if not (left and right) or left > x + STRIP_SLACK or right <= x then return 0 end
     return right - x + STRIP_MARGIN
 end
 Sheet.StripInset = NS.PerClient({ retail = retailStripInset, forever = foreverStripInset })
