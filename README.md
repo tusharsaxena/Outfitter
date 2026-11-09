@@ -4,7 +4,7 @@
 ![CurseForge Version](https://img.shields.io/curseforge/v/1698220)
 ![License](https://img.shields.io/badge/License-MIT-orange)
 ![Standard](https://img.shields.io/badge/Ka0s-WoW_Addon_Standard-yellow)
-![Tests](https://img.shields.io/badge/Tests-1592%2F1592_passing-green)
+![Tests](https://img.shields.io/badge/Tests-1593%2F1593_passing-green)
 
 Supports Retail and WoW Forever. Ka0s Outfitter Reborn manages your gear. You build named outfits from what you own and put them on with a click, a key or a slash command, or you let the addon change them for you: when you cast your fishing line, climb on a mount, shift into bear form, swap specs or walk into a particular battleground. It knows which items each outfit needs, tells you when one has gone missing or is sitting in the bank, and can put together the best outfit your bags hold for a stat or a Pawn scale.
 

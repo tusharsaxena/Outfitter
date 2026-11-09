@@ -549,3 +549,9 @@ The owner's third pass. On both clients unless a row says WoW Forever.
 | # | Do | See |
 |---|---|---|
 | FS3-10 | Retail and Forever: point just right of, left of, above and below an outfit row's gear, then click there | The gear lights as on the art itself, and the click opens the outfit menu. The target runs to the row's right edge, as far again on the left, and the row's full height |
+
+### 21.3 The ammo slot's glow (2026-11-09)
+
+| # | Do | See |
+|---|---|---|
+| FS3-11 (Forever) | On Chonky, the stock sheet and EllesmereUI, open the ammo slot's flyout; then open another slot's | The yellow glow hugs the ammo slot, centered and only slightly larger than it, on every sheet. Another slot's glow is as before |

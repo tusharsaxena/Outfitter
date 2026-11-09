@@ -536,10 +536,48 @@ function QS.TintSync()
     restoreRim()
 end
 
+-- THE AMMO HIGHLIGHT (Forever smoke feedback 5, owner 2026-11-09, 32.png). EquipmentFlyout_Show sizes
+-- the open slot's glow (`EquipmentFlyoutFrame.Highlight`) to 50 x 50 and puts it at the flyout's LEFT
+-- -4 (Camelot/EquipmentFlyout.lua:259-262, EquipmentFlyout.xml:58-66): art made for a 40 px slot. The
+-- ammo slot is 27 px (Camelot/PaperDollFrame.xml:874) and a sheet addon may resize it (Chonky), so on
+-- it the glow sits too large and off center. On the ammo slot the glow takes the slot's size by the
+-- art's own 50 : 40 and centers on it; on any other slot Blizzard's point comes back (Show adds its
+-- LEFT point without clearing, so the CENTER one must go).
+local GLOW_RATIO = 50 / 40
+local glowMoved = false
+
+local function glowScale(f)
+    local s = NS.SafeNumber(f:GetEffectiveScale(), 1)
+    return s > 0 and s or 1
+end
+
+local function fitGlow()
+    local flyout = _G.EquipmentFlyoutFrame
+    local glow = flyout and rawget(flyout, "Highlight")
+    local button = flyout and flyout.button
+    if type(glow) ~= "table" or not button then return end
+    if slotOf[button] == "AmmoSlot" then
+        local k = glowScale(button) / glowScale(flyout)
+        local w = NS.SafeNumber(button:GetWidth(), 0) * k
+        local h = NS.SafeNumber(button:GetHeight(), 0) * k
+        if w <= 0 or h <= 0 then return end
+        glow:ClearAllPoints()
+        glow:SetPoint("CENTER", button, "CENTER", 0, 0)
+        glow:SetSize(w * GLOW_RATIO, h * GLOW_RATIO)
+        glowMoved = true
+    elseif glowMoved then
+        local s = hostSettings(button)
+        glow:ClearAllPoints()
+        glow:SetPoint("LEFT", flyout, "LEFT", NS.SafeNumber(s.highlightOfsX, -4), NS.SafeNumber(s.highlightOfsY, 0))
+        glowMoved = false
+    end
+end
+
 -- EquipmentFlyout_UpdateItems' post-hook.
 local function onFlyoutUpdate()
     if locked() then return end
     placeFlyout()
+    fitGlow()
     QS.TintSync()
 end
 

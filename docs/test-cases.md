@@ -821,7 +821,7 @@ Total.
 - quickslots: quickSlots.enabled off silences every hook body; on brings them back
 - quickslots: the stand-down owns nothing to tear down: no event, no timer, no frame
 
-### test_drawer.lua (34)
+### test_drawer.lua (35)
 
 - drawer: with the doll shown a left-column flyout's buttonFrame is anchored TOPRIGHT to the slot's TOPLEFT
 - drawer: a right-column flyout's first item is level with its slot, past the arrow
@@ -857,6 +857,7 @@ Total.
 - drawer (Forever): in combat lockdown nothing is moved or turned
 - drawer (Forever): a BorderFrame hidden after the doll's show is caught by the refresh (S3)
 - drawer (Forever): the ammo slot gets its own arrow from Blizzard's template, opening right
+- drawer (Forever): the ammo slot's open glow takes the slot's size and centers on it
 
 ### test_equip_bracket.lua (32)
 
@@ -1880,7 +1881,7 @@ Total.
 | test_states.lua | 29 |
 | test_secrets_states.lua | 6 |
 | test_quickslots.lua | 19 |
-| test_drawer.lua | 34 |
+| test_drawer.lua | 35 |
 | test_equip_bracket.lua | 32 |
 | test_tooltips.lua | 18 |
 | test_stack.lua | 27 |
@@ -1926,4 +1927,4 @@ Total.
 | test_lizard_sighted.lua | 8 |
 | test_prose.lua | 15 |
 | Skipped | 1 |
-| **Total** | **1592** |
+| **Total** | **1593** |

@@ -719,3 +719,30 @@ test("drawer (Forever): the ammo slot gets its own arrow from Blizzard's templat
     QS(NS).DrawerSync()
     assertFalse(pop:IsShown(), "hidden with the doll")
 end)
+
+test("drawer (Forever): the ammo slot's open glow takes the slot's size and centers on it", function()
+    if not FOREVER then T.skip(FOREVER_ONLY) end
+    local NS, M, state = drawerInstance({ mutate = function(M)
+        M.CharacterAmmoSlot = M.CreateFrame("Button", "CharacterAmmoSlot", M.PaperDollItemsFrame)
+        rawset(M.CharacterAmmoSlot, "GetWidth", function() return 27 end)
+        rawset(M.CharacterAmmoSlot, "GetHeight", function() return 27 end)
+        M.C_XMLUtil = { GetTemplateInfo = function(name)
+            if name == "EquipmentFlyoutPopoutButtonTemplate" then return { type = "Button" } end
+        end }
+    end })
+    setWindow(NS, state, true)
+    local flyout = M.EquipmentFlyoutFrame
+    local glow = region({ SetSize = function(self, w, h) self.w, self.h = w, h end })
+    rawset(flyout, "Highlight", glow)
+    local ammo = M.CharacterAmmoSlot
+    flyout.button = ammo
+    flyout:Show()
+    M.EquipmentFlyout_UpdateItems()
+    -- red under: Blizzard's 50 x 50 at the flyout's LEFT -4 (made for a 40 px slot; 32.png).
+    assertEqual(glow.pts[#glow.pts][1], "CENTER"); assertEqual(glow.pts[#glow.pts][2], ammo)
+    assertEqual(glow.w, 27 * 50 / 40); assertEqual(glow.h, 27 * 50 / 40)
+    -- Another slot next: Blizzard's own point back, alone.
+    openFlyout(M, "HeadSlot")
+    assertEqual(#glow.pts, 1, "the CENTER point was left beside Blizzard's")
+    assertEqual(glow.pts[1][1], "LEFT"); assertEqual(glow.pts[1][2], flyout); assertEqual(glow.pts[1][4], -4)
+end)
