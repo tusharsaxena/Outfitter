@@ -1,0 +1,31 @@
+# Forever port, smoke feedback 1: plan
+
+**Design:** `docs/superpowers/specs/2026-11-09-forever-smoke-feedback-design.md` (decisions S1 to S7).
+**Branch:** `feat/2026-11-08-forever-port`, continued.
+
+## Resuming
+
+Git is the state. A step is done when the branch has a commit whose subject starts `OR-Sn: `. Run
+`git log --oneline master..HEAD | grep -E '^[0-9a-f]+ OR-S'`, take the first missing id, and look for
+uncommitted work for it before starting it fresh.
+
+## Green gate (every commit)
+
+`lua tests/run.lua`, `KA0S_KIT_CLIENT=forever lua tests/run.lua`, and
+`~/.claude/dev-copilot/bin/ka0s-bounded luacheck .` (0/0). The file budget test enforces the 1500-line cap.
+
+## Steps
+
+| Id | Decision | Files | Done when |
+|----|----------|-------|-----------|
+| OR-S1 | S7 + S3: outward drawer on the paper doll, both clients; Forever arrows and flyouts by hooks; flush arrow when BorderFrame hidden | modules/QuickSlots.lua, modules/Dock.lua (sync on doll show/hide, regen), settings row text, locales, tests/test_quickslots.lua | arrows and outward flyouts with the window closed; Forever re-anchor and rotation pinned; restore on doll hide |
+| OR-S2 | S1 + S4: the button at the strip's scale, horizontal or vertical, Chonky's skinned look; Forever button on every CharacterFrame tab | modules/Sheet.lua, modules/Dock.lua, tests/test_dock_forever.lua, tests/test_sheet.lua | scale, horizontal anchor and chonkytab look pinned; button survives a mode switch |
+| OR-S3 | S5 + S2: the window widens under a side strip; Chonky's top inset | modules/Sheet.lua, modules/Dock.lua, modules/Window.lua, tests | inset and widened width pinned; Chonky top offset pinned |
+| OR-S4 | S6: hover washes for rows, checkbox, EM mark; the gear painted as the title gear | modules/Window_Rows.lua, tests | hover state pinned through child enter/leave |
+| OR-S5 | Docs: ARCHITECTURE (deviation rows, drawer rule), smoke-tests.md checks FS1-*, known-limitations | docs/ | docs say what the code does |
+
+## Smoke (owner, in game; never marked passed by the builder)
+
+Listed in `docs/smoke-tests.md` under the FS1 heading after OR-S5. Run them on Forever on the stock sheet,
+on EllesmereUI's skin, and on Chonky with Skin Character Tabs both on and off. Run the hover and drawer
+checks on Retail too.
