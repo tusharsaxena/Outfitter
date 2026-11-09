@@ -58,9 +58,9 @@ bash --version           # GNU bash 4.x or 5.x; Ubuntu ships one
 
 ## Installing the checkout in the client
 
-The shipped folder is **`OutfitterReborn`**. The GitHub repository keeps the name `Outfitter`, so
-clone it into a folder named after the addon
-(`git clone https://github.com/tusharsaxena/Outfitter OutfitterReborn`); the owner's checkout is
+The shipped folder is **`OutfitterReborn`**, and the GitHub repository has the same name (renamed from
+`Outfitter` on 2026-11-09), so a plain clone lands in the right folder
+(`git clone https://github.com/tusharsaxena/OutfitterReborn`); the owner's checkout is
 `GIT/OutfitterReborn`. The client loads an addon only from a folder named after its TOC, so a development install is a
 junction named `OutfitterReborn` in `World of Warcraft\_retail_\Interface\AddOns\` pointing at this
 checkout. A junction named `Outfitter` loads nothing.

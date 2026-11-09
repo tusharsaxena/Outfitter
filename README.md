@@ -96,7 +96,7 @@ The report is added after the debug trace in the same window, so one copy carrie
 ## Issues and feature requests
 
 Please raise them on GitHub rather than in comments, so they're all in one place:
-<https://github.com/tusharsaxena/Outfitter/issues>
+<https://github.com/tusharsaxena/OutfitterReborn/issues>
 
 ## Version History
 
