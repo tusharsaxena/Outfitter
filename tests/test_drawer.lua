@@ -85,6 +85,10 @@ local function foreverFlyout(M, flyout)
         function border:IsShown() return self.shown end
         rawset(b, "BorderFrame", border)
         local popout = b.popoutButton
+        function popout:SetNormalAtlas(a) self.atlas = a end
+        function popout.SetPushedAtlas() end
+        function popout.SetHighlightAtlas() end
+        function popout:SetSize(w, h) self.w, self.h = w, h end
         local textures = {}
         for _, key in ipairs({ "Normal", "Pushed", "Highlight" }) do
             local t = { rotation = nil }
@@ -193,6 +197,7 @@ local function drawerInstance(opts)
         end
         if FOREVER then foreverFlyout(M, flyout) end
         for _, name in ipairs(opts.drop or {}) do M[name] = nil end
+        if opts.mutate then opts.mutate(M) end
         -- hooksecurefunc by name, as the client does it, on the two globals this stand-in defines;
         -- a missing global raises, as it does in the client.
         local base = M.hooksecurefunc
@@ -605,13 +610,19 @@ test("drawer (Forever): the doll shown turns every arrow outward by F-UI's own a
     local NS, M, state = drawerInstance()
     setWindow(NS, state, true)
     local head, hands, main = M.__slotButtons.HeadSlot, M.__slotButtons.HandsSlot, M.__slotButtons.MainHandSlot
+    local off = M.__slotButtons.SecondaryHandSlot
     -- red under: the 2026-11-08 drawer that moved nothing on Forever (MOVES_DRAWER false).
     samePoint(lastPoint(head.popoutButton), { "RIGHT", head, "LEFT", -5, 0 }, "left column")
     samePoint(lastPoint(hands.popoutButton), { "LEFT", hands, "RIGHT", 5, 0 }, "right column")
-    samePoint(lastPoint(main.popoutButton), { "TOP", main, "BOTTOM", 0, -5 }, "bottom row")
+    -- Forever smoke feedback 3: the main hand (and ranged) open left, the off-hand (and ammo) right.
+    samePoint(lastPoint(main.popoutButton), { "RIGHT", main, "LEFT", -5, 0 }, "the main hand")
+    samePoint(lastPoint(off.popoutButton), { "LEFT", off, "RIGHT", 5, 0 }, "the off-hand")
     assertEqual(head.popoutButton:GetNormalTexture().rotation, 0, "a LEFT arrow")
     assertEqual(hands.popoutButton:GetHighlightTexture().rotation, math.pi, "a RIGHT arrow")
-    assertEqual(main.popoutButton:GetPushedTexture().rotation, math.pi, "a DOWN arrow")
+    assertEqual(main.popoutButton:GetPushedTexture().rotation, 0, "the main hand's arrow points left")
+    -- red under: a turn alone on a slot Blizzard draws with the up art (43 x 20, upside down sideways).
+    assertEqual(main.popoutButton.atlas, "UI-Character-Info-Button-PullSide", "the side art")
+    assertEqual(main.popoutButton.w, 20); assertEqual(main.popoutButton.h, 43)
     assertEqual(head.flyoutDirection, "RIGHT", "Blizzard's flyoutDirection is never written")
 end)
 
@@ -634,8 +645,9 @@ test("drawer (Forever): an open flyout opens outward by F-UI's formula for that 
     samePoint(lastPoint(bf), { "TOPRIGHT", head.popoutButton, "TOPLEFT", 0, -3 }, "the left column opens left")
     local main = M.__slotButtons.MainHandSlot
     bf = openFlyout(M, "MainHandSlot")
-    samePoint(lastPoint(bf), { "TOPLEFT", main.popoutButton, "BOTTOMLEFT", 0, 0 }, "the bottom row opens down")
-    assertEqual(main.popoutButton:GetNormalTexture().rotation, math.pi, "the lock's repaint is turned back down")
+    samePoint(lastPoint(bf), { "TOPRIGHT", main.popoutButton, "TOPLEFT", 0, -3 }, "the main hand opens left")
+    assertEqual(main.popoutButton:GetNormalTexture().rotation, 0, "the lock's repaint is turned back left")
+    assertEqual(main.popoutButton.atlas, "UI-Character-Info-Button-PullSide-Open", "the open side art while locked")
 end)
 
 test("drawer (Forever): Blizzard's repaint on enter keeps the arrow outward", function()
@@ -684,4 +696,26 @@ test("drawer (Forever): a BorderFrame hidden after the doll's show is caught by 
     -- red under: the gap read once, at the drawer's turn (the first open keeps F-UI's 5 px).
     local p = head.popoutButton.pts[#head.popoutButton.pts]
     assertEqual(p[1], "RIGHT"); assertEqual(p[4], 0)
+end)
+
+test("drawer (Forever): the ammo slot gets its own arrow from Blizzard's template, opening right", function()
+    if not FOREVER then T.skip(FOREVER_ONLY) end
+    local NS, M, state = drawerInstance({ mutate = function(M)
+        M.CharacterAmmoSlot = M.CreateFrame("Button", "CharacterAmmoSlot", M.PaperDollItemsFrame)
+        M.C_XMLUtil = { GetTemplateInfo = function(name)
+            if name == "EquipmentFlyoutPopoutButtonTemplate" then return { type = "Button" } end
+        end }
+    end })
+    local ammo = M.CharacterAmmoSlot
+    local pop = rawget(ammo, "popoutButton")
+    -- red under: no ammo arrow (F-UI's CharacterAmmoSlot has none).
+    assertTrue(pop ~= nil, "the ammo slot has an arrow")
+    assertEqual(pop.__template, "EquipmentFlyoutPopoutButtonTemplate")
+    setWindow(NS, state, true)
+    assertTrue(pop:IsShown(), "shown with the doll")
+    local p = pop.__pts and pop.__pts[#pop.__pts]
+    if p then assertEqual(p[1], "LEFT"); assertEqual(p[2], ammo); assertEqual(p[3], "RIGHT") end
+    state.doll = false
+    QS(NS).DrawerSync()
+    assertFalse(pop:IsShown(), "hidden with the doll")
 end)

@@ -190,8 +190,8 @@ local SLOT_HEIGHT = 37            -- a stock slot button, when the client answer
 -- (EquipmentFlyoutPopoutButton_RefreshVisualState, Camelot/EquipmentFlyout.lua:707-755) and anchors
 -- `buttonFrame` by it on every EquipmentFlyout_UpdateItems after a ClearAllPoints (:420-433). The drawer
 -- never writes `flyoutDirection`: it anchors the arrow by F-UI's own rule for the OUTWARD direction
--- (OUT_DIR), re-rotates it from a RefreshVisualState post-hook (both sides share one atlas and size, as
--- do UP and DOWN, so only the rotation differs), and re-anchors buttonFrame by F-UI's own formula for
+-- (OUT_DIR, SLOT_DIR), repaints it from a RefreshVisualState post-hook (the art, size and turn F-UI
+-- gives that direction: paintForeverArrow), and re-anchors buttonFrame by F-UI's own formula for
 -- that direction from the UpdateItems post-hook. The flyout's backgrounds hang inside buttonFrame
 -- whatever the direction (:435-530), so they follow. Put back: the arrow at Blizzard's own anchor and
 -- RefreshVisualState run again; the next UpdateItems anchors buttonFrame Blizzard's way.
@@ -199,6 +199,25 @@ local SLOT_HEIGHT = 37            -- a stock slot button, when the client answer
 -- Character Sheet hides it, CCS-F Modules/Forever.lua:1340) the outward arrow sits flush on the slot.
 local FOREVER_DRAWER = NS.PerClient({ retail = false, forever = true })
 local OUT_DIR = { LEFT = "LEFT", RIGHT = "RIGHT", BOTTOM = "DOWN" }
+-- The bottom row by slot (Forever smoke feedback 3, owner 2026-11-09, 26.png): the main hand and the
+-- ranged slot open left, the off-hand and the ammo slot right. Chonky stacks them two by two, the
+-- main hand over the ranged slot on the left; the stock sheet keeps them in a row.
+local SLOT_DIR = { MainHandSlot = "LEFT", RangedSlot = "LEFT", SecondaryHandSlot = "RIGHT", AmmoSlot = "RIGHT" }
+-- POP_OUT_DIRECTION_DATA's art and sizes (Camelot/EquipmentFlyout.lua:691-718): the sides share the
+-- PullSide atlases at 20 x 43, up and down the PullUp ones at 43 x 20. A slot turned from up to a side
+-- takes the side's art and size, not only its rotation.
+local SIDE_ART = { normal = "UI-Character-Info-Button-PullSide", open = "UI-Character-Info-Button-PullSide-Open",
+                   pressed = "UI-Character-Info-Button-PullSide-Pressed", w = 20, h = 43 }
+local UP_ART = { normal = "UI-Character-Info-Button-PullUp", open = "UI-Character-Info-Button-PullUp-Open",
+                 pressed = "UI-Character-Info-Button-PullUp-Pressed", w = 43, h = 20 }
+local ART = { LEFT = SIDE_ART, RIGHT = SIDE_ART, UP = UP_ART, DOWN = UP_ART }
+-- The ammo slot (Forever smoke feedback 3): F-UI gives CharacterAmmoSlot no arrow
+-- (Camelot/PaperDollFrame.xml:873-927), so the drawer makes one from Blizzard's own
+-- EquipmentFlyoutPopoutButtonTemplate. Its click runs Blizzard's EquipmentFlyout_Show on the slot,
+-- which lists ammo through PaperDollItemsFrame's flyoutSettings like any slot. The arrow is the
+-- slot's `popoutButton` so Blizzard's lock and close logic finds it. Ammo is not part of an outfit
+-- yet (tusharsaxena/Outfitter#1): this is the flyout only.
+local AMMO_TEMPLATE = "EquipmentFlyoutPopoutButtonTemplate"
 local POP_OUT_GAP = 5             -- Camelot/PaperDollFrame.lua:1981-1987
 -- POP_OUT_DIRECTION_DATA's rotations (Camelot/EquipmentFlyout.lua:713-718): the baseline pi/2 added.
 local ROTATION = { LEFT = 0, RIGHT = math.pi, UP = 0, DOWN = math.pi }
@@ -254,7 +273,8 @@ end
 -- Forever: the slot's outward direction, or nil for a slot outside the three columns.
 local function outDir(button)
     local slot = button and slotOf[button]
-    return slot and OUT_DIR[NS.SlotEnables.COLUMN[slot]] or nil
+    if not slot then return nil end
+    return SLOT_DIR[slot] or OUT_DIR[NS.SlotEnables.COLUMN[slot]]
 end
 
 -- Whether the slot's BorderFrame art (which covers F-UI's 5 px arrow gap) is drawn.
@@ -287,6 +307,20 @@ local function rotateArrow(popout, dir)
     end
 end
 
+-- The arrow drawn for `dir` as RefreshVisualState draws it: the art set and size for that side, the
+-- open art while its flyout is locked, then the turn.
+local function paintForeverArrow(popout, dir)
+    local art = ART[dir]
+    if art and type(popout.SetNormalAtlas) == "function" then
+        local normal = popout.flyoutLocked and art.open or art.normal
+        popout:SetNormalAtlas(normal, true)
+        popout:SetPushedAtlas(art.pressed, true)
+        popout:SetHighlightAtlas(normal, "ADD")
+    end
+    if art and type(popout.SetSize) == "function" then popout:SetSize(art.w, art.h) end
+    rotateArrow(popout, dir)
+end
+
 -- Forever: one arrow outward (F-UI's anchor for the outward direction, S3's gap, turned) or back to
 -- Blizzard's own anchor and look.
 local function placeForeverArrow(button, out)
@@ -294,7 +328,7 @@ local function placeForeverArrow(button, out)
     if not popout or not dir then return end
     if out then
         anchorPopout(popout, button, dir, borderShown(button) and POP_OUT_GAP or 0)
-        rotateArrow(popout, dir)
+        paintForeverArrow(popout, dir)
         return
     end
     anchorPopout(popout, button, button.flyoutDirection, POP_OUT_GAP)
@@ -520,7 +554,7 @@ end
 local function onRefreshVisual(popout)
     if not FOREVER_DRAWER or not drawerOn or locked() or type(popout) ~= "table" or not popout.GetParent then return end
     local dir = outDir(popout:GetParent())
-    if dir then rotateArrow(popout, dir) end
+    if dir then paintForeverArrow(popout, dir) end
 end
 
 -- EquipmentFlyoutPopoutButton_HideAll's post-hook: the arrows back while still wanted. Shows only; the
@@ -567,6 +601,23 @@ end
 
 -- ── the lifecycle ─────────────────────────────────────────────────────────────────────────────
 
+-- Whether the client has XML template `name`.
+local function hasTemplate(name)
+    local xml = _G.C_XMLUtil
+    return type(xml) == "table" and type(xml.GetTemplateInfo) == "function" and xml.GetTemplateInfo(name) ~= nil
+end
+
+-- Forever: the ammo slot's own arrow, made once from Blizzard's template (see AMMO_TEMPLATE).
+local function ammoArrow()
+    local ammo = _G.CharacterAmmoSlot
+    if not FOREVER_DRAWER or type(ammo) ~= "table" then return nil end
+    if not rawget(ammo, "popoutButton") and hasTemplate(AMMO_TEMPLATE) then
+        local ok, pop = pcall(CreateFrame, "Button", "OutfitterRebornAmmoPopout", ammo, AMMO_TEMPLATE)
+        if ok and pop then rawset(ammo, "popoutButton", pop) end
+    end
+    return ammo
+end
+
 --- Build the hooks: once per session, however often the addon stands up.
 function QS.Install()
     if installed then return end
@@ -577,6 +628,11 @@ function QS.Install()
             slotOf[button] = slotName
             button:HookScript("PostClick", postClick)
         end
+    end
+    local ammo = ammoArrow()
+    if ammo then
+        slotOf[ammo] = "AmmoSlot"
+        ammo:HookScript("PostClick", postClick)
     end
     NS.Skin.OnLooksChanged(QS.TintSync)
     if type(hooksecurefunc) ~= "function" then return end

@@ -77,6 +77,9 @@ return function(T)
         local preview = T.fake(NS, "Preview", { IsActive = function() return ctl.preview end, Suspend = true,
                                                 Resume = true })
         rawset(preview, "Source", { Rows = function() return ctl.previewRows end })
+        -- The bar's geometry cases are pinned at base scale 1 (unless opts.baseScale); the 1.25 base
+        -- (Forever smoke feedback 3) is test_bar's own case.
+        NS.Bar.BASE_SCALE = opts.baseScale or 1
         ctl.menu = spy(NS, "OutfitMenu", { "Open" })
         if not opts.hidden then NS.db.profile.bar.shown = true end
         NS.Bar.Resume()

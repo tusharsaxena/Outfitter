@@ -4,7 +4,7 @@
 ![CurseForge Version](https://img.shields.io/curseforge/v/1698220)
 ![License](https://img.shields.io/badge/License-MIT-orange)
 ![Standard](https://img.shields.io/badge/Ka0s-WoW_Addon_Standard-yellow)
-![Tests](https://img.shields.io/badge/Tests-1585%2F1585_passing-green)
+![Tests](https://img.shields.io/badge/Tests-1589%2F1589_passing-green)
 
 Supports Retail and WoW Forever. Ka0s Outfitter Reborn manages your gear. You build named outfits from what you own and put them on with a click, a key or a slash command, or you let the addon change them for you: when you cast your fishing line, climb on a mount, shift into bear form, swap specs or walk into a particular battleground. It knows which items each outfit needs, tells you when one has gone missing or is sitting in the bank, and can put together the best outfit your bags hold for a stat or a Pawn scale.
 
@@ -26,7 +26,7 @@ To place and skin the bar and the window before you have outfits worth showing, 
 
 The minimap button opens the settings on a left-click, and its right-click menu turns the addon on or off, locks the bar, toggles test mode, shows the outfit window, or opens the settings or the skin picker. Hover it to see the outfit you have on.
 
-If you use a broker display such as Titan Panel or ChocolateBar, add *Ka0s Outfitter Reborn: Outfits* to it. It shows the outfit you have on, with its icon. Left-click it for a menu of your outfits, grouped like the window's lists with a tick on the ones you're wearing; click one to put it on, or to take off an Accessory you're wearing, and hold Shift, Ctrl or Alt as you click to be asked whether to save what you have on into that outfit. The same menu opens the outfit window and turns automatic changes on and off, and a right-click on the display opens or closes the window. This is the old Outfitter broker plugin's switcher; it never adds a second minimap button.
+If you use a broker display such as Titan Panel or ChocolateBar, add *Ka0s Outfitter Reborn: Outfits* to it. It shows the outfit you have on, with its icon. Hover it for a menu of your outfits, grouped like the window's lists with a tick on the ones you're wearing; click one to put it on, or to take off an Accessory you're wearing, and hold Shift, Ctrl or Alt as you click to be asked whether to save what you have on into that outfit. The same menu opens the outfit window and turns automatic changes on and off. A left-click on the display opens the character sheet with the outfit window, and a right-click opens the settings. This is the old Outfitter broker plugin's switcher; it never adds a second minimap button.
 
 Besides *Toggle outfit window* and *Toggle outfit bar*, the key bindings include the ten *Wear outfit* keys (a Complete outfit goes on, any other goes on or comes off), a pair that turns automatic changes on and off, and *Update outfit to equipped items*. A wear key announces the change on screen unless you turn off *Announce outfit changes from key bindings*. In chat, `/or wear`, `/or unwear` and `/or toggle` take an outfit's name in any case, or nothing for the Complete outfit you're wearing, and they understand macro conditionals: `/or wear [spec:1] Tank; DPS` puts on Tank in your first specialization and DPS in any other. `/or auto off` stops every trigger until `/or auto on`. The first time you log in, a picker offers the addon's skins, and `/or skin` brings it back whenever you like.
 

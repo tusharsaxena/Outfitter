@@ -11,12 +11,15 @@ local _, NS = ...
 --   text / icon   the top outfit's name and its icon (NS.OutfitIcon); with none, or stood down, the
 --                 brand and the default outfit icon (132724) in white. A fileID icon is cropped
 --                 (iconCoords) as the window's art is; a glyph is drawn whole
---   left-click    the outfit menu: the brand, Open outfit window (NS.Dock.Open: an open, never a
---                 close), Automatic changes (the `auto` verb), then each category in the window's
---                 order with one toggle row per visible outfit (not Disabled, not hidden from the
---                 bar: the legacy OutfitIsVisible)
---   right-click   the outfit window (NS.Dock.Toggle, the launcher's Show window handler's call)
---   tooltip       the brand, the current outfit and the two click hints
+--   hover         the outfit menu, dropped under the object (Forever smoke feedback 3, owner
+--                 2026-11-09: what left-click opened before): the brand, Open outfit window
+--                 (NS.Dock.Open: an open, never a close), Automatic changes (the `auto` verb), then
+--                 each category in the window's order with one toggle row per visible outfit (not
+--                 Disabled, not hidden from the bar: the legacy OutfitIsVisible), and the two click
+--                 hints. It closes once the pointer has been off both the object and the menu for
+--                 HOVER_GRACE seconds
+--   left-click    the character sheet with the outfit window open (NS.Dock.Open)
+--   right-click   the settings (NS.OpenOptionsPanel)
 --
 -- An outfit row's click: a modifier closes the menu and asks to set the outfit to the worn items
 -- (the legacy AskSetCurrent); a worn outfit that is not Complete comes off; anything else is worn.
@@ -137,11 +140,9 @@ local function openWindow()
     NS.Dock.Open()
 end
 
--- The right-click: the launcher's Show window toggle, which closes the sheet with the window.
-local function toggleWindow()
-    local line = NS.StoodDownRefusal()
-    if line then return NS.Print(line) end
-    NS.Dock.Toggle(true)
+-- The right-click: the settings.
+local function openSettings()
+    NS.OpenOptionsPanel()
 end
 
 --- Whether an outfit is on the menu: the legacy OutfitIsVisible (Outfitter.lua:2452 at d396f11), not
@@ -182,22 +183,57 @@ local function fill(root)
             end
         end
     end
+    root:CreateTitle(L["Left-click: outfit window"])
+    root:CreateTitle(L["Right-click: settings"])
 end
 
 -- ── the object's scripts ────────────────────────────────────────────────────────────────────
 
-local function onClick(frame, button)
-    if button == "RightButton" then return toggleWindow() end
-    NS.OpenMenu(frame, fill)
+-- The hover menu's close: off the object and the menu for this long (seconds).
+local HOVER_GRACE = 0.3
+local watcher, hoverFrom, hoverMenu, away
+
+local function stopWatch()
+    hoverFrom, hoverMenu, away = nil, nil, 0
+    if watcher then watcher:Hide() end
 end
 
-local function onTooltipShow(tt)
-    tt:AddLine(NS.BRAND)
-    tt:AddLine(L["Current outfit: %s"]:format(NS.Stack.CurrentLabel()))
-    local line = NS.StoodDownRefusal()
-    if line then return tt:AddLine(line) end
-    tt:AddLine(L["Left-click: choose an outfit"])
-    tt:AddLine(L["Right-click: outfit window"])
+local function over(f)
+    return type(f) == "table" and type(f.IsMouseOver) == "function" and f:IsMouseOver() == true
+end
+
+local function menuUp()
+    return type(hoverMenu) == "table" and type(hoverMenu.IsShown) == "function" and hoverMenu:IsShown() == true
+end
+
+local function watchTick(_, elapsed)
+    if not menuUp() then return stopWatch() end
+    if over(hoverFrom) or over(hoverMenu) then away = 0; return end
+    away = away + NS.SafeNumber(elapsed, 0)
+    if away < HOVER_GRACE then return end
+    local from = hoverFrom
+    stopWatch()
+    NS.CloseMenuFrom(function(anchor) return anchor == from end)
+end
+
+-- Hover: the outfit menu under the object, unless it is already up from it.
+local function onEnter(frame)
+    if menuUp() and hoverFrom == frame then return end
+    local _, menu = NS.OpenMenu(frame, fill, { below = true })
+    if type(menu) ~= "table" or type(menu.IsShown) ~= "function" then return end
+    hoverFrom, hoverMenu, away = frame, menu, 0
+    if not watcher then
+        watcher = CreateFrame("Frame", nil, UIParent)
+        watcher:SetScript("OnUpdate", watchTick)
+    end
+    watcher:Show()
+end
+
+local function onClick(_, button)
+    NS.CloseMenu()
+    stopWatch()
+    if button == "RightButton" then return openSettings() end
+    openWindow()
 end
 
 --- The registered object, or nil without LibDataBroker.
@@ -214,7 +250,7 @@ if LDB then
         text          = NS.BRAND,
         icon          = tex, iconR = r, iconG = g, iconB = b, iconCoords = coordsFor(tex),
         OnClick       = onClick,
-        OnTooltipShow = onTooltipShow,
+        OnEnter       = onEnter,
     })
 else
     NS.Debug("Broker", "LibDataBroker-1.1 is not loaded, so there is no Outfits broker object")

@@ -331,5 +331,5 @@ L["The old Outfitter addon is also loaded. Disable it: both change your gear."] 
 L["Outfits"] = "Outfits"
 L["Open outfit window"] = "Open outfit window"
 L["Automatic changes"] = "Automatic changes"
-L["Left-click: choose an outfit"] = "Left-click: choose an outfit"
-L["Right-click: outfit window"] = "Right-click: outfit window"
+L["Left-click: outfit window"] = "Left-click: outfit window"
+L["Right-click: settings"] = "Right-click: settings"

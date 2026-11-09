@@ -522,3 +522,16 @@ The owner's second pass over section 19 (FS1-1, Chonky's bottom row, passed). Sa
 | FS2-4 (R2-4) | Switch through the skins with an outfit selected | New outfit, All and None share one border and fill, and New outfit's label reads clearly in every skin. All and None are a step dimmer |
 | FS2-5 (R2-5) | Drag the character sheet around with the window open (Chonky, EllesmereUI or a mover addon) | The window stays fixed to the sheet's edge while it moves, with no stretch and snap |
 | FS2-6 (Retail) | FS2-3 to FS2-5 on Retail | The same |
+
+## 21. WoW Forever smoke feedback 3 (2026-11-09)
+
+The owner's third pass. On both clients unless a row says WoW Forever.
+
+| # | Do | See |
+|---|---|---|
+| FS3-1 (Forever) | Open the character sheet on the stock sheet and on Chonky | The main hand's and the ranged slot's arrows point left and their flyouts open left; the off-hand's and the ammo slot's point right and open right. Each arrow wears the side art at the side's size |
+| FS3-2 (Forever) | Look at the ammo slot; click its arrow; pick ammo from the flyout | The ammo slot has an arrow like the others. Its flyout lists your ammo and equips the pick. Ammo is not saved into outfits yet (tusharsaxena/Outfitter#1) |
+| FS3-3 | Open the outfit window; compare it with a pre-change screenshot | The window is 1.25x its old size and still docks flush at the sheet's edge and top |
+| FS3-4 | Show the outfit bar with Master scale at 1.0 | The bar draws as it did at 1.25 before. Master scale still multiplies it |
+| FS3-5 | Hover the *Ka0s Outfitter Reborn: Outfits* broker; move onto the menu; move off both | The outfit menu drops under the display, stays while the pointer is on the display or the menu, and closes a moment after it leaves both. It ends with the two click hints |
+| FS3-6 | Left-click the broker; right-click it | The left-click opens the character sheet with the outfit window. The right-click opens the settings |

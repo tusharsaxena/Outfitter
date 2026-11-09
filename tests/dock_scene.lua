@@ -65,6 +65,9 @@ return function(T)
             if opts.mutate then opts.mutate(M) end
         end })
         local NS, M = inst.NS, inst.mocks
+        -- The geometry cases are pinned at scale 1: the mock's frames answer no effective scale. The
+        -- window's and the bar's 1.25 (Forever smoke feedback 3) are test_dock's and test_bar's own cases.
+        if not opts.realScale then NS.Window.SCALE, NS.Bar.BASE_SCALE = 1, 1 end
         M.__now = 100
         NS.PlayerState.Resume()
         NS.Inventory.Resume()

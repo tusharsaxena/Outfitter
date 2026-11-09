@@ -534,8 +534,9 @@ end)
 
 test("disabled: the broker shows the brand and refuses outfit clicks", function()
     -- The Outfits data source (modules/Broker.lua, plan Task 3.8): the object stays, its text goes
-    -- back to the brand, its menu's outfit rows are grayed and refuse with the one line, and its
-    -- right-click shows nothing. Its menu is drawn through NS.OpenMenu, so W.ContextMenu is recorded.
+    -- back to the brand, its hover menu's outfit rows are grayed and refuse with the one line, its
+    -- left-click (the window) refuses, and its right-click (the settings) stays live, as the launcher's
+    -- Open settings does. Its menu is drawn through NS.OpenMenu, so W.ContextMenu is recorded.
     local inst, NS, M, S = scene()
     local obj = M.LibStub("LibDataBroker-1.1"):GetDataObjectByName("OutfitterRebornOutfits")
     assertEqual(obj.text, "Dungeon", "the worn outfit is not on the broker; nothing below can fail")
@@ -549,8 +550,8 @@ test("disabled: the broker shows the brand and refuses outfit clicks", function(
     M.__resetSvWrites()
     M.__resetPrinted()
     local shownBefore = #M.__shownFrames()
-    obj.OnClick(M.UIParent, "LeftButton")
-    assertEqual(#menus, 1, "left-click opened no menu")
+    obj.OnEnter(M.UIParent)
+    assertEqual(#menus, 1, "hovering opened no menu")
     local row
     for _, r in ipairs(menus[1]) do
         if r.label and r.label:find("Dungeon", 1, true) then row = r end
@@ -563,8 +564,12 @@ test("disabled: the broker shows the brand and refuses outfit clicks", function(
     assertTrue(NS.Stack.IsWorn(S.outfit), "a stood-down click changed the stack")
 
     M.__resetPrinted()
+    obj.OnClick(M.UIParent, "LeftButton")
+    assertEqual(table.concat(printedBare(M), "\n"), refusal, "the left-click did not refuse")
+    local settings = 0
+    NS.OpenOptionsPanel = function() settings = settings + 1 end
     obj.OnClick(M.UIParent, "RightButton")
-    assertEqual(table.concat(printedBare(M), "\n"), refusal, "the right-click did not refuse")
+    assertEqual(settings, 1, "the right-click's settings are not live while disabled")
     assertEqual(#M.__svWrites(), 0, "a broker click wrote SavedVariables")
     assertEqual(#M.__shownFrames(), shownBefore, "a broker click showed a frame")
 

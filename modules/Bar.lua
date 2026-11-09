@@ -141,10 +141,14 @@ end
 
 local function locked() return NS.GetSetting("locked") == true end
 
+-- The bar's base scale (Forever smoke feedback 3, owner 2026-11-09): Master scale 1.0 draws the bar
+-- as 1.25 did before, on both clients; Master scale multiplies it.
+Bar.BASE_SCALE = 1.25
+
 local function scale()
     local s = num(NS.GetSetting("scale"), 1)
-    if s <= 0 then return 1 end
-    return s
+    if s <= 0 then s = 1 end
+    return s * Bar.BASE_SCALE
 end
 
 --- The direction the bar grows in, as QUADRANT's signs: the grow rows, "auto" the saved corner's.

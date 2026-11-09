@@ -4,7 +4,8 @@ local _, NS = ...
 --
 -- `OutfitterRebornWindow` is built once, by modules/Dock.lua, which owns every Show and Hide of it,
 -- its position and its layers. This file draws what is in it. No tabs: the old Options and About
--- panels are the settings pages and their landing page. No scale of its own: it inherits UIParent's.
+-- panels are the settings pages and their landing page. Its own scale is Win.SCALE (1.25) over
+-- UIParent's.
 --
 -- DIRTY, THEN DRAWN. Window.MarkDirty(wipeCache) replaces the old Update(true): the bus receivers
 -- below mark the list dirty (and wipe the outfit status cache), and the dock's follow tick draws it
@@ -20,7 +21,11 @@ local _, NS = ...
 -- NS.Outfits.SetAllSlotsEnabled, NS.OutfitDialog.OpenNew, NS.OpenOptionsPanel, NS.Preview.IsActive,
 -- NS.MakeTestStrip.
 
-local Win = { collapsed = {}, offset = 0, dirty = true, entries = {}, WIDTH = 260, HEIGHT = 320, inset = 0 }
+-- SCALE: the window's own scale, 1.25 (Forever smoke feedback 3, owner 2026-11-09: the window drawn
+-- as at a 1.25 scale, on both clients). Its sizes stay in its own units; the dock converts the sheet's
+-- corner by the scale ratio, so it still docks flush.
+local Win = { collapsed = {}, offset = 0, dirty = true, entries = {}, WIDTH = 260, HEIGHT = 320, inset = 0,
+              SCALE = 1.25 }
 NS.Window = Win
 
 local L = NS.L
@@ -301,6 +306,7 @@ end
 function Win.Build()
     if frame then return frame end
     local f = CreateFrame("Frame", "OutfitterRebornWindow", UIParent, "BackdropTemplate")
+    f:SetScale(Win.SCALE)
     f:SetSize(Win.WIDTH, Win.HEIGHT)
     f:Hide()
     titleStrip(f)

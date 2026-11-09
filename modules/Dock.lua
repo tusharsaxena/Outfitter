@@ -146,8 +146,10 @@ function Dock.AloneSpot()
     if spot then return spot[1], spot[2] end
     local right, top = NS.SafeNumber(UIParent:GetRight(), nil), NS.SafeNumber(UIParent:GetTop(), nil)
     if not (right and top) then return nil, nil end
+    -- The window's size in its own units, times its scale (Win.SCALE), is its size in UIParent's.
     local w, h = NS.Window.Size()
-    return (right - w) / 2, (top + h) / 2
+    local k = NS.SafeNumber(NS.Window.SCALE, 1)
+    return (right - w * k) / 2, (top + h * k) / 2
 end
 
 -- The Outfit Window page's gap between the sheet and the window (smoke round 3 E11), in the sheet's

@@ -821,7 +821,7 @@ Total.
 - quickslots: quickSlots.enabled off silences every hook body; on brings them back
 - quickslots: the stand-down owns nothing to tear down: no event, no timer, no frame
 
-### test_drawer.lua (33)
+### test_drawer.lua (34)
 
 - drawer: with the doll shown a left-column flyout's buttonFrame is anchored TOPRIGHT to the slot's TOPLEFT
 - drawer: a right-column flyout's first item is level with its slot, past the arrow
@@ -856,6 +856,7 @@ Total.
 - drawer (Forever): the doll hidden puts Blizzard's arrows and flyout back
 - drawer (Forever): in combat lockdown nothing is moved or turned
 - drawer (Forever): a BorderFrame hidden after the doll's show is caught by the refresh (S3)
+- drawer (Forever): the ammo slot gets its own arrow from Blizzard's template, opening right
 
 ### test_equip_bracket.lua (32)
 
@@ -1220,7 +1221,7 @@ Total.
 - sheet (Forever): a scaled strip's reach is read in the sheet's units (S5)
 - sheet: Retail has no side strip (S5)
 
-### test_dock.lua (50)
+### test_dock.lua (51)
 
 - dock: NS.Dock is published with the §7.2 surface
 - dock: the holder fills the sheet, and the sheet button toggles the window
@@ -1272,6 +1273,7 @@ Total.
 - dock: the next frame's sheet check does nothing once the doll is gone or stood down
 - dock: on Chonky the Reputation tab takes the button and window down, the Character tab brings them back
 - dock: on Retail the sheet button is a plain Button with no template
+- dock: the window is built at its own 1.25 scale, and the alone spot centers its scaled size
 
 ### test_dock_forever.lua (8)
 
@@ -1356,7 +1358,7 @@ Total.
 - slot enables: another host's flyout, or one opened in lockdown, lifts nothing
 - slot enables: the flyout's hooks do nothing while stood down
 
-### test_bar.lua (45)
+### test_bar.lua (46)
 
 - bar: NS.Bar is published with the §7.7 surface
 - bar: bar.shown defaults false, so a fresh profile and a repaired one both come up hidden
@@ -1403,6 +1405,7 @@ Total.
 - bar: a profile switch redraws the bar from the new profile and rebinds the triggers
 - bar: Suspend hides it and stops the rebuilds; the stand-down keeps it down
 - bar: test mode shows the sample outfits with the strip, even with the bar off, and they do nothing
+- bar: Master scale multiplies a 1.25 base, so 1.0 draws as 1.25 did
 
 ### test_bar_look.lua (13)
 
@@ -1440,20 +1443,21 @@ Total.
 - icons: a pruned mirror on the set id another mirror moved to does not take that mirror's glyph
 - icons: deleting a mirror leaves an override another outfit's set id still owns
 
-### test_broker.lua (13)
+### test_broker.lua (14)
 
 - broker: a data source named OutfitterRebornOutfits exists and is not on the minimap
 - broker: text and icon follow the worn outfit
 - broker: no outfit shows the brand and the default icon, untinted and cropped
-- broker: left-click lists categories then outfits, worn ones checked, missing in the missing color
+- broker: the hover menu lists categories then outfits, worn ones checked, missing in the missing color
 - broker: the menu leaves out an outfit whose trigger is off or that is hidden from the bar
 - broker: clicking a worn accessory removes it; clicking a Complete wears it
 - broker: a modifier-click asks to set current
-- broker: right-click toggles the window
+- broker: left-click opens the sheet with the window; right-click opens the settings
+- broker: the hover menu drops under the object and closes once the pointer has left both
 - broker: the menu's Open outfit window opens, and never closes, the window
 - broker: wearing a Complete outfit from the menu clears the ticks of the outfits it took off
 - broker: a modifier-click closes the menu before the set-current prompt
-- broker: the tooltip names the brand, the current outfit and both clicks
+- broker: the hover menu ends with both click hints, and there is no tooltip
 - broker: in combat a wear is queued or refused as the window's is
 
 ### test_triggers_parity.lua (13)
@@ -1873,7 +1877,7 @@ Total.
 | test_states.lua | 29 |
 | test_secrets_states.lua | 6 |
 | test_quickslots.lua | 19 |
-| test_drawer.lua | 33 |
+| test_drawer.lua | 34 |
 | test_equip_bracket.lua | 32 |
 | test_tooltips.lua | 18 |
 | test_stack.lua | 27 |
@@ -1890,15 +1894,15 @@ Total.
 | test_triggers_class.lua | 11 |
 | test_triggers_pvp.lua | 7 |
 | test_sheet.lua | 29 |
-| test_dock.lua | 50 |
+| test_dock.lua | 51 |
 | test_dock_forever.lua | 8 |
 | test_list_model.lua | 8 |
 | test_rows_secure.lua | 26 |
 | test_slot_enables.lua | 29 |
-| test_bar.lua | 45 |
+| test_bar.lua | 46 |
 | test_bar_look.lua | 13 |
 | test_outfit_icons.lua | 17 |
-| test_broker.lua | 13 |
+| test_broker.lua | 14 |
 | test_triggers_parity.lua | 13 |
 | test_preview.lua | 35 |
 | test_preview_place.lua | 8 |
@@ -1919,4 +1923,4 @@ Total.
 | test_lizard_sighted.lua | 8 |
 | test_prose.lua | 15 |
 | Skipped | 1 |
-| **Total** | **1585** |
+| **Total** | **1589** |

@@ -46,3 +46,21 @@ FS1-1 (Chonky's bottom row) passed. Built as `OR-S6: ` on the same branch:
   the layers and the render stay on the 0.05 s throttle.
 
 Smoke: `docs/smoke-tests.md` section 20 (FS2-1 to FS2-6).
+
+## Addendum: smoke feedback 3 (owner, 2026-11-09)
+
+Built as `OR-S7: ` on the same branch.
+
+- **Bottom row (Forever).** The main hand and the ranged slot open left; the off-hand and the ammo slot
+  open right. A slot turned from up to a side takes F-UI's side art and size, not only its turn.
+- **Ammo flyout (Forever).** F-UI's CharacterAmmoSlot has no arrow, so the drawer makes one from
+  Blizzard's `EquipmentFlyoutPopoutButtonTemplate` as the slot's `popoutButton`. The flyout only;
+  ammo is still not part of an outfit (tusharsaxena/Outfitter#1).
+- **Scale, both (the owner chose "Both").** The window has its own scale, 1.25, and the alone spot
+  centers its scaled size. The bar has a 1.25 base that Master scale multiplies, so Master scale 1.0,
+  the default, draws as 1.25 did.
+- **Broker.** Hovering opens the outfit menu under the display, which closes 0.3 s after the pointer
+  leaves both. Left-click opens the sheet with the window, right-click opens the settings, and the
+  tooltip is retired.
+
+Smoke: `docs/smoke-tests.md` section 21 (FS3-1 to FS3-6).

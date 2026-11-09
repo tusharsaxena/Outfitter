@@ -960,3 +960,25 @@ test("dock: on Retail the sheet button is a plain Button with no template", func
     -- red under: SIDE_TAB_TEMPLATE set for Retail.
     assertEqual(button.__frameType, "Button"); assertNil(button.__template)
 end)
+
+-- ── Forever smoke feedback 3: the window at 1.25 ─────────────────────────────────────────────────
+test("dock: the window is built at its own 1.25 scale, and the alone spot centers its scaled size", function()
+    local scale
+    local NS, M = scene({ realScale = true, mutate = function(M)
+        local create = M.CreateFrame
+        M.CreateFrame = function(kind, name, ...)
+            local f = create(kind, name, ...)
+            if name == "OutfitterRebornWindow" then rawset(f, "SetScale", function(_, v) scale = v end) end
+            return f
+        end
+    end })
+    assertEqual(NS.Window.SCALE, 1.25)
+    M.__world:openCharacter()
+    NS.Dock.Open()
+    -- red under: no SetScale on the window (it drew at UIParent's 1).
+    assertEqual(scale, 1.25)
+    M.__sheets.place(M.UIParent, 1000, 800)
+    local x, top = NS.Dock.AloneSpot()
+    local w, h = NS.Window.Size()
+    assertEqual(x, (1000 - w * 1.25) / 2); assertEqual(top, (800 + h * 1.25) / 2)
+end)
