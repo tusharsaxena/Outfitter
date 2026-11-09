@@ -197,7 +197,7 @@ declaration order:
 |---|---|---|
 | `window.sheetButton` | `true` | Show the button on the character sheet: off, the button stays hidden (still anchored); the window opens from the minimap button, a key binding or `/or show` |
 | `window.slotBoxes` | `true` | Show slot check boxes: off, no box shows for any selection |
-| `window.drawer` | `true` | Show the flyout arrows while the window is open: off, the arrows and flyouts stay Blizzard's |
+| `window.drawer` | `true` | Show the flyout arrows and open flyouts outward, on the character sheet whether or not the window is open (Forever smoke feedback S7): off, the arrows and flyouts stay Blizzard's |
 | `window.dockGap` | `0` (0 to 40) | Gap from the character sheet (px): sheet units right of the dock's edge; never the alone test window |
 
 ### List

@@ -153,6 +153,7 @@ local SUITES = {
     { name = "test_secrets_states" },
 
     { name = "test_quickslots" },
+    { name = "test_drawer" },
 
     { name = "test_equip_bracket" },
 
@@ -266,6 +267,8 @@ Kit.skinValues = { root = root, rows = {
       why = "EllesmereUI's tab label hover color, matched to its neighbors", cause = HOST_LOOK },
     { file = "modules/Dock.lua", substring = "SetTextColor(1, 1, 1, 0.6)",
       why = "EllesmereUI's tab label idle color, matched to its neighbors", cause = HOST_LOOK },
+    { file = "modules/Dock.lua", substring = "ccsGlow:SetVertexColor(1, 1, 0, 1)",
+      why = "ChonkyCharacterSheet's tab glow, its own fixed yellow, matched to its neighbors", cause = HOST_LOOK },
 } }
 
 -- The skin-switch test's painted surfaces (skinning-§1): the design §9.5 builders (P4.30).

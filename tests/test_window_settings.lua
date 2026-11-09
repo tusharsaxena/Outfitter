@@ -107,8 +107,9 @@ test("window settings: Show the button on the character sheet hides and shows th
     assertFalse(button:IsShown(), "the sheet's next show brought the button back")
     NS.SetByPath("window.sheetButton", true)
     assertTrue(button:IsShown())
-    -- Off the paper doll the switch shows nothing.
-    M.PaperDollFrame:Hide(); M.PaperDollFrame:__fire("OnHide")
+    -- Off the button's host the switch shows nothing: the paper doll on Retail, CharacterFrame on
+    -- Forever, whose button stays on every tab (Forever smoke feedback S4).
+    if FOREVER then M.__world:closeCharacter() else M.PaperDollFrame:Hide(); M.PaperDollFrame:__fire("OnHide") end
     NS.SetByPath("window.sheetButton", false)
     NS.SetByPath("window.sheetButton", true)
     assertFalse(button:IsShown(), "the switch showed the button off the paper doll")

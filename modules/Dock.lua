@@ -27,10 +27,12 @@ local _, NS = ...
 -- EllesmereUI a text label in its tab style, idle, hover and active (its accent) as _paintTopButton
 -- paints its own. The button builds both looks once and placeButton picks one (NS.Sheet.ButtonAnchor).
 --
--- THE PAPER-DOLL PANE. The button and the window belong to the Character tab: the Reputation and
--- Currency tabs hide PaperDollFrame but not CharacterFrame, the button's parent, so the doll's OnHide
--- hides the button (and the window, which needs the doll shown) and its OnShow re-resolves the sheet
--- kind and re-anchors. A sheet addon may build its frames after the doll's OnShow (EllesmereUI builds
+-- THE PAPER-DOLL PANE. The window belongs to the Character tab, and on Retail so does the button: the
+-- Reputation and Currency tabs hide PaperDollFrame but not CharacterFrame, the button's parent, so the
+-- doll's OnHide hides the button (and the window, which needs the doll shown) and its OnShow
+-- re-resolves the sheet kind and re-anchors. On WoW Forever the button is one more tab of the mode
+-- strip, which shows on every tab, so it follows CharacterFrame instead (Forever smoke feedback S4);
+-- a click from another tab opens the Character tab and the window (Dock.Open). A sheet addon may build its frames after the doll's OnShow (EllesmereUI builds
 -- its tabs from a CharacterFrame OnShow hook on the first open, EllesmereUIBlizzardSkin_
 -- CharacterSheet.lua:4907, :3171), so the sheet show looks again on the next frame and re-anchors
 -- only when the kind moved.
@@ -54,7 +56,7 @@ local _, NS = ...
 -- THE OUTFIT WINDOW PAGE (smoke round 3 E11). `window.sheetButton` off keeps the sheet button hidden
 -- (still anchored, so turning it on shows it in place); `window.dockGap` moves the docked window that
 -- many sheet units right of the sheet's edge (never the alone test window); `window.drawer` is read by
--- the drawer itself. A write of any `window.*` row or a profile switch re-shows the button and syncs
+-- the drawer itself, which follows the paper doll (Forever smoke feedback S7). A write of any `window.*` row or a profile switch re-shows the button and syncs
 -- the drawer here; the follow's corner compare picks up the gap.
 --
 -- THE ONLY SHOW AND HIDE. Dock.Refresh is the one place this addon shows or hides
@@ -74,8 +76,9 @@ local _, NS = ...
 --
 -- CALLS (at call time; design §12): NS.Window, NS.WindowRows.DisarmSecure, NS.SlotEnables.MaybeRestack,
 -- NS.Stack.Select, NS.Dialogs.CloseAll, NS.IconBrowser.Close, NS.CloseMenu, NS.SecureQueue,
--- NS.Preview.IsActive, NS.Sheet.Refresh/Kind/DockRight/Frame/ButtonAnchor, NS.QuickSlots.DrawerSync (the window's show and
--- hide turn the left column's equipment drawer outward and back; modules/QuickSlots.lua).
+-- NS.Preview.IsActive, NS.Sheet.Refresh/Kind/DockRight/Frame/ButtonAnchor, NS.QuickSlots.DrawerSync (the doll's show
+-- and hide turn the equipment drawer outward and back, the window's show and hide the flyout tint, a
+-- regen catches up a lockdown; modules/QuickSlots.lua).
 
 local Dock = { wanted = false, suspended = false, followDisabled = false, built = false, testDismissed = false,
                Y_OFFSET = 0, FOLLOW_INTERVAL = 0.05 }
@@ -89,7 +92,7 @@ local WINDOW_NAME = "OutfitterRebornWindow"
 
 local holder, button, driver, win, events
 local placedKind -- the sheet kind the button was last anchored for
-local placedLook -- the look it wears there: "tab" | "text"
+local placedLook -- the look it wears there: "tab" | "text" | "sidetab" | "chonkytab"
 local installed = false
 local sinceTick = 0
 local toldCombat = false
@@ -109,6 +112,12 @@ end
 --- @return boolean
 function Dock.IsVisible()
     return win ~= nil and win:IsVisible() == true
+end
+
+--- The paper doll is on screen (the outward drawer's gate, modules/QuickSlots.lua).
+--- @return boolean
+function Dock.DollVisible()
+    return PaperDollFrame:IsVisible() == true
 end
 
 --- Test mode wants the window: on, and not dismissed for this test session.
@@ -299,6 +308,20 @@ local EUI_FONT_SIZE = 10
 local SIDE_TAB_TEMPLATE = NS.PerClient({ forever = "LargeSideTabButtonTemplate" })
 local SIDE_TAB_ICON_SIZE = 32 -- PROBE P27: the strip's icon size is unread
 
+-- ChonkyCharacterSheet's skinned mode tab (Forever smoke feedback S1; CCS-F core/styles.lua:844-947):
+-- the template's art hidden, a CCS_BG fill in the neighbor's file and coords, tinted, the icon at 42 of
+-- the tab's 48 masked round, and a yellow highlight at 38 of 48 while selected. Its mask and highlight
+-- files are its own; the fill and the colors are copied off the strip live (NS.Sheet.ChonkyTabArt,
+-- ChonkyTabColors), since Chonky's tables are private.
+local CCS_MEDIA = "Interface\\AddOns\\ChonkyCharacterSheet\\Media\\Textures\\Frame\\"
+local CCS_MASK, CCS_HIGHLIGHT = CCS_MEDIA .. "buttonmask1.blp", CCS_MEDIA .. "buttonhighlight1.png"
+local CCS_ICON, CCS_GLOW, CCS_TAB = 42, 38, 48
+-- The template regions Chonky hides on a tab it skins (core/styles.lua:849-868).
+local TEMPLATE_ART = { "Left", "LeftActive", "LeftHighlight", "Middle", "MiddleActive", "MiddleHighlight", "Right",
+                       "RightActive", "RightHighlight", "Text", "Background", "HighlightTexture", "Icon", "Mask",
+                       "SelectedTexture", "TabGlow" }
+local STATE_ART = { "GetNormalTexture", "GetPushedTexture", "GetHighlightTexture", "GetCheckedTexture" }
+
 -- The template to build the sheet button from, when this client has it; nil on Retail.
 local function sheetButtonTemplate()
     local xml = _G.C_XMLUtil
@@ -320,6 +343,61 @@ local function tabTexture(layer, w, h, coords)
     t:SetSize(w, h)
     t:SetTexCoord(unpack(coords))
     return t
+end
+
+-- The template's own art at full alpha, or out of sight while the button wears Chonky's skin. Alpha
+-- only: the regions stay where the template put them.
+local function templateArt(visible)
+    local a = visible and 1 or 0
+    for _, key in ipairs(TEMPLATE_ART) do
+        local r = rawget(button, key)
+        if type(r) == "table" and type(r.SetAlpha) == "function" then r:SetAlpha(a) end
+    end
+    for _, getter in ipairs(STATE_ART) do
+        local t = type(button[getter]) == "function" and button[getter](button)
+        if type(t) == "table" and type(t.SetAlpha) == "function" then t:SetAlpha(a) end
+    end
+end
+
+-- Chonky's look, built the first time a strip in its skin asks for it.
+local function buildChonkyLook()
+    if button.ccsBg then return end
+    button.ccsBg = button:CreateTexture(nil, "BACKGROUND", nil, -8)
+    button.ccsBg:SetAllPoints(button)
+    button.ccsIcon = button:CreateTexture(nil, "ARTWORK")
+    button.ccsIcon:SetPoint("CENTER", button, "CENTER", 0, 0)
+    button.ccsIcon:SetTexture(NS.Constants.DEFAULT_OUTFIT_ICON)
+    if type(button.CreateMaskTexture) == "function" then
+        local mask = button:CreateMaskTexture()
+        mask:SetTexture(CCS_MASK)
+        mask:SetAllPoints(button)
+        -- Every Texture answers AddMaskTexture in the client; a stand-in that does not draws it square.
+        if pcall(function() button.ccsIcon:AddMaskTexture(mask) end) then button.ccsMask = mask end
+    end
+    button.ccsGlow = button:CreateTexture(nil, "OVERLAY", nil, 7)
+    button.ccsGlow:SetTexture(CCS_HIGHLIGHT)
+    button.ccsGlow:SetPoint("CENTER", button, "CENTER", 0, 0)
+    button.ccsGlow:SetVertexColor(1, 1, 0, 1)
+end
+
+-- Chonky's look shown or hidden; shown, it takes the neighbor's fill and the tab's proportions.
+local function chonkyLook(on)
+    if not on then
+        if button.ccsBg then
+            for _, key in ipairs({ "ccsBg", "ccsIcon", "ccsGlow" }) do button[key]:Hide() end
+        end
+        return
+    end
+    buildChonkyLook()
+    local tex, coords = NS.Sheet.ChonkyTabArt()
+    if tex then button.ccsBg:SetTexture(tex) end
+    if coords and #coords >= 4 then button.ccsBg:SetTexCoord(unpack(coords)) end
+    local w = NS.SafeNumber(button:GetWidth(), CCS_TAB)
+    if w <= 0 then w = CCS_TAB end
+    button.ccsIcon:SetSize(w * CCS_ICON / CCS_TAB, w * CCS_ICON / CCS_TAB)
+    button.ccsGlow:SetSize(w * CCS_GLOW / CCS_TAB, w * CCS_GLOW / CCS_TAB)
+    button.ccsBg:Show()
+    button.ccsIcon:Show()
 end
 
 -- Both looks, built once; placeButton shows one.
@@ -367,12 +445,26 @@ local function paintSideTab(selected)
     if type(button.SetChecked) == "function" then button:SetChecked(selected) end
 end
 
+-- Chonky's skin: the selected tab's color and the yellow glow while the window shows, the selected
+-- color without the glow under the pointer, an unselected tab's color idle (core/styles.lua:931-947).
+local function paintChonkyTab(selected)
+    local idle, active = NS.Sheet.ChonkyTabColors()
+    local c = (selected or button.hovered) and active or idle
+    button.ccsBg:SetVertexColor(c[1], c[2], c[3], c[4])
+    button.ccsGlow:SetShown(selected)
+end
+
 -- Repaint the look the button wears for the window's state now.
 local function paintButton()
     if not button then return end
     local selected = Dock.IsShown()
     if placedLook == "text" then return paintLabel(selected) end
     if placedLook == "sidetab" then return paintSideTab(selected) end
+    if placedLook == "chonkytab" then
+        -- A CheckButton's own checked art stays out of sight; the glow is the selected state.
+        if type(button.SetChecked) == "function" then button:SetChecked(false) end
+        return paintChonkyTab(selected)
+    end
     paintTab(selected)
 end
 
@@ -381,7 +473,11 @@ local function applyLook(look)
     local tab = look == "tab"
     for _, key in ipairs({ "TabBg", "icon", "Hider", "Highlight" }) do button[key]:SetShown(tab) end
     button.label:SetShown(look == "text")
-    if look == "sidetab" then
+    templateArt(look ~= "chonkytab")
+    chonkyLook(look == "chonkytab")
+    if look == "chonkytab" then
+        button.icon:Hide()
+    elseif look == "sidetab" then
         local own = templateIcon()
         if own then
             own:SetTexture(NS.Constants.DEFAULT_OUTFIT_ICON)
@@ -412,7 +508,7 @@ local function onWindowShow()
     sinceTick = 0
     driver:Show()
     driver:SetScript("OnUpdate", followTick)
-    NS.QuickSlots.DrawerSync()
+    NS.QuickSlots.DrawerSync() -- the flyout tint follows the window
     paintButton()
 end
 
@@ -421,7 +517,7 @@ local function onWindowHide()
     paintButton()
     driver:SetScript("OnUpdate", nil)
     driver:Hide()
-    -- The outward drawer is for the open window only (sheet and window feedback design G8).
+    -- The flyout tint is for the open window only (DEV-SKIN-FLYOUT-TINT); the drawer is the doll's.
     NS.QuickSlots.DrawerSync()
     -- Escape (UISpecialFrames) hides it behind the dock's back: that is a close, unless combat did it.
     -- A close takes the Name and Rebuild dialogs with it (Outfitter.lua:1491-1504); the combat
@@ -504,6 +600,11 @@ end
 
 -- ── hooks and events ──────────────────────────────────────────────────────────────────────────
 
+-- WoW Forever's button follows CharacterFrame, not the paper doll (Forever smoke feedback S4): its
+-- mode-tab strip shows on every tab (Reputation, Skills, PvP, Currency, Statistics), and so does the
+-- button, one more tab of it. Retail's belongs to the doll's sidebar.
+local BUTTON_FOLLOWS_FRAME = NS.PerClient({ retail = false, forever = true })
+
 -- The Outfit Window page's sheet-button switch (smoke round 3 E11).
 local function buttonWanted() return NS.GetSetting("window.sheetButton") ~= false end
 
@@ -511,8 +612,9 @@ local function buttonWanted() return NS.GetSetting("window.sheetButton") ~= fals
 -- sheet's look, and show it unless the Outfit Window page turned it off (anchored either way, so the
 -- switch shows it in place). Out of the stand-down only; a plain button, so allowed in combat.
 local function placeButton()
-    local point, rel, relPoint, x, y, w, h, look = NS.Sheet.ButtonAnchor()
+    local point, rel, relPoint, x, y, w, h, look, scale = NS.Sheet.ButtonAnchor()
     button:ClearAllPoints()
+    button:SetScale(NS.SafeNumber(scale, 1) > 0 and NS.SafeNumber(scale, 1) or 1)
     button:SetPoint(point, rel, relPoint, x, y)
     button:SetSize(w, h)
     applyLook(look)
@@ -529,23 +631,44 @@ local function recheckSheet()
     if NS.Sheet.Kind() ~= placedKind then placeButton() end
 end
 
+-- Forever (S4): CharacterFrame's show places the button, and places it again on the next frame,
+-- once a sheet addon's own OnShow has laid the strip out (Chonky lays and skins it there).
+local function replaceOnFrame()
+    if NS.IsStoodDown() or CharacterFrame:IsVisible() ~= true then return end
+    placeButton()
+end
+
+local function onFrameShow()
+    if NS.IsStoodDown() then return end
+    NS.Sheet.Refresh()
+    placeButton()
+    if events then events:ScheduleTimer(replaceOnFrame, 0) end
+end
+
+local function onFrameHide()
+    if NS.IsStoodDown() then return end
+    button:Hide()
+end
+
 local function onSheetShow()
     if NS.IsStoodDown() then return end
     NS.Sheet.Refresh()
     placeButton()
     if events then events:ScheduleTimer(recheckSheet, 0) end
     Dock.Refresh()
+    -- The outward drawer is the doll's, whether or not the window is up (Forever smoke feedback S7).
+    NS.QuickSlots.DrawerSync()
 end
 
 -- "Doesn't reappear next open" (Outfitter.lua:1500-1504).
 local function onSheetHide()
     if NS.IsStoodDown() then return end
-    button:Hide()
+    -- Forever's button stays with its strip on the other tabs (S4); CharacterFrame's hide takes it.
+    if BUTTON_FOLLOWS_FRAME then paintButton() else button:Hide() end
     local wasShown = Dock.IsShown()
     Dock.wanted = false
     Dock.Refresh()
-    -- A window parked in the holder was hidden with the sheet, so its own Hide above fired no OnHide:
-    -- the drawer is put back here as well (design G8).
+    -- The drawer is the doll's (Forever smoke feedback S7): it goes back to Blizzard's with the doll.
     NS.QuickSlots.DrawerSync()
     NS.CloseMenu()
     -- A shown window's own OnHide closed the dialogs; this covers a window hidden for combat (O30).
@@ -567,13 +690,13 @@ end
 
 -- An Outfit Window row's write or a profile switch (smoke round 3 E11): the sheet button shows or
 -- hides in place while the paper doll is up (a plain button, so in combat too), and the drawer follows
--- `window.drawer` while the window is on screen (DrawerSync writes nothing in lockdown; the window's
--- next show syncs it; off screen the drawer is already in). The gap is the follow's (corner), the
--- list's sections and marks Window's own receiver.
+-- `window.drawer` (DrawerSync writes nothing in lockdown; the regen syncs it). The gap is the follow's
+-- (corner), the list's sections and marks Window's own receiver.
 local function onWindowSettings()
     if NS.IsStoodDown() then return end
-    if button and PaperDollFrame:IsVisible() == true then button:SetShown(buttonWanted()) end
-    if Dock.IsVisible() then NS.QuickSlots.DrawerSync() end
+    local host = BUTTON_FOLLOWS_FRAME and CharacterFrame or PaperDollFrame
+    if button and host:IsVisible() == true then button:SetShown(buttonWanted()) end
+    NS.QuickSlots.DrawerSync()
 end
 
 local function onSettingsChanged(_, path)
@@ -595,6 +718,8 @@ local function onRegenEnabled()
     toldCombat = false
     NS.SecureQueue.Flush()
     Dock.Refresh()
+    -- A doll shown or hidden in lockdown left the drawer as it was (Forever smoke feedback S7).
+    NS.QuickSlots.DrawerSync()
 end
 
 local function buildSheet()
@@ -635,6 +760,10 @@ function Dock.Install()
     buildSheet()
     PaperDollFrame:HookScript("OnShow", onSheetShow)
     PaperDollFrame:HookScript("OnHide", onSheetHide)
+    if BUTTON_FOLLOWS_FRAME then
+        CharacterFrame:HookScript("OnShow", onFrameShow)
+        CharacterFrame:HookScript("OnHide", onFrameHide)
+    end
     -- The bus record drops and replays this receiver across a stand-down.
     local bus = NS.NewBusTarget()
     if bus then
@@ -670,7 +799,8 @@ function Dock.Resume()
     if not events then events = LibStub("AceTimer-3.0"):Embed(LibStub("AceEvent-3.0"):Embed({})) end
     events:UnregisterAllEvents()
     for event in pairs(EVENTS) do NS.SafeRegisterEvent(events, event, onEvent, NS.rejectedEvents) end
-    if PaperDollFrame:IsVisible() == true then
+    local host = BUTTON_FOLLOWS_FRAME and CharacterFrame or PaperDollFrame
+    if host:IsVisible() == true then
         NS.Sheet.Refresh()
         placeButton()
     end

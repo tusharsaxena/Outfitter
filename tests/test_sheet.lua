@@ -283,3 +283,64 @@ test("sheet (Forever): unlaid tabs take the fallback gap, and no tab at all the 
     assertEqual(point, "RIGHT"); assertEqual(rel2, M.CharacterFrameCloseButton); assertEqual(relPoint, "LEFT")
     assertEqual(x, -2); assertEqual(y2, 0); assertEqual(w, 55); assertEqual(h, 55); assertEqual(look, "sidetab")
 end)
+
+-- ── Chonky's strip on Forever (Forever smoke feedback S1) ─────────────────────────────────────────
+-- ChonkyCharacterSheet scales the strip to 0.8 and, with "Skin Character Tabs", lays it across under
+-- the sheet in its own skin (CCS-F core/styles.lua:1046-1064, Modules/Forever.lua:1222-1238).
+
+-- Lay the mock's shown tabs in a row, `w` wide and `gap` apart, starting at x 100.
+local function across(M, w, gap)
+    for i = 1, 6 do
+        local tab, left = M["CharacterFrameModeTab" .. i], 100 + (i - 1) * (w + gap)
+        rawset(tab, "GetLeft", function() return left end)
+        rawset(tab, "GetRight", function() return left + w end)
+        rawset(tab, "GetTop", function() return 50 end)
+        rawset(tab, "GetBottom", function() return 50 - w end)
+    end
+end
+
+-- Chonky's CCS_BG on a tab: shown, its file, its coords and its tint.
+local function ccsBg(tab, color)
+    rawset(tab, "CCS_BG", {
+        IsShown = function() return true end,
+        GetTexture = function() return "ccs-tab.tga" end,
+        GetTexCoord = function() return 0, 0, 0, 1, 1, 0, 1, 1 end,
+        GetVertexColor = function() return unpack(color) end,
+    })
+end
+
+test("sheet (Forever): on a strip that runs across, the button sits right of the last tab", function()
+    if not FOREVER then T.skip(FOREVER_ONLY) end
+    local NS, M = fresh()
+    across(M, 48, 1)
+    assertTrue(NS.Sheet.StripAcross(), "the row reads across")
+    local point, rel, relPoint, x, y = NS.Sheet.ButtonAnchor()
+    -- red under: the down-the-strip anchor on Chonky's row (TOPLEFT below the last tab).
+    assertEqual(point, "LEFT"); assertEqual(rel, M.CharacterFrameModeTab6); assertEqual(relPoint, "RIGHT")
+    assertEqual(x, 1); assertEqual(y, 0)
+end)
+
+test("sheet (Forever): the button takes the strip's scale", function()
+    if not FOREVER then T.skip(FOREVER_ONLY) end
+    local NS, M = fresh()
+    rawset(M.CharacterFrameModeTab6, "GetEffectiveScale", function() return 0.8 end)
+    rawset(M.CharacterFrame, "GetEffectiveScale", function() return 1 end)
+    local scale = select(9, NS.Sheet.ButtonAnchor())
+    -- red under: no scale (the button at CharacterFrame's 1 beside Chonky's 0.8 tabs).
+    assertEqual(scale, 0.8)
+end)
+
+test("sheet (Forever): a last tab in Chonky's skin asks for its look, and its art and colors read live", function()
+    if not FOREVER then T.skip(FOREVER_ONLY) end
+    local NS, M = fresh()
+    for i = 1, 6 do rawset(M["CharacterFrameModeTab" .. i], "GetID", function() return i end) end
+    ccsBg(M.CharacterFrameModeTab1, { 1, 1, 1, 1 })
+    for i = 2, 6 do ccsBg(M["CharacterFrameModeTab" .. i], { 0.3, 0.4, 0.5, 1 }) end
+    M.PanelTemplates_GetSelectedTab = function() return 1 end
+    assertEqual(select(8, NS.Sheet.ButtonAnchor()), "chonkytab")
+    local tex, coords = NS.Sheet.ChonkyTabArt()
+    assertEqual(tex, "ccs-tab.tga"); assertEqual(#coords, 8)
+    local idle, active = NS.Sheet.ChonkyTabColors()
+    assertEqual(idle[1], 0.3, "an unselected tab's tint for idle")
+    assertEqual(active[1], 1, "the selected tab's tint for active")
+end)

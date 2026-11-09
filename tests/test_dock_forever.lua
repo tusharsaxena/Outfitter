@@ -74,3 +74,51 @@ test("dock (Forever): the template's unsized Icon takes the outfit icon, filled 
     assertTrue(filled, "the Icon was sized through SetFillToInterior")
     assertFalse(button.icon:IsShown(), "the button's own icon stays hidden behind the template's")
 end)
+
+-- ── Forever smoke feedback S4 and S1 ─────────────────────────────────────────────────────────────
+test("dock (Forever): the button stays on the other tabs and goes with CharacterFrame (S4)", function()
+    if not FOREVER then T.skip(FOREVER_ONLY) end
+    local _, M = scene()
+    M.__world:openCharacter()
+    local button = M.OutfitterRebornSheetButton
+    M.PaperDollFrame:Hide(); M.PaperDollFrame:__fire("OnHide")       -- the Reputation tab
+    -- red under: Retail's rule on Forever (the doll's OnHide hides the button).
+    assertTrue(button:IsShown(), "the button left with the paper doll")
+    M.__world:closeCharacter()
+    assertFalse(button:IsShown(), "CharacterFrame's hide keeps the button up")
+end)
+
+test("dock (Forever): the button takes the strip's scale (S1)", function()
+    if not FOREVER then T.skip(FOREVER_ONLY) end
+    local scale
+    local _, M = scene({ mutate = function(M)
+        local create = M.CreateFrame
+        M.CreateFrame = function(kind, name, ...)
+            local f = create(kind, name, ...)
+            if name == "OutfitterRebornSheetButton" then rawset(f, "SetScale", function(_, v) scale = v end) end
+            return f
+        end
+    end })
+    rawset(M.CharacterFrameModeTab6, "GetEffectiveScale", function() return 0.8 end)
+    rawset(M.CharacterFrame, "GetEffectiveScale", function() return 1 end)
+    M.__world:openCharacter()
+    -- red under: placeButton without SetScale.
+    assertEqual(scale, 0.8)
+end)
+
+test("dock (Forever): on Chonky's skinned strip the button wears its skin, not the template's (S1)", function()
+    if not FOREVER then T.skip(FOREVER_ONLY) end
+    local _, M = scene()
+    rawset(M.CharacterFrameModeTab6, "CCS_BG", {
+        IsShown = function() return true end, GetTexture = function() return "ccs-tab.tga" end,
+        GetTexCoord = function() return 0, 0, 0, 1, 1, 0, 1, 1 end,
+        GetVertexColor = function() return 0.3, 0.4, 0.5, 1 end,
+    })
+    M.__world:openCharacter()
+    local button = M.OutfitterRebornSheetButton
+    assertTrue(button.ccsBg ~= nil and button.ccsBg:IsShown(), "Chonky's fill")
+    assertEqual(button.ccsBg:GetTexture(), "ccs-tab.tga", "the neighbor's file")
+    assertTrue(button.ccsIcon:IsShown(), "the round icon")
+    assertFalse(button.icon:IsShown(), "the plain icon is hidden")
+    assertFalse(button.ccsGlow:IsShown(), "no glow with the window closed")
+end)

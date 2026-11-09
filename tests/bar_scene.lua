@@ -72,7 +72,8 @@ return function(T)
         -- Both are in the latch's MODULES walk, so each answers Suspend and Resume too.
         -- AloneSpot answers nothing: the test bar draws at its saved place (test_preview_place pins the
         -- place beside the real window).
-        T.fake(NS, "Dock", { IsShown = function() return false end, AloneSpot = true, Suspend = true, Resume = true })
+        T.fake(NS, "Dock", { IsShown = function() return false end, DollVisible = function() return false end,
+            AloneSpot = true, Suspend = true, Resume = true })
         local preview = T.fake(NS, "Preview", { IsActive = function() return ctl.preview end, Suspend = true,
                                                 Resume = true })
         rawset(preview, "Source", { Rows = function() return ctl.previewRows end })

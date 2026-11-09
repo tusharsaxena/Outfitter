@@ -265,6 +265,9 @@ test("drawer: the window's show and hide tell the drawer, with the window's stat
     local sync = NS.QuickSlots.DrawerSync
     NS.QuickSlots.DrawerSync = function() seen[#seen + 1] = NS.Dock.IsShown(); return sync() end
     M.__world:openCharacter()
+    -- The doll's show syncs the drawer too (Forever smoke feedback S7): the window's own is counted next.
+    assertEqual(#seen, 1, "the doll's show did not reach the drawer")
+    seen = {}
     NS.Dock.Open()
     -- red under: drop the DrawerSync call from Dock's window OnShow / OnHide hooks.
     assertEqual(#seen, 1, "the window's show did not reach the drawer")

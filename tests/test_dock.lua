@@ -476,6 +476,7 @@ test("dock: the button is parented to CharacterFrame and above the close button'
 end)
 
 test("dock: the button shows with the paper doll and hides with it", function()
+    if FOREVER then T.skip(RETAIL_ONLY .. "; on Forever it follows CharacterFrame (S4)") end
     local _, M = scene()
     local button = M.OutfitterRebornSheetButton
     M.__world:openCharacter()
@@ -916,6 +917,7 @@ test("dock: a sheet tab built after the paper doll's OnShow is picked up on the 
 end)
 
 test("dock: the next frame's sheet check does nothing once the doll is gone or stood down", function()
+    if FOREVER then T.skip(RETAIL_ONLY .. "; on Forever it follows CharacterFrame (S4)") end
     local NS, M = scene()
     M.__loadedAddOns.EllesmereUIBlizzardSkin = true
     M.__world:openCharacter()

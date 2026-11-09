@@ -799,7 +799,7 @@ Total.
 - secrets states: a secret icon falls through to the spell; a secret spell id matches nothing
 - secrets states: the last mana reading survives a secret sample
 
-### test_quickslots.lua (46)
+### test_quickslots.lua (19)
 
 - quickslots: NS.QuickSlots and its sort are published
 - quickslots: the hooks are post-hooks, built once however often the addon stands up
@@ -820,33 +820,41 @@ Total.
 - quickslots: every hook body stands down with the addon and comes back with it
 - quickslots: quickSlots.enabled off silences every hook body; on brings them back
 - quickslots: the stand-down owns nothing to tear down: no event, no timer, no frame
-- drawer: with the window open a left-column flyout's buttonFrame is anchored TOPRIGHT to the slot's TOPLEFT
+
+### test_drawer.lua (32)
+
+- drawer: with the doll shown a left-column flyout's buttonFrame is anchored TOPRIGHT to the slot's TOPLEFT
 - drawer: a right-column flyout's first item is level with its slot, past the arrow
 - drawer: a left-column flyout on a taller slot is level with it too
-- drawer: with the window open the left-column arrows sit on the slot's left, mirrored
+- drawer: with the doll shown the left-column arrows sit on the slot's left, mirrored
 - drawer: a right-column arrow stays where Blizzard put it, the flyout beside the slot
-- drawer: a moved right-column flyout gets Blizzard's own point back when the window closes
+- drawer: a moved right-column flyout gets Blizzard's own point back when the doll hides
 - drawer: the weapons' flyout opens down as Blizzard has it
 - drawer: a right-column flyout after a left one drops the left one's anchor
 - drawer: another host's flyout after a left-column one keeps that host's own anchor
 - drawer: SetReversed on a left-column arrow mirrors its coords
-- drawer: with the window closed the flyout keeps Blizzard's anchors
-- drawer: closing the window restores the left-column arrows and closes a locked flyout
-- drawer: a window hidden through its parent restores the drawer
+- drawer: with the doll hidden the flyout keeps Blizzard's anchors
+- drawer: hiding the doll restores the left-column arrows and closes a locked flyout
+- drawer: the doll shown with the window closed turns the drawer outward
+- drawer: window.drawer off keeps Blizzard's drawer with the doll shown
 - drawer: stood down nothing is moved
-- drawer: a stand-down with the window open puts Blizzard's drawer back
+- drawer: a stand-down with the doll shown puts Blizzard's drawer back
 - drawer: in combat lockdown nothing is moved
 - drawer: a HideAll after lockdown begins, with the drawer already out, shows no arrow
 - drawer: a missing Blizzard function installs nothing and errors nothing
-- arrows: shown on every slot, weapons included, while the window shows; hidden when it closes
+- arrows: shown on every slot, weapons included, while the doll shows; hidden when it closes
 - arrows: shown once per change, not on every sync
-- arrows: closing the window leaves the Equipment Manager pane's arrows shown
-- arrows: Blizzard's HideAll while the window shows puts them back
-- arrows: Blizzard's HideAll with the window closed leaves them hidden
+- arrows: hiding the doll leaves the Equipment Manager pane's arrows shown
+- arrows: Blizzard's HideAll while the doll shows puts them back
+- arrows: Blizzard's HideAll with the doll hidden leaves them hidden
 - arrows: Blizzard's HideAll never reopens a flyout it closed
-- arrows: a stand-down with the window open hides them
-- drawer (Forever): the window open shows every arrow and moves none
-- drawer (Forever): an open flyout keeps Blizzard's own anchor and coords
+- arrows: a stand-down with the doll shown hides them
+- drawer (Forever): the doll shown turns every arrow outward by F-UI's own anchor and rotation
+- drawer (Forever): a slot whose BorderFrame is hidden takes its arrow flush (S3)
+- drawer (Forever): an open flyout opens outward by F-UI's formula for that direction
+- drawer (Forever): Blizzard's repaint on enter keeps the arrow outward
+- drawer (Forever): the doll hidden puts Blizzard's arrows and flyout back
+- drawer (Forever): in combat lockdown nothing is moved or turned
 
 ### test_equip_bracket.lua (32)
 
@@ -1179,7 +1187,7 @@ Total.
 - pvp: a disabled spec keeps the outfit off, and the spec change puts it on or takes it off
 - pvp: every zone trigger honors each of the four spec toggles
 
-### test_sheet.lua (21)
+### test_sheet.lua (24)
 
 - sheet: NS.Sheet is published with the adapter's surface
 - sheet: stock by default
@@ -1202,6 +1210,9 @@ Total.
 - sheet (Forever): the button is one more tab below the last mode tab, at the strip's spacing
 - sheet (Forever): a hidden last tab gives the place to the last shown one
 - sheet (Forever): unlaid tabs take the fallback gap, and no tab at all the close X's place
+- sheet (Forever): on a strip that runs across, the button sits right of the last tab
+- sheet (Forever): the button takes the strip's scale
+- sheet (Forever): a last tab in Chonky's skin asks for its look, and its art and colors read live
 
 ### test_dock.lua (50)
 
@@ -1256,11 +1267,14 @@ Total.
 - dock: on Chonky the Reputation tab takes the button and window down, the Character tab brings them back
 - dock: on Retail the sheet button is a plain Button with no template
 
-### test_dock_forever.lua (3)
+### test_dock_forever.lua (6)
 
 - dock (Forever): the button sits below the last mode tab in the strip's look
 - dock (Forever): with the client's template the button is a LargeSideTabButtonTemplate CheckButton
 - dock (Forever): the template's unsized Icon takes the outfit icon, filled as the mode tabs fill theirs
+- dock (Forever): the button stays on the other tabs and goes with CharacterFrame (S4)
+- dock (Forever): the button takes the strip's scale (S1)
+- dock (Forever): on Chonky's skinned strip the button wears its skin, not the template's (S1)
 
 ### test_list_model.lua (8)
 
@@ -1846,7 +1860,8 @@ Total.
 | test_companion.lua | 25 |
 | test_states.lua | 29 |
 | test_secrets_states.lua | 6 |
-| test_quickslots.lua | 46 |
+| test_quickslots.lua | 19 |
+| test_drawer.lua | 32 |
 | test_equip_bracket.lua | 32 |
 | test_tooltips.lua | 18 |
 | test_stack.lua | 27 |
@@ -1862,9 +1877,9 @@ Total.
 | test_triggers_quest.lua | 14 |
 | test_triggers_class.lua | 11 |
 | test_triggers_pvp.lua | 7 |
-| test_sheet.lua | 21 |
+| test_sheet.lua | 24 |
 | test_dock.lua | 50 |
-| test_dock_forever.lua | 3 |
+| test_dock_forever.lua | 6 |
 | test_list_model.lua | 8 |
 | test_rows_secure.lua | 22 |
 | test_slot_enables.lua | 29 |
@@ -1892,4 +1907,4 @@ Total.
 | test_lizard_sighted.lua | 8 |
 | test_prose.lua | 15 |
 | Skipped | 1 |
-| **Total** | **1562** |
+| **Total** | **1573** |
