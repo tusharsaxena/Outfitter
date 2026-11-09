@@ -19,6 +19,8 @@ local SLOTS = {
     "MainHandSlot", "SecondaryHandSlot", "BackSlot", "NeckSlot", "ShirtSlot", "TabardSlot", "Finger0Slot",
     "Finger1Slot", "Trinket0Slot", "Trinket1Slot",
 }
+-- WoW Forever adds the ranged slot (defaults/Items.lua, ruling D2).
+if dofile("tests/_kit/mock_client.lua").current() == "forever" then SLOTS[#SLOTS + 1] = "RangedSlot" end
 
 --- A fresh instance: a gear scenario, and a class (and spec) set before the files load.
 local function scene(opts)
@@ -191,6 +193,8 @@ local TRIGGER_OF = {
     Moonkin = "DRUID_MOONKIN", Tree = "DRUID_TREE", Prowl = "DRUID_PROWL", Stealth = "ROGUE_STEALTH",
     GhostWolf = "SHAMAN_GHOST_WOLF",
 }
+-- Tree of Life is Retail's alone (clients-§4): on the forever kit profile no Tree outfit is seeded.
+local FOREVER = dofile("tests/_kit/mock_client.lua").current() == "forever"
 
 -- One case per class the capture seeded, in a stable order (the case list is generated, testing-§5).
 local CLASSES = {}
@@ -206,12 +210,14 @@ for _, class in ipairs(CLASSES) do
         NS.Outfits.LoadPass()
         assertEqual(table.concat(names(NS, "Complete"), "|"), "Normal|Birthday Suit")
         local wantAcc, wantTrig, wantIcon = {}, {}, {}
-        for i, o in ipairs(want.outfits.Accessory) do
-            local n = o.scriptID:match("^SPECIALIZATION_(%d+)$")
-            -- The capture's stand-in spec names (SpecN) are the mock's real ones here.
-            wantAcc[i] = n and (o.name:gsub("Spec%d+$", specs[tonumber(n)][2])) or o.name
-            wantTrig[i] = n and ("SPEC_" .. n) or TRIGGER_OF[o.scriptID]
-            wantIcon[i] = o.icon
+        for _, o in ipairs(want.outfits.Accessory) do
+            if not (FOREVER and o.scriptID == "Tree") then
+                local i, n = #wantAcc + 1, o.scriptID:match("^SPECIALIZATION_(%d+)$")
+                -- The capture's stand-in spec names (SpecN) are the mock's real ones here.
+                wantAcc[i] = n and (o.name:gsub("Spec%d+$", specs[tonumber(n)][2])) or o.name
+                wantTrig[i] = n and ("SPEC_" .. n) or TRIGGER_OF[o.scriptID]
+                wantIcon[i] = o.icon
+            end
         end
         assertEqual(table.concat(names(NS, "Accessory"), "|"), table.concat(wantAcc, "|"))
         for i, id in ipairs(NS.Outfits.Ids("Accessory")) do

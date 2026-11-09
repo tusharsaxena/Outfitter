@@ -205,6 +205,11 @@ end)
 test("secrets: the library-absent spec stubs walk C_SpecializationInfo, then the globals", function()
     local inst = T.load({ libFiles = {}, init = false })
     local Cs = inst.NS.Compat
+    -- The bare rung on its own, whichever client profile runs: the forever profile has no bare
+    -- globals and answers through the namespace (tests/wow_mock.lua), so the case sets the rung.
+    inst.mocks.C_SpecializationInfo = nil
+    inst.mocks.GetSpecialization = inst.mocks.GetSpecialization or function() return 1 end
+    inst.mocks.GetSpecializationInfo = inst.mocks.GetSpecializationInfo or function() return 250 end
     assertEqual(Cs.GetSpecialization(), 1, "the bare global rung")
     assertEqual((Cs.GetSpecializationInfo(1)), 250)
     assertNil(Cs.GetSpecializationInfo(nil), "no index, no client call")
@@ -297,6 +302,7 @@ local ACCESSORS = {
     "ContainerNumFreeSlots", "ContainerIDToInventoryID", "LastEquippedBagID", "PickupContainerItem", "PickupInventoryItem",
     "PickupItemLocation", "UseContainerItem", "ShowContainerSellCursor", "EquipCursorItem", "ClearCursor",
     "PawnVisibleScales", "PawnItemValue", "CanDualWield", "BitAnd",
+    "RegionalNames", "UnitCharacterName", "PerformEmote",
 }
 
 -- The client's ItemLocation mixin, reduced to the two constructors Compat calls: `b`/`s` for a bag
@@ -419,7 +425,8 @@ test("compat: with the client API absent every accessor answers its no-answer va
                          "ClearCursor", "SetCurrentTitle",
                          "EquipmentManager_GetLocationData", "PawnGetItemData", "PawnGetAllScales", "GetNumTitles",
                          "hooksecurefunc", "ItemLocation", "CanDualWield", "Enum", "MAX_EQUIPMENT_SETS_PER_PLAYER",
-                         "NUM_TOTAL_EQUIPPED_BAG_SLOTS", "IsFlying" }) do
+                         "NUM_TOTAL_EQUIPPED_BAG_SLOTS", "IsFlying", "C_PaperDollInfo", "C_ChatInfo",
+                         "DoEmote", "UnitName" }) do
         absent[k] = false   -- `false` stands for absent: the mock's __index would fall through to nil
     end
     local BAG, INV, fn = { bag = 0, slot = 1 }, { slotID = 16 }, function() end
@@ -430,13 +437,13 @@ test("compat: with the client API absent every accessor answers its no-answer va
         { "IsWarboundUntilEquip", INV }, { "CanUseItem", 1 }, { "CanUpgradeItem", INV }, { "AzeritePowers", INV },
         { "SummonedPetGUID" }, { "PetGUIDBySpecies", 1 }, { "EMSetInfo", 1 },
         { "EMLocation", 1 }, { "FlyoutLocationData", 1 }, { "EMSetID", "Tank" }, { "ContainerIDToInventoryID", 1 },
-        { "PawnItemValue", "link", "Alpha" }, { "LastEquippedBagID" } }
+        { "PawnItemValue", "link", "Alpha" }, { "LastEquippedBagID" }, { "UnitCharacterName", "target" } }
     local FALSE = { { "SummonPet", "g" }, { "HookPetSummon", fn }, { "HookCompare", fn }, { "EMCreateSet", "n", 1 },
         { "EMSaveSet", 1, 1 }, { "EMModifySet", 1, "n", 1 }, { "EMDeleteSet", 1 }, { "EMClearIgnored" },
         { "EMIgnoreSlot", 1, true }, { "SetCurrentTitle", 1 }, { "IsBankerInteraction", 8 },
         { "PickupContainerItem", 0, 1 }, { "PickupInventoryItem", 16 }, { "PickupItemLocation", BAG },
         { "UseContainerItem", 0, 1 }, { "ShowContainerSellCursor", 0, 1 }, { "EquipCursorItem", 16 },
-        { "ClearCursor" }, { "CanDualWield" }, { "IsFlying" } }
+        { "ClearCursor" }, { "CanDualWield" }, { "IsFlying" }, { "PerformEmote", "DANCE" } }
     local EMPTY = { { "TooltipLines", BAG }, { "EMSetIDs" }, { "EMLocations", 1 }, { "EMIgnoredSlots", 1 },
         { "KnownTitles" }, { "BankBagIDs" }, { "PawnVisibleScales" } }
     with(absent, function()

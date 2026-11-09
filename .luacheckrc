@@ -58,6 +58,7 @@ files["core/Compat.lua"] = {
         -- titles and macro icons. Every equipment call lives here and nowhere else.
         "C_Container", "C_Item", "C_ItemUpgrade", "C_EquipmentSet", "C_PetJournal", "C_TooltipInfo",
         "C_AzeriteEmpoweredItem", "GetInventoryItemLink", "GetInventoryItemID", "GetInventorySlotInfo",
+        "C_PaperDollInfo", "C_ChatInfo", "DoEmote",
         "GetInventoryItemCooldown", "PickupInventoryItem", "EquipCursorItem", "ClearCursor", "CursorHasItem",
         "GetCursorInfo", "SetCurrentTitle", "GetMacroIcons", "GetMacroItemIcons",
         "EquipmentManager_GetLocationData", "PawnGetItemData", "GetNumTitles", "GetTitleName", "IsTitleKnown",
@@ -112,7 +113,7 @@ files["modules/States_Zone.lua"] = {
 -- The trigger files: the reads their conditions make and the two effects that act on the client.
 local TRIGGER_READS = {
     "IsFalling", "IsResting", "UnitIsPVP", "UnitGUID", "UnitIsPlayer", "UnitName", "UnitInVehicle",
-    "C_QuestLog", "C_TradeSkillUI", "C_Minimap", "SpellIsTargeting", "HasFullControl", "DoEmote",
+    "C_QuestLog", "C_TradeSkillUI", "C_Minimap", "SpellIsTargeting", "HasFullControl",
     "ChangeActionBarPage", "IsInInstance", "C_Map", "GameTooltip", "C_Spell", "C_Item", "C_PetJournal",
     "C_UnitAuras", "GetCursorInfo", "GetMinimapZoneText", "GetNormalizedRealmName", "GetActionBarPage",
     "GetInstanceInfo",

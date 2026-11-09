@@ -9,6 +9,8 @@
 -- cases at the end run on the real modules: the popup's accept and the dialogs Reset all closes.
 
 local T = _G.OUTFITTERREBORN_TEST
+-- WoW Forever has no Tree of Life (clients-§4): its druid seeds one form fewer.
+local FOREVER = dofile("tests/_kit/mock_client.lua").current() == "forever"
 -- A unit instance: the login without the resume walk, so the module under test is the one this
 -- suite stands up (tests/unit_load.lua).
 local unitLoad = dofile(T.root .. "/tests/unit_load.lua")(T)
@@ -180,12 +182,13 @@ test("reset: Delete all wipes the character's outfits, re-seeds the built-in one
     assertNil(NS.Outfits.Get(a)); assertNil(NS.Outfits.Get(b))
     assertNil(NS.Outfits.BoundTo(4), "the bindings went")
     assertEqual(#NS.db.char.recent, 0); assertNil(NS.db.char.emPreserved)
-    -- Re-seeded: Normal, Naked, the seven druid forms and one outfit per spec.
+    -- Re-seeded: Normal, Naked, the seven druid forms (six on WoW Forever: no Tree of Life) and one
+    -- outfit per spec.
     local O = NS.Outfits
     assertTrue(O.FindByName("Normal") ~= nil and O.FindByName("Birthday Suit") ~= nil)
     assertTrue(O.FindByName("Druid: Caster Form") ~= nil and O.FindByName("Druid: Prowl") ~= nil)
     assertTrue(O.FindByName("Druid: Balance") ~= nil, "a spec outfit")
-    assertEqual(#O.Ids("Accessory"), 7 + 4)
+    assertEqual(#O.Ids("Accessory"), (FOREVER and 6 or 7) + 4)
     assertEqual(NS.db.char.stack[1].id, O.FindByName("Normal"))
     assertTrue(NS.db.char.seeded)
     -- Ids are never reused.

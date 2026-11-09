@@ -8,6 +8,21 @@ local test, assertEqual, assertTrue, assertFalse = T.test, T.assertEqual, T.asse
 
 local function data() return T.NS.ItemData end
 
+-- The suite's client profile. WoW Forever's slot table is Retail's (the legacy one) with the ranged
+-- slot after the two hands, and its ranged inventory types go there (rulings D2; probe P5).
+local FOREVER = dofile("tests/_kit/mock_client.lua").current() == "forever"
+local RANGED_TYPES = { INVTYPE_RANGED = true, INVTYPE_RANGEDRIGHT = true, INVTYPE_THROWN = true, INVTYPE_RELIC = true }
+
+-- The legacy slot list, with the ranged slot inserted after SecondaryHandSlot on WoW Forever.
+local function wantSlotNames()
+    local out = {}
+    for _, name in ipairs(T.legacy.slots.slotNames) do
+        out[#out + 1] = name
+        if FOREVER and name == "SecondaryHandSlot" then out[#out + 1] = "RangedSlot" end
+    end
+    return out
+end
+
 -- The keys of a table as a sorted, comma-joined string, so two sets compare in one assertion.
 local function keyList(t)
     local keys = {}
@@ -29,10 +44,10 @@ test("slots: NS.ItemData is published by defaults/Items.lua", function()
     assertEqual(type(data().SLOT_NAMES), "table", "SLOT_NAMES")
 end)
 
-test("slots: SLOT_NAMES is the legacy durability-first order, all 18", function()
-    local want = T.legacy.slots.slotNames
+test("slots: SLOT_NAMES is the legacy durability-first order, all 18 (19 with Forever's ranged slot)", function()
+    local want = wantSlotNames()
     local got = data().SLOT_NAMES
-    assertEqual(#got, 18, "slot count")
+    assertEqual(#got, FOREVER and 19 or 18, "slot count")
     assertEqual(#got, #want, "legacy slot count")
     for i, name in ipairs(want) do assertEqual(got[i], name, "slot " .. i) end
 end)
@@ -42,8 +57,11 @@ test("slots: SLOT_ORDER is SLOT_NAMES' reverse index, and the legacy one", funct
     for i, name in ipairs(names) do assertEqual(order[name], i, name) end
     -- red under: an extra entry in SLOT_ORDER (e.g. `AmmoSlot = 19`) -- the index would still agree
     -- with every SLOT_NAMES entry above, and only the key-set comparison sees the stray.
-    assertEqual(keyList(order), keyList(T.legacy.slots.slotOrder), "SLOT_ORDER's keys")
-    assertEqual(pairList(order), pairList(T.legacy.slots.slotOrder), "SLOT_ORDER against legacy")
+    local wantOrder = {}
+    for i, name in ipairs(wantSlotNames()) do wantOrder[name] = i end
+    if not FOREVER then assertEqual(pairList(wantOrder), pairList(T.legacy.slots.slotOrder), "the legacy order") end
+    assertEqual(keyList(order), keyList(wantOrder), "SLOT_ORDER's keys")
+    assertEqual(pairList(order), pairList(wantOrder), "SLOT_ORDER against legacy")
 end)
 
 test("slots: every slot has exactly one label source, a GlobalString key or an L string", function()
@@ -75,9 +93,25 @@ test("slots: INVTYPE_TO_SLOT is the legacy inventory-type map, as { slot, meta }
     -- red under: drop INVTYPE_RELIC (or add a stray INVTYPE_AMMO) from the table.
     assertEqual(keyList(got), keyList(want), "the inventory types")
     for invType, w in pairs(want) do
-        assertEqual(got[invType].slot, w.SlotName, invType .. ".slot")
+        local slot = (FOREVER and RANGED_TYPES[invType]) and "RangedSlot" or w.SlotName
+        assertEqual(got[invType].slot, slot, invType .. ".slot")
         assertEqual(got[invType].meta, w.MetaSlotName, invType .. ".meta")
     end
+end)
+
+test("slots: the slot table is picked per client: Forever adds the ranged slot, Retail's is unchanged", function()
+    local names = table.concat(data().SLOT_NAMES, ",")
+    local retail = "HeadSlot,ShoulderSlot,ChestSlot,WristSlot,HandsSlot,WaistSlot,LegsSlot,FeetSlot,"
+        .. "MainHandSlot,SecondaryHandSlot,"
+        .. "BackSlot,NeckSlot,ShirtSlot,TabardSlot,Finger0Slot,Finger1Slot,Trinket0Slot,Trinket1Slot"
+    -- red under: RangedSlot in Retail's list (Retail's client raises on the name), or missing on Forever.
+    assertEqual(names, FOREVER and retail:gsub("SecondaryHandSlot,", "SecondaryHandSlot,RangedSlot,") or retail)
+    assertEqual(data().SLOT_LABEL_KEYS.RangedSlot, FOREVER and "RANGEDSLOT" or nil, "the ranged slot's GlobalString")
+    for invType in pairs(RANGED_TYPES) do
+        assertEqual(data().INVTYPE_TO_SLOT[invType].slot, FOREVER and "RangedSlot" or "MainHandSlot", invType)
+        assertEqual(data().INVTYPE_TO_SLOT[invType].meta, nil, invType .. " has no meta slot")
+    end
+    assertEqual(data().SLOT_ORDER.AmmoSlot, nil, "no ammo slot yet (D1 waits for the stack-aware equip path)")
 end)
 
 test("slots: every INVTYPE_TO_SLOT target is one of the 18 slots", function()
@@ -169,4 +203,20 @@ test("slots: the dropped tables stay dropped (design §5.1, INV §18)", function
             end
         end
     end
+end)
+
+test("slots: C_PaperDollInfo.GetInventorySlotInfo is asked before the deprecated shim (OR-F4)", function()
+    local inst = T.load()
+    local C, M = inst.NS.Compat, inst.mocks
+    M.GetInventorySlotInfo = function() error("the shim is not asked while C_PaperDollInfo answers") end
+    M.C_PaperDollInfo = { GetInventorySlotInfo = function(name)
+        if name ~= "RangedSlot" then error("Invalid inventory slot") end
+        return 18
+    end }
+    -- red under: Compat.InventorySlotID reading the bare GetInventorySlotInfo first.
+    assertEqual(C.InventorySlotID("RangedSlot"), 18)
+    assertEqual(C.InventorySlotID("NoSuchSlot"), nil, "a raise is nil")
+    M.C_PaperDollInfo = false
+    M.GetInventorySlotInfo = function(name) return name == "HeadSlot" and 1 or nil end
+    assertEqual(C.InventorySlotID("HeadSlot"), 1, "the shim without C_PaperDollInfo")
 end)

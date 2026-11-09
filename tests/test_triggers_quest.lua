@@ -35,6 +35,15 @@ local function call(ns, id, over, event, ...)
     return ctx.desc.condition(ctx, event, ...)
 end
 
+-- The four content quests and Pet Battle are Retail's alone (clients-§4; rulings D5, D6): a case
+-- that drives one of them skips on the forever kit profile, where the trigger does not exist.
+local FOREVER = dofile("tests/_kit/mock_client.lua").current() == "forever"
+local RETAIL_ONLY = { "QUEST_ARGENT_TOURNAMENT", "QUEST_VIGILANCE_ON_WINGS", "QUEST_FLAME_LEVIATHAN",
+                      "QUEST_MULTIPHASE_SURVEY", "PET_BATTLE" }
+local function retailOnly()
+    if FOREVER then T.skip("a Retail-only trigger, absent on WoW Forever (clients-§4)") end
+end
+
 local function guid(unitType, npcID) return ("%s-0-3767-571-11063-%d-0000ABCDEF"):format(unitType, npcID) end
 
 local function keys(set)
@@ -73,6 +82,7 @@ test("quest: the vehicle NPC lists equal the legacy scripts', by faction", funct
 end)
 
 test("quest: each vehicle trigger equips on every NPC of its list, by its own GUID type", function()
+    retailOnly()
     local ns, M = fresh()
     local cases = {
         { id = "QUEST_ARGENT_TOURNAMENT",  unitType = "Vehicle",  other = "Creature", list = LEGACY.ALLIANCE },
@@ -103,6 +113,7 @@ test("quest: each vehicle trigger equips on every NPC of its list, by its own GU
 end)
 
 test("quest: the tooltip hiding unequips a second late, unless the player is in the vehicle", function()
+    retailOnly()
     local ns, M = fresh()
     for _, id in ipairs({ "QUEST_ARGENT_TOURNAMENT", "QUEST_VIGILANCE_ON_WINGS", "QUEST_FLAME_LEVIATHAN" }) do
         local ctx = ctxFor(ns, id, { did = true, now = 50 })
@@ -120,6 +131,7 @@ test("quest: the tooltip hiding unequips a second late, unless the player is in 
 end)
 
 test("quest: boarding within 3 s of that unequip cancels it, and not at 3 s or later", function()
+    retailOnly()
     local ns = fresh()
     for _, id in ipairs({ "QUEST_ARGENT_TOURNAMENT", "QUEST_VIGILANCE_ON_WINGS", "QUEST_FLAME_LEVIATHAN" }) do
         local within = call(ns, id, { didUn = true, now = 52.9, state = { unequipAt = 50 } }, "UNIT_ENTERED_VEHICLE", "player")
@@ -134,6 +146,7 @@ test("quest: boarding within 3 s of that unequip cancels it, and not at 3 s or l
 end)
 
 test("quest: leaving the vehicle unequips; Flame Leviathan waits for combat to end", function()
+    retailOnly()
     local ns, M = fresh()
     for _, id in ipairs({ "QUEST_ARGENT_TOURNAMENT", "QUEST_VIGILANCE_ON_WINGS" }) do
         assertEqual(call(ns, id, { did = true }, "UNIT_EXITED_VEHICLE", "player"), "unequip", id)
@@ -164,6 +177,7 @@ end)
 -- ── QUEST_MULTIPHASE_SURVEY (row 27) ──────────────────────────────────────────────────────────
 
 test("quest: the Multiphase Survey equips in Nagrand on quest 11880, five seconds late", function()
+    retailOnly()
     local ns, M = fresh()
     local asked = {}
     local isOn, isComplete = M.C_QuestLog.IsOnQuest, M.C_QuestLog.IsComplete
@@ -228,6 +242,7 @@ test("quest: the turn-in outfit goes on at QUEST_PROGRESS and off at QUEST_FINIS
 end)
 
 test("quest: a pet battle's opening equips and its close unequips", function()
+    retailOnly()
     local ns = fresh()
     assertEqual(call(ns, "PET_BATTLE", {}, "PET_BATTLE_OPENING_DONE"), "equip")
     assertEqual(call(ns, "PET_BATTLE", {}, "PET_BATTLE_CLOSE"), "unequip")
@@ -247,6 +262,20 @@ test("quest: DANCE dances when its outfit is worn, and changes nothing itself", 
     ctx.desc.onWorn(ctx)
     assertEqual(table.concat(emotes, ","), "DANCE")
     assertNil(ctx.desc.onRemoved, "nothing to undo")
+end)
+
+test("quest: DANCE asks C_ChatInfo.PerformEmote before the DoEmote shim (OR-F4)", function()
+    local ns, M = fresh()
+    local modern, bare = {}, {}
+    M.C_ChatInfo = { PerformEmote = function(token) modern[#modern + 1] = token end }
+    M.DoEmote = function(token) bare[#bare + 1] = token end
+    local ctx = ctxFor(ns, "DANCE")
+    ctx.desc.onWorn(ctx)
+    -- red under: Compat.PerformEmote calling DoEmote first.
+    assertEqual(table.concat(modern, ","), "DANCE")
+    assertEqual(#bare, 0, "the shim is not asked")
+    M.C_ChatInfo, M.DoEmote = false, false
+    assertFalse(ns.Compat.PerformEmote("DANCE"), "neither API: no emote, no raise")
 end)
 
 test("quest: COMPANION summons its pet two seconds after the wear, or says it couldn't find it", function()
@@ -321,26 +350,41 @@ test("quest: bound, the shipped conditions answer the binder's events", function
     local ns, M = fresh()
     local emotes = {}
     M.DoEmote = function(token) emotes[#emotes + 1] = token end
+    -- On WoW Forever the joust and pet-battle outfits name absent triggers: they bind nothing.
     local argent = ns.Outfits.Create("Joust", {}, { trigger = "QUEST_ARGENT_TOURNAMENT" })
     local turnin = ns.Outfits.Create("XP", {}, { trigger = "QUEST_TURNIN" })
     local battle = ns.Outfits.Create("Pets", {}, { trigger = "PET_BATTLE" })
     local dance = ns.Outfits.Create("Dance", {}, { trigger = "DANCE" })
     local st = fakeStack(ns)
-    assertEqual(ns.TriggerBinder.BindAll(), 4, "every one has a condition")
+    assertEqual(ns.TriggerBinder.BindAll(), FOREVER and 2 or 4, "every one this client has binds")
     M.__units.player.faction = "Alliance"
     M.__units.mouseover = { guid = guid("Vehicle", 33800) }
     M.__fire("UPDATE_MOUSEOVER_UNIT")
-    assertTrue(st.worn[argent], "the mount under the cursor")
+    assertEqual(st.worn[argent] == true, not FOREVER, "the mount under the cursor, on Retail only")
     M.__fire("QUEST_PROGRESS")
     assertTrue(st.worn[turnin])
     M.__fire("QUEST_FINISHED")
     assertNil(st.worn[turnin])
     M.__fire("PET_BATTLE_OPENING_DONE")
-    assertTrue(st.worn[battle])
+    assertEqual(st.worn[battle] == true, not FOREVER, "a pet battle, on Retail only")
     M.__fire("PET_BATTLE_CLOSE")
     assertNil(st.worn[battle])
     ns.Stack.Wear(dance, { byTrigger = false })
     assertEqual(table.concat(emotes, ","), "DANCE", "its own wear dances")
     ns.SendBus(ns.MSG.OUTFIT_WORN, argent, nil, true)
     assertEqual(#emotes, 1, "another outfit's wear does not")
+end)
+
+test("quest: the four content quests and Pet Battle exist on Retail only; Quest Turn-in on both", function()
+    local ns = fresh()
+    local quest = {}
+    for _, d in ipairs(ns.Triggers.List("QUEST")) do quest[#quest + 1] = d.id end
+    for _, id in ipairs(RETAIL_ONLY) do
+        -- red under: Finalize building a `clients = { "retail" }` row on Forever (rulings D5, D6).
+        assertEqual(ns.Triggers.Get(id) ~= nil, not FOREVER, id .. " is Retail's alone")
+    end
+    assertTrue(ns.Triggers.Get("QUEST_TURNIN") ~= nil, "Quest Turn-in stays on both clients")
+    assertEqual(table.concat(quest, ","), FOREVER and "QUEST_TURNIN"
+        or "QUEST_ARGENT_TOURNAMENT,QUEST_FLAME_LEVIATHAN,PET_BATTLE,QUEST_TURNIN,QUEST_MULTIPHASE_SURVEY,"
+        .. "QUEST_VIGILANCE_ON_WINGS", "the QUEST picker")
 end)

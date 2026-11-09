@@ -17,6 +17,9 @@ local test, assertEqual, assertTrue = T.test, T.assertEqual, T.assertTrue
 
 local OWNER = "OutfitterReborn"
 local BRAND = "Ka0s Outfitter Reborn"
+-- The client's default skin under the active kit profile (LibKa0s v1.94.0, skinning-§2): WoW Forever
+-- on forever, Ka0s Default on retail. Pinned from the profile, never read back from the addon.
+local CLIENT_SKIN = dofile("tests/_kit/mock_client.lua").current() == "forever" and "forever" or "ka0s"
 
 -- Design §7.1: each owner token, the pixel the old addon drew, and the library role it follows.
 local TOKENS = {
@@ -70,14 +73,15 @@ test("skin seam: the owner is registered at file load, before the profile store 
     assertTrue(inst.mocks.LibStub("LibKa0s-Skin-1.0"):IsOwner(OWNER), "not registered at file load")
 end)
 
-test("skin seam: the read answers Ka0s Default before the profile store exists", function()
+test("skin seam: the read answers the client's default skin before the profile store exists", function()
     -- RegisterOwner calls `get` at FILE LOAD; a getter that raised there would be a Lua error on
     -- every login.
     local NS = T.load({ init = false }).NS
     local ok, source, skin = pcall(NS.SkinChoice)
     assertTrue(ok, "NS.SkinChoice raised without a store: " .. tostring(source))
     assertEqual(source, "ka0s")
-    assertEqual(skin, "ka0s")
+    assertEqual(skin, CLIENT_SKIN)
+    assertEqual(NS.DEFAULT_SKIN, CLIENT_SKIN, "NS.DEFAULT_SKIN is Skin:DefaultSkin() on this client")
     local font, texture = NS.SkinOverride()
     assertEqual(font, false); assertEqual(texture, false)
     -- And the write seam is a quiet no-op until settings/Schema.lua's NS.SetByPath exists.
@@ -151,13 +155,23 @@ end)
 
 test("skin seam: login applies the stored skin before anything is built", function()
     -- red under: no NS.ApplySkinChoice() in NS:OnInitialize (core/OutfitterReborn.lua). Until the
-    -- schema seams exist the stored pair reads as Ka0s Default, so a choice applied before login
-    -- must come back to it.
+    -- schema seams exist the stored pair reads as the client's default skin, so a choice applied
+    -- before login must come back to it.
     local inst = T.load({ init = false })
     local Skin = inst.mocks.LibStub("LibKa0s-Skin-1.0")
     Skin:SetChoice(OWNER, "ka0s", "obsidian")
     inst.mocks.LibStub("AceAddon-3.0"):InitializeAddon(inst.NS)
-    assertEqual(select(2, Skin:GetChoice(OWNER)), "ka0s", "OnInitialize did not apply the stored skin")
+    assertEqual(select(2, Skin:GetChoice(OWNER)), CLIENT_SKIN, "OnInitialize did not apply the stored skin")
+end)
+
+test("skin seam: a new profile defaults to the client's default skin (skinning-§2)", function()
+    -- red under: the literal "ka0s" back in defaults/Profile.lua's skin.skin, or in the schema row's
+    -- default. WoW Forever on the Forever client, Ka0s Default on Retail.
+    local NS = setup()
+    local d = NS.defaults.profile.skin
+    assertEqual(d.source, "ka0s")
+    assertEqual(d.skin, CLIENT_SKIN, "WoW Forever on Forever, Ka0s Default on Retail")
+    assertEqual(NS.GetSetting("skin.skin"), CLIENT_SKIN, "a fresh profile reads the client's default")
 end)
 
 test("skin seam: a profile switch applies the profile's skin", function()
@@ -166,7 +180,7 @@ test("skin seam: a profile switch applies the profile's skin", function()
     Skin:SetChoice(OWNER, "ka0s", "obsidian")
     counts.looks = 0
     NS.db:SetProfile("SkinProbe")
-    assertEqual(select(2, Skin:GetChoice(OWNER)), "ka0s", "the switch did not apply the profile's skin")
+    assertEqual(select(2, Skin:GetChoice(OWNER)), CLIENT_SKIN, "the switch did not apply the profile's skin")
     assertEqual(counts.looks, 1, "one switch, one repaint")
 end)
 
@@ -195,7 +209,9 @@ end)
 
 test("skin seam: under Ka0s Default each owner token is the old addon's pixel", function()
     -- Never snapped to a near library token. red under: a `default` that drifts from INV §14/§7.2.
+    -- Ka0s Default is picked explicitly: on the Forever profile a new profile wears WoW Forever.
     local NS = setup()
+    NS.ApplySkinChoice("ka0s", "ka0s")
     for name, row in pairs(TOKENS) do
         assertColor({ NS.Skin.Color(name) }, row[1], name)
     end
@@ -217,6 +233,7 @@ end)
 
 test("skin seam: NS.SkinColor and NS.SkinEscape write a token the way a call site does", function()
     local NS = setup()
+    NS.ApplySkinChoice("ka0s", "ka0s")   -- the pixels below are Ka0s Default's, on either client
     assertEqual(select("#", NS.SkinColor("of.outfit.missing")), 3, "an opaque color is three components")
     assertEqual(NS.SkinEscape("of.outfit.missing"), "|cffff1a1a")
     assertEqual(NS.SkinEscape("title.text"), "|cffffd100")

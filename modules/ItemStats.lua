@@ -38,17 +38,31 @@ local STR_AGI, STR_INT, AGI_INT =
     "ITEM_MOD_STRENGTH_AGILITY_SHORT", "ITEM_MOD_STRENGTH_INTELLECT_SHORT", "ITEM_MOD_AGILITY_INTELLECT_SHORT"
 
 -- In display order. The first key of each list is the stat's own token and its label.
-local STAT_KEYS = {
+--
+-- PER CLIENT (clients-§4, §5; owner ruling D9), picked once at load. Haste, Versatility and Mastery
+-- are Retail's alone. WoW Forever's items carry the vanilla bonuses instead: spell damage, healing,
+-- attack power, mana per five, hit and defense. Probe P14 confirmed only the Retail-style key shape
+-- (ITEM_MOD_STAMINA_SHORT); the six vanilla keys below are Forever's GlobalStrings names, still to be
+-- seen on an item.
+local RETAIL, FOREVER = { "retail" }, { "forever" }
+local STAT_KEYS = NS.ForClientRows({
     { "STA", { "ITEM_MOD_STAMINA_SHORT" } },
     { "STR", { "ITEM_MOD_STRENGTH_SHORT", ALL3, STR_AGI, STR_INT } },
     { "INT", { "ITEM_MOD_INTELLECT_SHORT", ALL3, STR_INT, AGI_INT } },
     { "AGI", { "ITEM_MOD_AGILITY_SHORT", ALL3, STR_AGI, AGI_INT } },
     { "SPI", { "ITEM_MOD_SPIRIT_SHORT" } },
-    { "HAS", { "ITEM_MOD_HASTE_RATING_SHORT" } },
-    { "VER", { "ITEM_MOD_VERSATILITY" } },
-    { "MAS", { "ITEM_MOD_MASTERY_RATING_SHORT" } },
+    { "HAS", { "ITEM_MOD_HASTE_RATING_SHORT" }, clients = RETAIL },
+    { "VER", { "ITEM_MOD_VERSATILITY" }, clients = RETAIL },
+    { "MAS", { "ITEM_MOD_MASTERY_RATING_SHORT" }, clients = RETAIL },
     { "CRI", { "ITEM_MOD_CRIT_RATING_SHORT" } },
-}
+    -- PROBE P14: the six keys below, on a Forever item that carries each bonus
+    { "SPD", { "ITEM_MOD_SPELL_DAMAGE_DONE_SHORT" }, clients = FOREVER },
+    { "HEA", { "ITEM_MOD_SPELL_HEALING_DONE_SHORT" }, clients = FOREVER },
+    { "ATK", { "ITEM_MOD_ATTACK_POWER_SHORT" }, clients = FOREVER },
+    { "MP5", { "ITEM_MOD_MANA_REGENERATION_SHORT" }, clients = FOREVER },
+    { "HIT", { "ITEM_MOD_HIT_RATING_SHORT" }, clients = FOREVER },
+    { "DEF", { "ITEM_MOD_DEFENSE_SKILL_RATING_SHORT" }, clients = FOREVER },
+})
 
 -- Every key some stat reads: what TOTAL_STATS sums, each key once.
 local TOTAL_KEYS = {}

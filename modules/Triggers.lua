@@ -8,6 +8,10 @@ local _, NS = ...
 -- `initial = true`; the params gain their defaults and, with `specDefault`, the spec toggles; and the
 -- condition is resolved from the family (NS.TriggerFamilies) or from NS.TriggerConditions[id].
 --
+-- ABSENT PER CLIENT (clients-§4). A catalog row or a param whose `clients` does not admit this client
+-- (NS.Compat.ForClient) is skipped here, at registration: no descriptor, no picker entry, no schema row.
+-- The defaults/Zones.lua rows arrive already filtered (NS.Zones.rows).
+--
 -- A BESPOKE CONDITION (the three Triggers_Cond*.lua files) is either the condition function itself or
 -- a table `{ condition = fn, onWorn = fn, onRemoved = fn, onSuspend = fn }`. A row with neither a family
 -- nor a bespoke entry has no condition: it is listed, but the binder refuses to bind it ("Trigger %s
@@ -65,7 +69,9 @@ end
 
 local function buildParams(row)
     local out = {}
-    for i, p in ipairs(row.params or {}) do out[i] = copyParam(p) end
+    for _, p in ipairs(row.params or {}) do
+        if Compat.ForClient(p.clients) then out[#out + 1] = copyParam(p) end
+    end
     if row.specDefault ~= nil then
         for _, p in ipairs(NS.TriggerFamilies.SPEC_PARAMS(row.specDefault)) do out[#out + 1] = copyParam(p) end
     end
@@ -228,7 +234,7 @@ end
 --- @return number descriptors
 function T.Finalize()
     for k in pairs(byId) do byId[k] = nil end
-    for _, row in ipairs(NS.TriggerCatalog.rows) do byId[row.id] = build(row) end
+    for _, row in ipairs(NS.ForClientRows(NS.TriggerCatalog.rows)) do byId[row.id] = build(row) end
     for _, z in ipairs(NS.Zones.rows) do byId[z.id] = build(zoneRow(z)) end
     specsReady = addSpecs()
     reindex()

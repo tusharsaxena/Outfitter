@@ -395,7 +395,7 @@ test("binder: a 5-entry SetMany on one outfit rebinds it once; OUTFIT_ADDED bind
     local first = NS.TriggerBinder.Context(id)
     assertTrue(NS.Schema.SetMany({
         { path = "trigger.SWIMMING.disableBG", value = true }, { path = "trigger.SWIMMING.disablePVP", value = true },
-        { path = "trigger.SWIMMING.disableInstance", value = true }, { path = "trigger.SWIMMING.disableVashjir", value = false },
+        { path = "trigger.SWIMMING.disableInstance", value = true }, { path = "trigger.RIDING.stayWhileFalling", value = true },
         { path = "outfit.trigger.combatDisabled", value = true },
     }, { instanceId = id }))
     -- red under: onEdited rebinding at once (five unbind/binds and five BIND evaluations).

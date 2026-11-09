@@ -62,6 +62,9 @@ local COLUMN = {
     Finger1Slot = "RIGHT", Trinket0Slot = "RIGHT", Trinket1Slot = "RIGHT",
     MainHandSlot = "BOTTOM", SecondaryHandSlot = "BOTTOM",
 }
+-- WoW Forever's ranged slot (ruling D2) sits in the bottom row after the off-hand, its box on the
+-- slot's TOPRIGHT corner like the main hand's. Smoke: the box clears the off-hand's.
+if NS.CLIENT == "forever" then COLUMN.RangedSlot = "BOTTOM" end
 SE.COLUMN = COLUMN
 local BOX_TOPLEFT = { SecondaryHandSlot = true }
 local BOX_SIZE, BOX_INSET = 14, 2

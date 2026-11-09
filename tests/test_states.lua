@@ -19,6 +19,9 @@ local test, assertEqual, assertTrue, assertFalse = T.test, T.assertEqual, T.asse
 -- A fresh instance with the three fakes, PlayerState and States resumed, the first scans run, and
 -- the STATE_CHANGED log emptied. `opts.forState[stateId]` is what Triggers.ForState answers;
 -- `opts.worn[outfitId]` what Stack.IsWorn does; `opts.class` the player's class.
+-- Tree of Life is Retail's alone (clients-§4): on the forever kit profile there is no FORM_TREE.
+local FOREVER = dofile("tests/_kit/mock_client.lua").current() == "forever"
+
 local function scene(opts)
     opts = opts or {}
     local inst = unitLoad({ mutate = function(M)
@@ -76,7 +79,7 @@ end
 
 -- ── States.Set ────────────────────────────────────────────────────────────────────────────────
 
-test("states: NS.States publishes the §6.10 surface and the 13 state ids", function()
+test("states: NS.States publishes the §6.10 surface and the state ids, FORM_TREE on Retail only", function()
     local s = scene()
     for _, name in ipairs({ "Set", "IsActive", "Demand", "PlayerIsFull", "AuraRestricted", "PlayerHasSpell",
                             "IsFeigning", "Suspend", "Resume", "InPvPInstance", "ZoneInfo",
@@ -84,7 +87,7 @@ test("states: NS.States publishes the §6.10 surface and the 13 state ids", func
         assertEqual(type(s.S[name]), "function", "NS.States." .. name)
     end
     assertEqual(table.concat(s.S.STATES, ","), "MOUNTED,SWIMMING,DINING,SPIRIT_REGEN,STEALTH,GHOST_WOLF,"
-        .. "FEIGN_DEATH,FORM_CASTER,FORM_BEAR,FORM_CAT,FORM_TRAVEL,FORM_MOONKIN,FORM_TREE")
+        .. "FEIGN_DEATH,FORM_CASTER,FORM_BEAR,FORM_CAT,FORM_TRAVEL,FORM_MOONKIN" .. (FOREVER and "" or ",FORM_TREE"))
 end)
 
 test("states: Set coerces to a boolean, publishes the edge once, and an unchanged value is a no-op", function()
@@ -283,6 +286,7 @@ end)
 
 local FORMS = { { spellID = 5487 }, { spellID = 768 }, { spellID = 783 }, { spellID = 24858 }, { spellID = 33891 } }
 local FORM_STATE = { "FORM_BEAR", "FORM_CAT", "FORM_TRAVEL", "FORM_MOONKIN", "FORM_TREE" }
+if FOREVER then FORMS[#FORMS], FORM_STATE[#FORM_STATE] = nil, nil end
 
 test("states: each druid form id sets its own state, and no active form is FORM_CASTER", function()
     local s = scene({ class = "DRUID" })

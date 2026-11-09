@@ -1,4 +1,4 @@
-## Interface: 120105
+## Interface: 120105, 16001
 ## Title: Ka0s Outfitter Reborn
 ## Notes: Clothing and weapon management and automated equipment changes.
 ## Author: add1kted2ka0s
@@ -59,6 +59,8 @@ core\SkinSetup.lua
 # LOAD-BEARING: NS.Compat, whose secret detectors core\Secrets.lua binds at FILE SCOPE. Compat itself reaches NS.Secrets
 # at CALL time only (no file-scope capture), so it may precede Secrets; test_loadorder pins that.
 core\Compat.lua
+# LOAD-BEARING: NS.CLIENT, NS.PerClient and NS.ForClientRows, read at FILE SCOPE by defaults\ and modules\.
+core\ClientSetup.lua
 # LOAD-BEARING: NS.Secrets, captured at FILE SCOPE by modules\ItemInfo.lua, modules\States.lua and modules\Inventory.lua.
 core\Secrets.lua
 core\Bus.lua

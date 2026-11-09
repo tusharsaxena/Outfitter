@@ -9,6 +9,7 @@ How to verify Ka0s Outfitter Reborn (testing-§6). What to install first is in t
 | Command | What it does |
 |---|---|
 | `lua tests/run.lua` | The headless suite. Exits non-zero on any failure |
+| `KA0S_KIT_CLIENT=forever lua tests/run.lua` | The same suite under the kit's WoW Forever profile (clients-§6) |
 | `lua tests/run.lua -j auto` | The same, split across one worker per CPU (testing-§14) |
 | `lua tests/run.lua --list > docs/test-cases.md` | Regenerates the case inventory without running anything |
 | `~/.claude/dev-copilot/bin/ka0s-bounded luacheck .` | Lint, configured by `.luacheckrc`; must report 0 warnings and 0 errors. `luacheck` loads no kit, so it runs through the bounded runner (testing-§15) |
@@ -19,9 +20,22 @@ Every Lua run is bounded by the vendored kit as it loads (memory, time, process 
 
 ## The commit gate
 
-Before **every** commit: `lua tests/run.lua` green **and** `~/.claude/dev-copilot/bin/ka0s-bounded
-luacheck .` at 0/0 (testing-§4). The runner's `--suite lint --suite tests --no-bundle` is the same
-pair and writes nothing. Work is test-first: a failing case that pins the behavior, then the code.
+Before **every** commit: `lua tests/run.lua` green, `KA0S_KIT_CLIENT=forever lua tests/run.lua` green
+**and** `~/.claude/dev-copilot/bin/ka0s-bounded luacheck .` at 0/0 (testing-§4). The runner's
+`--suite lint --suite tests --no-bundle` is the Retail pair and writes nothing;
+`KA0S_KIT_CLIENT=forever tests/_kit/run-automated-tests.sh --suite tests --no-bundle` is the Forever
+half. Work is test-first: a failing case that pins the behavior, then the code.
+
+### Both clients
+
+The addon serves Retail and WoW Forever (Interface 120105, 16001), one codebase, so the `tests` suite
+gates under **both** kit profiles (clients-§6). The forever profile answers as the Forever client
+(`tests/_kit/mock_client.lua`: build 1.60.1, interface 16001) and removes the Retail-only globals, so
+`NS.CLIENT` and every file-scope per-client pick load as Forever's. A case that pins one client's
+behavior says so and skips on the other (`FOREVER` in the case files); a case that pins a per-client
+value asserts each client's. On the forever profile the mock answers the spec through
+`C_SpecializationInfo` (`tests/wow_mock.lua`), as the Forever client does (probe P1), because the
+profile removes the bare spec globals; both profiles gate green.
 
 ## The four out-of-game suites
 
@@ -30,7 +44,7 @@ A suite gates a **commit** and a **release** (the tag) differently, so both are 
 | Suite | Command | Gates the commit? | Gates the release (tag)? |
 |---|---|---|---|
 | `lint` | `~/.claude/dev-copilot/bin/ka0s-bounded luacheck .` | yes | yes |
-| `tests` | `lua tests/run.lua` | yes | yes |
+| `tests` | `lua tests/run.lua`, then `KA0S_KIT_CLIENT=forever lua tests/run.lua` | yes, both profiles | yes, both profiles |
 | `perf` | `lua tests/perf.lua` | no, recorded only | yes, at `pass` (a `skip` is not evaluated) |
 | `complexity` | `bash tests/_kit/run-automated-tests.sh --suite complexity` | no, recorded only | yes, at `pass` with zero functions above CCN 15 |
 
@@ -165,10 +179,11 @@ has no row here, or a row leaves its §9.3 group or order.
 
 | Suite | What it covers |
 |---|---|
-| `test_sheet` | The sheet adapter: stock, EllesmereUI and Chonky told apart (addon loaded and its frame there: EllesmereUI's tab built, so its hidden state off the Character tab still reads eui; Chonky's backdrop shown), the fallback to stock when a sheet addon's skin is off, the button anchor per sheet, the dock edge past an open Chonky side panel |
+| `test_sheet` | The sheet adapter: stock, EllesmereUI and Chonky told apart (addon loaded and its frame there: EllesmereUI's tab built, so its hidden state off the Character tab still reads eui; Chonky's backdrop shown), the fallback to stock when a sheet addon's skin is off, the button anchor per sheet, the dock edge past an open Chonky side panel and level with Chonky's visible top line; on Forever the strip's scale and direction, Chonky's skinned row and art, and a side strip's reach over the window (Forever smoke feedback S1, S2, S5) |
 | `test_dock` | The window dock: strata and level from the host, the secure queue under lockdown, combat hide and restore, the follow driver, Escape; the sheet button in each host's tab look (sidebar tab on stock and Chonky, selected while the window shows; EllesmereUI's text tab), the header gear at the close X's size and tint |
+| `test_dock_forever` | WoW Forever's sheet button (ruling D8): below the last mode tab of the outer strip, from `LargeSideTabButtonTemplate` when the client has it, the template's unsized Icon filled as the mode tabs fill theirs; the button on every CharacterFrame tab, at the strip's scale, in Chonky's skin on its row, and the window widened under a side strip with its contents moved right (Forever smoke feedback S1, S4, S5); forever kit profile only |
 | `test_list_model` | The list model: section order, both sorts, nil names last, collapse; the sample outfits with no item section in test mode |
-| `test_rows_secure` | The secure row children: built once, never moved after the build, disarmed in lockdown; the EM mark's one-click toggle and its state-and-hint tooltip |
+| `test_rows_secure` | The secure row children: built once, never moved after the build, disarmed in lockdown; the EM mark's one-click toggle and its state-and-hint tooltip; the row's hover wash over its controls, the accent wash on the box and mark, the gear painted as the title gear (Forever smoke feedback S6) |
 | `test_slot_enables` | The slot checkboxes: one per slot on the character sheet, the tri-state, All and None, the restack to the host strata (the slot buttons' included) and its level cap, the accent edge |
 | `test_outfit_menu` | The outfit context menu: the rows per kind, the bank rows, the binding labels, the title submenu, the trigger switch; the whole tree as cascading levels, keep-open radios and toggles against act-and-close rows, MenuUtil's Refresh; the bar's menu closing on every path that hides the bar, and only the bar's; test mode's browse-only menu for a sample (every data row disabled with its tooltip, the submenus cascading, no click reaching a seam), only in test mode; *Save in equipment manager*'s On/Off radios on the EM mark's path, and every row of the open menu following the outfit across its store |
 | `test_dialogs` | The new-outfit and rename dialogs, the popups' data, the icon browser (Change icon...), the row's Equipment Manager mark (one click stores, the full-EM popup, one more unstores) |
@@ -181,7 +196,8 @@ has no row here, or a row leaves its §9.3 group or order.
 | `test_preview_place` | Where test mode puts its surfaces (smoke round 3 E3): the alone window centered, dragged for the session only (the drop held through Refresh, the follow and a sheet open and close, never saved, the client's user-placed flag cleared), never moved docked or in lockdown, the move stopped when combat comes; the bar just left of the window, a drag of it saved as usual, Reset position honored in the session, the saved place back when test mode ends |
 | `test_window_settings` | The Outfit Window settings page (smoke round 3 E11): its rows, tabs, tooltips and defaults, and the reach of each: the sheet button hidden and shown in place, the slot check boxes, the outward drawer, the dock's gap (never on the alone test window), the item sections and the outfit row's two marks, each following a write and a profile switch |
 | `test_flyout_tint` | The equipment flyout's border tint (smoke round 3 E1, deviation DEV-SKIN-FLYOUT-TINT): while the window is on screen a sheet slot's flyout rim (every background piece and the paging strip, never the slot's glow) is desaturated in the skin's `win.border`; each texture's own color and desaturation are given back exactly when the window closes, another host opens the flyout and at the stand-down; once let go the rim is not written again; a new page's pieces are tinted and restored too; a skin change re-tints; nothing is written in combat lockdown |
-| `test_quickslots` | The flyout quick slots: the sort against the legacy capture, the upgrade fallback, the specials, the guards and the latch; the drawer: every arrow shown while the window shows, the `HideAll` post-hook, the flyout level with its slot in both columns and Blizzard's point back |
+| `test_quickslots` | The flyout quick slots: the sort against the legacy capture, the upgrade fallback, the specials, the guards and the latch |
+| `test_drawer` | The outward drawer, the paper doll's since Forever smoke feedback S7: every arrow shown while the doll shows, the `HideAll` post-hook, Retail's flyout level with its slot in both columns and Blizzard's point back, and WoW Forever's arrows and flyouts turned outward by F-UI's own rules (S3's flush arrow, the `RefreshVisualState` post-hook, the restore) |
 | `test_tooltips` | The "Used by outfits" line on bag, inventory and hyperlink tooltips (never another unit's), its colors and cache; the compare tooltips; the outfit tooltip |
 | `test_skinsetup` | The skin seam: the owner registration, the `of.*` tokens, the choice and the picker |
 | `test_skin` | Only our frames are skinned; the window, bar, dialogs and menus follow a skin switch |

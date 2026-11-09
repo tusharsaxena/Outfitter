@@ -148,15 +148,16 @@ Total.
 - bus: a stand-up is refused while the latch says the addon is down
 - bus: NS.SendBus before NS.addon exists is a silent no-op
 
-### test_skinsetup.lua (21)
+### test_skinsetup.lua (22)
 
 - skin seam: the owner is the folder name, and NS.Skin is its facade
 - skin seam: the owner is registered at file load, before the profile store exists
-- skin seam: the read answers Ka0s Default before the profile store exists
+- skin seam: the read answers the client's default skin before the profile store exists
 - skin seam: Core's window edge is handed the owner
 - skin seam: the dropdown, the context menu and the test strip are handed the owner
 - skin seam: the test strip's End test stops test mode, and a caller's option wins
 - skin seam: login applies the stored skin before anything is built
+- skin seam: a new profile defaults to the client's default skin (skinning-§2)
 - skin seam: a profile switch applies the profile's skin
 - skin seam: the owner tokens are exactly design §7.1's, namespaced of. and registered
 - skin seam: under Ka0s Default each owner token is the old addon's pixel
@@ -454,13 +455,14 @@ Total.
 - mock gear: a case installs a fake and leaves it in place
 - mock gear: the next case sees the original again (restored when the last case ended)
 
-### test_slots.lua (15)
+### test_slots.lua (17)
 
 - slots: NS.ItemData is published by defaults/Items.lua
-- slots: SLOT_NAMES is the legacy durability-first order, all 18
+- slots: SLOT_NAMES is the legacy durability-first order, all 18 (19 with Forever's ranged slot)
 - slots: SLOT_ORDER is SLOT_NAMES' reverse index, and the legacy one
 - slots: every slot has exactly one label source, a GlobalString key or an L string
 - slots: INVTYPE_TO_SLOT is the legacy inventory-type map, as { slot, meta }
+- slots: the slot table is picked per client: Forever adds the ranged slot, Retail's is unchanged
 - slots: every INVTYPE_TO_SLOT target is one of the 18 slots
 - slots: the alternate-slot tables are the legacy ones
 - slots: SLOT_SWAP pairs the two rings, the two trinkets and the two hands
@@ -471,8 +473,9 @@ Total.
 - slots: PHANTOM_IDS holds the 18 legacy artifact off-hands
 - slots: CORRECTIONS are the three legacy item-class overrides
 - slots: the dropped tables stay dropped (design §5.1, INV §18)
+- slots: C_PaperDollInfo.GetInventorySlotInfo is asked before the deprecated shim (OR-F4)
 
-### test_zones.lua (37)
+### test_zones.lua (38)
 
 - zones: NS.Zones is published with its rows and the brawl list
 - zones: every row has a unique SCREAMING_SNAKE id and a known kind
@@ -488,6 +491,7 @@ Total.
 - zones: one battleground never sets another's outfit
 - zones: a brawl map sets the generic battleground and nothing specific
 - zones: an arena map sets both generics and its own row
+- zones: the rows are picked per client: Forever keeps the generic and the three vanilla battlegrounds
 - zones: the regeneration header is in place
 - zones: no legacy lockstep table is kept by hand
 - gen-zones: the CSV reader keeps a quoted field's commas, quotes and newlines in one field
@@ -666,7 +670,7 @@ Total.
 - reset: Delete all asks through OUTFITTERREBORN_DELETE_ALL, refuses in combat and stood down
 - reset: Reset all closes every open dialog first, and a draft writes nothing
 
-### test_equip_plan.lua (31)
+### test_equip_plan.lua (32)
 
 - equip plan: NS.Changes and NS.Moves are published
 - equip plan: changes run in SLOT_NAMES order, durability slots first (Q4)
@@ -678,6 +682,7 @@ Total.
 - equip plan: a matching plan is empty, a table and not nil (B3's no-execute input)
 - equip plan: TGFix unequips a two-hander held in the off hand without Titan's Grip, first
 - equip plan: TGFix over the client's gear, with CanDualWield2H = a WARRIOR in spec 2
+- equip plan: Titan's Grip is Retail's alone; spec 2 on Forever never grips (OR-F4)
 - equip plan: unique-equip deltas are -1 per key going out and +1 per key coming in
 - equip plan: a two-hander the player cannot grip carries meta TwoHandSlot, a gripped one Weapon0Slot
 - equip plan: unique-equip ranks equal the legacy captures (fixtures/legacy/plans.lua)
@@ -755,7 +760,7 @@ Total.
 
 ### test_states.lua (29)
 
-- states: NS.States publishes the §6.10 surface and the 13 state ids
+- states: NS.States publishes the §6.10 surface and the state ids, FORM_TREE on Retail only
 - states: Set coerces to a boolean, publishes the edge once, and an unchanged value is a no-op
 - states: an unknown id is a debug line, not a raise, and publishes nothing
 - states: a nil state is seeded from the worn outfits whose trigger subscribes to it
@@ -794,7 +799,7 @@ Total.
 - secrets states: a secret icon falls through to the spell; a secret spell id matches nothing
 - secrets states: the last mana reading survives a secret sample
 
-### test_quickslots.lua (44)
+### test_quickslots.lua (19)
 
 - quickslots: NS.QuickSlots and its sort are published
 - quickslots: the hooks are post-hooks, built once however often the addon stands up
@@ -815,31 +820,44 @@ Total.
 - quickslots: every hook body stands down with the addon and comes back with it
 - quickslots: quickSlots.enabled off silences every hook body; on brings them back
 - quickslots: the stand-down owns nothing to tear down: no event, no timer, no frame
-- drawer: with the window open a left-column flyout's buttonFrame is anchored TOPRIGHT to the slot's TOPLEFT
+
+### test_drawer.lua (35)
+
+- drawer: with the doll shown a left-column flyout's buttonFrame is anchored TOPRIGHT to the slot's TOPLEFT
 - drawer: a right-column flyout's first item is level with its slot, past the arrow
 - drawer: a left-column flyout on a taller slot is level with it too
-- drawer: with the window open the left-column arrows sit on the slot's left, mirrored
+- drawer: with the doll shown the left-column arrows sit on the slot's left, mirrored
 - drawer: a right-column arrow stays where Blizzard put it, the flyout beside the slot
-- drawer: a moved right-column flyout gets Blizzard's own point back when the window closes
+- drawer: a moved right-column flyout gets Blizzard's own point back when the doll hides
 - drawer: the weapons' flyout opens down as Blizzard has it
 - drawer: a right-column flyout after a left one drops the left one's anchor
 - drawer: another host's flyout after a left-column one keeps that host's own anchor
 - drawer: SetReversed on a left-column arrow mirrors its coords
-- drawer: with the window closed the flyout keeps Blizzard's anchors
-- drawer: closing the window restores the left-column arrows and closes a locked flyout
-- drawer: a window hidden through its parent restores the drawer
+- drawer: with the doll hidden the flyout keeps Blizzard's anchors
+- drawer: hiding the doll restores the left-column arrows and closes a locked flyout
+- drawer: the doll shown with the window closed turns the drawer outward
+- drawer: window.drawer off keeps Blizzard's drawer with the doll shown
 - drawer: stood down nothing is moved
-- drawer: a stand-down with the window open puts Blizzard's drawer back
+- drawer: a stand-down with the doll shown puts Blizzard's drawer back
 - drawer: in combat lockdown nothing is moved
 - drawer: a HideAll after lockdown begins, with the drawer already out, shows no arrow
 - drawer: a missing Blizzard function installs nothing and errors nothing
-- arrows: shown on every slot, weapons included, while the window shows; hidden when it closes
+- arrows: shown on every slot, weapons included, while the doll shows; hidden when it closes
 - arrows: shown once per change, not on every sync
-- arrows: closing the window leaves the Equipment Manager pane's arrows shown
-- arrows: Blizzard's HideAll while the window shows puts them back
-- arrows: Blizzard's HideAll with the window closed leaves them hidden
+- arrows: hiding the doll leaves the Equipment Manager pane's arrows shown
+- arrows: Blizzard's HideAll while the doll shows puts them back
+- arrows: Blizzard's HideAll with the doll hidden leaves them hidden
 - arrows: Blizzard's HideAll never reopens a flyout it closed
-- arrows: a stand-down with the window open hides them
+- arrows: a stand-down with the doll shown hides them
+- drawer (Forever): the doll shown turns every arrow outward by F-UI's own anchor and rotation
+- drawer (Forever): a slot whose BorderFrame is hidden takes its arrow flush (S3)
+- drawer (Forever): an open flyout opens outward by F-UI's formula for that direction
+- drawer (Forever): Blizzard's repaint on enter keeps the arrow outward
+- drawer (Forever): the doll hidden puts Blizzard's arrows and flyout back
+- drawer (Forever): in combat lockdown nothing is moved or turned
+- drawer (Forever): a BorderFrame hidden after the doll's show is caught by the refresh (S3)
+- drawer (Forever): the ammo slot gets its own arrow from Blizzard's template, opening right
+- drawer (Forever): the ammo slot's open glow takes the slot's size and centers on it
 
 ### test_equip_bracket.lua (32)
 
@@ -1084,7 +1102,7 @@ Total.
 - api: after load, init and enable every outfitter-named global is on the allow-list
 - api: no shipped file names an Outfitter_*, gOutfitter_* or OutfitterItemList_* identifier in code
 
-### test_triggers_general.lua (18)
+### test_triggers_general.lua (20)
 
 - general: each bespoke id resolves to this file's condition; SPIRIT_REGEN stays a family row
 - general: SPIRIT_REGEN equips on its state and unequips half a second later, only its own
@@ -1095,6 +1113,8 @@ Total.
 - general: HAS_BUFF evaluates at bind, follows the aura scan, and reads false while restricted
 - general: TARGET matches NPCs by creatureID and players by full name
 - general: TARGET is nil-safe and secret-guarded, and unequips on a change when asked
+- general: TARGET keys a player as 'First Surname', no realm, under regional names (OR-F4)
+- general: Compat.UnitCharacterName is 'First Surname' with no realm under regional names (OR-F4)
 - general: TRINKET_QUEUE fills each slot from its own list, in one Batch, only while worn
 - general: TRINKET_QUEUE skips the outfit's own item and an active trinket; an empty list reads nothing
 - general: TRINKET_QUEUE refuses an Equipment Manager set at bind
@@ -1105,7 +1125,7 @@ Total.
 - general: TALENT_TREE equips for an enabled spec and unequips for another, half a second late
 - general: PVP_FLAGGED is edge-triggered through outfit.triggerState, the player's flag only
 
-### test_triggers_trade.lua (18)
+### test_triggers_trade.lua (21)
 
 - trade: every bespoke TRADE id has its condition from Triggers_CondTrade.lua
 - trade: gathering reads skill lines 182, 186 and 393, equips on a found line and waits 1 s on hide
@@ -1125,8 +1145,11 @@ Total.
 - trade: cooking summons its fire pet 0.2 s on, saves the pet that was out, and puts it back on close
 - trade: a cooking wear that never reached its restore leaves no stale pet for the next one
 - trade: cooking with randomPet picks among the enabled pets only, and dismisses when none was out
+- trade: on WoW Forever swimming has no Vashj'ir toggle and equips on Vashj'ir's map ids
+- trade: on WoW Forever fishing has no Track Fish and leaves tracking alone; the other helpers stay
+- trade: on WoW Forever cooking keeps its core and has no fire pets to summon
 
-### test_triggers_quest.lua (12)
+### test_triggers_quest.lua (14)
 
 - quest: the vehicle NPC lists equal the legacy scripts', by faction
 - quest: each vehicle trigger equips on every NPC of its list, by its own GUID type
@@ -1137,9 +1160,11 @@ Total.
 - quest: the turn-in outfit goes on at QUEST_PROGRESS and off at QUEST_FINISHED if it put it on
 - quest: a pet battle's opening equips and its close unequips
 - quest: DANCE dances when its outfit is worn, and changes nothing itself
+- quest: DANCE asks C_ChatInfo.PerformEmote before the DoEmote shim (OR-F4)
 - quest: COMPANION summons its pet two seconds after the wear, or says it couldn't find it
 - quest: COMPANION says it couldn't find the pet when the summon is refused
 - quest: bound, the shipped conditions answer the binder's events
+- quest: the four content quests and Pet Battle exist on Retail only; Quest Turn-in on both
 
 ### test_triggers_class.lua (11)
 
@@ -1165,7 +1190,7 @@ Total.
 - pvp: a disabled spec keeps the outfit off, and the spec change puts it on or takes it off
 - pvp: every zone trigger honors each of the four spec toggles
 
-### test_sheet.lua (18)
+### test_sheet.lua (29)
 
 - sheet: NS.Sheet is published with the adapter's surface
 - sheet: stock by default
@@ -1185,12 +1210,24 @@ Total.
 - sheet: a scaled Chonky panel's edge is read in the sheet's units
 - sheet: with no Chonky panel shown DockRight is the backdrop's edge
 - sheet: the adapter creates, anchors and shows nothing
+- sheet (Forever): the button is one more tab below the last mode tab, at the strip's spacing
+- sheet (Forever): a hidden last tab gives the place to the last shown one
+- sheet (Forever): unlaid tabs take the fallback gap, and no tab at all the close X's place
+- sheet (Forever): on a strip that runs across, the button sits right of the last tab
+- sheet (Forever): the button takes the strip's scale
+- sheet (Forever): a last tab in Chonky's skin asks for its look, and its art and colors read live
+- sheet: on Chonky the dock's top is the backdrop's visible line, its insets read live (S2)
+- sheet: the stock sheet's top is the frame's (S2 is Chonky's only)
+- sheet (Forever): a strip down the window's edge reaches over it by its width and a margin (S5)
+- sheet (Forever): a scaled strip's reach is read in the sheet's units (S5)
+- sheet: Retail has no side strip (S5)
 
-### test_dock.lua (48)
+### test_dock.lua (51)
 
 - dock: NS.Dock is published with the §7.2 surface
 - dock: the holder fills the sheet, and the sheet button toggles the window
 - dock: strata and level are copied from the host, level + DOCK_OVER_HOST, never toplevel
+- dock: a secret host strata is never copied onto the window (OR-F4)
 - dock: the layer writes go through NS.SecureQueue in lockdown and replay on REGEN_ENABLED
 - dock: Refresh never shows or hides the window in lockdown
 - dock: PLAYER_REGEN_DISABLED hides the window, PLAYER_REGEN_ENABLED restores it, dialogs stay
@@ -1198,7 +1235,7 @@ Total.
 - dock: the window takes ONE UIParent-relative SetPoint, and falls back to the holder when refused
 - dock: closing the sheet syncs the drawer after the window is gone
 - dock: a sheet that was never laid out parks the window at the UIParent TOPLEFT
-- dock: the follow runs every 0.05 s on the driver frame, only while shown and standing up
+- dock: the follow tracks the corner every frame on the driver frame, only while shown and standing up
 - dock: an idle States poll sends no STACK_CHANGED, and a stack change keeps the status cache
 - dock: a stood-down tick returns before it reads the sheet (the latch first)
 - dock: the window is in UISpecialFrames, by its global name
@@ -1236,6 +1273,20 @@ Total.
 - dock: a sheet tab built after the paper doll's OnShow is picked up on the next frame
 - dock: the next frame's sheet check does nothing once the doll is gone or stood down
 - dock: on Chonky the Reputation tab takes the button and window down, the Character tab brings them back
+- dock: on Retail the sheet button is a plain Button with no template
+- dock: the window is built at its own 1.25 scale, and the alone spot centers its scaled size
+
+### test_dock_forever.lua (9)
+
+- dock (Forever): the button sits below the last mode tab in the strip's look
+- dock (Forever): with the client's template the button is a LargeSideTabButtonTemplate CheckButton
+- dock (Forever): the template's unsized Icon takes the outfit icon, filled as the mode tabs fill theirs
+- dock (Forever): the button stays on the other tabs and goes with CharacterFrame (S4)
+- dock (Forever): the button takes the strip's scale (S1)
+- dock (Forever): on Chonky's skinned strip the button wears its skin, not the template's (S1)
+- dock (Forever): a strip down the sheet's edge widens the window and moves its contents right (S5)
+- dock (Forever): a strip re-laid while the sheet is open places the button again (R2-1)
+- dock (Forever): Open with the character sheet closed keeps the wish and says so, never opening it
 
 ### test_list_model.lua (8)
 
@@ -1248,7 +1299,7 @@ Total.
 - list model: Status caches O.Status in the table it is handed, until that is wiped
 - list model: in test mode the list is the sample outfits under their headers, no item section
 
-### test_rows_secure.lua (22)
+### test_rows_secure.lua (26)
 
 - rows: NS.WindowRows is published with the secure surface
 - rows: fourteen rows and their secure children are created once, each SetAllPoints'd at birth
@@ -1272,6 +1323,10 @@ Total.
 - rows: an outfit row's name is colored by its status, and a disabled one says so
 - rows: a profile switch redraws the trigger mark from the new profile's auto.enabled
 - rows: an item with no quality color is drawn muted, never in the previous item's color
+- rows: a row wears the hover wash while the pointer is over it or its controls
+- rows: a blank row takes no hover, and a rebind keeps the stripe and selection
+- rows: the worn box and the EM mark wash in the skin's accent; the gear is painted as the title gear
+- window: the footer's three buttons share the plain look; All and None dim their label (R2-3, R2-4)
 
 ### test_slot_enables.lua (29)
 
@@ -1305,7 +1360,7 @@ Total.
 - slot enables: another host's flyout, or one opened in lockdown, lifts nothing
 - slot enables: the flyout's hooks do nothing while stood down
 
-### test_bar.lua (45)
+### test_bar.lua (46)
 
 - bar: NS.Bar is published with the §7.7 surface
 - bar: bar.shown defaults false, so a fresh profile and a repaired one both come up hidden
@@ -1352,6 +1407,7 @@ Total.
 - bar: a profile switch redraws the bar from the new profile and rebinds the triggers
 - bar: Suspend hides it and stops the rebuilds; the stand-down keeps it down
 - bar: test mode shows the sample outfits with the strip, even with the bar off, and they do nothing
+- bar: Master scale multiplies a 1.25 base, so 1.0 draws as 1.25 did
 
 ### test_bar_look.lua (13)
 
@@ -1389,21 +1445,24 @@ Total.
 - icons: a pruned mirror on the set id another mirror moved to does not take that mirror's glyph
 - icons: deleting a mirror leaves an override another outfit's set id still owns
 
-### test_broker.lua (13)
+### test_broker.lua (16)
 
 - broker: a data source named OutfitterRebornOutfits exists and is not on the minimap
 - broker: text and icon follow the worn outfit
 - broker: no outfit shows the brand and the default icon, untinted and cropped
-- broker: left-click lists categories then outfits, worn ones checked, missing in the missing color
+- broker: the hover menu lists categories then outfits, worn ones checked, missing in the missing color
 - broker: the menu leaves out an outfit whose trigger is off or that is hidden from the bar
 - broker: clicking a worn accessory removes it; clicking a Complete wears it
 - broker: a modifier-click asks to set current
-- broker: right-click toggles the window
+- broker: left-click opens the sheet with the window; right-click opens the settings
+- broker: the hover menu drops under the object and closes once the pointer has left both
 - broker: the menu's Open outfit window opens, and never closes, the window
 - broker: wearing a Complete outfit from the menu clears the ticks of the outfits it took off
 - broker: a modifier-click closes the menu before the set-current prompt
-- broker: the tooltip names the brand, the current outfit and both clicks
+- broker: the hover menu ends with both click hints, and there is no tooltip
 - broker: in combat a wear is queued or refused as the window's is
+- broker (Forever): with the sheet closed the display's own click never opens the sheet from addon code
+- broker: hovering lays a secure button over the display that clicks the character micro button
 
 ### test_triggers_parity.lua (13)
 
@@ -1795,7 +1854,7 @@ Total.
 | test_vendor_sync.lua | 3 |
 | test_secrets.lua | 42 |
 | test_bus.lua | 12 |
-| test_skinsetup.lua | 21 |
+| test_skinsetup.lua | 22 |
 | test_surface_parity.lua | 29 |
 | test_perf_harness.lua | 19 |
 | test_schema.lua | 25 |
@@ -1809,19 +1868,20 @@ Total.
 | test_file_budget.lua | 2 |
 | test_removed_apis.lua | 2 |
 | test_mock_gear.lua | 27 |
-| test_slots.lua | 15 |
-| test_zones.lua | 37 |
+| test_slots.lua | 17 |
+| test_zones.lua | 38 |
 | test_itemlink.lua | 42 |
 | test_item_match.lua | 20 |
 | test_inventory.lua | 24 |
 | test_outfits.lua | 45 |
 | test_reset.lua | 8 |
-| test_equip_plan.lua | 31 |
+| test_equip_plan.lua | 32 |
 | test_item_stats.lua | 22 |
 | test_companion.lua | 25 |
 | test_states.lua | 29 |
 | test_secrets_states.lua | 6 |
-| test_quickslots.lua | 44 |
+| test_quickslots.lua | 19 |
+| test_drawer.lua | 35 |
 | test_equip_bracket.lua | 32 |
 | test_tooltips.lua | 18 |
 | test_stack.lua | 27 |
@@ -1832,20 +1892,21 @@ Total.
 | test_trigger_binder.lua | 19 |
 | test_no_loadstring.lua | 4 |
 | test_api.lua | 20 |
-| test_triggers_general.lua | 18 |
-| test_triggers_trade.lua | 18 |
-| test_triggers_quest.lua | 12 |
+| test_triggers_general.lua | 20 |
+| test_triggers_trade.lua | 21 |
+| test_triggers_quest.lua | 14 |
 | test_triggers_class.lua | 11 |
 | test_triggers_pvp.lua | 7 |
-| test_sheet.lua | 18 |
-| test_dock.lua | 48 |
+| test_sheet.lua | 29 |
+| test_dock.lua | 51 |
+| test_dock_forever.lua | 9 |
 | test_list_model.lua | 8 |
-| test_rows_secure.lua | 22 |
+| test_rows_secure.lua | 26 |
 | test_slot_enables.lua | 29 |
-| test_bar.lua | 45 |
+| test_bar.lua | 46 |
 | test_bar_look.lua | 13 |
 | test_outfit_icons.lua | 17 |
-| test_broker.lua | 13 |
+| test_broker.lua | 16 |
 | test_triggers_parity.lua | 13 |
 | test_preview.lua | 35 |
 | test_preview_place.lua | 8 |
@@ -1866,4 +1927,4 @@ Total.
 | test_lizard_sighted.lua | 8 |
 | test_prose.lua | 15 |
 | Skipped | 1 |
-| **Total** | **1540** |
+| **Total** | **1593** |

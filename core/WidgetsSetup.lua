@@ -214,10 +214,13 @@ local function remember(m, anchor)
 end
 
 --- A context menu at the cursor: `fill(root)` adds its rows as it would to a MenuUtil description.
+--- `opts.below`: drop it under the anchor instead (a hover menu, the Outfits broker's).
 --- @param anchor table the region the menu belongs to (a press on it is no outside press)
 --- @param fill function
+--- @param opts table|nil { below = bool }
 --- @return boolean opened  false when neither the library nor the client's MenuUtil can draw one
-function NS.OpenMenu(anchor, fill)
+--- @return table|nil menu  the library's menu frame (nil on the client's MenuUtil)
+function NS.OpenMenu(anchor, fill, opts)
     if not W then
         if not (MenuUtil and MenuUtil.CreateContextMenu) then return false end
         MenuUtil.CreateContextMenu(anchor, function(_, root) fill(wrapDescription(root)) end)
@@ -235,8 +238,10 @@ function NS.OpenMenu(anchor, fill)
         fill(fresh)
         relabel(rows, fresh)
     end
-    remember(W.ContextMenu(anchor, rows, { owner = addonName, cursor = true }), anchor)
-    return true
+    local below = type(opts) == "table" and opts.below == true
+    local m = W.ContextMenu(anchor, rows, { owner = addonName, cursor = not below })
+    remember(m, anchor)
+    return true, type(m) == "table" and m or nil
 end
 
 --- An icon as inline markup for a line of text, cropped by the library's icon rule (W.IconText):

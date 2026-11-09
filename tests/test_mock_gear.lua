@@ -9,6 +9,8 @@
 -- client model the later suites stand on, not the addon.
 
 local T = _G.OUTFITTERREBORN_TEST
+-- Titan's Grip is Retail's alone (OR-F4): on the forever kit profile no warrior grips.
+local FOREVER = dofile("tests/_kit/mock_client.lua").current() == "forever"
 local test, assertEqual, assertTrue, assertFalse, assertNil =
     T.test, T.assertEqual, T.assertTrue, T.assertFalse, T.assertNil
 
@@ -364,8 +366,9 @@ test("mock gear: Titan's Grip follows the spec, and grips an axe but never a sta
     M.ClearCursor()
     M.__world:setClass("WARRIOR", 2)
     M.C_Container.PickupContainerItem(0, 4)
-    assertTrue(M.EquipCursorItem(17), "back to Fury, it fits")
-    assertEqual(keyAt(G, "SecondaryHandSlot"), "greataxe")
+    -- red under: a mock hasTitansGrip that grips on Forever too (tests/mock_gear.lua).
+    assertEqual(M.EquipCursorItem(17), not FOREVER, "back to Fury, it fits (never on Forever)")
+    if not FOREVER then assertEqual(keyAt(G, "SecondaryHandSlot"), "greataxe") end
 end)
 
 -- ── the world half ────────────────────────────────────────────────────────────────────────────

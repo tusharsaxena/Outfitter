@@ -24,7 +24,7 @@ addon and asserts a non-zero count per bucket, and that `equipExecute` is only e
 | `equipExecute` | `equipUpdate` | `modules/Equip.lua`, `E.Execute` when called from `E.Update` | The item moves themselves (the bank's direct call is not bracketed) |
 | `triggerDispatch` | — | `modules/Triggers_Binder.lua`, `Binder.Dispatch` | Every event every bound trigger listens to |
 | `optimizeStep` | — | `modules/Optimize*.lua`, one coroutine resume of the genetic search | A long search spread over frames |
-| `dockFollow` | — | `modules/Dock.lua`, one throttled follow tick | 20 Hz while the window is shown |
+| `dockFollow` | — | `modules/Dock.lua`, one throttled follow tick (the layer sync and the render) | 20 Hz while the window is shown; the corner compare runs every frame outside the bucket (Forever smoke feedback 2, R2-5), a few edge reads that move nothing while the sheet stands still |
 | `barRender` | — | `modules/Bar.lua`, `Bar.Render` | Every stack and outfit change while the bar shows |
 | `tooltipUsedBy` | — | `modules/Tooltips.lua`, `Tooltips.OnItem` past its gates | Every item tooltip |
 

@@ -59,6 +59,9 @@ end
 
 -- ── the catalog and the descriptors ───────────────────────────────────────────────────────────
 
+-- The zone rows are per client (defaults/Zones.lua, ruling D3): WoW Forever keeps four of the 33.
+local FOREVER = dofile("tests/_kit/mock_client.lua").current() == "forever"
+
 test("triggers: CATEGORY_ORDER, ids unique SCREAMING_SNAKE, categories and real classFiles", function()
     local C = NS.TriggerCatalog
     assertEqual(table.concat(C.CATEGORY_ORDER, ","), "GENERAL,TRADE,PVP,QUEST,ENTERTAIN,CLASS")
@@ -74,10 +77,11 @@ test("triggers: CATEGORY_ORDER, ids unique SCREAMING_SNAKE, categories and real 
         assertTrue(type(row.desc) == "string" and row.desc ~= "", row.id .. " has a description")
         assertTrue((row.family ~= nil) ~= (BESPOKE[row.id] == true), row.id .. ": a family XOR a bespoke condition")
     end
-    -- 40 static rows + 33 zone rows = the 73 static ports of design §6.8.
+    -- 40 static rows + 33 zone rows = the 73 static ports of design §6.8. WoW Forever builds 34 of
+    -- the 40 (the four content quests, Pet Battle and Tree of Life are Retail's, clients-§4) + 4 zones.
     assertEqual(#C.rows, 40)
     for _, z in ipairs(NS.Zones.rows) do assertNil(seen[z.id], z.id .. " is also a catalog row") end
-    assertEqual(#NS.Triggers.All(), 73, "no spec rows without a class (the shared instance)")
+    assertEqual(#NS.Triggers.All(), FOREVER and 38 or 73, "no spec rows without a class (the shared instance)")
 end)
 
 test("triggers: every event is a pseudo key or UPPER_SNAKE, and every state one is produced", function()
@@ -132,8 +136,13 @@ test("triggers: params have known types, valid defaults, unique keys and a label
         end
     end
     local swim = NS.Triggers.Get("SWIMMING")
-    assertEqual(swim.params[4].key, "disableVashjir")
-    assertTrue(swim.params[4].default, "Vashj'ir is off by default (design §6.8 row 12)")
+    if FOREVER then
+        -- red under: buildParams copying a Retail-only param (Vashj'ir is a Cataclysm zone, clients-§4).
+        assertEqual(#swim.params, 3, "no disableVashjir on Forever")
+    else
+        assertEqual(swim.params[4].key, "disableVashjir")
+        assertTrue(swim.params[4].default, "Vashj'ir is off by default (design §6.8 row 12)")
+    end
 end)
 
 test("triggers: the generated schema rows validate, store typed values and refuse bad ones", function()
@@ -142,10 +151,13 @@ test("triggers: the generated schema rows validate, store typed values and refus
     local n = 0
     for _, desc in ipairs(NS.Triggers.All()) do n = n + #desc.params end
     assertEqual(#NS.Triggers.SchemaRows(), n)
-    local row = O.FindRow("trigger.SWIMMING.disableVashjir")
+    -- disableVashjir is Retail's alone (clients-§4): on Forever it has no schema row at all.
+    local swimKey = FOREVER and "trigger.SWIMMING.disableBG" or "trigger.SWIMMING.disableVashjir"
+    local row = O.FindRow(swimKey)
     assertTrue(row ~= nil and row.page == "outfit" and row.group == "SWIMMING" and row.type == "bool")
+    if FOREVER then assertNil(O.FindRow("trigger.SWIMMING.disableVashjir"), "absent on Forever") end
     assertTrue(O.FindRow("trigger.BG_AV.spec4") ~= nil, "a zone trigger's spec toggles have rows")
-    assertNil(NS.Schema.FindRow("trigger.SWIMMING.disableVashjir"), "never on the settings instance")
+    assertNil(NS.Schema.FindRow(swimKey), "never on the settings instance")
 
     local inst = T.load()
     local ns = inst.NS
@@ -170,6 +182,7 @@ test("triggers: every descriptor declares an icon, the legacy default where ther
                    PVP_BATTLEGROUND = 1376041, BG_AV = 1376041, INSTANCE_DIFFICULTY = 132132, GATHER_MINING = 134708 }
     for id, icon in pairs(want) do assertEqual(NS.Triggers.Get(id).icon, icon, id) end
     -- red under: a zone row taking another row's icon (ZONE_ICONS read for every zone).
+    if FOREVER then assertNil(NS.Triggers.Get("BG_DEEPHAUL"), "a Retail-only zone row is absent") return end
     assertEqual(NS.Triggers.Get("BG_DEEPHAUL").icon, false, "no legacy icon: the outfit's own")
 end)
 
@@ -231,7 +244,11 @@ test("triggers: one zone trigger per zone row, family zone, spec toggles on, the
         for _, p in ipairs(d.params) do assertTrue(p.default, z.id .. "." .. p.key .. " defaults on") end
     end
     assertEqual(ns.Triggers.Get("BG_AV").name, "Battleground: Alterac Valley")
-    assertEqual(ns.Triggers.Get("ARENA_NAGRAND").name, "Arena: ARENA_NAGRAND", "no client name: the id")
+    if FOREVER then
+        assertNil(ns.Triggers.Get("ARENA_NAGRAND"), "no arena rows on Forever (ruling D3)")
+    else
+        assertEqual(ns.Triggers.Get("ARENA_NAGRAND").name, "Arena: ARENA_NAGRAND", "no client name: the id")
+    end
     assertEqual(ns.Triggers.Get("PVP_BATTLEGROUND").name, "Battleground")
 end)
 
@@ -380,9 +397,11 @@ test("triggers: simple and smartUnequip, with the skipAll guards and the spec ga
     assertNil(call(ns, "SWIMMING", { did = false }, "STATE", "SWIMMING", false))
     local action, delay = call(ns, "SWIMMING", { did = true }, "STATE", "SWIMMING", false)
     assertEqual(action, "unequip"); assertEqual(delay, 2.5)
-    M.__world:setMap(204)
-    assertNil(call(ns, "SWIMMING", {}, "STATE", "SWIMMING", true), "Vashj'ir blocks by default")
-    assertEqual(call(ns, "SWIMMING", { params = { disableVashjir = false } }, "STATE", "SWIMMING", true), "equip")
+    if not FOREVER then                            -- disableVashjir is Retail's alone (clients-§4)
+        M.__world:setMap(204)
+        assertNil(call(ns, "SWIMMING", {}, "STATE", "SWIMMING", true), "Vashj'ir blocks by default")
+        assertEqual(call(ns, "SWIMMING", { params = { disableVashjir = false } }, "STATE", "SWIMMING", true), "equip")
+    end
     M.__world:setInstance({ type = "party" })
     assertNil(call(ns, "SWIMMING", { params = { disableVashjir = false, disableInstance = true } }, "STATE", "SWIMMING", true))
     -- The zone family: a disabled spec unequips; a spec change re-reads the state.
@@ -419,6 +438,8 @@ test("triggers: the druid forms tag, wear on the shapeshift layer and wait in co
     assertNil(call(ns, "DRUID_CAT", { params = { spec1 = false } }, "STATE", "FORM_CAT", true), "spec off")
 end)
 
+local vehicleQuests                                -- below: the Retail-only half of the next case
+
 test("triggers: gathering, the vehicle quests and the spec rows", function()
     local ns, M = finalized(nil, function(M) M.__world:setClass("DRUID", 1) end)
     M.__world.tradeSkills[182] = "Herbalism"
@@ -433,6 +454,18 @@ test("triggers: gathering, the vehicle quests and the spec rows", function()
     tip:ClearLines(); tip:AddLine("Wolf"); tip:AddLine("Skinnable", 0.1, 0.9, 0.1)
     assertEqual(call(ns, "GATHER_SKINNING", { params = { ignoreDifficulty = true } }, "TOOLTIP_SHOW"), "equip")
 
+    if not FOREVER then vehicleQuests(ns, M) end   -- the vehicle quests are Retail's alone (ruling D6)
+
+    ns.PlayerState.Refresh()
+    local ctx = ctxFor(ns, "SPEC_1")
+    a, d = ctx.desc.condition(ctx, "BIND")
+    assertEqual(a, "equip"); assertEqual(d, 0.5)
+    assertNil(ctx.desc.condition(ctx, "PLAYER_ENTERING_WORLD"), "the spec did not change")
+    assertEqual(call(ns, "SPEC_2", {}, "BIND"), "unequip")
+end)
+
+vehicleQuests = function(ns, M)
+    local a, d
     M.__units.mouseover = { guid = "Vehicle-0-1-2-3-33790-00" }
     assertEqual(call(ns, "QUEST_ARGENT_TOURNAMENT", {}, "UPDATE_MOUSEOVER_UNIT"), "equip", "Alliance mount")
     M.__units.player.faction = "Horde"
@@ -448,14 +481,7 @@ test("triggers: gathering, the vehicle quests and the spec rows", function()
     assertEqual(ctx.desc.condition(ctx, "UNIT_ENTERED_VEHICLE", "player"), "equip", "boarded within 3 s")
     assertEqual(call(ns, "QUEST_FLAME_LEVIATHAN", { did = true }, "PLAYER_REGEN_ENABLED"), "unequip")
     assertNil(call(ns, "QUEST_VIGILANCE_ON_WINGS", { did = true }, "PLAYER_REGEN_ENABLED"), "Leviathan only")
-
-    ns.PlayerState.Refresh()
-    ctx = ctxFor(ns, "SPEC_1")
-    a, d = ctx.desc.condition(ctx, "BIND")
-    assertEqual(a, "equip"); assertEqual(d, 0.5)
-    assertNil(ctx.desc.condition(ctx, "PLAYER_ENTERING_WORLD"), "the spec did not change")
-    assertEqual(call(ns, "SPEC_2", {}, "BIND"), "unequip")
-end)
+end
 
 test("triggers: a spec change reads the client's spec, not PlayerState's cache of it", function()
     local ns, M = finalized(nil, function(M) M.__world:setClass("WARRIOR", 1) end)
@@ -492,13 +518,15 @@ test("triggers: the effects record what they changed and restore exactly that", 
                                           changeActionBar = true, actionBarPage = 4 } }
     local names = ns.TriggerCatalog.rows[16].effects   -- FISHING's
     assertEqual(ns.TriggerCatalog.rows[16].id, "FISHING")
-    assertEqual(E.Apply(ctx, names), 4)
+    -- red under: FishTracking left on Forever, whose tracking list has no Find Fish (probe P19).
+    local n = FOREVER and 3 or 4
+    assertEqual(E.Apply(ctx, names), n)
     assertEqual(M.__cvars.autoLootDefault, "1"); assertEqual(M.__cvars.autoInteract, "0")
-    assertTrue(tracking[1].active); assertEqual(page, 4)
+    assertEqual(tracking[1].active, not FOREVER, "Find Fish selected on Retail only"); assertEqual(page, 4)
     -- red under: Apply overwriting an existing record (a second wear would save the changed value).
     assertEqual(E.Apply(ctx, names), 0, "not applied twice")
     ctx.params.autoLoot = false
-    assertEqual(E.Restore(ctx, names), 4, "restored from the record, whatever the param says now")
+    assertEqual(E.Restore(ctx, names), n, "restored from the record, whatever the param says now")
     assertEqual(M.__cvars.autoLootDefault, "0"); assertEqual(M.__cvars.autoInteract, "1")
     assertFalse(tracking[1].active); assertEqual(page, 1)
     assertNil(next(ctx.persist), "the record is gone")

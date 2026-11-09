@@ -17,7 +17,7 @@ local _, NS = ...
 -- cancels it; Resume re-arms it only when the first LoadPass has not run (design §5.12) and the
 -- world is entered: that PEW was seen, or a stand-down came first (a login stood down hears no PEW).
 --
--- CALLS (at call time, no nil guard; design §12): NS.EM.Sync, NS.Stack.Init and
+-- CALLS (at call time, no nil guard; design §12): NS.EM.Sync, NS.Stack.Init, NS.Triggers.Get and
 -- NS.TriggerBinder.BindAll.
 
 local O = NS.Outfits
@@ -171,7 +171,8 @@ end
 
 local function seedClass()
     for _, row in ipairs(SEED_CLASS[Compat.PlayerClass()] or {}) do
-        seedOne("CLASS_" .. row[2], row[1], {}, { trigger = row[2] })
+        -- A trigger this client lacks (Tree of Life on WoW Forever, clients-§4) seeds no outfit.
+        if NS.Triggers.Get(row[2]) then seedOne("CLASS_" .. row[2], row[1], {}, { trigger = row[2] }) end
     end
 end
 

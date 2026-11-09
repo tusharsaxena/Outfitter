@@ -16,6 +16,9 @@ local unitLoad = dofile(T.root .. "/tests/unit_load.lua")(T)
 local test, assertEqual, assertTrue, assertFalse, assertNil =
     T.test, T.assertEqual, T.assertTrue, T.assertFalse, T.assertNil
 
+-- Arenas are Retail's alone (clients-§4): on the forever kit profile IN_DUNGEON has no enableArena.
+local FOREVER = dofile("tests/_kit/mock_client.lua").current() == "forever"
+
 local IDS = { "PVP_FLAGGED", "IN_DUNGEON", "TRINKET_QUEUE", "FEET_QUEUE", "IN_ZONES", "TALENT_TREE",
               "INSTANCE_DIFFICULTY", "HAS_BUFF", "TARGET" }
 
@@ -110,7 +113,10 @@ test("general: IN_DUNGEON equips by instance type, and arena reads enableArena",
     W:setInstance({ type = "arena" })
     -- red under: the legacy arena arm reading enableBG (OutfitterScripting.lua:565).
     assertEqual(call(NS, "IN_DUNGEON", { params = { enableBG = true } }), "unequip", "BG does not enable arenas")
-    assertEqual(call(NS, "IN_DUNGEON", { params = { enableArena = true } }), "equip")
+    -- red under: buildParams copying enableArena on Forever (vanilla has no arenas), where a stored
+    -- true is then ignored rather than read.
+    assertEqual(call(NS, "IN_DUNGEON", { params = { enableArena = true } }), FOREVER and "unequip" or "equip")
+    assertEqual(NS.OutfitSchema.FindRow("trigger.IN_DUNGEON.enableArena") ~= nil, not FOREVER, "enableArena, Retail only")
     W:setInstance({ type = "scenario" })
     assertEqual(call(NS, "IN_DUNGEON", { params = { enable5Man = true, enableRaid = true } }), "unequip")
     W:setInstance(nil)
@@ -136,7 +142,9 @@ test("general: INSTANCE_DIFFICULTY equips in every id of an enabled group, and o
                 "smart: its own outfit comes off")
         end
     end
-    assertEqual(n, 16, "every id design §6.8.1 row 17 lists")
+    -- WoW Forever's four groups hold one id each (ruling D7: 0, 1, 148, 9).
+    local forever = dofile("tests/_kit/mock_client.lua").current() == "forever"
+    assertEqual(n, forever and 4 or 16, "every id design §6.8.1 row 17 lists")
 end)
 
 test("general: INSTANCE_DIFFICULTY matches the open world (0) and leaves an unreadable id alone", function()
@@ -234,6 +242,40 @@ test("general: TARGET is nil-safe and secret-guarded, and unequips on a change w
     M.__units.target = { guid = "Player-1-0000BEEF" }
     M.UnitName = function() return T.secret("Ann"), "Realm" end
     assertNil(call(NS, "TARGET", { params = { targets = { { player = "Ann-Realm" } } } }), "a secret name")
+end)
+
+test("general: TARGET keys a player as 'First Surname', no realm, under regional names (OR-F4)", function()
+    local NS, M = fresh()
+    M.RegionalUniqueNamesEnabled = function() return true end
+    M.GetNormalizedRealmName = function() return "Ourrealm" end
+    M.__units.target = { guid = "Player-1-0000BEEF" }
+    M.UnitName = function() return "Ryz", "Rockheart" end
+    -- red under: UnitName's second return (the surname on WoW Forever) read as a realm: "Ryz-Rockheart".
+    assertEqual(NS.TriggerParams.CaptureTarget().player, "Ryz Rockheart", "no realm is appended")
+    local list = { targets = { { player = "Ryz Rockheart" } } }
+    assertEqual(call(NS, "TARGET", { params = list }), "equip")
+    M.UnitName = function() return "Ryz", "Stonefist" end
+    assertNil(call(NS, "TARGET", { params = list }), "another Ryz is another character")
+    M.UnitName = function() return "Ryz", nil end
+    assertEqual(NS.TriggerParams.CaptureTarget().player, "Ryz", "a character with no surname")
+end)
+
+test("general: Compat.UnitCharacterName is 'First Surname' with no realm under regional names (OR-F4)", function()
+    local NS, M = fresh()
+    local C = NS.Compat
+    M.UnitName = function() return "Ryz", "Rockheart" end
+    local name, realm = C.UnitCharacterName("target")
+    assertEqual(name, "Ryz"); assertEqual(realm, "Rockheart")
+    assertFalse(C.RegionalNames(), "no RegionalUniqueNamesEnabled: not regional")
+    M.RegionalUniqueNamesEnabled = function() return true end
+    name, realm = C.UnitCharacterName("target")
+    assertEqual(name, "Ryz Rockheart"); assertNil(realm)
+    assertTrue(C.RegionalNames())
+    M.RegionalUniqueNamesEnabled = nil
+    M.UnitName = function() return T.secret("Ryz"), T.secret("Realm") end
+    name, realm = C.UnitCharacterName("target")
+    -- red under: UnitCharacterName passing the library's answer through unguarded.
+    assertNil(name, "a secret name never leaves Compat"); assertNil(realm)
 end)
 
 -- ── TRINKET_QUEUE and FEET_QUEUE ──────────────────────────────────────────────────────────────

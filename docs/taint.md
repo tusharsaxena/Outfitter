@@ -81,10 +81,10 @@ never moves Blizzard's or another addon's tabs.
 `modules/QuickSlots.lua` meets Blizzard's equipment flyout through post-hooks only: `HookScript`
 PostClick on the paper doll's 18 slot buttons (`Character<Slot>`), `hooksecurefunc` on
 its `flyoutSettings.getItemsFunc` and `postGetItemsFunc`, and `hooksecurefunc` on the globals
-`EquipmentFlyout_UpdateItems`, `EquipmentFlyoutPopoutButton_SetReversed` and
-`EquipmentFlyoutPopoutButton_HideAll`
-(wow-ui-source@297d7aa:Interface/AddOns/Blizzard_FrameXML/EquipmentFlyout.lua:238, :598, :633). A
-missing global is skipped, never hooked. `modules/SlotEnables.lua` adds `HookScript` OnShow and OnHide
+`EquipmentFlyout_UpdateItems`, `EquipmentFlyoutPopoutButton_SetReversed`,
+`EquipmentFlyoutPopoutButton_HideAll` and (Forever) `EquipmentFlyoutPopoutButton_RefreshVisualState`
+(wow-ui-source@297d7aa:Interface/AddOns/Blizzard_FrameXML/EquipmentFlyout.lua:238, :598, :633;
+F-UI Camelot/EquipmentFlyout.lua:731). A missing global is skipped, never hooked. `modules/SlotEnables.lua` adds `HookScript` OnShow and OnHide
 on `EquipmentFlyoutFrame` itself (the stand-down latch first), which only restack the addon's own
 slot boxes over it (smoke round 3 E2).
 
@@ -115,9 +115,9 @@ A skin change re-tints through `NS.Skin.OnLooksChanged(QS.TintSync)`. Nothing is
 lockdown (`TintSync` and the update hook return under `InCombatLockdown`); the window hides before
 lockdown, so the restore has already run by then.
 
-While the outfit window is on screen (visible, not just shown: a window parked in the sheet holder
-keeps its shown flag when the sheet hides it), the drawer is the window's (design 2026-11-04 G8,
-2026-11-05 G3):
+While the paper doll is on screen and `window.drawer` is on, the drawer is out, whether or not the
+outfit window is (Forever smoke feedback S7, superseding design 2026-11-04 G8's "only while the window
+shows"; 2026-11-05 G3). On Retail:
 
 - **Every slot's arrow is shown.** Blizzard's popout template is hidden, and only the Equipment
   Manager pane shows the arrows (its OnShow and OnHide call `EquipmentFlyoutPopoutButton_ShowAll`
@@ -143,11 +143,50 @@ keeps its shown flag when the sheet hides it), the drawer is the window's (desig
   frames that share the flyout keep theirs.
 - `EquipmentFlyoutPopoutButton_SetReversed`'s post-hook re-mirrors a moved arrow's coords.
 
-These are Show, Hide, anchor and texcoord writes on the arrows and `buttonFrame`, which are not
-protected. Every one is **out of combat only** (each hook and `QuickSlots.DrawerSync` return in
-lockdown), and each hook reads the stand-down first. The window's OnShow and OnHide, the sheet's
-OnHide and the stand-down all call `DrawerSync`, which puts Blizzard's arrows, anchors and coords
-back when the window is gone. No Blizzard function is replaced and no Blizzard table is written.
+On WoW Forever (F-UI, wow-ui-source@9dc84f0 branch `forever`) the arrows are rotated atlases
+anchored by each slot's `flyoutDirection`. The drawer never writes that field:
+
+- each arrow is anchored by F-UI's own rule for the outward direction (`Camelot/PaperDollFrame.lua:1976-1989`),
+  flush on a slot whose `BorderFrame` art is hidden (Chonky), and drawn with that direction's art,
+  size and turn, again from a `RefreshVisualState` post-hook after every Blizzard repaint;
+- the main hand and ranged slot open left, the off-hand and ammo slot right;
+- the `EquipmentFlyout_UpdateItems` post-hook anchors `buttonFrame` by F-UI's formula for that
+  direction (`Camelot/EquipmentFlyout.lua:420-433`);
+- the ammo slot, which F-UI gives no arrow, gets one made from Blizzard's
+  `EquipmentFlyoutPopoutButtonTemplate`, set as the slot's `popoutButton` so Blizzard's lock and close
+  logic finds it. That field is the one value this addon writes on a Blizzard frame. Its open
+  flyout's glow (`EquipmentFlyoutFrame.Highlight`) is sized and centered on the 27 px slot, and
+  Blizzard's point comes back for the next slot.
+
+These are Show, Hide, anchor, texcoord, atlas, size and rotation writes on the arrows,
+`buttonFrame` and the glow, none of them protected. Every one is **out of combat only** (each hook
+and `QuickSlots.DrawerSync` return in lockdown, and the regen re-syncs), and each hook reads the
+stand-down first. The doll's OnShow and OnHide, the window's (for the tint), a `window.*` write, the
+regen and the stand-down all call `DrawerSync`, which puts Blizzard's arrows, anchors and art back
+when the doll is gone. No Blizzard function is replaced and no Blizzard table is written.
+
+### Opening the character sheet on WoW Forever
+
+Forever's `CharacterFrameMixin:OnShow` sets the player frame's status text, comparing secret health
+values (F-UI `Camelot/CharacterFrame.lua:710-729` -> `TextStatusBar.lua:110`). Under taint that
+raises: "attempt to compare a secret number value (execution tainted by 'OutfitterReborn')". So no
+code path here opens a closed CharacterFrame on Forever. `NS.Dock.Open` keeps the wish and prints
+the hint instead (`OPENS_SHEET`). Switching tabs on an open frame fires no OnShow and stays
+allowed.
+
+### The broker's secure click
+
+While the pointer is on the Outfits broker display, out of lockdown and standing up,
+`OutfitterRebornBrokerClick` (a `SecureActionButtonTemplate` button) lies over the display at its
+screen rect, parented to UIParent and never anchored to the display, so no foreign frame is
+restricted.
+
+- Its left button is `type1 = "click"` on `CharacterMicroButton` while the sheet is closed, so the
+  player's own click runs Blizzard's `ToggleCharacter` untainted.
+- Its PostClick, which is addon code, then opens the window or the settings.
+- It hides when the pointer leaves it, at `PLAYER_REGEN_DISABLED`, and at the stand-down (queued
+  past lockdown).
+- Its attributes and position are written only out of lockdown.
 
 ### Combat-gated acts
 

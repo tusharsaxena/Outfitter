@@ -19,12 +19,14 @@ D.AURA_ICON_STATE = {
 
 -- A player aura's spellID -> the state it sets (Outfitter.lua:1114-1120). Evocation (12051) is gone:
 -- nothing consumed its state. Prowl (5215) is new (O27): before it only Shadowmeld fed STEALTH.
+-- Shadowmeld's ID is per client (probe P4): 58984 on Retail, 20580 on WoW Forever. The other IDs are
+-- the same rank-1 spells on both; Forever's higher ranks wait for step 2's data (ruling D10).
 D.AURA_SPELL_STATE = {
     [2645]  = "GHOST_WOLF",   -- Ghost Wolf
     [5384]  = "FEIGN_DEATH",  -- Feign Death
-    [58984] = "STEALTH",      -- Shadowmeld
     [5215]  = "STEALTH",      -- Prowl
 }
+D.AURA_SPELL_STATE[NS.PerClient({ retail = 58984, forever = 20580 })] = "STEALTH" -- Shadowmeld
 
 -- A shapeshift form's spellID (GetShapeshiftFormInfo's 4th return) -> the state it sets
 -- (Outfitter.lua:1297-1307). A druid with no form active is FORM_CASTER, which has no spell.
@@ -34,9 +36,10 @@ D.FORM_SPELL_STATE = {
     [768]   = "FORM_CAT",     -- Cat Form
     [783]   = "FORM_TRAVEL",  -- Travel Form
     [24858] = "FORM_MOONKIN", -- Moonkin Form
-    [33891] = "FORM_TREE",    -- Incarnation: Tree of Life
     [1784]  = "STEALTH",      -- rogue Stealth
 }
+-- Tree of Life is Retail's alone (clients-§4): WoW Forever has no DRUID_TREE trigger, so no FORM_TREE.
+D.FORM_SPELL_STATE[33891] = NS.PerClient({ retail = "FORM_TREE" })   -- Incarnation: Tree of Life
 
 -- Forms that mean the player may be in combat before PLAYER_REGEN_DISABLED says so (the legacy
 -- MaybeInCombat flag on Bear Form): the producer calls PS.SetMaybeInCombat(true) on entering one.
@@ -94,7 +97,10 @@ D.LEVIATHAN_NPCS = {
 -- (O24): every id below is the db2 row its group names. The export also has ids no group lists, left
 -- out as the design lists the groups: 24 and 33 (Timewalking), 151 (a second Looking For Raid row),
 -- 205 (Follower), 220 (Story), 233 (a second Mythic raid row) and the scenario ids.
-D.DIFFICULTY_GROUPS = {
+--
+-- PER CLIENT (clients-§5, owner ruling D7). WoW Forever has the open world, normal dungeons and the
+-- 20- and 40-player raids; every other group is Retail's alone, so its toggle does not exist there.
+local RETAIL_DIFFICULTY_GROUPS = {
     openWorld     = { 0 },
     dungeonNormal = { 1 },
     dungeonHeroic = { 2 },
@@ -107,11 +113,20 @@ D.DIFFICULTY_GROUPS = {
     raid40        = { 9 },          -- 40 Player
     delve         = { 208 },        -- Delves
 }
--- The params in the trigger dialog's order.
-D.DIFFICULTY_ORDER = {
-    "openWorld", "dungeonNormal", "dungeonHeroic", "dungeonMythic", "mythicPlus",
-    "raidFinder", "raidNormal", "raidHeroic", "raidMythic", "raid40", "delve",
+local FOREVER_DIFFICULTY_GROUPS = {
+    openWorld     = { 0 },
+    dungeonNormal = { 1 },          -- PROBE P17: a Forever dungeon answering 1
+    raid20        = { 148 },        -- PROBE P18: the Classic 20 Player row (Zul'Gurub, AQ20)
+    raid40        = { 9 },          -- PROBE P18: 40 Player (Molten Core)
 }
+D.DIFFICULTY_GROUPS = NS.PerClient({ retail = RETAIL_DIFFICULTY_GROUPS, forever = FOREVER_DIFFICULTY_GROUPS })
+-- The params in the trigger dialog's order: defaults/Triggers.lua builds INSTANCE_DIFFICULTY's
+-- toggles from this list, one per group.
+D.DIFFICULTY_ORDER = NS.PerClient({
+    retail  = { "openWorld", "dungeonNormal", "dungeonHeroic", "dungeonMythic", "mythicPlus",
+                "raidFinder", "raidNormal", "raidHeroic", "raidMythic", "raid40", "delve" },
+    forever = { "openWorld", "dungeonNormal", "raid20", "raid40" },
+})
 
 -- Vashj'ir's uiMapIDs, for SWIMMING's disableVashjir guard (OutfitterScripting.lua:798-801).
 D.VASHJIR_MAP_IDS = {

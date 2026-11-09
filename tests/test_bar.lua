@@ -941,3 +941,16 @@ test("bar: test mode shows the sample outfits with the strip, even with the bar 
     assertFalse(f:IsShown(), "back to the live bar, which is off")
     assertFalse(f.strip:IsShown())
 end)
+
+-- ── Forever smoke feedback 3: the 1.25 base ──────────────────────────────────────────────────────
+test("bar: Master scale multiplies a 1.25 base, so 1.0 draws as 1.25 did", function()
+    local NS, M, Bar = scene({ baseScale = 1.25 })
+    complete(NS, "A")
+    settle(M)
+    local f = Bar.Frame()
+    -- red under: scale() answering Master scale alone.
+    assertEqual(f.__scale, 1.25)
+    NS.SetByPath("scale", 0.8)
+    settle(M)
+    assertEqual(f.__scale, 1.0)
+end)

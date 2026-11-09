@@ -83,10 +83,14 @@ function PS.Spec() return flags.spec end
 --- @return number|nil
 function PS.LastCastSpellID() return lastCastSpellID end
 
---- A Fury warrior grips a two-hander in each hand (Titan's Grip, Outfitter.lua:2249).
+-- The warrior spec whose Titan's Grip holds a two-hander in each hand: Retail's Fury. WoW Forever has
+-- no Titan's Grip (its spec 2 is not Fury's talent), so the pair has no Forever value (spec §4).
+local TITANS_GRIP_SPEC = NS.PerClient({ retail = 2 })
+
+--- A Fury warrior grips a two-hander in each hand (Titan's Grip, Outfitter.lua:2249). Retail only.
 --- @return boolean
 function PS.CanDualWield2H()
-    return Compat.PlayerClass() == "WARRIOR" and flags.spec == 2
+    return TITANS_GRIP_SPEC ~= nil and Compat.PlayerClass() == "WARRIOR" and flags.spec == TITANS_GRIP_SPEC
 end
 
 --- Whether the player can dual wield at all (B15).

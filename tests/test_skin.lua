@@ -255,7 +255,7 @@ end)
 
 test("window: the header gear has no border", function()
     -- Sheet and window feedback design G10: the window's small icon buttons lose their box and
-    -- bevel; the text buttons (New outfit..., Slots: All / None) keep theirs. Smoke round 2 design
+    -- bevel; the text buttons (New outfit, Slots: All / None) keep theirs. Smoke round 2 design
     -- G5: the gear is painted as the close X is (S.CloseButton: close.rest, close.hot), which draws
     -- no box. red under: modules/Window.lua's NS.Skin.Button(gear) (a box, and no X tint).
     local _, _, Skin, built = buildAll()

@@ -105,6 +105,7 @@ return function(T)
             M.STANDARD_TEXT_FONT = "Fonts\\FRIZQT__.TTF"
             M.__gear:load(opts.scenario or "geared")
             if opts.class then M.__world:setClass(opts.class, 1) end
+            if opts.mutate then opts.mutate(M) end
         end })
         local NS, M = inst.NS, inst.mocks
         M.__now = 100

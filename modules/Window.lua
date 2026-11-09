@@ -4,7 +4,8 @@ local _, NS = ...
 --
 -- `OutfitterRebornWindow` is built once, by modules/Dock.lua, which owns every Show and Hide of it,
 -- its position and its layers. This file draws what is in it. No tabs: the old Options and About
--- panels are the settings pages and their landing page. No scale of its own: it inherits UIParent's.
+-- panels are the settings pages and their landing page. Its own scale is Win.SCALE (1.25) over
+-- UIParent's.
 --
 -- DIRTY, THEN DRAWN. Window.MarkDirty(wipeCache) replaces the old Update(true): the bus receivers
 -- below mark the list dirty (and wipe the outfit status cache), and the dock's follow tick draws it
@@ -20,7 +21,11 @@ local _, NS = ...
 -- NS.Outfits.SetAllSlotsEnabled, NS.OutfitDialog.OpenNew, NS.OpenOptionsPanel, NS.Preview.IsActive,
 -- NS.MakeTestStrip.
 
-local Win = { collapsed = {}, offset = 0, dirty = true, entries = {}, WIDTH = 260, HEIGHT = 320 }
+-- SCALE: the window's own scale, 1.25 (Forever smoke feedback 3, owner 2026-11-09: the window drawn
+-- as at a 1.25 scale, on both clients). Its sizes stay in its own units; the dock converts the sheet's
+-- corner by the scale ratio, so it still docks flush.
+local Win = { collapsed = {}, offset = 0, dirty = true, entries = {}, WIDTH = 260, HEIGHT = 320, inset = 0,
+              SCALE = 1.25 }
 NS.Window = Win
 
 local L = NS.L
@@ -115,13 +120,19 @@ end
 -- The list's top under the title divider, and the strip's gap below it.
 local LIST_TOP, STRIP_TOP, STRIP_GAP = -30, -27, 2
 
+-- The contents' shift for an inset: the list's own 8 px left padding is taken up by the band, so the
+-- rows start flush with the strip's edge (Forever smoke feedback 2, R2-2) and the window widens by
+-- the rest.
+local LEFT_PAD = 8
+local function shiftOf(px) return math.max(0, px - LEFT_PAD) end
+
 -- The strip, built the first time test mode shows the window; false when the library is degraded.
 local function ensureStrip()
     if frame.strip == nil then
         local strip = NS.MakeTestStrip(frame, L["Test mode: sample outfits, nothing equipped"])
         frame.strip = strip or false
         if strip then
-            strip:SetPoint("TOPLEFT", frame, "TOPLEFT", 1, STRIP_TOP)
+            strip:SetPoint("TOPLEFT", frame, "TOPLEFT", 1 + shiftOf(Win.inset), STRIP_TOP)
             strip:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -1, STRIP_TOP)
             chrome[#chrome + 1] = strip
             strip:SetFrameLevel(NS.SafeNumber(frame:GetFrameLevel(), 0) + LEVEL.CHROME)
@@ -133,7 +144,27 @@ end
 --- The window's size as this file set it, in its own units: the width and the height with the test
 --- strip's push. Read where the client's rect may not be laid yet (the dock's alone spot).
 --- @return number width, number height
-function Win.Size() return Win.WIDTH, Win.HEIGHT + (Win.push or 0) end
+function Win.Size() return Win.WIDTH + shiftOf(Win.inset), Win.HEIGHT + (Win.push or 0) end
+
+--- Widen the window by `px` on its left and move its contents right by as much (Forever smoke
+--- feedback S5): a side-tab strip that hangs over the docked window's left edge then lies over an
+--- empty band of the window's own background, and the window is extended, never moved. The dock
+--- passes the strip's reach (NS.Sheet.StripInset) on every placing and 0 standing alone. Out of
+--- lockdown only (the list holds secure children); a no-op when the inset is unchanged.
+--- @param px number
+function Win.SetLeftInset(px)
+    if not frame then return end
+    px = math.floor(math.max(0, NS.SafeNumber(px, 0)) + 0.5)
+    if px == Win.inset then return end
+    Win.inset = px
+    local shift = shiftOf(px)
+    frame:SetWidth(Win.WIDTH + shift)
+    frame.title:SetPoint("TOPLEFT", frame, "TOPLEFT", 10 + shift, -8)
+    frame.divider:SetPoint("TOPLEFT", frame, "TOPLEFT", 1 + shift, -26)
+    if frame.strip then frame.strip:SetPoint("TOPLEFT", frame, "TOPLEFT", 1 + shift, STRIP_TOP) end
+    list:SetPoint("TOPLEFT", frame, "TOPLEFT", LEFT_PAD + shift, LIST_TOP - (Win.push or 0))
+    newButton:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", LEFT_PAD + shift, 8)
+end
 
 --- Dress the window for test mode or take it off: the strip, the list's push, the height, New outfit
 --- and the degraded title. Dock.Refresh only (the list holds secure children: never in lockdown).
@@ -147,7 +178,7 @@ function Win.SetTestMode(on)
     if strip then strip:Show() elseif frame.strip then frame.strip:Hide() end
     local push = strip and (NS.TEST_STRIP_HEIGHT + STRIP_GAP) or 0
     Win.push = push
-    list:SetPoint("TOPLEFT", frame, "TOPLEFT", 8, LIST_TOP - push)
+    list:SetPoint("TOPLEFT", frame, "TOPLEFT", LEFT_PAD + shiftOf(Win.inset), LIST_TOP - push)
     frame:SetHeight(Win.HEIGHT + push)
     frame.title:SetText((on and not strip) and L["Outfitter Reborn (test mode)"] or L["Outfitter Reborn"])
     newButton:SetEnabled(not on)
@@ -236,7 +267,10 @@ local function body(f)
 end
 
 local function footerRow(f)
-    local new = labeledButton("OutfitterRebornNewOutfitButton", f, 120, 20, L["New outfit..."], { primary = true })
+    -- One look for the footer's three buttons (Forever smoke feedback 2, R2-4): the skin's plain button,
+    -- not the primary one, whose fill made the label hard to read under several skins; All and None
+    -- draw their label in the muted text color, a step dimmer.
+    local new = labeledButton("OutfitterRebornNewOutfitButton", f, 120, 20, L["New outfit"])
     new:SetPoint("BOTTOMLEFT", f, "BOTTOMLEFT", 8, 8)
     new.mark = new:CreateTexture(nil, "ARTWORK")
     new.mark:SetSize(12, 12)
@@ -247,9 +281,10 @@ local function footerRow(f)
         if not NS.IsStoodDown() and not NS.Preview.IsActive() then NS.OutfitDialog.OpenNew() end
     end)
     newButton = new
-    local none = labeledButton("OutfitterRebornSlotsNone", f, 40, 18, L["None"])
+    local dim = { tokens = { text = "text.muted" } }
+    local none = labeledButton("OutfitterRebornSlotsNone", f, 40, 18, L["None"], dim)
     none:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -8, 9)
-    local all = labeledButton("OutfitterRebornSlotsAll", f, 40, 18, L["All"])
+    local all = labeledButton("OutfitterRebornSlotsAll", f, 40, 18, L["All"], dim)
     all:SetPoint("RIGHT", none, "LEFT", -4, 0)
     local label = f:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     label:SetPoint("RIGHT", all, "LEFT", -4, 0)
@@ -271,6 +306,7 @@ end
 function Win.Build()
     if frame then return frame end
     local f = CreateFrame("Frame", "OutfitterRebornWindow", UIParent, "BackdropTemplate")
+    f:SetScale(Win.SCALE)
     f:SetSize(Win.WIDTH, Win.HEIGHT)
     f:Hide()
     titleStrip(f)

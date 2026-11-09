@@ -105,6 +105,10 @@ end
 
 -- ── the descriptors ───────────────────────────────────────────────────────────────────────────
 
+-- The zone rows are per client (defaults/Zones.lua, ruling D3): WoW Forever keeps the generic
+-- battleground and AV, AB and WSG, eight map ids in all, and no arena or brawl.
+local FOREVER = dofile("tests/_kit/mock_client.lua").current() == "forever"
+
 test("pvp: every NS.Zones row has a PVP zone trigger on STATE:<id> and the spec change, spec1..4 on", function()
     local inst = T.load({ mutate = function(M) M.__world:setClass("DRUID", 1) end })
     local NS = inst.NS
@@ -129,8 +133,8 @@ test("pvp: every NS.Zones row has a PVP zone trigger on STATE:<id> and the spec 
         assertEqual(table.concat(NS.Triggers.ForState(z.id), ","), z.id, z.id .. " is the one subscriber")
         assertTrue(NS.OutfitSchema.FindRow("trigger." .. z.id .. ".spec1") ~= nil, z.id .. " schema row")
     end
-    -- Design §6.8.2: rows 37-69, the two generics and 31 maps.
-    assertEqual(n, 33)
+    -- Design §6.8.2: rows 37-69, the two generics and 31 maps (Forever: one generic and three maps).
+    assertEqual(n, FOREVER and 4 or 33)
     local pvp = 0
     for _, d in ipairs(NS.Triggers.List("PVP", "WARRIOR")) do
         if d.family == "zone" then pvp = pvp + 1 end
@@ -145,8 +149,13 @@ test("pvp: a map row is named after the client's map, a generic keeps its own na
     local Tr = inst.NS.Triggers
     Tr.Finalize()
     assertEqual(Tr.Get("BG_AV").name, "Battleground: Map30")
-    assertEqual(Tr.Get("ARENA_NAGRAND").name, "Arena: Map559")
     assertEqual(Tr.Get("PVP_BATTLEGROUND").name, "Battleground")
+    if FOREVER then
+        assertNil(Tr.Get("ARENA_NAGRAND"), "no arena row on Forever")
+        assertNil(Tr.Get("PVP_ARENA"), "no arena generic on Forever")
+        return
+    end
+    assertEqual(Tr.Get("ARENA_NAGRAND").name, "Arena: Map559")
     assertEqual(Tr.Get("PVP_ARENA").name, "Arena")
 end)
 
@@ -180,7 +189,7 @@ test("pvp: every map of every row wears its outfit over the generics, and the op
             assertEqual(wornIds(s), "", z.id .. ": nothing left on")
         end
     end
-    assertEqual(covered, 40, "every map ID of design §6.8.2")
+    assertEqual(covered, FOREVER and 8 or 40, "every map ID of design §6.8.2")
 end)
 
 test("pvp: a brawl wears only the generic battleground; an unknown arena still sets both generics", function()
@@ -194,7 +203,8 @@ test("pvp: a brawl wears only the generic battleground; an unknown arena still s
     end
     clear(s)
     go(s, { type = "arena", instanceID = 99999 })
-    assertEqual(logged(s, "wear"), "PVP_BATTLEGROUND,PVP_ARENA", "matched by instance type")
+    assertEqual(logged(s, "wear"), FOREVER and "PVP_BATTLEGROUND" or "PVP_BATTLEGROUND,PVP_ARENA",
+        "matched by instance type")
 end)
 
 test("pvp: leaving takes off only the outfits the trigger wore", function()

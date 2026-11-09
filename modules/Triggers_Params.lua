@@ -316,11 +316,12 @@ function P.CaptureCurrentSubzone()
     return trim(text)
 end
 
--- A player target's full name: "Name-Realm", the realm normalized when the target is on ours.
+-- A player target's full name: "Name-Realm", the realm normalized when the target is on ours. With
+-- regional names (WoW Forever) a character is "First Surname" and has no realm (client-quirks-§5).
 local function playerEntry()
-    local name, realm = UnitName("target")
-    name, realm = Secrets.PlainString(name), Secrets.PlainString(realm)
+    local name, realm = Compat.UnitCharacterName("target")
     if not name or name == "" then return nil end
+    if Compat.RegionalNames() then return { player = name } end
     if not realm or realm == "" then
         local own = _G.GetNormalizedRealmName
         realm = own and Secrets.PlainString(own())

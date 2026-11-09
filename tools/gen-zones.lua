@@ -122,10 +122,14 @@ function M.report(d)
     return table.concat(out, "\n")
 end
 
---- Loads defaults/Zones.lua outside the client: its NS gets an L that answers every key with itself.
+--- Loads defaults/Zones.lua outside the client: its NS gets an L that answers every key with itself,
+--- and reads as Retail with every row admitted, so `rows` is the whole table (Zones.ALL) the export
+--- is diffed against.
 function M.loadZones(path)
     local chunk = assert(loadfile(path))
-    local NS = { L = setmetatable({}, { __index = function(_, k) return k end }) }
+    local NS = { L = setmetatable({}, { __index = function(_, k) return k end }), CLIENT = "retail" }
+    function NS.PerClient(pair) return pair and pair.retail end
+    function NS.ForClientRows(list) return list end
     chunk("OutfitterReborn", NS)
     return NS.Zones
 end

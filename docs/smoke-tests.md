@@ -7,7 +7,9 @@ rows that verify it. Section 11 is the sheet, window and broker round of 2026-11
 pass; section 12 is smoke round 2 of 2026-11-05 (the sheet button, slots, flyouts, menus, the
 outfit bar and test mode), the owner's CP5 pass; section 13 is smoke round 3 of 2026-11-05 (the flyout,
 the sheet button's icon, the bar's options, test mode's placement and menu, the Outfit Window page),
-the owner's R7 pass.
+the owner's R7 pass. Sections 14 to 18 are the WoW Forever port (2026-11-08 design): each runs on the
+Forever client unless a row says Retail, and a row tagged with a probe settles a value the build took
+from the inventory's best evidence (`-- PROBE Pn` at the code site).
 
 ## Sign-off
 
@@ -421,3 +423,137 @@ the set once the swap lands.
 | R3M3 (E12) | Open an outfit's gear menu | *Save in equipment manager* sits directly below *Rename...*; its submenu has *On* and *Off*, the outfit's state ticked. Pick the other one: the menu stays open, the change is the same as R3M2's click, and the tick moves once the save lands |
 | R3M4 (E12) | Attack a training dummy; in combat, click an EM icon, then pick On or Off in the menu | Refused with *Outfits can't be changed in combat.*; nothing is worn and the Equipment Manager is unchanged. A full Equipment Manager shows its popup before anything is worn |
 | R3M5 (E12) | `/or test`: hover sample 4's EM icon and another sample's; open a sample's gear menu, then *Save in equipment manager* | The tooltip gives the sample's drawn state and *Not available in test mode*. The submenu opens, and *On* and *Off* are grayed |
+
+## 14. WoW Forever: per-client data (OR-F2, 2026-11-08)
+
+Sections 14 to 21 passed: the owner's in-game pass, 2026-11-09 ("everything looks good").
+
+On WoW Forever. Each row checks a value the build took from the inventory's best evidence where a
+probe is still open; the code site is marked `-- PROBE Pn`. Retail is unchanged by this step.
+
+| # | Do | See |
+|---|---|---|
+| F2-1 (D2) | Select an outfit with the character sheet open; equip a gun or bow, then save the outfit | A slot box sits on the ranged slot, clear of the off-hand's box; the outfit records the ranged item and wears it back |
+| F2-2 (D9, P14) | Rebuild an outfit by a stat; open the stat list | Haste, Versatility and Mastery are not offered. Spell damage, healing, attack power, mana per five, hit and defense are, each with the client's label; an item carrying one scores it above 0 |
+| F2-3 (D7, P17) | Make an outfit with *Instance Difficulty*, *Equip in normal dungeons* only; enter a vanilla dungeon | The toggles are open world, normal dungeons, 20 player raids and 40 player raids, nothing else. In the dungeon the outfit goes on (`/dump GetInstanceInfo()` third return is 1) |
+| F2-4 (D7, P18) | The same with *Equip in 20 player raids*, then *Equip in 40 player raids*; enter Zul'Gurub or AQ20, then Molten Core | The outfit goes on in each. Record `/dump GetInstanceInfo()`'s third return: 148 for the 20-player raid, 9 for the 40 |
+| F2-5 (D3, P17) | Open the trigger picker's PvP list; then queue Warsong Gulch, Arathi Basin and Alterac Valley with an outfit on each | The list holds Battleground and the three battlegrounds only, no arena. Each battleground wears its own outfit over the generic one; record `/dump select(8, GetInstanceInfo())` (489, 529, 30 expected) |
+| F2-6 (P4) | As a night elf druid, make an outfit on *Druid: Prowl*; cast Shadowmeld | The outfit goes on (Shadowmeld is 20580 on Forever and feeds the stealth state) |
+
+## 15. WoW Forever: Retail-only triggers absent (OR-F3, 2026-11-08)
+
+On WoW Forever, unless a row says Retail. Each feature below is declared `clients = { "retail" }` and is
+never built on Forever: no picker entry, no setting, no saved value read. No probe is open for this step.
+
+| # | Do | See |
+|---|---|---|
+| F3-1 (D6, D5) | Open the trigger picker's Quest list | Only *Quest Turn-in*. No Argent Tournament, Vigilance on Wings, Flame Leviathan, Multiphase Survey or Pet Battle |
+| F3-2 | As a druid, open the picker's Class list; log in a new druid | Caster, Bear, Cat, Travel, Moonkin and Prowl; no *Tree of Life*, and the new druid's first login seeds no *Druid: Tree of Life* outfit |
+| F3-3 (P19) | Make an outfit on *Fishing*; open its automation settings; wear it | No *Select Track Fish* toggle; the minimap tracking is unchanged. Auto loot, Click-to-Move and the action-bar page still work |
+| F3-4 (D5) | Make an outfit on *Cooking*; open its settings; open the Cooking window | No fire-pet toggles ("No settings"). The outfit goes on with the window and comes off when it closes |
+| F3-5 | Open *In Dungeon*'s and *Swimming*'s settings | No *Equip in Arena instances*, no *Don't equip in Vashj'ir* |
+| F3-6 (Retail) | The same five checks on Retail | Every row above is back: the quests, Pet Battle, Tree of Life, Track Fish, the fire pets, arenas and Vashj'ir |
+
+## 16. WoW Forever: behavior guards (OR-F4, 2026-11-08)
+
+On WoW Forever, unless a row says Retail. No probe is open for this step.
+
+| # | Do | See |
+|---|---|---|
+| F4-1 | As a warrior in spec 2, make an outfit with a two-handed axe in each hand, then wear it | No second two-hander is equipped in the off hand (WoW Forever has no Titan's Grip); the off hand is left empty |
+| F4-2 | Target a player; make an outfit on *Target*, add the target; retarget them, then a player sharing their first name only | The list entry reads "First Surname" with no realm suffix. The outfit goes on for that character and not for the other |
+| F4-3 | Make an outfit on *Dance* and wear it | The character dances, with no Lua error |
+| F4-4 | Dock the window on the character sheet; open and close the bags and the spellbook over it | The window keeps to the sheet's layer, with no Lua error |
+| F4-5 (Retail) | F4-1 to F4-4 on Retail as a Fury warrior | Fury grips the second two-hander; a target entry reads "Name-Realm"; the dance and the dock are unchanged |
+
+## 17. WoW Forever: the sheet button and the drawer (OR-F5, 2026-11-09)
+
+On WoW Forever, unless a row says Retail. Probes P25 (the flyouts) and P27 (the side-tab strip's geometry and
+template) are settled by these rows: the sizes, the gap and the template's regions are coded from the inventory's
+best evidence.
+
+| # | Do | See |
+|---|---|---|
+| F5-1 (D8, P27) | Open the character sheet | The Outfitter button is the last button of the outer side-tab strip, directly below Statistics, the same width as the strip's tabs, at the strip's spacing, wearing the strip's tab art with the default outfit icon. No Lua error at login |
+| F5-2 (D8) | Collapse and expand the inner right pane; switch to Reputation, Skills, PvP, Currency and Statistics and back | The button stays below Statistics through both pane states. It hides off the Character tab and comes back on it, as on Retail |
+| F5-3 (D8) | Click the button twice | The first click opens the Outfitter window and the button reads selected; the second closes it and the button reads unselected. The strip's own tab stays on Character, and no mode switches |
+| F5-4 (D4, P25) | With the window open, look at every slot; open Head's, Hands', Main Hand's and Ranged's flyouts | Every slot shows its arrow, Ranged's included, pointing as Blizzard draws it. Head's flyout opens right, Hands' left, the weapons' and Ranged's up, each where Blizzard opens it. Closing the window hides the arrows |
+| F5-5 (D4) | Turn off *Show the flyout arrows* on the Outfit Window page with the window open | The arrows hide; turning it on shows them again |
+| F5-6 (Retail) | F5-1 to F5-5 on Retail | The button sits right of the Equipment Manager tab; the left column's arrows and flyouts open outward, as before |
+
+## 18. WoW Forever: load and the port shape (OR-F6, 2026-11-09)
+
+On WoW Forever, unless a row says Retail. The TOC declares `## Interface: 120105, 16001`.
+
+| # | Do | See |
+|---|---|---|
+| F6-1 | Install the build in the Forever client's `Interface\AddOns\OutfitterReborn\`; open the AddOns list at the character screen; log in | The addon is listed without *Out of date*, loads with no Lua error, and `/or version` prints 1.1.0 |
+| F6-2 | With no saved settings, log in | The skin is *WoW Forever* (the per-client default); `/or skin` offers the others |
+| F6-3 (P1) | Log in a new character | *Normal* and *Birthday Suit* are seeded, plus the class outfits for a druid, rogue or shaman. Record which spec outfits appear: Forever has one specialization per class |
+| F6-4 | `/or diagnostics` | It prints with no Lua error, and nothing in it reads as failed |
+| F6-5 (Retail) | F6-1 to F6-4 on Retail | The same, on Ka0s Default, with one spec outfit per specialization |
+
+## 19. WoW Forever smoke feedback 1 (2026-11-09)
+
+The owner's checks for `docs/superpowers/specs/2026-11-09-forever-smoke-feedback-design.md`. On WoW Forever unless a
+row says Retail. Run the sheet rows on the stock sheet, on EllesmereUI's skin, and on ChonkyCharacterSheet with
+*Skin Character Tabs* on and off.
+
+| # | Do | See |
+|---|---|---|
+| FS1-1 (S1) | Chonky, *Skin Character Tabs* on: open the character sheet | The Outfitter button is one more tab at the end of Chonky's row under the sheet, the same size, at the same spacing, in Chonky's tab art with the outfit icon in its round mask. Its glow is yellow while the window shows, and its tint follows the neighbors |
+| FS1-2 (S1) | Chonky, *Skin Character Tabs* off | The button is the last tab of the vertical strip, the same size as the tabs above it and lined up with them |
+| FS1-3 (S2) | Chonky: open the window | The window's top edge is level with Chonky's visible top border line |
+| FS1-4 (S3) | Chonky: look at the slot arrows | Each arrow touches its slot, with no gap |
+| FS1-5 (S4) | Stock: switch to Reputation, Skills, PvP, Currency and Statistics; click the Outfitter button from one of them | The button stays at the bottom of the strip on every tab. The click opens the Character tab and the window |
+| FS1-6 (S5) | Stock, EllesmereUI, and Chonky with its tabs off: open the window | The window starts at the sheet's edge and is wider. The tabs lie over an empty band of its own background, and the title, list and footer start right of the tabs. Nothing floats in empty space. Open a Chonky side panel: the window moves past it and loses the band |
+| FS1-7 (S6) | Any client and skin: point at an outfit row, its check box, its EM mark and its gear | The row lights up in the skin's hover color, and stays lit over its controls. The check box and EM mark take an accent wash, and the gear brightens as the title gear does. Switch the skin: the colors follow |
+| FS1-8 (S7) | With the window closed, open the character sheet; then open the Equipment Manager (Retail) and the window | Every slot shows its arrow. The left column's flyouts open left, the right column's right and the bottom row's down, on the plain Character tab, on the Equipment Manager and with the window open |
+| FS1-9 (S7) | Turn off *Show the flyout arrows and open flyouts outward* | The arrows and flyouts are Blizzard's own again; turned on, they are outward |
+| FS1-10 (Retail) | FS1-7 to FS1-9 on Retail | The same |
+
+## 20. WoW Forever smoke feedback 2 (2026-11-09)
+
+The owner's second pass over section 19 (FS1-1, Chonky's bottom row, passed). Same clients and sheets.
+
+| # | Do | See |
+|---|---|---|
+| FS2-1 (R2-1) | Chonky: with the sheet open, turn *Skin Character Tabs* off, then on again | Each time, the Outfitter button follows the strip on the next frame. Off, it is the last tab of the vertical strip in its art and size. On, it is the end of the bottom row in Chonky's skin |
+| FS2-2 (R2-2) | Stock, EllesmereUI, and Chonky with its tabs on the right: open the window | The rows, the title and the footer start flush with the tabs' right edge, with no empty gap past the tabs |
+| FS2-3 (R2-3) | Look at the footer | The button reads *New outfit*, with no ellipsis |
+| FS2-4 (R2-4) | Switch through the skins with an outfit selected | New outfit, All and None share one border and fill, and New outfit's label reads clearly in every skin. All and None are a step dimmer |
+| FS2-5 (R2-5) | Drag the character sheet around with the window open (Chonky, EllesmereUI or a mover addon) | The window stays fixed to the sheet's edge while it moves, with no stretch and snap |
+| FS2-6 (Retail) | FS2-3 to FS2-5 on Retail | The same |
+
+## 21. WoW Forever smoke feedback 3 (2026-11-09)
+
+The owner's third pass. On both clients unless a row says WoW Forever.
+
+| # | Do | See |
+|---|---|---|
+| FS3-1 (Forever) | Open the character sheet on the stock sheet and on Chonky | The main hand's and the ranged slot's arrows point left and their flyouts open left; the off-hand's and the ammo slot's point right and open right. Each arrow wears the side art at the side's size |
+| FS3-2 (Forever) | Look at the ammo slot; click its arrow; pick ammo from the flyout | The ammo slot has an arrow like the others. Its flyout lists your ammo and equips the pick. Ammo is not saved into outfits yet (tusharsaxena/Outfitter#1) |
+| FS3-3 | Open the outfit window; compare it with a pre-change screenshot | The window is 1.25x its old size and still docks flush at the sheet's edge and top |
+| FS3-4 | Show the outfit bar with Master scale at 1.0 | The bar draws as it did at 1.25 before. Master scale still multiplies it |
+| FS3-5 | Hover the *Ka0s Outfitter Reborn: Outfits* broker; move onto the menu; move off both | The outfit menu drops under the display, stays while the pointer is on the display or the menu, and closes a moment after it leaves both. It ends with the two click hints |
+| FS3-6 | Left-click the broker; right-click it | The left-click opens the character sheet with the outfit window. The right-click opens the settings |
+
+### 21.1 The broker's left-click taint (owner's report, 2026-11-09)
+
+| # | Do | See |
+|---|---|---|
+| FS3-7 (Forever) | Character sheet closed: left-click the Outfits broker (Bazooka or another display) | The sheet opens on the Character tab with the outfit window, and there is **no** Lua error (before: `TextStatusBar.lua:110: attempt to compare a secret number value (execution tainted by 'OutfitterReborn')`) |
+| FS3-8 (Forever) | Character sheet closed: `/or show`, the *Toggle the Outfitter window* key, and the hover menu's *Open outfit window* | Each prints *Open the character sheet to see the outfit window.* and opens nothing. Opening the sheet then brings the window. No Lua error |
+| FS3-9 (Retail) | FS3-7 and FS3-8 on Retail | The broker's left-click opens the sheet with the window. The other three open the sheet with the window as before |
+
+### 21.2 The gear's target (2026-11-09)
+
+| # | Do | See |
+|---|---|---|
+| FS3-10 | Retail and Forever: point just right of, left of, above and below an outfit row's gear, then click there | The gear lights as on the art itself, and the click opens the outfit menu. The target runs to the row's right edge, as far again on the left, and the row's full height |
+
+### 21.3 The ammo slot's glow (2026-11-09)
+
+| # | Do | See |
+|---|---|---|
+| FS3-11 (Forever) | On Chonky, the stock sheet and EllesmereUI, open the ammo slot's flyout; then open another slot's | The yellow glow hugs the ammo slot, centered and only slightly larger than it, on every sheet. Another slot's glow is as before |

@@ -10,12 +10,14 @@ the build order is
 
 ## Overview
 
-Ka0s Outfitter Reborn is an equipment manager for Retail (Midnight, 12.x). A player builds named
+Ka0s Outfitter Reborn is an equipment manager for Retail (Midnight, 12.x) and WoW Forever, from one
+codebase (`## Interface: 120105, 16001`; see Per-client features below). A player builds named
 outfits, wears them by hand from a window docked to the character sheet, from an outfit bar, from key
 bindings or from `/or`, and lets **native triggers** wear and remove them automatically: fishing,
 gathering, a battleground or arena by map, a druid form, a spec, a mount, and about seventy more
 (77 in all). It is a rewrite of the community fork of Outfitter by John Stephen (mundocani), MIT
-licensed, as an Ace3 addon in the standard's modular layout, on the vendored `LibKa0s` v1.91.0.
+licensed, as an Ace3 addon in the standard's modular layout, on the vendored `LibKa0s` (the release
+the `CLAUDE.md` provenance line names).
 
 Three ideas carry the design:
 
@@ -37,6 +39,42 @@ slot checkboxes, the outfit bar, the dialogs and menus, the tooltips and quick s
 public API, four settings pages (General, Outfit Bar, Outfit Window, Profiles), 36 slash verbs and 15 key bindings (as measured on 2026-11-06)
 and six translation overlays. What it does not do yet, and what a client has still to confirm, is
 under Known Limitations.
+
+### Per-client features
+
+The addon serves Retail and WoW Forever from one codebase (clients-§1; the roster's Clients value is
+`Retail · Forever`). The client is asked in one place: `core/ClientSetup.lua` reads `NS.CLIENT` once at
+load from `NS.Compat.ClientKey()` (`LibKa0s-Compat-1.0`, clients-§3; without the library it answers
+Retail) and publishes `NS.PerClient(pair)` and `NS.ForClientRows(list)`, which the `defaults/` files and
+the modules call at **file scope** (clients-§5). Feature code never asks which client it runs on. A
+Retail-only feature is declared `clients = { "retail" }` and never built on Forever: no descriptor,
+picker entry, schema row or setting (clients-§4), so it is absent, never hidden. The owner's rulings
+D1 to D10 and the probes behind each value are in
+[`superpowers/specs/2026-11-08-forever-port-design.md`](superpowers/specs/2026-11-08-forever-port-design.md);
+a value an open probe has still to confirm is marked `-- PROBE Pn` at its site and has a smoke row in
+`smoke-tests.md` sections 14 to 18.
+
+| Feature | Retail | WoW Forever | Picked in |
+|---|---|---|---|
+| Equipment slots (D2) | the 18 slots | the same 18 plus `RangedSlot` (18) after the two hands; ranged, thrown and relic invtypes go there | `defaults/Items.lua` (`ID.SLOT_NAMES`), `modules/SlotEnables.lua` |
+| Ammo slot (D1) | — | not built yet (needs a stack-aware equip path) | — |
+| Stats (D9) | Haste, Versatility, Mastery | spell damage, healing, attack power, MP5, hit, defense (PROBE P14) | `modules/ItemStats.lua` (`STAT_KEYS`) |
+| PvP zones (D3) | every battleground, arena and brawl row | the generic battleground row, AV, AB, WSG (PROBE P17); no brawls | `defaults/Zones.lua` (`Z.rows`, `Z.BRAWL_MAP_IDS`) |
+| Instance difficulty (D7) | Retail's groups | open world, normal dungeon (PROBE P17), 20-player raid 148 and 40-player raid 9 (PROBE P18) | `defaults/TriggerData.lua` (`DIFFICULTY_GROUPS`, `DIFFICULTY_ORDER`) |
+| Retail-only triggers (D5, D6) | the four content quests, Pet Battle, Tree of Life | absent; Quest Turn-in and Cooking's core stay | `defaults/Triggers.lua` (`clients`), `modules/Triggers.lua` (`Finalize`) |
+| Retail-only params | arena, Vashj'ir, Find Fish, Cooking's fire pets | absent | `defaults/Triggers.lua`, `modules/Triggers.lua` (`buildParams`) |
+| The Tree of Life state | `FORM_TREE` | absent | `defaults/TriggerData.lua`, `modules/States.lua` |
+| Shadowmeld (P4) | 58984 | 20580 | `defaults/TriggerData.lua` |
+| Titan's Grip | spec 2 grips | never | `modules/PlayerState.lua` (`TITANS_GRIP_SPEC`) |
+| `TARGET` names | `Name-Realm` | `First Surname` (regional names) | `Compat.UnitCharacterName` |
+| Sheet button (D8) | the sidebar tab row (stock, EllesmereUI, Chonky), shown with the paper doll | the last button of `CharacterFrame.ModeTabs`, a `LargeSideTabButtonTemplate` CheckButton outside Blizzard's mode switching (PROBE P27), at the strip's scale, below the last tab or right of it on Chonky's skinned row, in Chonky's skin there; shown on every CharacterFrame tab (Forever smoke feedback S1, S4) | `modules/Sheet.lua` (`Sheet.ButtonAnchor`), `modules/Dock.lua` |
+| Window under the side strip (S5) | none | widened by the strip's reach, its contents moved right of it, when the strip runs down the window's left edge | `modules/Sheet.lua` (`Sheet.StripInset`), `modules/Window.lua` (`Win.SetLeftInset`) |
+| Flyout drawer (D4, S7) | the left column's arrows moved and mirrored, flyouts re-anchored to the slot | every arrow re-anchored and turned outward by F-UI's own rules, the flyout anchored by F-UI's formula for the outward direction, flush on a slot whose `BorderFrame` is hidden (S3) | `modules/QuickSlots.lua` (`FOREVER_DRAWER`) |
+| Default skin | Ka0s Default | WoW Forever | `core/SkinSetup.lua` (`Skin:DefaultSkin()`) |
+
+Both clients take the modern APIs first: `C_PaperDollInfo.GetInventorySlotInfo` and
+`C_ChatInfo.PerformEmote`, with the bare globals behind them, and the host strata read passes the
+secret guard. The suite runs under both kit profiles (`docs/testing.md`).
 
 ## Module Map
 
@@ -200,11 +238,16 @@ combat lockdown, otherwise it waits (latest per key) and replays on `PLAYER_REGE
 accepted exception, the equipment flyout's rim tint (`DEV-SKIN-FLYOUT-TINT`, below): hooks are
 `hooksecurefunc` or `HookScript`, and every hook body checks the stand-down latch first. The outfit
 list's secure item buttons make the window protected, so it hides for the length of combat and is
-moved rather than its rows re-anchored. While the outfit window is shown, every slot's own popout
-arrow is shown per button (never `EquipmentFlyoutPopoutButton_ShowAll`/`HideAll`, which write
-`flyoutLocked`), re-shown after Blizzard's `HideAll` through a post-hook, and a character-sheet
-slot's horizontal flyout is re-anchored level with its slot; all of it out of lockdown only and put
-back when the window goes. The full notes, with each secure surface and the client checks still
+moved rather than its rows re-anchored. While the paper doll is shown (Forever smoke feedback S7),
+every slot's own popout arrow is shown per button (never `EquipmentFlyoutPopoutButton_ShowAll`/`HideAll`,
+which write `flyoutLocked`), re-shown after Blizzard's `HideAll` through a post-hook, and turned
+outward with its flyout (Retail: the left column moved and mirrored; Forever: by F-UI's own rules
+through post-hooks, never writing `flyoutDirection`); all of it out of lockdown only and put back
+when the doll goes. On Forever the ammo slot's arrow is made from Blizzard's popout template and set
+as the slot's `popoutButton`, the one field this addon writes on a Blizzard frame. On Forever
+CharacterFrame is never opened from addon code: its OnShow compares secret health values, which
+raises under taint, so the broker opens it through a secure click (`OutfitterRebornBrokerClick`) and
+`NS.Dock.Open` keeps the wish instead. The full notes, with each secure surface and the client checks still
 owed: [`taint.md`](taint.md).
 
 ## Known Limitations
@@ -219,6 +262,9 @@ owed: [`taint.md`](taint.md).
 - The sheet button copies each host sheet's tab, so it inherits that sheet's quirks: Chonky's tab row
   sits about 18 px right-heavy with it, and the EllesmereUI label takes EllesmereUI's face when it is
   placed, not when EllesmereUI changes it.
+- On WoW Forever outfits do not hold ammo yet (the slot has a flyout only), triggers match one spell
+  rank's ID, and `/or show`, the window key and the broker menu's *Open outfit window* cannot open a
+  closed sheet (they keep the wish and say so); the port's step-1 limits are in `known-limitations.md`.
 
 The full list, with the client checks still owed: [`known-limitations.md`](known-limitations.md).
 
@@ -287,7 +333,7 @@ player-facing document, documentation-§1), and its slash-command table was a se
 | `documentation-§1` | The README has no screenshots of the 1.1.0 UI | D6. They need a client capture of the reskinned docked window and settings pages after the smoke test; stale shots would mislead (H22) | 2026-11-03 | The first client capture of 1.1.0 |
 | `localization-§4` | `Inv.SlotItemActive` (the TRINKET_QUEUE skip-while-active rule) parses the item's use-duration tooltip line with the `cUseDurationTooltipLineFormat*` patterns kept in `L` | D8. No GlobalString or ID route gives an active use effect's remaining duration yet (O15) | 2026-11-03 | `C_Item.GetItemSpell` plus spell-duration data (or an aura read) covers it, after which the `L` keys and this row go |
 | `launcher-§1` | A second LibDataBroker object, `OutfitterRebornOutfits` (type `data source`, `modules/Broker.lua`), carries the old addon's outfit switcher; the launcher object is unchanged, and the second object is never put on the minimap | Owner ruling 2026-11-04: players used the old broker plugin to switch outfits, and the launcher's clicks and logo are fixed by launcher-§2/§4 | 2026-11-04 | The standard allows a feature data source next to the launcher |
-| `skinning-§1`/`skinning-§9` (`DEV-SKIN-SHEET-BUTTON`) | The sheet button (`OutfitterRebornSheetButton`, `modules/Dock.lua`) draws the host sheet's tab look, not the Ka0s skin: on the stock sheet and ChonkyCharacterSheet a hand-built copy of Blizzard's `PaperDollSidebarTabTemplate` (TabBg, icon, Hider and Highlight from `Interface\PaperDollInfoFrame\PaperDollSidebarTabs` with the template's texcoords, selected while the window shows); on EllesmereUI a text tab, `L["Outfits"]`, in EllesmereUI's tab style (its face at size 10, white at 0.6 idle, 1.0 on hover, `EllesmereUI.ELLESMERE_GREEN` while the window shows). No `NS.Skin` call paints it, it left `Kit.skinSwitch.surfaces` (`tests/skin_surfaces.lua`), and its three typed values are `Kit.skinValues` rows citing this id (`tests/run.lua`) | Smoke round 2 design D3/D4 (G2), [2026-11-05](superpowers/specs/2026-11-05-smoke-round-2-design.md): the way in sits in the host's own tab row, and a skinned button there read as bolted on; matching the neighboring tabs is the point, so the skin must not reach it | 2026-11-05 owner ruling | The standard gains a host-matched ingress exception, or a host changes its tabs (Blizzard's sidebar tab art, Chonky's tab row, EllesmereUI's tab style) |
+| `skinning-§1`/`skinning-§9` (`DEV-SKIN-SHEET-BUTTON`) | The sheet button (`OutfitterRebornSheetButton`, `modules/Dock.lua`) draws the host sheet's tab look, not the Ka0s skin: on the stock sheet and ChonkyCharacterSheet a hand-built copy of Blizzard's `PaperDollSidebarTabTemplate` (TabBg, icon, Hider and Highlight from `Interface\PaperDollInfoFrame\PaperDollSidebarTabs` with the template's texcoords, selected while the window shows); on EllesmereUI a text tab, `L["Outfits"]`, in EllesmereUI's tab style (its face at size 10, white at 0.6 idle, 1.0 on hover, `EllesmereUI.ELLESMERE_GREEN` while the window shows). On WoW Forever, one more tab of the mode strip in that strip's template; on ChonkyCharacterSheet's skinned strip a copy of Chonky's skin (its `CCS_BG` file and coords and its tints copied live off the neighboring tabs, the outfit icon in Chonky's round mask, Chonky's fixed yellow glow while the window shows; Forever smoke feedback S1, [2026-11-09](superpowers/specs/2026-11-09-forever-smoke-feedback-design.md)). No `NS.Skin` call paints it, it left `Kit.skinSwitch.surfaces` (`tests/skin_surfaces.lua`), and its three typed values are `Kit.skinValues` rows citing this id (`tests/run.lua`) | Smoke round 2 design D3/D4 (G2), [2026-11-05](superpowers/specs/2026-11-05-smoke-round-2-design.md): the way in sits in the host's own tab row, and a skinned button there read as bolted on; matching the neighboring tabs is the point, so the skin must not reach it | 2026-11-05 owner ruling | The standard gains a host-matched ingress exception, or a host changes its tabs (Blizzard's sidebar tab art, Chonky's tab row, EllesmereUI's tab style) |
 | `skinning-§7` (`DEV-SKIN-FLYOUT-TINT`) | While the outfit window is on screen and Blizzard's equipment flyout is open on one of the 18 paper-doll slots, `modules/QuickSlots.lua` (`QS.TintSync`) desaturates the flyout's rim (`EquipmentFlyoutFrame.buttonFrame.bg1..bgN` and `NavigationFrame.BottomBackground`) and gives it the skin's window border color (`win.border`) through `SetVertexColor`. Each texture's own color and desaturation are read before its first tint and written back exactly when the window closes, when another host's slot opens the flyout (Item Upgrade, Item Interaction, Runeforge) and at the stand-down (`QS.Suspend`); a skin change re-tints; nothing is written in combat lockdown. Tint only: no new art, no reparenting, no anchor change, and the slot `Highlight` is left alone. Under Ka0s Default the rim reads near black | Smoke round 3 E1 (screen 16): the flyout's gold `UI-GearManager-Flyout` rim beside the skinned window read as a different UI. The owner accepted a skin color on Blizzard's shared frame, held only while this addon holds the flyout, and the near-black rim under Ka0s Default that comes with it ([round 3 plan](superpowers/plans/2026-11-05-smoke-round-3.md), *Owner rulings on the held items*). Cited at `modules/QuickSlots.lua` and `core/SkinSetup.lua`; pinned by `tests/test_flyout_tint.lua` | 2026-11-05 owner ruling | The standard allows a host-held tint of a Blizzard frame, or Blizzard restyles the flyout |
 | `localization-§4` | The gathering triggers (GATHER_HERBALISM, GATHER_MINING) match the node tooltip's line against `C_TradeSkillUI.GetTradeSkillDisplayName(skillLine)`, the client's own localized name for an ID, not a GlobalString constant | D10. Tooltip data exposes no skill line for a node; the name is never hardcoded or put in `L`, so the match is correct on every locale | 2026-11-03 | `TooltipDataProcessor` exposes the node's skill line |
 

@@ -20,8 +20,15 @@ local _, NS = ...
 -- OUTFIT_REMOVED and on stand-down. `persist` gives the condition `ctx.persist`. `icon` is the bar's
 -- default icon, ported from OutfitterBar.lua:9-53 (C30); `false` where the legacy table had none, so
 -- the bar draws the outfit's own icon as it always did.
+--
+-- PER CLIENT (clients-§4; owner rulings D3, D5, D6). A row or a param with `clients = { "retail" }` is
+-- Retail's alone: modules/Triggers.lua's Finalize never builds the row, and buildParams never copies the
+-- param, on WoW Forever, so it has no catalog entry, no picker entry and no schema row there (absent,
+-- never hidden). The data the absent rows read (the vehicle NPC tables, FIND_FISH, COOKING_PETS,
+-- VASHJIR_MAP_IDS) stays defined and is simply never reached on Forever.
 
 local L = NS.L
+local RETAIL = { "retail" }                          -- a Retail-only row or param (clients-§4)
 
 NS.TriggerCatalog = NS.TriggerCatalog or {}          -- architecture-§3 idempotent
 local C = NS.TriggerCatalog
@@ -47,6 +54,30 @@ local function unequipComplete()
     return { key = "unequipComplete", type = "bool", label = L["Allow Complete outfits to unequip"], default = false }
 end
 
+-- INSTANCE_DIFFICULTY's toggles: one per NS.TriggerData.DIFFICULTY_GROUPS key, in DIFFICULTY_ORDER,
+-- which is per client (ruling D7), so a group the client lacks has no toggle at all.
+local DIFFICULTY_LABELS = {
+    openWorld     = L["Equip in the open world"],
+    dungeonNormal = L["Equip in normal dungeons"],
+    dungeonHeroic = L["Equip in heroic dungeons"],
+    dungeonMythic = L["Equip in mythic dungeons"],
+    mythicPlus    = L["Equip in Mythic+ dungeons"],
+    raidFinder    = L["Equip in raid finder"],
+    raidNormal    = L["Equip in normal raids"],
+    raidHeroic    = L["Equip in heroic raids"],
+    raidMythic    = L["Equip in mythic raids"],
+    raid20        = L["Equip in 20 player raids"],
+    raid40        = L["Equip in 40 player raids"],
+    delve         = L["Equip in delves"],
+}
+local function difficultyParams()
+    local out = {}
+    for _, key in ipairs(NS.TriggerData.DIFFICULTY_ORDER) do
+        out[#out + 1] = { key = key, type = "bool", label = DIFFICULTY_LABELS[key], default = false }
+    end
+    return out
+end
+
 -- The three vehicle quests share their events (OutfitterScripting.lua:1376-1567).
 local VEHICLE_EVENTS = { "TOOLTIP_SHOW", "UPDATE_MOUSEOVER_UNIT", "TOOLTIP_HIDE", "UNIT_ENTERED_VEHICLE",
                          "UNIT_EXITED_VEHICLE" }
@@ -57,9 +88,9 @@ local function vehicleEvents(extra)
     return out
 end
 
--- A druid shape: the bar icon, the state and the family (design §6.8.3 rows 71-75).
-local function druidForm(id, name, desc, state, icon)
-    return { id = id, category = "CLASS", class = "DRUID", icon = icon, name = name, desc = desc,
+-- A druid shape: the bar icon, the state and the family (design §6.8.3 rows 71-75); `clients` as a row's.
+local function druidForm(id, name, desc, state, icon, clients)
+    return { id = id, category = "CLASS", class = "DRUID", icon = icon, name = name, desc = desc, clients = clients,
              events = { "STATE:" .. state, "OUTFIT_WORN" }, layer = "shapeshift",
              family = "druidForm", familyArgs = { state = state }, specDefault = true,
              params = { disableBG(false), disablePVP(false), unequipComplete() } }
@@ -75,26 +106,15 @@ C.rows = {
           { key = "enable5Man",  type = "bool", label = L["Equip in 5-man instances"],        default = true },
           { key = "enableRaid",  type = "bool", label = L["Equip in Raid instances"],         default = false },
           { key = "enableBG",    type = "bool", label = L["Equip in Battleground instances"], default = false },
-          { key = "enableArena", type = "bool", label = L["Equip in Arena instances"],        default = false },
+          { key = "enableArena", type = "bool", label = L["Equip in Arena instances"],        default = false,
+            clients = RETAIL },                    -- vanilla has no arenas
       } },
     { id = "INSTANCE_DIFFICULTY", category = "GENERAL", icon = 132132,
       name = L["Instance Difficulty"],
       desc = L["Equips the outfit in the open world or the instance difficulties you select"],
       events = { "PLAYER_ENTERING_WORLD", "GROUP_ROSTER_UPDATE", "PLAYER_DIFFICULTY_CHANGED", "BIND" },
-      -- One toggle per NS.TriggerData.DIFFICULTY_GROUPS key, in DIFFICULTY_ORDER.
-      params = {
-          { key = "openWorld",     type = "bool", label = L["Equip in the open world"],       default = false },
-          { key = "dungeonNormal", type = "bool", label = L["Equip in normal dungeons"],      default = false },
-          { key = "dungeonHeroic", type = "bool", label = L["Equip in heroic dungeons"],      default = false },
-          { key = "dungeonMythic", type = "bool", label = L["Equip in mythic dungeons"],      default = false },
-          { key = "mythicPlus",    type = "bool", label = L["Equip in Mythic+ dungeons"],     default = false },
-          { key = "raidFinder",    type = "bool", label = L["Equip in raid finder"],          default = false },
-          { key = "raidNormal",    type = "bool", label = L["Equip in normal raids"],         default = false },
-          { key = "raidHeroic",    type = "bool", label = L["Equip in heroic raids"],         default = false },
-          { key = "raidMythic",    type = "bool", label = L["Equip in mythic raids"],         default = false },
-          { key = "raid40",        type = "bool", label = L["Equip in 40 player raids"],      default = false },
-          { key = "delve",         type = "bool", label = L["Equip in delves"],               default = false },
-      } },
+      -- One toggle per NS.TriggerData.DIFFICULTY_GROUPS key, in DIFFICULTY_ORDER (per client).
+      params = difficultyParams() },
     { id = "HAS_BUFF", category = "GENERAL", icon = 135826,
       name = L["Has Buff"],
       desc = L["Equips the outfit when you have one of the listed buffs"],
@@ -184,16 +204,23 @@ C.rows = {
       family = "smartUnequip", familyArgs = { state = "SWIMMING", unequipDelay = 2.5, guards = "skipAll" },
       params = {
           disableInstance(false), disableBG(false), disablePVP(false),
-          { key = "disableVashjir", type = "bool", label = L["Don't equip in Vashj'ir"], default = true },
+          { key = "disableVashjir", type = "bool", label = L["Don't equip in Vashj'ir"], default = true,
+            clients = RETAIL },                    -- a Cataclysm zone
       } },
     { id = "FISHING", category = "TRADE", icon = 136245, persist = true,
       name = L["Fishing"],
       desc = L["Turns on Find Fish, auto loot and the other fishing helpers while the outfit is worn"],
       events = { "OUTFIT_WORN", "OUTFIT_REMOVED" },
       -- Never equips by itself: the effects are the whole trigger (design §6.8.1 row 13).
-      family = "passive", effects = { "AutoLoot", "FishTracking", "ClickToMove", "ActionBarPage" },
+      -- Find Fish tracking is Retail's alone (probe P19: Forever's tracking list has no Find Fish), so
+      -- the FishTracking effect and its trackFish param are absent there.
+      family = "passive", effects = NS.PerClient({
+          retail  = { "AutoLoot", "FishTracking", "ClickToMove", "ActionBarPage" },
+          forever = { "AutoLoot", "ClickToMove", "ActionBarPage" },
+      }),
       params = {
-          { key = "trackFish",          type = "bool", label = L["Select Track Fish while equipped"],     default = true },
+          { key = "trackFish",          type = "bool", label = L["Select Track Fish while equipped"],     default = true,
+            clients = RETAIL },
           { key = "autoLoot",           type = "bool", label = L["Enable auto loot while equipped"],      default = false },
           { key = "disableClickToMove", type = "bool", label = L["Disable Click-to-Move while equipped"], default = true },
           { key = "changeActionBar",    type = "bool", label = L["Switch action bars while equipped"],    default = false },
@@ -224,11 +251,13 @@ C.rows = {
       name = L["Cooking"],
       desc = L["Equips the outfit whenever your Cooking window is open"],
       events = { "TRADE_SKILL_SHOW", "TRADE_SKILL_CLOSE" },
-      -- One toggle per NS.TriggerData.COOKING_PETS param, then the random pick.
+      -- One toggle per NS.TriggerData.COOKING_PETS param, then the random pick. The fire pets are
+      -- Retail's (ruling D5), so on Forever the trigger keeps its core and has no params.
       params = {
-          { key = "summonRagnaros", type = "bool", label = L["Summon Lil' Ragnaros"], default = false },
-          { key = "summonPierre",   type = "bool", label = L["Summon Pierre"],        default = false },
-          { key = "randomPet",      type = "bool", label = L["Randomly summon a permitted cooking fire pet"], default = false },
+          { key = "summonRagnaros", type = "bool", label = L["Summon Lil' Ragnaros"], default = false, clients = RETAIL },
+          { key = "summonPierre",   type = "bool", label = L["Summon Pierre"],        default = false, clients = RETAIL },
+          { key = "randomPet",      type = "bool", label = L["Randomly summon a permitted cooking fire pet"], default = false,
+            clients = RETAIL },
       } },
 
     -- ── PVP (the zone rows follow from defaults/Zones.lua) ──────────────────────────────────────
@@ -238,22 +267,24 @@ C.rows = {
       events = { "PLAYER_FLAGS_CHANGED", "PLAYER_ENTERING_WORLD", "BIND" } },
 
     -- ── QUEST ───────────────────────────────────────────────────────────────────────────────────
-    { id = "QUEST_ARGENT_TOURNAMENT", category = "QUEST", icon = false, unit = "player",
+    -- The four content quests are WotLK, Cataclysm and WoD content (ruling D6): Retail only. Quest
+    -- Turn-in stays on both. Pet Battle is Retail's too (ruling D5): vanilla has no pet battles.
+    { id = "QUEST_ARGENT_TOURNAMENT", category = "QUEST", icon = false, unit = "player", clients = RETAIL,
       name = L["Argent Tournament"],
       desc = L["Equips the outfit when you mount an Argent Tournament steed"],
       events = vehicleEvents(),
       family = "vehicleMount", familyArgs = { unitType = "Vehicle", npcs = "ARGENT_MOUNTS", byFaction = true } },
-    { id = "QUEST_VIGILANCE_ON_WINGS", category = "QUEST", icon = false, unit = "player",
+    { id = "QUEST_VIGILANCE_ON_WINGS", category = "QUEST", icon = false, unit = "player", clients = RETAIL,
       name = L["Vigilance on Wings"],
       desc = L["Equips the outfit when you ride an Aviana's Guardian for the Vigilance on Wings quest"],
       events = vehicleEvents(),
       family = "vehicleMount", familyArgs = { unitType = "Creature", npcs = "VIGILANCE_NPCS" } },
-    { id = "QUEST_FLAME_LEVIATHAN", category = "QUEST", icon = false, unit = "player",
+    { id = "QUEST_FLAME_LEVIATHAN", category = "QUEST", icon = false, unit = "player", clients = RETAIL,
       name = L["Flame Leviathan"],
       desc = L["Equips the outfit when you enter a Flame Leviathan encounter vehicle, unequips it when you exit and combat is ended"],
       events = vehicleEvents("PLAYER_REGEN_ENABLED"),
       family = "vehicleMount", familyArgs = { unitType = "Vehicle", npcs = "LEVIATHAN_NPCS", regenUnequip = true } },
-    { id = "QUEST_MULTIPHASE_SURVEY", category = "QUEST", icon = false,
+    { id = "QUEST_MULTIPHASE_SURVEY", category = "QUEST", icon = false, clients = RETAIL,
       name = L["The Multiphase Survey"],
       desc = L["Equips the outfit when you're on the Multiphase Survey quest and enter Nagrand, unequips when you complete the quest or leave Nagrand"],
       events = { "QUEST_LOG_UPDATE", "ZONE_CHANGED", "ZONE_CHANGED_NEW_AREA", "ZONE_CHANGED_INDOORS", "BIND" } },
@@ -262,7 +293,7 @@ C.rows = {
       desc = L["Use this to automatically equip your bonus XP gear before you turn in quests"],
       events = { "QUEST_PROGRESS", "QUEST_FINISHED" } },
     -- Pet Battle: contributed by Bruce Quinton (credited in the README).
-    { id = "PET_BATTLE", category = "QUEST", icon = false,
+    { id = "PET_BATTLE", category = "QUEST", icon = false, clients = RETAIL,
       name = L["Pet Battle"],
       desc = L["Equips the outfit when engaging in a pet battle"],
       events = { "PET_BATTLE_OPENING_DONE", "PET_BATTLE_CLOSE" } },
@@ -294,7 +325,7 @@ C.rows = {
     druidForm("DRUID_MOONKIN", L["Druid: Moonkin Form"],
         L["This outfit will be worn whenever you're in Moonkin Form"], "FORM_MOONKIN", 136096),
     druidForm("DRUID_TREE", L["Druid: Tree of Life"],
-        L["This outfit will be worn whenever you're in Tree Form"], "FORM_TREE", 136041),
+        L["This outfit will be worn whenever you're in Tree Form"], "FORM_TREE", 136041, RETAIL),  -- a TBC talent
     { id = "DRUID_PROWL", category = "CLASS", class = "DRUID", icon = 132089,
       name = L["Druid: Prowl"],
       desc = L["This outfit will be worn whenever you're prowling"],

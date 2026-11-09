@@ -18,6 +18,8 @@ return function(T)
         "MainHandSlot", "SecondaryHandSlot", "BackSlot", "NeckSlot", "ShirtSlot", "TabardSlot", "Finger0Slot",
         "Finger1Slot", "Trinket0Slot", "Trinket1Slot",
     }
+    -- WoW Forever adds the ranged slot (defaults/Items.lua, ruling D2).
+    if dofile("tests/_kit/mock_client.lua").current() == "forever" then SLOTS[#SLOTS + 1] = "RangedSlot" end
 
     --- Every frame built from here on records its points, mouse, scale and size, and answers geometry
     --- from `geom` when the suite sets it.
@@ -70,10 +72,14 @@ return function(T)
         -- Both are in the latch's MODULES walk, so each answers Suspend and Resume too.
         -- AloneSpot answers nothing: the test bar draws at its saved place (test_preview_place pins the
         -- place beside the real window).
-        T.fake(NS, "Dock", { IsShown = function() return false end, AloneSpot = true, Suspend = true, Resume = true })
+        T.fake(NS, "Dock", { IsShown = function() return false end, DollVisible = function() return false end,
+            AloneSpot = true, Suspend = true, Resume = true })
         local preview = T.fake(NS, "Preview", { IsActive = function() return ctl.preview end, Suspend = true,
                                                 Resume = true })
         rawset(preview, "Source", { Rows = function() return ctl.previewRows end })
+        -- The bar's geometry cases are pinned at base scale 1 (unless opts.baseScale); the 1.25 base
+        -- (Forever smoke feedback 3) is test_bar's own case.
+        NS.Bar.BASE_SCALE = opts.baseScale or 1
         ctl.menu = spy(NS, "OutfitMenu", { "Open" })
         if not opts.hidden then NS.db.profile.bar.shown = true end
         NS.Bar.Resume()

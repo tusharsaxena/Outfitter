@@ -46,9 +46,11 @@ local MANA = Enum and Enum.PowerType and Enum.PowerType.Mana or 0
 
 local SPIRIT_KEY, TOOLTIP_KEY = "STATE:SPIRIT_REGEN", "TOOLTIP"
 
---- The non-zone state ids, in a fixed order (design §6.10).
+--- The non-zone state ids, in a fixed order (design §6.10). FORM_TREE is Retail's alone: WoW Forever
+--- has no Tree of Life, so neither the state nor its trigger exists there (clients-§4).
 S.STATES = { "MOUNTED", "SWIMMING", "DINING", "SPIRIT_REGEN", "STEALTH", "GHOST_WOLF", "FEIGN_DEATH",
-             "FORM_CASTER", "FORM_BEAR", "FORM_CAT", "FORM_TRAVEL", "FORM_MOONKIN", "FORM_TREE" }
+             "FORM_CASTER", "FORM_BEAR", "FORM_CAT", "FORM_TRAVEL", "FORM_MOONKIN" }
+if NS.PerClient({ retail = true }) then S.STATES[#S.STATES + 1] = "FORM_TREE" end
 
 local known = {}
 for _, id in ipairs(S.STATES) do known[id] = true end

@@ -10,6 +10,9 @@
 -- the EllesmereUI tab and the Chonky backdrop and side panels only when a case asks for them.
 
 local T = _G.OUTFITTERREBORN_TEST
+-- OR-F5: the cases that pin Retail's placement skip on the forever kit profile.
+local FOREVER = dofile("tests/_kit/mock_client.lua").current() == "forever"
+local RETAIL_ONLY = "Retail's sheet button (sidebar tab, EllesmereUI, Chonky); WoW Forever's is the outer side-tab strip (ruling D8)"
 local test, assertEqual, assertTrue = T.test, T.assertEqual, T.assertTrue
 
 local function fresh()
@@ -32,6 +35,7 @@ test("sheet: NS.Sheet is published with the adapter's surface", function()
 end)
 
 test("sheet: stock by default", function()
+    if FOREVER then T.skip(RETAIL_ONLY) end
     local NS, M = fresh()
     NS.Sheet.Refresh()
     assertEqual(NS.Sheet.Kind(), "stock")
@@ -47,6 +51,7 @@ test("sheet: stock by default", function()
 end)
 
 test("sheet: without the stock tab the button keeps its place left of the close X, as a tab", function()
+    if FOREVER then T.skip(RETAIL_ONLY) end
     local NS, M = fresh()
     M.PaperDollSidebarTab3 = nil
     NS.Sheet.Refresh()
@@ -98,6 +103,7 @@ test("sheet: the tab icon falls back to the template's offset when the neighbor'
 end)
 
 test("sheet: EllesmereUI with its equipment tab shown is eui", function()
+    if FOREVER then T.skip(RETAIL_ONLY) end
     local NS, M = fresh()
     local tab = M.__sheets.eui()
     markLoaded(NS, M, "EllesmereUIBlizzardSkin")
@@ -112,6 +118,7 @@ test("sheet: EllesmereUI with its equipment tab shown is eui", function()
 end)
 
 test("sheet: EllesmereUI loaded with the blizzard style resolves to stock", function()
+    if FOREVER then T.skip(RETAIL_ONLY) end
     local NS, M = fresh()
     markLoaded(NS, M, "EllesmereUIBlizzardSkin")
     assertEqual(M.EUI_CharSheet_Equipment, nil)
@@ -122,6 +129,7 @@ test("sheet: EllesmereUI loaded with the blizzard style resolves to stock", func
 end)
 
 test("sheet: EllesmereUI's tab hidden off the Character tab still reads eui", function()
+    if FOREVER then T.skip(RETAIL_ONLY) end
     local NS, M = fresh()
     -- EllesmereUI hides its three text tabs on the Reputation and Currency tabs and shows them again
     -- from a PaperDollFrame OnShow hook (EllesmereUIBlizzardSkin_CharacterSheet.lua:1025-1090) that
@@ -143,6 +151,7 @@ test("sheet: the EllesmereUI tab without the addon loaded is stock", function()
 end)
 
 test("sheet: Chonky with its backdrop shown is chonky", function()
+    if FOREVER then T.skip(RETAIL_ONLY) end
     local NS, M = fresh()
     local bg = M.__sheets.chonky()
     markLoaded(NS, M, "ChonkyCharacterSheet")
@@ -198,7 +207,7 @@ test("sheet: DockRight takes the rightmost shown Chonky side panel", function()
     markLoaded(NS, M, "ChonkyCharacterSheet")
     local x, top = NS.Sheet.DockRight()
     assertEqual(x, 700, "the shown M+ panel, not the hidden raid one")
-    assertEqual(top, 520)
+    assertEqual(top, 517, "Chonky's visible top line, 3 inside the frame (S2)")
     mplus:Hide()
     x = NS.Sheet.DockRight()
     assertEqual(x, 650)
@@ -223,7 +232,7 @@ test("sheet: with no Chonky panel shown DockRight is the backdrop's edge", funct
     M.__sheets.chonkyPanel("CCSf", 900, 520):Hide()
     markLoaded(NS, M, "ChonkyCharacterSheet")
     local x, top = NS.Sheet.DockRight()
-    assertEqual(x, 400); assertEqual(top, 520)
+    assertEqual(x, 400); assertEqual(top, 517)
 end)
 
 test("sheet: the adapter creates, anchors and shows nothing", function()
@@ -235,4 +244,159 @@ test("sheet: the adapter creates, anchors and shows nothing", function()
     NS.Sheet.Kind(); NS.Sheet.Frame(); NS.Sheet.ButtonAnchor(); NS.Sheet.DockRight()
     assertTrue(#M.__shownFrames() == after, "no frame shown by the reads")
     assertTrue(after == before + 1, "only the mock's own tab")
+end)
+
+-- ── WoW Forever's outer side-tab strip (ruling D8, OR-F5) ────────────────────────────────────────
+-- The mock's strip (tests/wow_mock.lua): CharacterFrameModeTab1..6, shown, 55 x 60, 6 px apart.
+
+local FOREVER_ONLY = "pins WoW Forever's sheet button (ruling D8); runs on the forever kit profile"
+
+test("sheet (Forever): the button is one more tab below the last mode tab, at the strip's spacing", function()
+    if not FOREVER then T.skip(FOREVER_ONLY) end
+    local NS, M = fresh()
+    NS.Sheet.Refresh()
+    -- red under: Retail's anchor on Forever (right of PaperDollSidebarTab3, which is Titles there).
+    local point, rel, relPoint, x, y, w, h, look = NS.Sheet.ButtonAnchor()
+    assertEqual(point, "TOPLEFT"); assertEqual(rel, M.CharacterFrameModeTab6); assertEqual(relPoint, "BOTTOMLEFT")
+    assertEqual(x, 0); assertEqual(y, -6)
+    assertEqual(w, 55); assertEqual(h, 60)
+    assertEqual(look, "sidetab")
+end)
+
+test("sheet (Forever): a hidden last tab gives the place to the last shown one", function()
+    if not FOREVER then T.skip(FOREVER_ONLY) end
+    local NS, M = fresh()
+    M.CharacterFrameModeTab6:Hide()
+    local _, rel, _, _, y = NS.Sheet.ButtonAnchor()
+    -- red under: anchoring to Tab6 by name, shown or not.
+    assertEqual(rel, M.CharacterFrameModeTab5); assertEqual(y, -6)
+end)
+
+test("sheet (Forever): unlaid tabs take the fallback gap, and no tab at all the close X's place", function()
+    if not FOREVER then T.skip(FOREVER_ONLY) end
+    local NS, M = fresh()
+    rawset(M.CharacterFrameModeTab5, "GetBottom", function() return nil end)
+    local _, rel, _, _, y = NS.Sheet.ButtonAnchor()
+    assertEqual(rel, M.CharacterFrameModeTab6); assertEqual(y, -4)
+    for i = 1, 6 do M["CharacterFrameModeTab" .. i]:Hide() end
+    local point, rel2, relPoint, x, y2, w, h, look = NS.Sheet.ButtonAnchor()
+    assertEqual(point, "RIGHT"); assertEqual(rel2, M.CharacterFrameCloseButton); assertEqual(relPoint, "LEFT")
+    assertEqual(x, -2); assertEqual(y2, 0); assertEqual(w, 55); assertEqual(h, 55); assertEqual(look, "sidetab")
+end)
+
+-- ── Chonky's strip on Forever (Forever smoke feedback S1) ─────────────────────────────────────────
+-- ChonkyCharacterSheet scales the strip to 0.8 and, with "Skin Character Tabs", lays it across under
+-- the sheet in its own skin (CCS-F core/styles.lua:1046-1064, Modules/Forever.lua:1222-1238).
+
+-- Lay the mock's shown tabs in a row, `w` wide and `gap` apart, starting at x 100.
+local function across(M, w, gap)
+    for i = 1, 6 do
+        local tab, left = M["CharacterFrameModeTab" .. i], 100 + (i - 1) * (w + gap)
+        rawset(tab, "GetLeft", function() return left end)
+        rawset(tab, "GetRight", function() return left + w end)
+        rawset(tab, "GetTop", function() return 50 end)
+        rawset(tab, "GetBottom", function() return 50 - w end)
+    end
+end
+
+-- Chonky's CCS_BG on a tab: shown, its file, its coords and its tint.
+local function ccsBg(tab, color)
+    rawset(tab, "CCS_BG", {
+        IsShown = function() return true end,
+        GetTexture = function() return "ccs-tab.tga" end,
+        GetTexCoord = function() return 0, 0, 0, 1, 1, 0, 1, 1 end,
+        GetVertexColor = function() return unpack(color) end,
+    })
+end
+
+test("sheet (Forever): on a strip that runs across, the button sits right of the last tab", function()
+    if not FOREVER then T.skip(FOREVER_ONLY) end
+    local NS, M = fresh()
+    across(M, 48, 1)
+    assertTrue(NS.Sheet.StripAcross(), "the row reads across")
+    local point, rel, relPoint, x, y = NS.Sheet.ButtonAnchor()
+    -- red under: the down-the-strip anchor on Chonky's row (TOPLEFT below the last tab).
+    assertEqual(point, "LEFT"); assertEqual(rel, M.CharacterFrameModeTab6); assertEqual(relPoint, "RIGHT")
+    assertEqual(x, 1); assertEqual(y, 0)
+end)
+
+test("sheet (Forever): the button takes the strip's scale", function()
+    if not FOREVER then T.skip(FOREVER_ONLY) end
+    local NS, M = fresh()
+    rawset(M.CharacterFrameModeTab6, "GetEffectiveScale", function() return 0.8 end)
+    rawset(M.CharacterFrame, "GetEffectiveScale", function() return 1 end)
+    local scale = select(9, NS.Sheet.ButtonAnchor())
+    -- red under: no scale (the button at CharacterFrame's 1 beside Chonky's 0.8 tabs).
+    assertEqual(scale, 0.8)
+end)
+
+test("sheet (Forever): a last tab in Chonky's skin asks for its look, and its art and colors read live", function()
+    if not FOREVER then T.skip(FOREVER_ONLY) end
+    local NS, M = fresh()
+    for i = 1, 6 do rawset(M["CharacterFrameModeTab" .. i], "GetID", function() return i end) end
+    ccsBg(M.CharacterFrameModeTab1, { 1, 1, 1, 1 })
+    for i = 2, 6 do ccsBg(M["CharacterFrameModeTab" .. i], { 0.3, 0.4, 0.5, 1 }) end
+    M.PanelTemplates_GetSelectedTab = function() return 1 end
+    assertEqual(select(8, NS.Sheet.ButtonAnchor()), "chonkytab")
+    local tex, coords = NS.Sheet.ChonkyTabArt()
+    assertEqual(tex, "ccs-tab.tga"); assertEqual(#coords, 8)
+    local idle, active = NS.Sheet.ChonkyTabColors()
+    assertEqual(idle[1], 0.3, "an unselected tab's tint for idle")
+    assertEqual(active[1], 1, "the selected tab's tint for active")
+end)
+
+-- ── Forever smoke feedback S2 and S5 ─────────────────────────────────────────────────────────────
+
+test("sheet: on Chonky the dock's top is the backdrop's visible line, its insets read live (S2)", function()
+    local NS, M = fresh()
+    local bg = M.__sheets.place(M.__sheets.chonky(), 400, 520)
+    markLoaded(NS, M, "ChonkyCharacterSheet")
+    local _, top = NS.Sheet.DockRight()
+    -- red under: the frame's own top (the window then sits above Chonky's border, 8.png).
+    assertEqual(top, 517, "the fallback inset, 3")
+    rawset(bg, "backdropInfo", { insets = { left = 5, right = 5, top = 5, bottom = 5 } })
+    _, top = NS.Sheet.DockRight()
+    assertEqual(top, 515, "BackdropTemplateMixin's insets")
+end)
+
+test("sheet: the stock sheet's top is the frame's (S2 is Chonky's only)", function()
+    local NS, M = fresh()
+    M.__sheets.place(M.CharacterFrame, 300, 500)
+    local _, top = NS.Sheet.DockRight()
+    assertEqual(top, 500)
+end)
+
+-- The mock's strip laid down the sheet's right edge: each tab from `left`, 55 wide.
+local function downStrip(M, left)
+    for i = 1, 6 do
+        rawset(M["CharacterFrameModeTab" .. i], "GetLeft", function() return left end)
+        rawset(M["CharacterFrameModeTab" .. i], "GetRight", function() return left + 55 end)
+    end
+end
+
+test("sheet (Forever): a strip down the window's edge reaches over it by its width and a margin (S5)", function()
+    if not FOREVER then T.skip(FOREVER_ONLY) end
+    local NS, M = fresh()
+    downStrip(M, 302)
+    -- red under: no StripInset (the tabs cover the window's left edge, 14.png).
+    assertEqual(NS.Sheet.StripInset(300), 357 - 300)
+    assertEqual(NS.Sheet.StripInset(400), 0, "a window docked clear of the strip (a Chonky panel open)")
+    -- red under: a strip read only when it starts at the window's edge (a dock gap leaves it hanging over).
+    assertEqual(NS.Sheet.StripInset(320), 357 - 320, "a window 20 px off the sheet still under the strip")
+    across(M, 48, 1)
+    assertEqual(NS.Sheet.StripInset(100), 0, "a strip that runs across hangs over nothing")
+end)
+
+test("sheet (Forever): a scaled strip's reach is read in the sheet's units (S5)", function()
+    if not FOREVER then T.skip(FOREVER_ONLY) end
+    local NS, M = fresh()
+    downStrip(M, 375)                       -- 300 / 0.8, the strip at Chonky's 0.8
+    for i = 1, 6 do rawset(M["CharacterFrameModeTab" .. i], "GetEffectiveScale", function() return 0.8 end) end
+    assertEqual(NS.Sheet.StripInset(300), (375 + 55) * 0.8 - 300)
+end)
+
+test("sheet: Retail has no side strip (S5)", function()
+    if FOREVER then T.skip("pins Retail's StripInset; Forever's strip is the case above") end
+    local NS = fresh()
+    assertEqual(NS.Sheet.StripInset(300), 0)
 end)

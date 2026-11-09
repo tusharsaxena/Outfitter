@@ -10,16 +10,32 @@ local L = NS.L
 NS.ItemData = NS.ItemData or {}                      -- architecture-§3 idempotent
 local ID = NS.ItemData
 
--- The 18 equipment slots in priority order (Outfitter.lua:850-878). The order is load-bearing: the
--- change engine equips in it, so the slots that carry durability go first.
-ID.SLOT_NAMES = {
+-- The equipment slots in priority order (Outfitter.lua:850-878), per client and picked once at load
+-- (clients-§5, NS.PerClient): Retail's 18, and on WoW Forever the same 18 with the ranged slot
+-- (inventory id 18, probe P5) after the two hands, where the Classic Outfitter had it (owner ruling
+-- D2). The order is load-bearing: the change engine equips in it, so the slots that carry durability
+-- go first. Every slot walk loops over this table, so the engine needs no per-client branch.
+-- The ammo slot (0, ruling D1) is not here yet: it needs the stack-aware equip path first.
+local SLOTS_ARMOR = {
     -- First priority goes to armor
     "HeadSlot", "ShoulderSlot", "ChestSlot", "WristSlot", "HandsSlot", "WaistSlot", "LegsSlot", "FeetSlot",
-    -- Second priority goes to weapons
-    "MainHandSlot", "SecondaryHandSlot",
+}
+local SLOTS_LAST = {
     -- Last priority goes to items with no durability
     "BackSlot", "NeckSlot", "ShirtSlot", "TabardSlot", "Finger0Slot", "Finger1Slot", "Trinket0Slot", "Trinket1Slot",
 }
+local function slotList(weapons)
+    local out = {}
+    for _, part in ipairs({ SLOTS_ARMOR, weapons, SLOTS_LAST }) do
+        for _, name in ipairs(part) do out[#out + 1] = name end
+    end
+    return out
+end
+ID.SLOT_NAMES = NS.PerClient({
+    -- Second priority goes to weapons
+    retail  = slotList({ "MainHandSlot", "SecondaryHandSlot" }),
+    forever = slotList({ "MainHandSlot", "SecondaryHandSlot", "RangedSlot" }),
+})
 
 -- slot name -> its index in SLOT_NAMES
 ID.SLOT_ORDER = {}
@@ -34,6 +50,7 @@ ID.SLOT_LABEL_KEYS = {
     HandsSlot = "HANDSSLOT", WaistSlot = "WAISTSLOT", LegsSlot = "LEGSSLOT", FeetSlot = "FEETSLOT",
     MainHandSlot = "MAINHANDSLOT", SecondaryHandSlot = "SECONDARYHANDSLOT",
 }
+if NS.CLIENT == "forever" then ID.SLOT_LABEL_KEYS.RangedSlot = "RANGEDSLOT" end
 ID.SLOT_LABELS = {
     Finger0Slot  = L["First finger"],
     Finger1Slot  = L["Second finger"],
@@ -42,7 +59,8 @@ ID.SLOT_LABELS = {
 }
 
 -- An item's inventory type -> the slot it goes in, and the meta slot the optimizer pairs it on
--- (Outfitter.lua:908-935). Ranged, thrown and relic all live in the main hand since Legion.
+-- (Outfitter.lua:908-935). On Retail ranged, thrown and relic all live in the main hand since Legion;
+-- on WoW Forever they go in the ranged slot (probe P5: a gun is INVTYPE_RANGEDRIGHT, worn in 18).
 ID.INVTYPE_TO_SLOT = {
     INVTYPE_2HWEAPON       = { slot = "MainHandSlot", meta = "TwoHandSlot" },
     INVTYPE_BODY           = { slot = "ShirtSlot" },
@@ -65,11 +83,13 @@ ID.INVTYPE_TO_SLOT = {
     INVTYPE_WEAPONMAINHAND = { slot = "MainHandSlot" },
     INVTYPE_WEAPONOFFHAND  = { slot = "SecondaryHandSlot" },
     INVTYPE_WRIST          = { slot = "WristSlot" },
-    INVTYPE_RANGED         = { slot = "MainHandSlot" },
-    INVTYPE_RANGEDRIGHT    = { slot = "MainHandSlot" },
-    INVTYPE_THROWN         = { slot = "MainHandSlot" },
-    INVTYPE_RELIC          = { slot = "MainHandSlot" },
 }
+do
+    local rangedSlot = NS.PerClient({ retail = "MainHandSlot", forever = "RangedSlot" })
+    for _, invType in ipairs({ "INVTYPE_RANGED", "INVTYPE_RANGEDRIGHT", "INVTYPE_THROWN", "INVTYPE_RELIC" }) do
+        ID.INVTYPE_TO_SLOT[invType] = { slot = rangedSlot }
+    end
+end
 
 -- The second slot an item of a paired type may also go in (Outfitter.lua:937-952). HALF names the
 -- forward step only; FULL is the same pairs in both directions.

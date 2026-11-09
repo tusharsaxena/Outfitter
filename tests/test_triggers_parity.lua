@@ -209,11 +209,34 @@ end
 local NSI = instance()
 local Tr, Params = NSI.Triggers, NSI.TriggerParams
 
+-- A ported trigger the running client leaves out by declaration (clients-§4): on WoW Forever, the
+-- zone rows defaults/Zones.lua declares Retail's alone (ruling D3) and the catalog rows and params
+-- defaults/Triggers.lua declares so (rulings D5, D6). The legacy menu was Retail's, so such a row or
+-- param is absent here, not lost; every other ported row and param must still be there.
+local ABSENT, ABSENT_PARAM = {}, {}
+do
+    local here = {}
+    for _, z in ipairs(NSI.Zones.rows) do here[z.id] = true end
+    for _, z in ipairs(NSI.Zones.ALL) do
+        if not here[z.id] then ABSENT[z.id] = true end
+    end
+    local admits = NSI.Compat.ForClient
+    for _, row in ipairs(NSI.TriggerCatalog.rows) do
+        if not admits(row.clients) then ABSENT[row.id] = true end
+        for _, p in ipairs(row.params or {}) do
+            if not admits(p.clients) then ABSENT_PARAM[row.id .. "." .. p.key] = true end
+        end
+    end
+end
+local function absentHere(id) return ABSENT[id] == true end
+
 local function ported()
     local out = {}
     for _, p in ipairs(LEGACY.presets) do
         local row = PARITY[p.id]
-        if row and row.id then out[#out + 1] = { legacy = p, row = row, desc = Tr.Get(row.id) } end
+        if row and row.id and not absentHere(row.id) then
+            out[#out + 1] = { legacy = p, row = row, desc = Tr.Get(row.id) }
+        end
     end
     return out
 end
@@ -225,7 +248,8 @@ test("parity: every legacy preset maps to a new trigger or a listed drop reason"
         local row = PARITY[p.id]
         assertTrue(row ~= nil, "legacy " .. p.id .. " has no parity row")
         if row.id then
-            assertTrue(Tr.Get(row.id) ~= nil, p.id .. " -> " .. row.id .. " is not a trigger")
+            -- red under: a declared-absent row still registered (it would be a trigger on this client).
+            assertEqual(Tr.Get(row.id) ~= nil, not absentHere(row.id), p.id .. " -> " .. row.id .. " is not a trigger")
         else
             assertTrue(row.drop == "retired" and type(row.why) == "string", p.id .. " drops with a reason")
         end
@@ -272,7 +296,9 @@ test("parity: 77 ported, 6 retired, 1 dropped by H1, 84 in all (design §6.8 tot
     assertEqual(n.retired, 6)
     assertEqual(n.H1, 1)
     assertEqual(#LEGACY.presets + 1, 84)
-    assertEqual(#Tr.All(), 77, "the registry holds exactly the ported rows")
+    local absent = 0
+    for _ in pairs(ABSENT) do absent = absent + 1 end
+    assertEqual(#Tr.All(), 77 - absent, "the registry holds exactly the ported rows this client has")
 end)
 
 -- ── events ────────────────────────────────────────────────────────────────────────────────────
@@ -337,8 +363,10 @@ local function expectedParams(e)
         local ptype = (e.row.types and e.row.types[key]) or TYPE_RENAME[input.type]
         local default = input.default
         if default == nil or (e.row.types and e.row.types[key]) then default = Params.TYPES[ptype].default end
-        out[#out + 1] = { key = key, type = ptype, default = default, suffix = input.suffix,
-                          label = (e.row.labels and e.row.labels[key]) or input.label }
+        if not ABSENT_PARAM[e.row.id .. "." .. key] then
+            out[#out + 1] = { key = key, type = ptype, default = default, suffix = input.suffix,
+                              label = (e.row.labels and e.row.labels[key]) or input.label }
+        end
     end
     return out
 end

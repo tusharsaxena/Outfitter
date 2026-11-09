@@ -1,8 +1,9 @@
 -- tests/test_broker.lua — the Outfits data source (sheet and window feedback plan Task 3.8; design G9):
 -- modules/Broker.lua's second LibDataBroker object, the old addon's outfit switcher. Its text and icon
--- follow the worn outfit; left-click opens the outfit menu through the real NS.OpenMenu seam (the
--- shared tests/dialog_scene.lua recorder), right-click toggles the window, and it is never put on the
--- minimap. The stood-down cases are tests/test_disabled.lua's.
+-- follow the worn outfit; hovering opens the outfit menu under it through the real NS.OpenMenu seam
+-- (the shared tests/dialog_scene.lua recorder), left-click opens the character sheet with the window,
+-- right-click the settings (Forever smoke feedback 3), and it is never put on the minimap. The
+-- stood-down cases are tests/test_disabled.lua's.
 
 local T = _G.OUTFITTERREBORN_TEST
 local test, assertEqual, assertTrue, assertFalse, assertNil =
@@ -36,8 +37,8 @@ end
 
 local function open(M, ctl)
     ctl.menus = {}
-    object(M).OnClick(M.UIParent, "LeftButton")
-    assertTrue(#ctl.menus > 0, "left-click opened no menu")
+    object(M).OnEnter(M.UIParent)
+    assertTrue(#ctl.menus > 0, "hovering opened no menu")
     return ctl.menus[#ctl.menus].rows
 end
 
@@ -98,7 +99,7 @@ test("broker: no outfit shows the brand and the default icon, untinted and cropp
         "the idle icon is not cropped")
 end)
 
-test("broker: left-click lists categories then outfits, worn ones checked, missing in the missing color", function()
+test("broker: the hover menu lists categories then outfits, worn ones checked, missing in the missing color", function()
     local NS, M, ctl = scene()
     local ids = outfits(NS)
     local status = NS.Outfits.Status
@@ -110,7 +111,7 @@ test("broker: left-click lists categories then outfits, worn ones checked, missi
     for _, r in ipairs(rows) do order[#order + 1] = r.divider and "-" or plain(r.label) end
     -- The checkbox rows carry the tick in front of a worn one, so the order is read without it.
     assertEqual(table.concat(order, "|"), NS.BRAND .. "|Open outfit window|Automatic changes|"
-        .. "Complete outfits|Bare|Accessories|Cloak|Ride")
+        .. "Complete outfits|Bare|Accessories|Cloak|Ride|Left-click: outfit window|Right-click: settings")
     assertTrue(rows[1].title, "the brand is a title")
     assertTrue(find(rows, "Complete outfits").title and find(rows, "Accessories").title, "categories are titles")
     -- Each outfit row is a toggle that keeps the menu open, drawn with its icon.
@@ -146,7 +147,7 @@ test("broker: the menu leaves out an outfit whose trigger is off or that is hidd
     for _, r in ipairs(open(M, ctl)) do order[#order + 1] = r.divider and "-" or plain(r.label) end
     -- red under: a menu that lists every outfit the window does (and an empty category's title).
     assertEqual(table.concat(order, "|"), NS.BRAND .. "|Open outfit window|Automatic changes|"
-        .. "Complete outfits|Bare")
+        .. "Complete outfits|Bare|Left-click: outfit window|Right-click: settings")
 end)
 
 test("broker: clicking a worn accessory removes it; clicking a Complete wears it", function()
@@ -185,15 +186,61 @@ test("broker: a modifier-click asks to set current", function()
     assertFalse(NS.Stack.IsWorn(ids.ride), "a modifier-click also wore the outfit")
 end)
 
-test("broker: right-click toggles the window", function()
-    local NS, M = scene()
-    local toggles = {}
-    local real = NS.Dock.Toggle
-    NS.Dock.Toggle = function(closeSheet) toggles[#toggles + 1] = closeSheet end
+test("broker: left-click opens the sheet with the window; right-click opens the settings", function()
+    local NS, M, ctl = scene()
+    local opens, settings = 0, 0
+    local realOpen, realSettings = NS.Dock.Open, NS.OpenOptionsPanel
+    NS.Dock.Open = function() opens = opens + 1 end
+    NS.OpenOptionsPanel = function() settings = settings + 1 end
+    ctl.menus = {}
+    M.CharacterFrame:Show()
+    object(M).OnClick(M.UIParent, "LeftButton")
+    -- red under: the 2026-11-08 left-click (the outfit menu).
+    assertEqual(opens, 1, "left-click did not open the window")
+    assertEqual(#ctl.menus, 0, "left-click still opens the menu")
     object(M).OnClick(M.UIParent, "RightButton")
-    NS.Dock.Toggle = real
-    assertEqual(#toggles, 1, "right-click did not toggle the window")
-    assertTrue(toggles[1], "the window toggle closes the sheet as the launcher's does")
+    NS.Dock.Open, NS.OpenOptionsPanel = realOpen, realSettings
+    -- red under: the 2026-11-08 right-click (the window toggle).
+    assertEqual(settings, 1, "right-click did not open the settings")
+    assertEqual(opens, 1, "right-click touched the window")
+end)
+
+test("broker: the hover menu drops under the object and closes once the pointer has left both", function()
+    local NS, M, ctl = scene()
+    local W = M.LibStub("LibKa0s-Widgets-1.0")
+    local record = W.ContextMenu
+    local menu = { shown = true, over = false }
+    function menu:IsShown() return self.shown end
+    function menu:IsMouseOver() return self.over end
+    W.ContextMenu = function(...) record(...); return menu end
+    local anchor = M.CreateFrame("Button", nil, M.UIParent)
+    local inside = true
+    rawset(anchor, "IsMouseOver", function() return inside end)
+    local closes = 0
+    local realClose = NS.CloseMenu
+    NS.CloseMenu = function(...) closes = closes + 1; menu.shown = false; return realClose(...) end
+    ctl.menus = {}
+    object(M).OnEnter(anchor)
+    assertEqual(#ctl.menus, 1)
+    assertFalse(ctl.menus[1].opts.cursor, "the hover menu drops under the object, not at the pointer")
+    object(M).OnEnter(anchor)
+    assertEqual(#ctl.menus, 1, "a second enter while it is up opens no second menu")
+    local watcher
+    for _, f in ipairs(M.__shownFrames()) do
+        if f.__scripts and f.__scripts.OnUpdate and f.__parent == M.UIParent and not f.__name then watcher = f end
+    end
+    assertTrue(watcher ~= nil, "a watcher runs while the hover menu is up")
+    inside = false
+    menu.over = true
+    watcher:__fire("OnUpdate", 1)
+    assertEqual(closes, 0, "the pointer on the menu keeps it")
+    menu.over = false
+    watcher:__fire("OnUpdate", 0.1)
+    assertEqual(closes, 0, "closed before the grace")
+    watcher:__fire("OnUpdate", 0.3)
+    NS.CloseMenu = realClose
+    -- red under: no watcher (the hover menu would stay up after the pointer left).
+    assertEqual(closes, 1, "the menu stayed up off the object and the menu")
 end)
 
 -- G9 lists the menu entry as *Open outfit window*: with the window already up it keeps it (and the
@@ -204,6 +251,7 @@ test("broker: the menu's Open outfit window opens, and never closes, the window"
     local realOpen, realToggle = NS.Dock.Open, NS.Dock.Toggle
     NS.Dock.Open = function() opens = opens + 1 end
     NS.Dock.Toggle = function() toggles = toggles + 1 end
+    M.CharacterFrame:Show()
     find(open(M, ctl), "Open outfit window").onClick()
     NS.Dock.Open, NS.Dock.Toggle = realOpen, realToggle
     -- red under: the entry sharing the right-click's NS.Dock.Toggle(true) (a second pick closes both).
@@ -245,15 +293,14 @@ test("broker: a modifier-click closes the menu before the set-current prompt", f
     assertTrue(closed > 0, "the menu stayed open over the set-current prompt")
 end)
 
-test("broker: the tooltip names the brand, the current outfit and both clicks", function()
-    local NS, M = scene()
-    local ids = outfits(NS)
-    NS.Stack.Wear(ids.ride, { hw = true })
-    M.__fireTimers()
-    local lines = {}
-    object(M).OnTooltipShow({ AddLine = function(_, text) lines[#lines + 1] = text end })
-    assertEqual(table.concat(lines, "|"), NS.BRAND .. "|Current outfit: Ride|Left-click: choose an outfit|"
-        .. "Right-click: outfit window")
+test("broker: the hover menu ends with both click hints, and there is no tooltip", function()
+    local NS, M, ctl = scene()
+    outfits(NS)
+    local rows = open(M, ctl)
+    assertEqual(plain(rows[#rows - 1].label), "Left-click: outfit window")
+    assertEqual(plain(rows[#rows].label), "Right-click: settings")
+    -- red under: OnTooltipShow kept (a broker display prefers OnEnter, but some draw both).
+    assertNil(object(M).OnTooltipShow)
 end)
 
 -- One click on an Accessory outfit in combat, through `click(NS, M, id)`, on a fresh scene: whether it
@@ -277,4 +324,58 @@ test("broker: in combat a wear is queued or refused as the window's is", functio
     -- red under: a broker that refuses in combat on its own (the window queues the wear).
     assertEqual(wornB, wornW, "the broker's combat wear differs from the window's")
     assertEqual(printedB, printedW)
+end)
+
+-- ── the secure click (owner's report 2026-11-09: a tainted CharacterFrame show on Forever) ─────────
+
+test("broker (Forever): with the sheet closed the display's own click never opens the sheet from addon code", function()
+    if dofile("tests/_kit/mock_client.lua").current() ~= "forever" then
+        T.skip("WoW Forever's secret-health CharacterFrame; Retail opens the sheet as before")
+    end
+    local NS, M = scene()
+    local toggles = 0
+    M.ToggleCharacter = function() toggles = toggles + 1 end
+    M.CharacterFrame:Hide()
+    M.__resetPrinted()
+    object(M).OnClick(M.UIParent, "LeftButton")
+    -- red under: NS.Dock.Open from the click (ToggleCharacter tainted: Forever's secret-health error).
+    assertEqual(toggles, 0, "addon code opened the sheet")
+    assertTrue(NS.Dock.wanted, "the wish is kept for the sheet's next show")
+    assertTrue(table.concat(M.__printed(), "\n"):find("Open the character sheet", 1, true) ~= nil, "the player is told")
+end)
+
+test("broker: hovering lays a secure button over the display that clicks the character micro button", function()
+    local NS, M = scene({ mutate = function(M)
+        M.CharacterMicroButton = M.CreateFrame("Button", "CharacterMicroButton", M.UIParent)
+    end })
+    local display = M.CreateFrame("Button", nil, M.UIParent)
+    rawset(display, "GetLeft", function() return 100 end)
+    rawset(display, "GetBottom", function() return 700 end)
+    rawset(display, "GetWidth", function() return 80 end)
+    rawset(display, "GetHeight", function() return 20 end)
+    M.CharacterFrame:Hide()
+    object(M).OnEnter(display)
+    local o = M.OutfitterRebornBrokerClick
+    assertTrue(o ~= nil, "no secure button")
+    assertEqual(o.__template, "SecureActionButtonTemplate")
+    assertTrue(o:IsShown(), "it lies over the display")
+    -- red under: no secure click (the display's click opened the sheet tainted).
+    assertEqual(o:GetAttribute("type1"), "click")
+    assertEqual(o:GetAttribute("clickbutton1"), M.CharacterMicroButton)
+    -- The sheet already up: the left button clicks nothing; the PostClick opens the window.
+    M.CharacterFrame:Show()
+    object(M).OnEnter(display)
+    assertNil(o:GetAttribute("type1"), "an open sheet would be closed by the micro button")
+    local opens, settings = 0, 0
+    NS.Dock.Open = function() opens = opens + 1 end
+    NS.OpenOptionsPanel = function() settings = settings + 1 end
+    o:__fire("PostClick", "LeftButton")
+    o:__fire("PostClick", "RightButton")
+    assertEqual(opens, 1); assertEqual(settings, 1)
+    -- In lockdown it is never shown or moved.
+    o:Hide()
+    M.__lockdown = true
+    object(M).OnEnter(display)
+    M.__lockdown = false
+    assertFalse(o:IsShown(), "the secure button moved in lockdown")
 end)

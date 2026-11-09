@@ -84,6 +84,30 @@ in [smoke-tests.md](smoke-tests.md) §12 for the owner's eye.
   pet, not the owned-pet list: that needs a journal walk Compat does not publish yet
   (`Compat.OwnedPets()`, due when `core/Compat.lua` splits; it is at its line budget).
 
+## WoW Forever, step 1
+
+The port's first step (the 2026-11-08 design, `superpowers/specs/2026-11-08-forever-port-design.md`)
+makes the addon Forever-compatible; these wait for step 2 or for an open probe.
+
+- **The ammo slot** (ruling D1) is not in the slot table yet: it needs a stack-aware equip path
+  (tusharsaxena/Outfitter#1). The slot has a flyout arrow (Forever smoke feedback 3), so ammo can be
+  equipped from the sheet, but no outfit saves or wears it.
+- **The sheet is the player's to open** (the owner's report, 2026-11-09). Forever's CharacterFrame
+  OnShow compares the player frame's secret health values, which raises when addon code opened it.
+  `/or show`, the *Toggle outfit window* key, the minimap menu's and the broker menu's *Open outfit
+  window* keep the wish and print *Open the character sheet to see the outfit window.*; the next sheet
+  open brings the window. The broker display's left-click opens it through a secure click. A secure
+  key binding could open it the same way; not built.
+- **Spell ranks** (D10): a trigger keyed by a Retail spell ID matches only that rank's ID.
+- **No Forever seed data:** no Forever spec outfits, optimizer weights for the vanilla stats, or
+  gathering and lockpicking tooltip wording beyond Retail's.
+- **Spec cases on the forever kit profile** run on the mock's Retail spec lists (three or four per
+  class), answered through `C_SpecializationInfo` as Forever answers; Forever's one spec per class
+  (probe P1) is not modeled in the mock yet.
+- **Open probes** (P14 vanilla stat keys, P17 dungeon and battleground IDs, P18 raid IDs, P25 the
+  flyouts, P27 the side-tab strip's geometry): each value is coded from the inventory's best evidence,
+  marked `-- PROBE Pn` at its site, and checked by a row in `smoke-tests.md` sections 14 to 18.
+
 ## Client checks still owed
 
 Each is a row in [smoke-tests.md](smoke-tests.md) with its pass criterion.
