@@ -267,14 +267,18 @@ local function cornerMoved()
     return right ~= Dock.followRight or top ~= Dock.followTop or reach ~= Dock.followReach
 end
 
+-- The corner is compared on EVERY frame, so a dragged sheet takes the window with it in the same
+-- frame instead of up to FOLLOW_INTERVAL behind (Forever smoke feedback 2, R2-5: the window trailed
+-- the sheet like elastic). The compare is a handful of edge reads and moves nothing while the sheet
+-- stands still; the layer sync and the render stay on the 0.05 s throttle.
 local function followTick(_, elapsed)
     if NS.IsStoodDown() then return end
+    if cornerMoved() then Dock.Attach() end
     sinceTick = sinceTick + NS.SafeNumber(elapsed, 0)
     if sinceTick < Dock.FOLLOW_INTERVAL then return end
     sinceTick = 0
     local t0 = Perf.on and debugprofilestop()
     Dock.ApplyLayers()
-    if cornerMoved() then Dock.Attach() end
     NS.Window.RenderIfDirty()
     if t0 then Perf.Note("dockFollow", debugprofilestop() - t0) end
 end
@@ -655,6 +659,29 @@ local function onFrameHide()
     button:Hide()
 end
 
+-- A sheet addon re-lays the strip while the sheet is open (Chonky's "Skin Character Tabs" turned on or
+-- off moves CharacterFrameModeTabs and Tab2..6 and re-skins them; CCS-F core/styles.lua:797-814,
+-- :1046-1064): the button is placed again on the next frame, once, however many anchors moved
+-- (Forever smoke feedback 2, R2-1: the button stayed in the old row's place and skin).
+local replacePending = false
+local function onStripMoved()
+    if replacePending or not events or NS.IsStoodDown() then return end
+    replacePending = true
+    events:ScheduleTimer(function()
+        replacePending = false
+        replaceOnFrame()
+    end, 0)
+end
+
+-- Post-hook SetPoint on the strip and its tabs (per frame, never a global; nothing is written to them).
+local function hookStrip()
+    local strips = { CharacterFrame.ModeTabs, _G.CharacterFrameModeTab2, _G.CharacterFrameModeTab6 }
+    for i = 1, 3 do
+        local f = strips[i]
+        if type(f) == "table" and type(f.SetPoint) == "function" then _G.hooksecurefunc(f, "SetPoint", onStripMoved) end
+    end
+end
+
 local function onSheetShow()
     if NS.IsStoodDown() then return end
     NS.Sheet.Refresh()
@@ -768,6 +795,7 @@ function Dock.Install()
     if BUTTON_FOLLOWS_FRAME then
         CharacterFrame:HookScript("OnShow", onFrameShow)
         CharacterFrame:HookScript("OnHide", onFrameHide)
+        hookStrip()
     end
     -- The bus record drops and replays this receiver across a stand-down.
     local bus = NS.NewBusTarget()

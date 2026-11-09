@@ -554,3 +554,18 @@ test("rows: the worn box and the EM mark wash in the skin's accent; the gear is 
     assertTrue(gear.vertex ~= nil, "the row gear's art is tinted")
     assertEqual(table.concat(gear.vertex, ","), table.concat(title.vertex or {}, ","), "as the title gear's is")
 end)
+
+test("window: the footer's three buttons share the plain look; All and None dim their label (R2-3, R2-4)", function()
+    local NS, M = opened()
+    local skin = M.LibStub("LibKa0s-Skin-1.0").painted
+    local new, all, none = M.OutfitterRebornNewOutfitButton, M.OutfitterRebornSlotsAll, M.OutfitterRebornSlotsNone
+    assertEqual(new.text:GetText(), NS.L["New outfit"], "no ellipsis")
+    local nopts = skin[new].calls.Button[1]
+    -- red under: { primary = true } on New outfit (its fill made the label hard to read).
+    assertTrue(type(nopts) ~= "table" or nopts.primary ~= true, "New outfit is a plain button")
+    for _, b in ipairs({ all, none }) do
+        local o = skin[b].calls.Button[1]
+        assertEqual(o.tokens and o.tokens.text, "text.muted", "a dimmer label")
+        assertTrue(o.primary ~= true)
+    end
+end)

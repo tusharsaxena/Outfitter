@@ -509,3 +509,16 @@ row says Retail. Run the sheet rows on the stock sheet, on EllesmereUI's skin, a
 | FS1-8 (S7) | With the window closed, open the character sheet; then open the Equipment Manager (Retail) and the window | Every slot shows its arrow. The left column's flyouts open left, the right column's right and the bottom row's down, on the plain Character tab, on the Equipment Manager and with the window open |
 | FS1-9 (S7) | Turn off *Show the flyout arrows and open flyouts outward* | The arrows and flyouts are Blizzard's own again; turned on, they are outward |
 | FS1-10 (Retail) | FS1-7 to FS1-9 on Retail | The same |
+
+## 20. WoW Forever smoke feedback 2 (2026-11-09)
+
+The owner's second pass over section 19 (FS1-1, Chonky's bottom row, passed). Same clients and sheets.
+
+| # | Do | See |
+|---|---|---|
+| FS2-1 (R2-1) | Chonky: with the sheet open, turn *Skin Character Tabs* off, then on again | Each time, the Outfitter button follows the strip on the next frame. Off, it is the last tab of the vertical strip in its art and size. On, it is the end of the bottom row in Chonky's skin |
+| FS2-2 (R2-2) | Stock, EllesmereUI, and Chonky with its tabs on the right: open the window | The rows, the title and the footer start flush with the tabs' right edge, with no empty gap past the tabs |
+| FS2-3 (R2-3) | Look at the footer | The button reads *New outfit*, with no ellipsis |
+| FS2-4 (R2-4) | Switch through the skins with an outfit selected | New outfit, All and None share one border and fill, and New outfit's label reads clearly in every skin. All and None are a step dimmer |
+| FS2-5 (R2-5) | Drag the character sheet around with the window open (Chonky, EllesmereUI or a mover addon) | The window stays fixed to the sheet's edge while it moves, with no stretch and snap |
+| FS2-6 (Retail) | FS2-3 to FS2-5 on Retail | The same |

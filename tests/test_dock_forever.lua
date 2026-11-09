@@ -138,13 +138,14 @@ test("dock (Forever): a strip down the sheet's edge widens the window and moves 
     local p = win.__pts[#win.__pts]
     -- red under: moving the window clear of the strip instead of widening it (the owner's ruling).
     assertEqual(p[4], 300, "the window keeps its dock point")
-    local inset = 353 - 300 + 4
-    assertEqual(NS.Window.Size(), NS.Window.WIDTH + inset, "the window is wider by the strip's reach")
+    local inset = 353 - 300
+    assertEqual(NS.Window.Size(), NS.Window.WIDTH + inset - 8, "the window is wider by the strip's reach, less its own padding")
     local list = M.OutfitterRebornWindowList
     local lp = list.__pts[#list.__pts]
-    assertEqual(lp[4], 8 + inset, "the list starts right of the strip")
+    -- red under: the 2026-11-09 band (4 px margin plus the list's 8 px padding past the tabs, R2-2).
+    assertEqual(lp[4], inset, "the rows start flush with the strip's edge")
     local new = M.OutfitterRebornNewOutfitButton
-    assertEqual(new.__pts[#new.__pts][4], 8 + inset, "so does the footer")
+    assertEqual(new.__pts[#new.__pts][4], inset, "so does the footer")
     -- The strip moves clear (a Chonky side panel opens): the follow narrows the window again.
     for i = 1, 6 do
         rawset(M["CharacterFrameModeTab" .. i], "GetLeft", function() return 900 end)
@@ -153,4 +154,26 @@ test("dock (Forever): a strip down the sheet's edge widens the window and moves 
     M.OutfitterRebornDockDriver:__fire("OnUpdate", 0.05)
     assertEqual(NS.Window.Size(), NS.Window.WIDTH)
     assertEqual(list.__pts[#list.__pts][4], 8)
+end)
+
+-- ── Forever smoke feedback 2 ─────────────────────────────────────────────────────────────────────
+test("dock (Forever): a strip re-laid while the sheet is open places the button again (R2-1)", function()
+    if not FOREVER then T.skip(FOREVER_ONLY) end
+    local _, M = scene({ mutate = function(M)
+        -- The strip's SetPoint, made hookable (tests/mock_world.lua hooks only modeled tables).
+        for _, f in ipairs({ M.CharacterFrame.ModeTabs, M.CharacterFrameModeTab2, M.CharacterFrameModeTab6 }) do
+            rawset(f, "SetPoint", function() end)
+            M.__hookable[f] = true
+        end
+    end })
+    M.__world:openCharacter()
+    M.__fireTimers()
+    local button = M.OutfitterRebornSheetButton
+    local before = #button.__pts
+    -- Chonky's "Skin Character Tabs" turned off: its revert moves the strip and the tabs.
+    M.CharacterFrame.ModeTabs:SetPoint("TOPLEFT", M.CharacterFrame, "TOPRIGHT", 2, -2)
+    M.CharacterFrameModeTab2:SetPoint("TOPLEFT", M.CharacterFrameModeTab1, "BOTTOMLEFT", 0, -4)
+    M.__fireTimers()
+    -- red under: no SetPoint post-hook on the strip (the button kept the old row's place and skin).
+    assertEqual(#button.__pts, before + 1, "placed again once, on the next frame")
 end)

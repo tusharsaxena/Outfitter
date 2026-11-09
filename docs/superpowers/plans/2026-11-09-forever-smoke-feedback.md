@@ -29,3 +29,20 @@ uncommitted work for it before starting it fresh.
 Listed in `docs/smoke-tests.md` under the FS1 heading after OR-S5. Run them on Forever on the stock sheet,
 on EllesmereUI's skin, and on Chonky with Skin Character Tabs both on and off. Run the hover and drawer
 checks on Retail too.
+
+## Addendum: smoke feedback 2 (owner, 2026-11-09)
+
+FS1-1 (Chonky's bottom row) passed. Built as `OR-S6: ` on the same branch:
+
+- **R2-1.** On Chonky with its tabs on the right, the button still sat in the old row's place and skin
+  (17.png: left over from Skin Character Tabs being on). SetPoint post-hooks on the strip and on
+  Tab2 and Tab6 now place the button again on the next frame.
+- **R2-2.** Too much empty space past the tabs (19.png, 24.png, 25.png). There is no margin now, and the
+  list's own 8 px padding is taken up by the band, so the rows start flush with the tabs' edge.
+- **R2-3.** "New outfit..." becomes "New outfit".
+- **R2-4.** The footer's three buttons share the skin's plain button (New outfit drops the primary fill
+  that was hard to read). All and None draw their labels in `text.muted`.
+- **R2-5.** The window trailed a dragged sheet. The follow now compares the corner on every frame;
+  the layers and the render stay on the 0.05 s throttle.
+
+Smoke: `docs/smoke-tests.md` section 20 (FS2-1 to FS2-6).

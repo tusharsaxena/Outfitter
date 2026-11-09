@@ -115,13 +115,19 @@ end
 -- The list's top under the title divider, and the strip's gap below it.
 local LIST_TOP, STRIP_TOP, STRIP_GAP = -30, -27, 2
 
+-- The contents' shift for an inset: the list's own 8 px left padding is taken up by the band, so the
+-- rows start flush with the strip's edge (Forever smoke feedback 2, R2-2) and the window widens by
+-- the rest.
+local LEFT_PAD = 8
+local function shiftOf(px) return math.max(0, px - LEFT_PAD) end
+
 -- The strip, built the first time test mode shows the window; false when the library is degraded.
 local function ensureStrip()
     if frame.strip == nil then
         local strip = NS.MakeTestStrip(frame, L["Test mode: sample outfits, nothing equipped"])
         frame.strip = strip or false
         if strip then
-            strip:SetPoint("TOPLEFT", frame, "TOPLEFT", 1 + Win.inset, STRIP_TOP)
+            strip:SetPoint("TOPLEFT", frame, "TOPLEFT", 1 + shiftOf(Win.inset), STRIP_TOP)
             strip:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -1, STRIP_TOP)
             chrome[#chrome + 1] = strip
             strip:SetFrameLevel(NS.SafeNumber(frame:GetFrameLevel(), 0) + LEVEL.CHROME)
@@ -133,7 +139,7 @@ end
 --- The window's size as this file set it, in its own units: the width and the height with the test
 --- strip's push. Read where the client's rect may not be laid yet (the dock's alone spot).
 --- @return number width, number height
-function Win.Size() return Win.WIDTH + Win.inset, Win.HEIGHT + (Win.push or 0) end
+function Win.Size() return Win.WIDTH + shiftOf(Win.inset), Win.HEIGHT + (Win.push or 0) end
 
 --- Widen the window by `px` on its left and move its contents right by as much (Forever smoke
 --- feedback S5): a side-tab strip that hangs over the docked window's left edge then lies over an
@@ -146,12 +152,13 @@ function Win.SetLeftInset(px)
     px = math.floor(math.max(0, NS.SafeNumber(px, 0)) + 0.5)
     if px == Win.inset then return end
     Win.inset = px
-    frame:SetWidth(Win.WIDTH + px)
-    frame.title:SetPoint("TOPLEFT", frame, "TOPLEFT", 10 + px, -8)
-    frame.divider:SetPoint("TOPLEFT", frame, "TOPLEFT", 1 + px, -26)
-    if frame.strip then frame.strip:SetPoint("TOPLEFT", frame, "TOPLEFT", 1 + px, STRIP_TOP) end
-    list:SetPoint("TOPLEFT", frame, "TOPLEFT", 8 + px, LIST_TOP - (Win.push or 0))
-    newButton:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 8 + px, 8)
+    local shift = shiftOf(px)
+    frame:SetWidth(Win.WIDTH + shift)
+    frame.title:SetPoint("TOPLEFT", frame, "TOPLEFT", 10 + shift, -8)
+    frame.divider:SetPoint("TOPLEFT", frame, "TOPLEFT", 1 + shift, -26)
+    if frame.strip then frame.strip:SetPoint("TOPLEFT", frame, "TOPLEFT", 1 + shift, STRIP_TOP) end
+    list:SetPoint("TOPLEFT", frame, "TOPLEFT", LEFT_PAD + shift, LIST_TOP - (Win.push or 0))
+    newButton:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", LEFT_PAD + shift, 8)
 end
 
 --- Dress the window for test mode or take it off: the strip, the list's push, the height, New outfit
@@ -166,7 +173,7 @@ function Win.SetTestMode(on)
     if strip then strip:Show() elseif frame.strip then frame.strip:Hide() end
     local push = strip and (NS.TEST_STRIP_HEIGHT + STRIP_GAP) or 0
     Win.push = push
-    list:SetPoint("TOPLEFT", frame, "TOPLEFT", 8 + Win.inset, LIST_TOP - push)
+    list:SetPoint("TOPLEFT", frame, "TOPLEFT", LEFT_PAD + shiftOf(Win.inset), LIST_TOP - push)
     frame:SetHeight(Win.HEIGHT + push)
     frame.title:SetText((on and not strip) and L["Outfitter Reborn (test mode)"] or L["Outfitter Reborn"])
     newButton:SetEnabled(not on)
@@ -255,7 +262,10 @@ local function body(f)
 end
 
 local function footerRow(f)
-    local new = labeledButton("OutfitterRebornNewOutfitButton", f, 120, 20, L["New outfit..."], { primary = true })
+    -- One look for the footer's three buttons (Forever smoke feedback 2, R2-4): the skin's plain button,
+    -- not the primary one, whose fill made the label hard to read under several skins; All and None
+    -- draw their label in the muted text color, a step dimmer.
+    local new = labeledButton("OutfitterRebornNewOutfitButton", f, 120, 20, L["New outfit"])
     new:SetPoint("BOTTOMLEFT", f, "BOTTOMLEFT", 8, 8)
     new.mark = new:CreateTexture(nil, "ARTWORK")
     new.mark:SetSize(12, 12)
@@ -266,9 +276,10 @@ local function footerRow(f)
         if not NS.IsStoodDown() and not NS.Preview.IsActive() then NS.OutfitDialog.OpenNew() end
     end)
     newButton = new
-    local none = labeledButton("OutfitterRebornSlotsNone", f, 40, 18, L["None"])
+    local dim = { tokens = { text = "text.muted" } }
+    local none = labeledButton("OutfitterRebornSlotsNone", f, 40, 18, L["None"], dim)
     none:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -8, 9)
-    local all = labeledButton("OutfitterRebornSlotsAll", f, 40, 18, L["All"])
+    local all = labeledButton("OutfitterRebornSlotsAll", f, 40, 18, L["All"], dim)
     all:SetPoint("RIGHT", none, "LEFT", -4, 0)
     local label = f:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     label:SetPoint("RIGHT", all, "LEFT", -4, 0)

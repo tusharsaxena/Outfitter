@@ -226,16 +226,16 @@ test("dock: a sheet that was never laid out parks the window at the UIParent TOP
     assertEqual(p[1], "TOPLEFT"); assertEqual(p[2], M.UIParent); assertEqual(p[3], "TOPLEFT")
 end)
 
-test("dock: the follow runs every 0.05 s on the driver frame, only while shown and standing up", function()
+test("dock: the follow tracks the corner every frame on the driver frame, only while shown and standing up", function()
     local NS, M, _, win = opened()
     local driver = M.OutfitterRebornDockDriver
     assertTrue(driver.__scripts.OnUpdate ~= nil, "the follow is armed while the window is shown")
+    driver:__fire("OnUpdate", 0.01)
+    assertEqual(#win.__pts, 1, "a still sheet moves nothing")
     rawset(M.CharacterFrame, "GetRight", function() return 350 end)
-    driver:__fire("OnUpdate", 0.03)
-    -- red under: drop the FOLLOW_INTERVAL throttle in the driver's OnUpdate.
-    assertEqual(#win.__pts, 1, "the follow ran before 0.05 s")
-    driver:__fire("OnUpdate", 0.03)
-    assertEqual(#win.__pts, 2, "the moved corner was not followed")
+    driver:__fire("OnUpdate", 0.01)
+    -- red under: the corner compare behind the 0.05 s throttle (the window trails a dragged sheet).
+    assertEqual(#win.__pts, 2, "the moved corner was not followed in the same frame")
     assertEqual(win.__pts[2][4], 350)
     -- Stood down: the tick does nothing (H26), and the window goes.
     NS.SetByPath("enabled", false)

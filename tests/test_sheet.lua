@@ -379,10 +379,10 @@ test("sheet (Forever): a strip down the window's edge reaches over it by its wid
     local NS, M = fresh()
     downStrip(M, 302)
     -- red under: no StripInset (the tabs cover the window's left edge, 14.png).
-    assertEqual(NS.Sheet.StripInset(300), 357 - 300 + 4)
+    assertEqual(NS.Sheet.StripInset(300), 357 - 300)
     assertEqual(NS.Sheet.StripInset(400), 0, "a window docked clear of the strip (a Chonky panel open)")
     -- red under: a strip read only when it starts at the window's edge (a dock gap leaves it hanging over).
-    assertEqual(NS.Sheet.StripInset(320), 357 - 320 + 4, "a window 20 px off the sheet still under the strip")
+    assertEqual(NS.Sheet.StripInset(320), 357 - 320, "a window 20 px off the sheet still under the strip")
     across(M, 48, 1)
     assertEqual(NS.Sheet.StripInset(100), 0, "a strip that runs across hangs over nothing")
 end)
@@ -392,7 +392,7 @@ test("sheet (Forever): a scaled strip's reach is read in the sheet's units (S5)"
     local NS, M = fresh()
     downStrip(M, 375)                       -- 300 / 0.8, the strip at Chonky's 0.8
     for i = 1, 6 do rawset(M["CharacterFrameModeTab" .. i], "GetEffectiveScale", function() return 0.8 end) end
-    assertEqual(NS.Sheet.StripInset(300), (375 + 55) * 0.8 - 300 + 4)
+    assertEqual(NS.Sheet.StripInset(300), (375 + 55) * 0.8 - 300)
 end)
 
 test("sheet: Retail has no side strip (S5)", function()

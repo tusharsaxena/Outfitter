@@ -1233,7 +1233,7 @@ Total.
 - dock: the window takes ONE UIParent-relative SetPoint, and falls back to the holder when refused
 - dock: closing the sheet syncs the drawer after the window is gone
 - dock: a sheet that was never laid out parks the window at the UIParent TOPLEFT
-- dock: the follow runs every 0.05 s on the driver frame, only while shown and standing up
+- dock: the follow tracks the corner every frame on the driver frame, only while shown and standing up
 - dock: an idle States poll sends no STACK_CHANGED, and a stack change keeps the status cache
 - dock: a stood-down tick returns before it reads the sheet (the latch first)
 - dock: the window is in UISpecialFrames, by its global name
@@ -1273,7 +1273,7 @@ Total.
 - dock: on Chonky the Reputation tab takes the button and window down, the Character tab brings them back
 - dock: on Retail the sheet button is a plain Button with no template
 
-### test_dock_forever.lua (7)
+### test_dock_forever.lua (8)
 
 - dock (Forever): the button sits below the last mode tab in the strip's look
 - dock (Forever): with the client's template the button is a LargeSideTabButtonTemplate CheckButton
@@ -1282,6 +1282,7 @@ Total.
 - dock (Forever): the button takes the strip's scale (S1)
 - dock (Forever): on Chonky's skinned strip the button wears its skin, not the template's (S1)
 - dock (Forever): a strip down the sheet's edge widens the window and moves its contents right (S5)
+- dock (Forever): a strip re-laid while the sheet is open places the button again (R2-1)
 
 ### test_list_model.lua (8)
 
@@ -1294,7 +1295,7 @@ Total.
 - list model: Status caches O.Status in the table it is handed, until that is wiped
 - list model: in test mode the list is the sample outfits under their headers, no item section
 
-### test_rows_secure.lua (25)
+### test_rows_secure.lua (26)
 
 - rows: NS.WindowRows is published with the secure surface
 - rows: fourteen rows and their secure children are created once, each SetAllPoints'd at birth
@@ -1321,6 +1322,7 @@ Total.
 - rows: a row wears the hover wash while the pointer is over it or its controls
 - rows: a blank row takes no hover, and a rebind keeps the stripe and selection
 - rows: the worn box and the EM mark wash in the skin's accent; the gear is painted as the title gear
+- window: the footer's three buttons share the plain look; All and None dim their label (R2-3, R2-4)
 
 ### test_slot_enables.lua (29)
 
@@ -1889,9 +1891,9 @@ Total.
 | test_triggers_pvp.lua | 7 |
 | test_sheet.lua | 29 |
 | test_dock.lua | 50 |
-| test_dock_forever.lua | 7 |
+| test_dock_forever.lua | 8 |
 | test_list_model.lua | 8 |
-| test_rows_secure.lua | 25 |
+| test_rows_secure.lua | 26 |
 | test_slot_enables.lua | 29 |
 | test_bar.lua | 45 |
 | test_bar_look.lua | 13 |
@@ -1917,4 +1919,4 @@ Total.
 | test_lizard_sighted.lua | 8 |
 | test_prose.lua | 15 |
 | Skipped | 1 |
-| **Total** | **1583** |
+| **Total** | **1585** |

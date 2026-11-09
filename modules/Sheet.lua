@@ -340,8 +340,9 @@ end
 -- the window; one that ends before it stands clear (a Chonky side panel opens 63 px right of the
 -- sheet to make room for the strip, CCS-F Modules/Forever.lua:1409, and the window docks past it).
 local STRIP_SLACK = 12
--- The empty band's spare width past the strip's right edge.
-local STRIP_MARGIN = 4
+-- The empty band's spare width past the strip's right edge: none, the rows start flush with the
+-- tabs' edge (Forever smoke feedback 2, R2-2).
+local STRIP_MARGIN = 0
 
 --- How far a side-tab strip down the sheet's right edge reaches over a window docked at `x` (Forever
 --- smoke feedback S5), in the sheet frame's units: the strip's right edge past `x`, plus a margin, when
